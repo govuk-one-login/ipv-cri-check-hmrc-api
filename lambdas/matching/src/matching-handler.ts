@@ -3,9 +3,6 @@ import { LambdaInterface } from "@aws-lambda-powertools/commons";
 export class MatchingHandler implements LambdaInterface {
   public async handler(event: any, _context: unknown): Promise<any> {
     const url = event.apiURL.value;
-    if (!event.userDetails.firstName) {
-      throw new Error("firstName is missing");
-    }
     const postBody = {
       firstName: event.userDetails.firstName,
       lastName: event.userDetails.lastName,
