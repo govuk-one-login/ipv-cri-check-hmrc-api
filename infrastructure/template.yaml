@@ -38,4 +38,3 @@ Outputs:
   MatchingFunctionIamRole:
     Description: "Implicit IAM Role created for Matching function"
     Value: !GetAtt MatchingFunctionRole.Arn
-

@@ -2,7 +2,6 @@ import { MatchingHandler } from "../src/matching-handler";
 import { Context } from "aws-lambda";
 
 describe("matching-handler", () => {
-
   beforeEach(() => {
     jest.clearAllMocks();
     jest.resetAllMocks();
@@ -15,7 +14,7 @@ describe("matching-handler", () => {
         firstName: "Jim",
         lastName: "Ferguson",
         dob: "1948-04-23",
-        nino: "AA000003D"
+        nino: "AA000003D",
       }),
     });
     const matchingHandler = new MatchingHandler();
@@ -24,25 +23,24 @@ describe("matching-handler", () => {
         firstName: "Jim",
         lastName: "Ferguson",
         dob: "1948-04-23",
-        nino: "AA000003D"
+        nino: "AA000003D",
       },
       apiURL: {
-        value: "https://hmrc/api"
+        value: "https://hmrc/api",
       },
       userAgent: {
-        value: "govuk-one-login"
+        value: "govuk-one-login",
       },
       oAuthToken: {
-        value: "123456789"
-      }
+        value: "123456789",
+      },
     };
     const result = await matchingHandler.handler(event, {} as Context);
     expect(result).toStrictEqual({
       firstName: "Jim",
       lastName: "Ferguson",
       dob: "1948-04-23",
-      nino: "AA000003D"
+      nino: "AA000003D",
     });
   });
-
 });
