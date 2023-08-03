@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: "Digital Identity IPV CRI Pdv-Matching API"
+
+Globals:
+  Function:
+    Runtime: nodejs18.x
+    Architectures:
+      - arm64
+    Timeout: 3
+
+Resources:
+  MatchingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/matching
+      Handler: matching-handler.lambdaHandler
+      FunctionUrlConfig:
+        AuthType: AWS_IAM
+        Cors:
+          AllowOrigins: ["*"]
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - src/matching-handler.ts
+
+Outputs:
+  MatchingFunctionURLEndpoint:
+    Description: FURLFunction function name
+    Value: !GetAtt MatchingFunctionUrl.FunctionUrl
+  MatchingFunction:
+    Description: "Matching Lambda Function ARN"
+    Value: !GetAtt MatchingFunction.Arn
+  MatchingFunctionIamRole:
+    Description: "Implicit IAM Role created for Matching function"
+    Value: !GetAtt MatchingFunctionRole.Arn
+
