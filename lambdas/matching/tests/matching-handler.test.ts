@@ -19,22 +19,38 @@ describe("matching-handler", () => {
     });
     const matchingHandler = new MatchingHandler();
     const event = {
+      sessionId: "12346",
+      nino: "AA000003D",
       userDetails: {
-        firstName: "Jim",
-        lastName: "Ferguson",
-        dob: "1948-04-23",
-        nino: "AA000003D",
-      },
-      apiURL: {
-        value: "https://hmrc/api",
+        Count: 1,
+        Items: [
+          {
+            firstName: {
+              S: "Jim",
+            },
+            lastName: {
+              S: "Ferguson",
+            },
+            dob: {
+              S: "1948-04-23",
+            },
+            nino: {
+              S: "AA000003D",
+            },
+          },
+        ],
       },
       userAgent: {
         value: "govuk-one-login",
       },
-      oAuthToken: {
-        value: "123456789",
+      apiURL: {
+        value:
+          "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match",
       },
-    };
+      oAuthToken: {
+        value: "d48c73a3f8712351a4d1db25bb4170a5",
+      },
+    } as MatchEvent;
     const result = await matchingHandler.handler(event, {} as Context);
     expect(result).toStrictEqual({
       firstName: "Jim",
