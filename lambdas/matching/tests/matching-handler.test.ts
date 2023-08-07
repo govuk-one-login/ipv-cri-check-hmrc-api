@@ -48,7 +48,7 @@ describe("matching-handler", () => {
           "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match",
       },
       oAuthToken: {
-        value: "d48c73a3f8712351a4d1db25bb4170a5",
+        value: "123",
       },
     } as MatchEvent;
     const result = await matchingHandler.handler(event, {} as Context);
