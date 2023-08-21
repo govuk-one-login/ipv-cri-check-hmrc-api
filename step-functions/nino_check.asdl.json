@@ -1,0 +1,260 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Check sessionId is present",
+  "States": {
+    "Check sessionId is present": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Not": {
+            "Variable": "$.sessionId",
+            "IsPresent": true
+          },
+          "Next": "Error: No sessionId was provided"
+        }
+      ],
+      "Default": "Check nino is present"
+    },
+    "Error: No sessionId was provided": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Check nino is present": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Not": {
+            "Variable": "$.nino",
+            "IsPresent": true
+          },
+          "Next": "Error: No nino was provided"
+        }
+      ],
+      "Default": "Query user attempts"
+    },
+    "Query user attempts": {
+      "Type": "Task",
+      "Next": "Check if user attempts exists in db",
+      "Parameters": {
+        "TableName": "${NinoAttemptsTable}",
+        "KeyConditionExpression": "id = :value",
+        "ExpressionAttributeValues": {
+          ":value": {
+            "S.$": "$.sessionId"
+          }
+        }
+      },
+      "Resource": "arn:aws:states:::aws-sdk:dynamodb:query",
+      "ResultPath": "$.check-attempts-exist"
+    },
+    "Check if user attempts exists in db": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.check-attempts-exist.Count",
+          "NumericGreaterThan": 0,
+          "Next": "Check user attempts is not 0 or 1"
+        }
+      ],
+      "Default": "Create new user attempt entry"
+    },
+    "Create new user attempt entry": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+      "Parameters": {
+        "TableName": "${NinoAttemptsTable}",
+        "Item": {
+          "id": {
+            "S.$": "$.sessionId"
+          },
+          "attempts": {
+            "N": "0"
+          }
+        },
+        "ConditionExpression": "attribute_not_exists(id)"
+      },
+      "Next": "Update number of attempts by user",
+      "ResultPath": null
+    },
+    "Check user attempts is not 0 or 1": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "And": [
+            {
+              "Not": {
+                "Variable": "$.check-attempts-exist.Items[0].attempts.N",
+                "StringEquals": "0"
+              }
+            },
+            {
+              "Not": {
+                "Variable": "$.check-attempts-exist.Items[0].attempts.N",
+                "StringEquals": "1"
+              }
+            }
+          ],
+          "Next": "Error: Maximum number of attempts exceeded"
+        }
+      ],
+      "Default": "Update number of attempts by user"
+    },
+    "Update number of attempts by user": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "${NinoAttemptsTable}",
+        "Key": {
+          "id": {
+            "S.$": "$.sessionId"
+          }
+        },
+        "UpdateExpression": "ADD attempts :attempts",
+        "ExpressionAttributeValues": {
+          ":attempts": {
+            "N": "1"
+          }
+        }
+      },
+      "Next": "Query user from nino",
+      "ResultPath": null
+    },
+    "Query user from nino": {
+      "Type": "Task",
+      "Next": "Check user details exist for given nino",
+      "Parameters": {
+        "TableName": "${NinoUsersTable}",
+        "KeyConditionExpression": "nino = :value",
+        "ExpressionAttributeValues": {
+          ":value": {
+            "S.$": "$.nino"
+          }
+        }
+      },
+      "Resource": "arn:aws:states:::aws-sdk:dynamodb:query",
+      "ResultPath": "$.userDetails"
+    },
+    "Check user details exist for given nino": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Not": {
+            "Variable": "$.userDetails.Count",
+            "NumericGreaterThan": 0
+          },
+          "Next": "Error: No user for given nino found"
+        }
+      ],
+      "Default": "Get User Agent"
+    },
+    "Error: Maximum number of attempts exceeded": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Error: No nino was provided": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Error: No user for given nino found": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Get User Agent": {
+      "Type": "Task",
+      "Next": "Get API URL",
+      "Parameters": {
+        "Name": "${UserAgent}"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+      "ResultPath": "$.userAgent",
+      "ResultSelector": {
+        "value.$": "$.Parameter.Value"
+      }
+    },
+    "Get API URL": {
+      "Type": "Task",
+      "Next": "Get OAuth Token",
+      "Parameters": {
+        "Name": "${NinoCheckUrl}"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+      "ResultSelector": {
+        "value.$": "$.Parameter.Value"
+      },
+      "ResultPath": "$.apiURL"
+    },
+    "Get OAuth Token": {
+      "Type": "Task",
+      "Next": "Call Matching API",
+      "Parameters": {
+        "SecretId": "${BearerTokenName}"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:secretsmanager:getSecretValue",
+      "ResultPath": "$.oAuthToken",
+      "ResultSelector": {
+        "value.$": "$.SecretString"
+      }
+    },
+    "Call Matching API": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${MatchingFunction}"
+      },
+      "Next": "Response Validation",
+      "ResultSelector": {
+        "result.$": "$.Payload"
+      }
+    },
+    "Response Validation": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "And": [
+            {
+              "Not": {
+                "Variable": "$.result.firstName",
+                "IsPresent": true
+              }
+            },
+            {
+              "Not": {
+                "Variable": "$.result.lastName",
+                "IsPresent": true
+              }
+            },
+            {
+              "Not": {
+                "Variable": "$.result.dateOfBirth",
+                "IsPresent": true
+              }
+            },
+            {
+              "Not": {
+                "Variable": "$.result.nino",
+                "IsPresent": true
+              }
+            },
+            {
+              "Not": {
+                "Variable": "$.result.saUtr",
+                "IsPresent": true
+              }
+            }
+          ],
+          "Next": "Error: HMRC came back with an error"
+        }
+      ],
+      "Default": "Nino check successful"
+    },
+    "Error: HMRC came back with an error": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Nino check successful": {
+      "Type": "Pass",
+      "End": true
+    }
+  }
+}
