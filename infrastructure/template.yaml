@@ -9,7 +9,51 @@ Globals:
       - arm64
     Timeout: 3
 
+Parameters:
+  BearerTokenName:
+    Type: String
+
 Resources:
+  UserAgent:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/UserAgent"
+      Value: govuk-one-login
+      Type: String
+      Description: User agent for HMRC requests
+
+  NinoCheckUrl:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/NinoCheckUrl"
+      Value: https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match
+      Type: String
+      Description: URL for HMRC /check endpoint
+
+  NinoAttemptsTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Sub "${AWS::StackName}-nino-attempts"
+      BillingMode: "PAY_PER_REQUEST"
+      AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+
+  NinoUsersTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Sub "${AWS::StackName}-nino-users"
+      BillingMode: "PAY_PER_REQUEST"
+      AttributeDefinitions:
+        - AttributeName: "nino"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "nino"
+          KeyType: "HASH"
+
   MatchingFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -27,6 +71,38 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - src/matching-handler.ts
+
+  NinoCheckStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub "${AWS::StackName}-NinoCheck"
+      DefinitionUri: ../step-functions/nino_check.asdl.json
+      DefinitionSubstitutions:
+        MatchingFunction: !Ref MatchingFunction
+        NinoAttemptsTable: !Ref NinoAttemptsTable
+        NinoUsersTable: !Ref NinoUsersTable
+        NinoCheckUrl: !Ref NinoCheckUrl
+        UserAgent: !Ref UserAgent
+        BearerTokenName: !Ref BearerTokenName
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref MatchingFunction
+        - DynamoDBWritePolicy:
+            TableName: !Ref NinoAttemptsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref NinoAttemptsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref NinoUsersTable
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${BearerTokenName}-??????
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameters
+              - ssm:GetParameter
+            Resource:
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/NinoCheckUrl"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/UserAgent"
 
 Outputs:
   MatchingFunctionURLEndpoint:
