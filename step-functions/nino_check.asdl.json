@@ -200,7 +200,7 @@
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
         "Payload.$": "$",
-        "FunctionName": "${MatchingFunction}"
+        "FunctionName": "${MatchingFunctionArn}"
       },
       "Next": "Response Validation",
       "ResultSelector": {
