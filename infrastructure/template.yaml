@@ -76,7 +76,7 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       Name: !Sub "${AWS::StackName}-NinoCheck"
-      DefinitionUri: ../step-functions/nino_check.asdl.json
+      DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
         NinoAttemptsTable: !Ref NinoAttemptsTable
