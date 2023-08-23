@@ -1,11 +1,12 @@
 version = 0.1
 [default.deploy.parameters]
-stack_name = "pdv-matching"
+stack_name = "cronk-pdv-matching"
 resolve_s3 = true
 s3_prefix = "pdv-matching"
 region = "eu-west-2"
 capabilities = "CAPABILITY_IAM"
 image_repositories = []
 parameter_overrides = [
-    "BearerTokenName=HMRCBearerToken"
+    "BearerTokenName=HMRCBearerToken",
+    "Environment=dev"
 ]

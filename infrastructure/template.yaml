@@ -12,6 +12,27 @@ Globals:
 Parameters:
   BearerTokenName:
     Type: String
+  PermissionsBoundary:
+    Description: "The ARN of the permissions boundary to apply when creating IAM roles"
+    Type: String
+    Default: "none"
+  Environment:
+    Description: "The environment type"
+    Type: "String"
+    AllowedValues:
+      - "dev"
+      - "build"
+      - "staging"
+      - "integration"
+      - "production"
+    ConstraintDescription: must be dev, build, staging, integration or production
+
+Conditions:
+  UsePermissionsBoundary:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref PermissionsBoundary
+          - "none"
 
 Resources:
   UserAgent:
@@ -29,6 +50,94 @@ Resources:
       Value: https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match
       Type: String
       Description: URL for HMRC /check endpoint
+
+  PrivateNinoCheckApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Description: Private NINO check CRI API
+      MethodSettings:
+        - ResourcePath: "/*"
+          # LoggingLevel: INFO
+          HttpMethod: "*"
+          # Disable data trace in production to avoid logging customer sensitive information
+          # DataTraceEnabled: true
+          # MetricsEnabled: true
+          ThrottlingRateLimit: 5
+          ThrottlingBurstLimit: 10
+      # AccessLogSetting:
+      #   DestinationArn: !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PrivateNinoCheckApiAccessLogGroup}"
+      #   Format: >-
+      #     {
+      #     "requestId":"$context.requestId",
+      #     "ip":"$context.identity.sourceIp",
+      #     "requestTime":"$context.requestTime",
+      #     "httpMethod":"$context.httpMethod",
+      #     "path":"$context.path",
+      #     "routeKey":"$context.routeKey",
+      #     "status":"$context.status",
+      #     "protocol":"$context.protocol",
+      #     "responseLatency":"$context.responseLatency",
+      #     "responseLength":"$context.responseLength"
+      #     }
+      TracingEnabled: true
+      Name: !Sub "nino-check-cri-private-${AWS::StackName}"
+      StageName: !Ref Environment
+      DefinitionBody:
+        openapi: "3.0.1" # workaround to get `sam validate` to work
+        paths: # workaround to get `sam validate` to work
+          /never-created:
+            options: {} # workaround to get `sam validate` to work
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: "./private-api.yaml"
+      OpenApiVersion: 3.0.1
+      EndpointConfiguration:
+        Type: PRIVATE
+      Auth:
+        ResourcePolicy:
+          CustomStatements:
+            - Action: "execute-api:Invoke"
+              Effect: Allow
+              Principal: "*"
+              Resource:
+                - "execute-api:/*"
+
+  # PrivateNinoCheckApiAccessLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs
+  #     RetentionInDays: 365
+
+  ExecuteStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Role to allow API gateway to execute step function
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: AllowFavouriteLambdaInvoke
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "states:StartExecution"
+                  - "states:StartSyncExecution"
+                Resource: "*"
+      PermissionsBoundary:
+        !If [
+          UsePermissionsBoundary,
+          !Ref PermissionsBoundary,
+          !Ref AWS::NoValue,
+        ]
 
   NinoAttemptsTable:
     Type: "AWS::DynamoDB::Table"
@@ -76,6 +185,7 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       Name: !Sub "${AWS::StackName}-NinoCheck"
+      Type: EXPRESS
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
