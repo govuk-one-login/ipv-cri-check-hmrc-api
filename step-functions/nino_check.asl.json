@@ -204,7 +204,10 @@
       },
       "Next": "Response Validation",
       "ResultSelector": {
-        "result.$": "$.Payload"
+        "firstName.$": "$.Payload.firstName",
+        "lastName.$": "$.Payload.lastName",
+        "dateOfBirth.$": "$.Payload.dateOfBirth",
+        "nino.$": "$.Payload.nino"
       }
     },
     "Response Validation": {

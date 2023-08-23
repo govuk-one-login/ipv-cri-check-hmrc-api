@@ -40,7 +40,10 @@ paths:
               }
         responses:
           "200":
-            application/json:
+            statusCode: 200
+            responseTemplates:
+              application/json:
+                Fn::Sub: $input.path('$').output
 
 components:
   parameters:

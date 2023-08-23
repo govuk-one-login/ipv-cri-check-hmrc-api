@@ -123,7 +123,7 @@ Resources:
             Action:
               - "sts:AssumeRole"
       Policies:
-        - PolicyName: AllowFavouriteLambdaInvoke
+        - PolicyName: AllowStateMachineInvoke
           PolicyDocument:
             Version: "2012-10-17"
             Statement:

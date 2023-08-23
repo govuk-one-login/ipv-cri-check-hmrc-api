@@ -1,6 +1,6 @@
 version = 0.1
 [default.deploy.parameters]
-stack_name = "cronk-pdv-matching"
+stack_name = "pdv-matching"
 resolve_s3 = true
 s3_prefix = "pdv-matching"
 region = "eu-west-2"
