@@ -3,7 +3,6 @@ info:
   title: "HMRC NINO Check Credential Issuer Private Api"
   version: "1.0"
 
-
 paths:
   /check:
     post:
@@ -28,9 +27,6 @@ paths:
           Fn::Sub: ${ExecuteStateMachineRole.Arn}
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:states:action/StartSyncExecution
-        responses:
-          default:
-            statusCode: "200"
         requestTemplates:
           application/json:
             Fn::Sub: |-

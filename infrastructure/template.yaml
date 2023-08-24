@@ -194,6 +194,12 @@ Resources:
         NinoCheckUrl: !Ref NinoCheckUrl
         UserAgent: !Ref UserAgent
         BearerTokenName: !Ref BearerTokenName
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt NinoCheckStateMachineLogGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref MatchingFunction
@@ -213,6 +219,18 @@ Resources:
             Resource:
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/NinoCheckUrl"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/UserAgent"
+        - Statement:
+            Effect: Allow
+            Action:
+              - logs:*
+            Resource:
+              - "*"
+
+  NinoCheckStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-NinoCheck-state-machine-logs
+      RetentionInDays: 365
 
 Outputs:
   MatchingFunctionURLEndpoint:
