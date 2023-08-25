@@ -185,7 +185,7 @@
     },
     "Get OAuth Token": {
       "Type": "Task",
-      "Next": "Call Matching API",
+      "Next": "Filter out jargon",
       "Parameters": {
         "SecretId": "${BearerTokenName}"
       },
@@ -193,6 +193,18 @@
       "ResultPath": "$.oAuthToken",
       "ResultSelector": {
         "value.$": "$.SecretString"
+      }
+    },
+    "Filter out jargon": {
+      "Type": "Pass",
+      "Next": "Call Matching API",
+      "Parameters": {
+        "sessionId.$": "$.sessionId",
+        "nino.$": "$.nino",
+        "userDetails.$": "$.userDetails.Items[0]",
+        "userAgent.$": "$.userAgent.value",
+        "apiURL.$": "$.apiURL.value",
+        "oAuthToken.$": "$.oAuthToken.value"
       }
     },
     "Call Matching API": {
@@ -236,12 +248,6 @@
             {
               "Not": {
                 "Variable": "$.result.nino",
-                "IsPresent": true
-              }
-            },
-            {
-              "Not": {
-                "Variable": "$.result.saUtr",
                 "IsPresent": true
               }
             }
