@@ -6,17 +6,17 @@ const logger = new Logger();
 export class MatchingHandler implements LambdaInterface {
   public async handler(event: MatchEvent, _context: unknown): Promise<any> {
     try {
-      const response = await fetch(event.apiURL.value, {
+      const response = await fetch(event.apiURL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "User-Agent": event.userAgent.value,
-          Authorization: "Bearer " + event.oAuthToken.value,
+          "User-Agent": event.userAgent,
+          Authorization: "Bearer " + event.oAuthToken,
         },
         body: JSON.stringify({
-          firstName: event.userDetails.Items[0].firstName.S,
-          lastName: event.userDetails.Items[0].lastName.S,
-          dateOfBirth: event.userDetails.Items[0].dob.S,
+          firstName: event.userDetails.firstName.S,
+          lastName: event.userDetails.lastName.S,
+          dateOfBirth: event.userDetails.dob.S,
           nino: event.nino,
         }),
       });

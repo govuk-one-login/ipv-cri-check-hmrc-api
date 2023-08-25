@@ -22,34 +22,23 @@ describe("matching-handler", () => {
       sessionId: "12346",
       nino: "AA000003D",
       userDetails: {
-        Count: 1,
-        Items: [
-          {
-            firstName: {
-              S: "Jim",
-            },
-            lastName: {
-              S: "Ferguson",
-            },
-            dob: {
-              S: "1948-04-23",
-            },
-            nino: {
-              S: "AA000003D",
-            },
-          },
-        ],
+        firstName: {
+          S: "Jim",
+        },
+        lastName: {
+          S: "Ferguson",
+        },
+        dob: {
+          S: "1948-04-23",
+        },
+        nino: {
+          S: "AA000003D",
+        },
       },
-      userAgent: {
-        value: "govuk-one-login",
-      },
-      apiURL: {
-        value:
-          "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match",
-      },
-      oAuthToken: {
-        value: "123",
-      },
+      userAgent: "govuk-one-login",
+      apiURL:
+        "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match",
+      oAuthToken: "123",
     } as MatchEvent;
     const result = await matchingHandler.handler(event, {} as Context);
     expect(result).toStrictEqual({
