@@ -228,40 +228,32 @@
         {
           "And": [
             {
-              "Not": {
-                "Variable": "$.result.firstName",
-                "IsPresent": true
-              }
+              "Variable": "$.firstName",
+              "IsPresent": true
             },
             {
-              "Not": {
-                "Variable": "$.result.lastName",
-                "IsPresent": true
-              }
+              "Variable": "$.lastName",
+              "IsPresent": true
             },
             {
-              "Not": {
-                "Variable": "$.result.dateOfBirth",
-                "IsPresent": true
-              }
+              "Variable": "$.dateOfBirth",
+              "IsPresent": true
             },
             {
-              "Not": {
-                "Variable": "$.result.nino",
-                "IsPresent": true
-              }
+              "Variable": "$.nino",
+              "IsPresent": true
             }
           ],
-          "Next": "Error: HMRC came back with an error"
+          "Next": "Nino check successful"
         }
       ],
-      "Default": "Nino check successful"
+      "Default": "Error: HMRC came back with an error"
     },
-    "Error: HMRC came back with an error": {
+    "Nino check successful": {
       "Type": "Pass",
       "End": true
     },
-    "Nino check successful": {
+    "Error: HMRC came back with an error": {
       "Type": "Pass",
       "End": true
     }
