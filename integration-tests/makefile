@@ -26,3 +26,31 @@ happy2ndTry:
 	--state-machine ${STATE_MACHINE_ARN}#HappyPathTestOn2ndAttempt \
 	--input '{ "sessionId": "12345", "nino": "AA000003D" }' \
 	--no-cli-pager
+sessionIdNotPresent:
+	aws stepfunctions start-execution \
+	--endpoint http://localhost:8083 \
+	--name happyPathExecution \
+	--state-machine ${STATE_MACHINE_ARN}#InValidRequestSessionIdNotPresent \
+	--input '{ "nino": "AA000003D" }' \
+	--no-cli-pager
+ninoNotPresent:
+	aws stepfunctions start-execution \
+	--endpoint http://localhost:8083 \
+	--name happyPathExecution \
+	--state-machine ${STATE_MACHINE_ARN}#InValidRequestNinoIdNotPresent \
+	--input '{ "sessionId": "12345" }' \
+	--no-cli-pager
+failMaxAttempts:
+	aws stepfunctions start-execution \
+	--endpoint http://localhost:8083 \
+	--name happyPathExecution \
+	--state-machine ${STATE_MACHINE_ARN}#MaxiumNumberOfAttemptsExceeded \
+	--input '{ "sessionId": "12345", "nino": "AA000003D" }' \
+	--no-cli-pager
+userNotFoundNino:
+	aws stepfunctions start-execution \
+	--endpoint http://localhost:8083 \
+	--name happyPathExecution \
+	--state-machine ${STATE_MACHINE_ARN}#UserNotFoundForGivenNino \
+	--input '{ "sessionId": "12345", "nino": "AA000003D" }' \
+	--no-cli-pager
