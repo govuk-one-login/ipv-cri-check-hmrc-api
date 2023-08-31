@@ -8,10 +8,29 @@ Globals:
     Architectures:
       - arm64
     Timeout: 3
+    PermissionsBoundary: !If
+      - UsePermissionsBoundary
+      - !Ref PermissionsBoundary
+      - !Ref AWS::NoValue
+    CodeSigningConfigArn: !If
+      - EnforceCodeSigning
+      - !Ref CodeSigningConfigArn
+      - !Ref AWS::NoValue
 
 Parameters:
-  BearerTokenName:
+  CodeSigningEnabled:
+    Type: "String"
+    Default: "true"
+  CodeSigningConfigArn:
     Type: String
+    Default: "none"
+    Description: >
+      The ARN of the Code Signing Config to use, provided by the deployment pipeline
+  BearerTokenName:
+    Description: "The name of the bearer token parameter"
+    Type: String
+    # Temporary - solution to be changed once cross account behaviour implemented
+    Default: "HMRCBearerToken"
   PermissionsBoundary:
     Description: "The ARN of the permissions boundary to apply when creating IAM roles"
     Type: String
@@ -32,6 +51,9 @@ Parameters:
     Default: "common-cri-api"
 
 Conditions:
+  EnforceCodeSigning: !Equals
+    - !Ref CodeSigningEnabled
+    - true
   UsePermissionsBoundary:
     Fn::Not:
       - Fn::Equals:
@@ -280,10 +302,6 @@ Resources:
     Properties:
       CodeUri: ../lambdas/matching
       Handler: matching-handler.lambdaHandler
-      FunctionUrlConfig:
-        AuthType: AWS_IAM
-        Cors:
-          AllowOrigins: ["*"]
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -337,6 +355,10 @@ Resources:
               - logs:*
             Resource:
               - "*"
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
 
   NinoCheckStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
@@ -345,9 +367,6 @@ Resources:
       RetentionInDays: 365
 
 Outputs:
-  MatchingFunctionURLEndpoint:
-    Description: FURLFunction function name
-    Value: !GetAtt MatchingFunctionUrl.FunctionUrl
   MatchingFunction:
     Description: "Matching Lambda Function ARN"
     Value: !GetAtt MatchingFunction.Arn
