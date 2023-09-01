@@ -1,8 +1,8 @@
 import {
   clearItems,
   populateNinoTable,
-} from "../aws-resources/nino-check-dynamodb-helper";
-import { executeStepFunction } from "../aws-resources/nino-check-stepfunction-helper";
+} from "./resources/nino-check-dynamodb-helper";
+import { executeStepFunction } from "./resources/nino-check-stepfunction-helper";
 
 describe("Nino Check ", () => {
   const sessionId = "12345";

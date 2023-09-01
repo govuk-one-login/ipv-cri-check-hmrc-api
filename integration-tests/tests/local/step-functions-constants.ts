@@ -1,10 +1,10 @@
 import fs from "fs";
 import path from "path";
 
-const EVENT_FILE = path.join(__dirname, "../events/sfn_valid_input.json");
+const EVENT_FILE = path.join(__dirname, "../../events/sfn_valid_input.json");
 const STATE_MACHINE_FILE = path.join(
   __dirname,
-  "../../step-functions/nino_check.asl.json"
+  "../../../step-functions/nino_check.asl.json"
 );
 
 export const StepFunctionConstants = {
