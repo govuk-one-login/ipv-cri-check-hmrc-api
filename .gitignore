@@ -130,3 +130,5 @@ dist
 .pnp.*
 
 *.aws-sam/
+.DS_Store
+integration-tests/build
