@@ -33,7 +33,7 @@ describe("Nino Check", () => {
       const startExecutionResult = await executeStepFunction({
         nino: nino,
       });
-      expect(startExecutionResult.output).toBe('{"sessionId":"12345"}');
+      expect(startExecutionResult.output).toBe('{"nino":"AA000003D"}');
     });
 
     it("should fail when there is no nino present", async () => {
