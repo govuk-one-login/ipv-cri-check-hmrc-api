@@ -87,7 +87,7 @@ describe("Nino Check", () => {
         await clearItems(process.env.NINO_USERS_TABLE as string, {
           nino: goodBadNino,
         });
-        expect(startExecutionResult.output).toBe(undefined);
+        expect(startExecutionResult.output).toBeUndefined();
       });
     });
   });
