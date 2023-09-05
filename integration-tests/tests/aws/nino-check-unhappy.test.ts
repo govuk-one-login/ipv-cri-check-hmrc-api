@@ -28,23 +28,24 @@ describe("Nino Check", () => {
     });
   });
 
-  describe("Unhappy User Input Paths", () => {
-    it("should fail when there is no sessionId present", async () => {
-      const startExecutionResult = await executeStepFunction({
-        nino: nino,
+  describe("unhappy Case Scenario", () => {
+    describe("Invalid Request Received", () => {
+      it("should fail when there is no sessionId present", async () => {
+        const startExecutionResult = await executeStepFunction({
+          nino: nino,
+        });
+        expect(startExecutionResult.output).toBe('{"nino":"AA000003D"}');
       });
-      expect(startExecutionResult.output).toBe('{"nino":"AA000003D"}');
+      it("should fail when NINO not present", async () => {
+        const startExecutionResult = await executeStepFunction({
+          sessionId: sessionId,
+        });
+        expect(startExecutionResult.output).toBe('{"sessionId":"12345"}');
+      });
     });
 
-    it("should fail when there is no nino present", async () => {
-      const startExecutionResult = await executeStepFunction({
-        sessionId: sessionId,
-      });
-      expect(startExecutionResult.output).toBe('{"sessionId":"12345"}');
-    });
-
-    describe("Unhappy Nino Check Paths", () => {
-      it("should fail when there is more than 2 nino check attempts", async () => {
+    describe("non-existent data input", () => {
+      it("should fail when there is more than two nino check attempts on a bad nino", async () => {
         await executeStepFunction({
           sessionId: sessionId,
           nino: badNino,

@@ -4,7 +4,7 @@ import {
 } from "./resources/nino-check-dynamodb-helper";
 import { executeStepFunction } from "./resources/nino-check-stepfunction-helper";
 
-describe("Nino Check ", () => {
+describe("HMRC Nino Check ", () => {
   const sessionId = "12345";
   const testUser = {
     nino: "AA000003D",
@@ -25,8 +25,8 @@ describe("Nino Check ", () => {
       id: sessionId,
     });
   });
-  describe("Happy Case Nino Check", () => {
-    it("should execute nino step function 1st attempt", async () => {
+  describe("happy Case Scenario", () => {
+    it("should succeed when called with no previous attempt", async () => {
       const startExecutionResult = await executeStepFunction({
         nino: "AA000003D",
         sessionId: "12345",
@@ -37,7 +37,7 @@ describe("Nino Check ", () => {
       );
     });
 
-    it("should execute nino step function 2nd attempt", async () => {
+    it("should succeed when called after 1 failed previous attempt", async () => {
       const firstExecutionResult = await executeStepFunction({
         nino: "AA000003C",
         sessionId: "12345",
