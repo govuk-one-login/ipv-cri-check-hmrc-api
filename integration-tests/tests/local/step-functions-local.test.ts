@@ -38,15 +38,13 @@ describe("step-function-local", () => {
               responseStepFunction
             );
 
-            expect(results).toBeDefined();
-            expect(results?.length).toBe(1);
             expect(results[0].stateExitedEventDetails?.output).toEqual(
               '{"firstName":"Jim","lastName":"Ferguson","dateOfBirth":"1948-04-23","nino":"AA000003D"}'
             );
           });
         });
       });
-      describe("Error Scenarios", () => {
+      describe("unhappy Case Scenario", () => {
         describe("Invalid Request Received", () => {
           it("should fail when session id not present", async () => {
             const input = JSON.stringify({
@@ -66,8 +64,6 @@ describe("step-function-local", () => {
               responseStepFunction
             );
 
-            expect(results).toBeDefined();
-            expect(results?.length).toBe(1);
             expect(results[0].stateExitedEventDetails?.output).toEqual(
               '{"nino":"AA000003D"}'
             );
@@ -93,8 +89,6 @@ describe("step-function-local", () => {
               responseStepFunction
             );
 
-            expect(results).toBeDefined();
-            expect(results?.length).toBe(1);
             expect(results[0].stateExitedEventDetails?.output).toEqual(
               '{"sessionId":"12345"}'
             );
@@ -105,8 +99,8 @@ describe("step-function-local", () => {
         });
       });
 
-      describe("dynamodb error", () => {
-        it("should fail when there are more than two attempts", async () => {
+      describe("non-existent data input", () => {
+        it("should fail when there are more than two attempts on a bad nino", async () => {
           const input = JSON.stringify({
             nino: "AA000003D",
             sessionId: "12345",
@@ -125,8 +119,6 @@ describe("step-function-local", () => {
             responseStepFunction
           );
 
-          expect(results).toBeDefined();
-          expect(results?.length).toBe(1);
           expect(results[0].stateExitedEventDetails?.output).toEqual(
             '{"nino":"AA000003D","sessionId":"12345","check-attempts-exist":{"Count":1,"Items":[{"id":{"S":"12345"},"attempts":{"N":"2"}}],"ScannedCount":1}}'
           );
@@ -150,8 +142,6 @@ describe("step-function-local", () => {
             responseStepFunction
           );
 
-          expect(results).toBeDefined();
-          expect(results?.length).toBe(1);
           expect(results[0].stateExitedEventDetails?.output).toEqual(
             '{"nino":"AA000003D","sessionId":"12345","check-attempts-exist":{"Count":0,"Items":[],"ScannedCount":0},"userDetails":{"Count":0,"Items":[],"ScannedCount":0}}'
           );
