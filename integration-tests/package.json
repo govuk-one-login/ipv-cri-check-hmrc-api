@@ -8,8 +8,10 @@
     "compile": "tsc",
     "unit:all": "jest --config=jest.config.ts",
     "unit:aws": "jest --config=jest.config-aws.ts",
+    "unit:mocked": "jest --config=jest.config-mocked.ts",
     "test:all": "npm run compile && npm run unit:all",
     "test:aws": "npm run compile && npm run unit:aws",
+    "test:mocked": "npm run compile && npm run unit:mocked"
   },
   "author": "alphagov",
   "license": "MIT",
