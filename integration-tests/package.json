@@ -6,8 +6,10 @@
     "lint:prettier-fix": "pre-commit run prettier --all-files",
     "lint:eslint": "eslint ..",
     "compile": "tsc",
-    "unit": "jest --config=jest.config.ts",
-    "test": "npm run compile && npm run unit"
+    "unit:all": "jest --config=jest.config.ts",
+    "unit:aws": "jest --config=jest.config-aws.ts",
+    "test:all": "npm run compile && npm run unit:all",
+    "test:aws": "npm run compile && npm run unit:aws",
   },
   "author": "alphagov",
   "license": "MIT",

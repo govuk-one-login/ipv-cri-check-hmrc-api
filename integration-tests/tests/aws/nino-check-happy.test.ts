@@ -1,8 +1,6 @@
-import {
-  clearItems,
-  populateNinoTable,
-} from "./resources/nino-check-dynamodb-helper";
-import { executeStepFunction } from "./resources/nino-check-stepfunction-helper";
+import { stackOutputs } from "./resources/cloudformation-helper";
+import { clearItems, populateTable } from "./resources/dynamodb-helper";
+import { executeStepFunction } from "./resources/stepfunction-helper";
 
 describe("HMRC Nino Check ", () => {
   const sessionId = "12345";
@@ -12,40 +10,53 @@ describe("HMRC Nino Check ", () => {
     firstName: "Jim",
     lastName: "Ferguson",
   };
-
+  let output: Partial<{
+    NinoUsersTable: string;
+    NinoAttemptsTable: string;
+    NinoCheckStateMachineArn: string;
+  }>;
   beforeEach(async () => {
-    await populateNinoTable(testUser);
+    output = await stackOutputs(process.env.STACK_NAME);
+    await populateTable(testUser, output.NinoUsersTable);
   });
 
   afterEach(async () => {
-    await clearItems(process.env.NINO_USERS_TABLE as string, {
+    await clearItems(output.NinoUsersTable as string, {
       nino: testUser.nino,
     });
-    await clearItems(process.env.NINO_ATTEMPTS_TABLE as string, {
+    await clearItems(output.NinoAttemptsTable as string, {
       id: sessionId,
     });
   });
-  describe("happy Case Scenario", () => {
-    it("should succeed when called with no previous attempt", async () => {
-      const startExecutionResult = await executeStepFunction({
-        nino: "AA000003D",
-        sessionId: "12345",
-      });
-
+  describe("Happy Case Nino Check", () => {
+    it("should execute nino step function 1st attempt", async () => {
+      const startExecutionResult = await executeStepFunction(
+        {
+          nino: "AA000003D",
+          sessionId: "12345",
+        },
+        output.NinoCheckStateMachineArn
+      );
       expect(startExecutionResult.output).toBe(
         '{"firstName":"Jim","lastName":"Ferguson","dateOfBirth":"1948-04-23","nino":"AA000003D"}'
       );
     });
 
-    it("should succeed when called after 1 failed previous attempt", async () => {
-      const firstExecutionResult = await executeStepFunction({
-        nino: "AA000003C",
-        sessionId: "12345",
-      });
-      const secondExecutionResult = await executeStepFunction({
-        nino: "AA000003D",
-        sessionId: "12345",
-      });
+    it("should execute nino step function 2nd attempt", async () => {
+      const firstExecutionResult = await executeStepFunction(
+        {
+          nino: "AA000003C",
+          sessionId: "12345",
+        },
+        output.NinoCheckStateMachineArn
+      );
+      const secondExecutionResult = await executeStepFunction(
+        {
+          nino: "AA000003D",
+          sessionId: "12345",
+        },
+        output.NinoCheckStateMachineArn
+      );
 
       expect(firstExecutionResult.output).toBe(
         '{"nino":"AA000003C","sessionId":"12345","check-attempts-exist":{"Count":0,"Items":[],"ScannedCount":0},"userDetails":{"Count":0,"Items":[],"ScannedCount":0}}'

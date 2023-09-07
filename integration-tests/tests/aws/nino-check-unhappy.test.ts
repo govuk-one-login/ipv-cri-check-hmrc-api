@@ -1,8 +1,6 @@
-import {
-  clearItems,
-  populateNinoTable,
-} from "./resources/nino-check-dynamodb-helper";
-import { executeStepFunction } from "./resources/nino-check-stepfunction-helper";
+import { stackOutputs } from "./resources/cloudformation-helper";
+import { clearItems, populateTable } from "./resources/dynamodb-helper";
+import { executeStepFunction } from "./resources/stepfunction-helper";
 
 describe("Nino Check", () => {
   const sessionId = "12345";
@@ -14,60 +12,82 @@ describe("Nino Check", () => {
     firstName: "Jim",
     lastName: "Ferguson",
   };
-
+  let output: Partial<{
+    NinoUsersTable: string;
+    NinoAttemptsTable: string;
+    NinoCheckStateMachineArn: string;
+  }>;
   beforeEach(async () => {
-    await populateNinoTable(testUser);
+    output = await stackOutputs(process.env.STACK_NAME);
+    await populateTable(testUser, output.NinoUsersTable);
   });
 
   afterEach(async () => {
-    await clearItems(process.env.NINO_USERS_TABLE as string, {
+    await clearItems(output.NinoUsersTable as string, {
       nino: testUser.nino,
     });
-    await clearItems(process.env.NINO_ATTEMPTS_TABLE as string, {
+    await clearItems(output.NinoAttemptsTable as string, {
       id: sessionId,
     });
   });
 
-  describe("unhappy Case Scenario", () => {
-    describe("Invalid Request Received", () => {
-      it("should fail when there is no sessionId present", async () => {
-        const startExecutionResult = await executeStepFunction({
+  describe("Unhappy User Input Paths", () => {
+    it("should fail when there is no sessionId present", async () => {
+      const startExecutionResult = await executeStepFunction(
+        {
           nino: nino,
-        });
-        expect(startExecutionResult.output).toBe('{"nino":"AA000003D"}');
-      });
-      it("should fail when NINO not present", async () => {
-        const startExecutionResult = await executeStepFunction({
-          sessionId: sessionId,
-        });
-        expect(startExecutionResult.output).toBe('{"sessionId":"12345"}');
-      });
+        },
+        output.NinoCheckStateMachineArn
+      );
+      expect(startExecutionResult.output).toBe('{"nino":"AA000003D"}');
     });
 
-    describe("non-existent data input", () => {
-      it("should fail when there is more than two nino check attempts on a bad nino", async () => {
-        await executeStepFunction({
+    it("should fail when there is no nino present", async () => {
+      const startExecutionResult = await executeStepFunction(
+        {
           sessionId: sessionId,
-          nino: badNino,
-        });
-        await executeStepFunction({
-          sessionId: sessionId,
-          nino: badNino,
-        });
-        const startExecutionResult = await executeStepFunction({
-          sessionId: sessionId,
-          nino: badNino,
-        });
+        },
+        output.NinoCheckStateMachineArn
+      );
+      expect(startExecutionResult.output).toBe('{"sessionId":"12345"}');
+    });
+
+    describe("Unhappy Nino Check Paths", () => {
+      it("should fail when there is more than 2 nino check attempts", async () => {
+        await executeStepFunction(
+          {
+            sessionId: sessionId,
+            nino: badNino,
+          },
+          output.NinoCheckStateMachineArn
+        );
+        await executeStepFunction(
+          {
+            sessionId: sessionId,
+            nino: badNino,
+          },
+          output.NinoCheckStateMachineArn
+        );
+        const startExecutionResult = await executeStepFunction(
+          {
+            sessionId: sessionId,
+            nino: badNino,
+          },
+          output.NinoCheckStateMachineArn
+        );
         expect(startExecutionResult.output).toBe(
           '{"sessionId":"12345","nino":"abc","check-attempts-exist":{"Count":1,"Items":[{"id":{"S":"12345"},"attempts":{"N":"2"}}],"ScannedCount":1}}'
         );
       });
 
       it("should fail when there is no user present for given nino", async () => {
-        const startExecutionResult = await executeStepFunction({
-          sessionId: sessionId,
-          nino: badNino,
-        });
+        const startExecutionResult = await executeStepFunction(
+          {
+            sessionId: sessionId,
+            nino: badNino,
+          },
+          output.NinoCheckStateMachineArn
+        );
         expect(startExecutionResult.output).toBe(
           '{"sessionId":"12345","nino":"abc","check-attempts-exist":{"Count":0,"Items":[],"ScannedCount":0},"userDetails":{"Count":0,"Items":[],"ScannedCount":0}}'
         );
@@ -75,17 +95,23 @@ describe("Nino Check", () => {
 
       it("should fail when there is no user in HMRC present", async () => {
         const goodBadNino = "bad-good-nino";
-        await populateNinoTable({
-          nino: goodBadNino,
-          dob: testUser.dob,
-          firstName: testUser.firstName,
-          lastName: testUser.lastName,
-        });
-        const startExecutionResult = await executeStepFunction({
-          sessionId: sessionId,
-          nino: "bad-good-nino",
-        });
-        await clearItems(process.env.NINO_USERS_TABLE as string, {
+        await populateTable(
+          {
+            nino: goodBadNino,
+            dob: testUser.dob,
+            firstName: testUser.firstName,
+            lastName: testUser.lastName,
+          },
+          output.NinoUsersTable
+        );
+        const startExecutionResult = await executeStepFunction(
+          {
+            sessionId: sessionId,
+            nino: "bad-good-nino",
+          },
+          output.NinoCheckStateMachineArn
+        );
+        await clearItems(output.NinoUsersTable as string, {
           nino: goodBadNino,
         });
         expect(startExecutionResult.output).toBeUndefined();
