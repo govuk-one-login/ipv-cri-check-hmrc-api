@@ -6,8 +6,12 @@
     "lint:prettier-fix": "pre-commit run prettier --all-files",
     "lint:eslint": "eslint ..",
     "compile": "tsc",
-    "unit": "jest --config=jest.config.ts",
-    "test": "npm run compile && npm run unit"
+    "unit:all": "jest --config=jest.config.ts",
+    "unit:aws": "jest --config=jest.config-aws.ts",
+    "unit:mocked": "jest --config=jest.config-mocked.ts",
+    "test:all": "npm run compile && npm run unit:all",
+    "test:aws": "npm run compile && npm run unit:aws",
+    "test:mocked": "npm run compile && npm run unit:mocked"
   },
   "author": "alphagov",
   "license": "MIT",
@@ -17,8 +21,9 @@
     "esbuild": "0.17.18"
   },
   "devDependencies": {
+    "@aws-sdk/client-cloudformation": "^3.405.0",
     "@aws-sdk/client-dynamodb": "^3.398.0",
-    "@aws-sdk/client-sfn": "^3.385.0",
+    "@aws-sdk/client-sfn": "^3.405.0",
     "@aws-sdk/lib-dynamodb": "^3.398.0",
     "@types/aws-lambda": "8.10.114",
     "@types/jest": "^29.5.3",

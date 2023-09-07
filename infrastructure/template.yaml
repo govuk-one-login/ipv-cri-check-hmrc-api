@@ -351,6 +351,18 @@ Outputs:
   MatchingFunction:
     Description: "Matching Lambda Function ARN"
     Value: !GetAtt MatchingFunction.Arn
-  MatchingFunctionIamRole:
-    Description: "Implicit IAM Role created for Matching function"
+  MatchingFunctionRoleArn:
+    Description: "MatchingFunctionRole Arn"
     Value: !GetAtt MatchingFunctionRole.Arn
+  NinoCheckStateMachineArn:
+    Description: "NinoCheck StateMachine Arn"
+    Value: !GetAtt NinoCheckStateMachine.Arn
+  NinoCheckStateMachineIamRole:
+    Description: "Implicit IAM Role created for Matching function"
+    Value: !GetAtt NinoCheckStateMachineRole.Arn
+  NinoAttemptsTable:
+    Description: NinoAttemptsTable table name
+    Value: !Ref NinoAttemptsTable
+  NinoUsersTable:
+    Description: NinoUsersTable table name
+    Value: !Ref NinoUsersTable
