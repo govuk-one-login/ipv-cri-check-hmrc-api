@@ -69,6 +69,9 @@
           },
           "attempts": {
             "N": "0"
+          },
+          "outcome": {
+            "S": "FAIL"
           }
         },
         "ConditionExpression": "attribute_not_exists(id)"
@@ -244,10 +247,29 @@
               "IsPresent": true
             }
           ],
-          "Next": "Nino check successful"
+          "Next": "Update status to PASS"
         }
       ],
       "Default": "Error: HMRC came back with an error"
+    },
+    "Update status to PASS": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "${NinoAttemptsTable}",
+        "Key": {
+          "id": {
+            "S.$": "$$.Execution.Input.sessionId"
+          }
+        },
+        "UpdateExpression": "SET outcome = :outcome",
+        "ExpressionAttributeValues": {
+          ":outcome": {
+            "S": "PASS"
+          }
+        }
+      },
+      "Next": "Nino check successful"
     },
     "Nino check successful": {
       "Type": "Pass",
