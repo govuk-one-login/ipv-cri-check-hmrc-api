@@ -140,7 +140,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs
-      RetentionInDays: 365
+      RetentionInDays: 30
 
   DevOnlyNinoCheckApi:
     Type: AWS::Serverless::Api
@@ -248,7 +248,7 @@ Resources:
     Condition: IsNotDevEnvironment
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs
-      RetentionInDays: 365
+      RetentionInDays: 30
 
   ExecuteStateMachineRole:
     Type: AWS::IAM::Role
@@ -371,7 +371,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-NinoCheck-state-machine-logs
-      RetentionInDays: 365
+      RetentionInDays: 30
 
   NinoIssueCredentialStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -424,7 +424,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/vendedlogs/states/aws/apigateway/${AWS::StackName}-NinoIssueCredential-state-machine-logs
-      RetentionInDays: 365
+      RetentionInDays: 30
 
 Outputs:
   MatchingFunctionURLEndpoint:
