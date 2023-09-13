@@ -128,7 +128,7 @@ paths:
           application/json:
             Fn::Sub: |-
               {
-                "input": "{\"nino\": \"$util.parseJson($input.json('$.nino'))\",\"sessionId\": \"$input.params('session-id')\"}",
+                "input": "{\"nino\": \"$util.parseJson($input.json('$.nino').trim())\",\"sessionId\": \"$input.params('session-id').trim()\"}",
                 "stateMachineArn": "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-NinoCheck"
               }
         responses:

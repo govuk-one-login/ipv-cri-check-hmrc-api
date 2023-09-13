@@ -158,7 +158,7 @@ paths:
           application/json:
             Fn::Sub: |-
               {
-                "input": "{\"bearerToken\": \"$input.params('Authorization')\"}",
+                "input": "{\"bearerToken\": \"$input.params('Authorization').trim()\"}",
                 "stateMachineArn": "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-NinoIssueCredential"
               }
         responses:
