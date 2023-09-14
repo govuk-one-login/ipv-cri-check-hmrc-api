@@ -9,6 +9,25 @@ Globals:
       - arm64
     Timeout: 3
 
+Mappings:
+  # Only numeric values should be assigned here
+  MaxJwtTtlMapping:
+    Environment:
+      dev: 2
+      build: 2
+      staging: 6
+      integration: 6
+      production: 6
+
+  # Permitted values: SECONDS,MINUTES,HOURS,DAYS,MONTHS,YEARS
+  JwtTtlUnitMapping:
+    Environment:
+      dev: HOURS
+      build: HOURS
+      staging: MONTHS
+      integration: MONTHS
+      production: MONTHS
+
 Parameters:
   BearerTokenName:
     Type: String
@@ -60,6 +79,22 @@ Resources:
       Type: String
       Description: URL for HMRC /check endpoint
 
+  MaxJwtTtlParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/MaxJwtTtl"
+      Type: String
+      Value: !FindInMap [MaxJwtTtlMapping, Environment, !Ref "Environment"]
+      Description: default time to live for an JWT in (seconds)
+
+  JwtTtlUnitParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/JwtTtlUnit"
+      Type: String
+      Value: !FindInMap [JwtTtlUnitMapping, Environment, !Ref Environment]
+      Description: The unit for the time-to-live for an JWT e.g. (MONTHS)
+
   PublicNinoCheckApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -92,15 +127,12 @@ Resources:
       Name: !Sub "${AWS::StackName}-public"
       StageName: !Ref Environment
       DefinitionBody:
-        openapi: "3.0.1" # workaround to get `sam validate` to work
-        paths: # workaround to get `sam validate` to work
-          /never-created:
-            options: {} # workaround to get `sam validate` to work
+        openapi: "3.1.0"
         Fn::Transform:
           Name: AWS::Include
           Parameters:
             Location: "./public-api.yaml"
-      OpenApiVersion: 3.0.1
+      OpenApiVersion: 3.1.0
       EndpointConfiguration:
         Type: REGIONAL
 
@@ -108,7 +140,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs
-      RetentionInDays: 365
+      RetentionInDays: 30
 
   DevOnlyNinoCheckApi:
     Type: AWS::Serverless::Api
@@ -142,15 +174,12 @@ Resources:
       Name: !Sub "${AWS::StackName}-dev-only-private"
       StageName: !Ref Environment
       DefinitionBody:
-        openapi: "3.0.1" # workaround to get `sam validate` to work
-        paths: # workaround to get `sam validate` to work
-          /never-created:
-            options: {} # workaround to get `sam validate` to work
+        openapi: "3.1.0"
         Fn::Transform:
           Name: AWS::Include
           Parameters:
             Location: "./private-api.yaml"
-      OpenApiVersion: 3.0.1
+      OpenApiVersion: 3.1.0
       EndpointConfiguration:
         Type: REGIONAL
 
@@ -159,7 +188,7 @@ Resources:
     Condition: IsDevEnvironment
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${DevOnlyNinoCheckApi}-dev-only-AccessLogs
-      RetentionInDays: 365
+      RetentionInDays: 30
 
   PrivateNinoCheckApi:
     Type: AWS::Serverless::Api
@@ -219,7 +248,7 @@ Resources:
     Condition: IsNotDevEnvironment
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs
-      RetentionInDays: 365
+      RetentionInDays: 30
 
   ExecuteStateMachineRole:
     Type: AWS::IAM::Role
@@ -342,7 +371,60 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-NinoCheck-state-machine-logs
-      RetentionInDays: 365
+      RetentionInDays: 30
+
+  NinoIssueCredentialStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub "${AWS::StackName}-NinoIssueCredential"
+      Type: EXPRESS
+      DefinitionUri: ../step-functions/nino_issue_credential.asl.json
+      DefinitionSubstitutions:
+        NinoAttemptsTable: !Ref NinoAttemptsTable
+        MaxJwtTtlParameter: !Ref MaxJwtTtlParameter
+        JwtTtlUnitParameter: !Ref JwtTtlUnitParameter
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt NinoIssueCredentialLogGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref NinoAttemptsTable
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameters
+              - ssm:GetParameter
+            Resource:
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/JwtTtlUnit"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
+        - Statement:
+            Effect: Allow
+            Action:
+              - logs:*
+            Resource:
+              - "*"
+        - Statement:
+            Effect: Allow
+            Action:
+              - kms:Sign
+            Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
+
+  NinoIssueCredentialLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/aws/apigateway/${AWS::StackName}-NinoIssueCredential-state-machine-logs
+      RetentionInDays: 30
 
 Outputs:
   MatchingFunctionURLEndpoint:
@@ -357,7 +439,7 @@ Outputs:
   NinoCheckStateMachineArn:
     Description: "NinoCheck StateMachine Arn"
     Value: !GetAtt NinoCheckStateMachine.Arn
-  NinoCheckStateMachineIamRole:
+  NinoIssueCredentialStateMachineIamRole:
     Description: "Implicit IAM Role created for Matching function"
     Value: !GetAtt NinoCheckStateMachineRole.Arn
   NinoAttemptsTable:
