@@ -8,15 +8,7 @@ describe("time-handler", () => {
     jest.resetAllMocks();
   });
 
-  it("should return the current value for Date.now() when getting NBF", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
-    const event = {};
-    const timeHandler = new TimeHandler();
-    const result = await timeHandler.handler(event, {} as Context);
-    expect(result).toBe(1622502000000);
-  });
-
-  it("should return a time that expires in 10 seconds", async () => {
+  it("should return the current time for nbf", async () => {
     jest.spyOn(Date, "now").mockReturnValue(1622502000000);
     const event = {
       ttl: 10,
@@ -24,10 +16,24 @@ describe("time-handler", () => {
     } as TimeEvent;
     const timeHandler = new TimeHandler();
     const result = await timeHandler.handler(event, {} as Context);
-    expect(result).toBe(1622502000000 + 10000);
+    expect(result.nbf).toBe(1622502000000);
   });
 
-  it("should return a time that expires in 10 minutes", async () => {
+  it("should return a expiry that expires in 10 seconds", async () => {
+    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
+    const event = {
+      ttl: 10,
+      ttlUnit: "seconds",
+    } as TimeEvent;
+    const timeHandler = new TimeHandler();
+    const result = await timeHandler.handler(event, {} as Context);
+    expect(result).toEqual({
+      nbf: 1622502000000,
+      expiry: 1622502000000 + 10000,
+    });
+  });
+
+  it("should return a expiry that expires in 10 minutes", async () => {
     jest.spyOn(Date, "now").mockReturnValue(1622502000000);
     const event = {
       ttl: 10,
@@ -35,10 +41,13 @@ describe("time-handler", () => {
     } as TimeEvent;
     const timeHandler = new TimeHandler();
     const result = await timeHandler.handler(event, {} as Context);
-    expect(result).toBe(1622502000000 + 10 * (1000 * 60));
+    expect(result).toEqual({
+      nbf: 1622502000000,
+      expiry: 1622502000000 + 10 * (1000 * 60),
+    });
   });
 
-  it("should return a time that expires in 1 hour", async () => {
+  it("should return a expiry that expires in 1 hour", async () => {
     jest.spyOn(Date, "now").mockReturnValue(1622502000000);
     const event = {
       ttl: 1,
@@ -46,10 +55,13 @@ describe("time-handler", () => {
     } as TimeEvent;
     const timeHandler = new TimeHandler();
     const result = await timeHandler.handler(event, {} as Context);
-    expect(result).toBe(1622502000000 + 1000 * 60 * 60);
+    expect(result).toEqual({
+      nbf: 1622502000000,
+      expiry: 1622502000000 + 1000 * 60 * 60,
+    });
   });
 
-  it("should return a time that expires in 1 day", async () => {
+  it("should return a expiry that expires in 1 day", async () => {
     jest.spyOn(Date, "now").mockReturnValue(1622502000000);
     const event = {
       ttl: 1,
@@ -57,10 +69,13 @@ describe("time-handler", () => {
     } as TimeEvent;
     const timeHandler = new TimeHandler();
     const result = await timeHandler.handler(event, {} as Context);
-    expect(result).toBe(1622502000000 + 1000 * 60 * 60 * 24);
+    expect(result).toEqual({
+      nbf: 1622502000000,
+      expiry: 1622502000000 + 1000 * 60 * 60 * 24,
+    });
   });
 
-  it("should return a time that expires in 1 month", async () => {
+  it("should return a expiry that expires in 1 month", async () => {
     jest.spyOn(Date, "now").mockReturnValue(1622502000000);
     const event = {
       ttl: 1,
@@ -68,10 +83,13 @@ describe("time-handler", () => {
     } as TimeEvent;
     const timeHandler = new TimeHandler();
     const result = await timeHandler.handler(event, {} as Context);
-    expect(result).toBe(1622502000000 + 1000 * 60 * 60 * 24 * 30);
+    expect(result).toEqual({
+      nbf: 1622502000000,
+      expiry: 1622502000000 + 1000 * 60 * 60 * 24 * 30,
+    });
   });
 
-  it("should return a time that expires in 1 year", async () => {
+  it("should return a expiry that expires in 1 year", async () => {
     jest.spyOn(Date, "now").mockReturnValue(1622502000000);
     const event = {
       ttl: 1,
@@ -79,6 +97,9 @@ describe("time-handler", () => {
     } as TimeEvent;
     const timeHandler = new TimeHandler();
     const result = await timeHandler.handler(event, {} as Context);
-    expect(result).toBe(1622502000000 + 1000 * 60 * 60 * 24 * 365);
+    expect(result).toEqual({
+      nbf: 1622502000000,
+      expiry: 1622502000000 + 1000 * 60 * 60 * 24 * 365,
+    });
   });
 });
