@@ -340,6 +340,20 @@ Resources:
         EntryPoints:
           - src/matching-handler.ts
 
+  TimeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/issue-credential
+      Handler: time-handler.lambdaHandler
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - src/time-handler.ts
+
   NinoCheckStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -392,7 +406,7 @@ Resources:
   NinoCheckStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-NinoCheck-state-machine-logs
+      LogGroupName: !Sub /aws/vendedlogs/states/aws/apigateway/${AWS::StackName}-NinoCheck-state-machine-logs
       RetentionInDays: 30
 
   NinoIssueCredentialStateMachine:
@@ -402,6 +416,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_issue_credential.asl.json
       DefinitionSubstitutions:
+        TimeFunctionArn: !GetAtt TimeFunction.Arn
         NinoAttemptsTable: !Ref NinoAttemptsTable
         MaxJwtTtlParameter: !Ref MaxJwtTtlParameter
         JwtTtlUnitParameter: !Ref JwtTtlUnitParameter
@@ -412,6 +427,8 @@ Resources:
         IncludeExecutionData: True
         Level: ALL
       Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref TimeFunction
         - DynamoDBReadPolicy:
             TableName: !Ref NinoAttemptsTable
         - DynamoDBReadPolicy:
@@ -449,6 +466,12 @@ Resources:
       RetentionInDays: 30
 
 Outputs:
+  TimeFunction:
+    Description: "Time Lambda Function ARN"
+    Value: !GetAtt TimeFunction.Arn
+  TimeFunctionRoleArn:
+    Description: "TimeFunctionRole Arn"
+    Value: !GetAtt TimeFunctionRole.Arn
   MatchingFunction:
     Description: "Matching Lambda Function ARN"
     Value: !GetAtt MatchingFunction.Arn
