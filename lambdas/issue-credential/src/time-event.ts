@@ -1,4 +1,4 @@
 export interface TimeEvent {
-  ttl: number;
-  ttlUnit: string;
+  ttl?: number;
+  ttlUnit?: string;
 }

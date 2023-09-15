@@ -35,7 +35,7 @@ const convert = (unit?: string): number => {
   }
 };
 
-const parseUnit = (value?: string) => {
+const parseUnit = (value?: string): string => {
   const unitKey = Object.keys(Unit).find(
     (key) => Unit[key as keyof typeof Unit] === value?.toLowerCase()
   );
@@ -48,12 +48,21 @@ const parseUnit = (value?: string) => {
 export class TimeHandler implements LambdaInterface {
   public async handler(event: TimeEvent, _context: unknown): Promise<any> {
     try {
-      return Date.now() + event.ttl * convert(parseUnit(event.ttlUnit));
+      if (event?.ttl && event?.ttlUnit) {
+        return this.expiryDate(event.ttl, event.ttlUnit);
+      } else {
+        return this.notBeforeDate();
+      }
     } catch (error: any) {
       logger.error("Error in TimeHandler: " + error.message);
       throw error;
     }
   }
+
+  expiryDate = (ttl: number, unit: string) =>
+    Date.now() + ttl * convert(parseUnit(unit));
+
+  notBeforeDate = () => Date.now();
 }
 
 const handlerClass = new TimeHandler();
