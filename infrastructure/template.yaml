@@ -97,7 +97,7 @@ Resources:
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/${AWS::StackName}/NinoCheckUrl"
-      Value: https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match
+      Value: https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match
       Type: String
       Description: URL for HMRC /check endpoint
 
