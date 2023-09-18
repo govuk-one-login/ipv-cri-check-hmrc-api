@@ -1,6 +1,4 @@
-import { TimeHandler } from "../../issue-credential/src/time-handler";
 import { Context } from "aws-lambda";
-import { TimeEvent } from "../../issue-credential/src/time-event";
 import { CreateAuthCodeHandler } from "../src/create-auth-code-handler";
 
 describe("create-auth-code-handler", () => {
