@@ -219,10 +219,12 @@
       },
       "Next": "Response Validation",
       "ResultSelector": {
-        "firstName.$": "$.Payload.firstName",
-        "lastName.$": "$.Payload.lastName",
-        "dateOfBirth.$": "$.Payload.dateOfBirth",
-        "nino.$": "$.Payload.nino"
+        "hmrc_response": {
+          "firstName.$": "$.Payload.firstName",
+          "lastName.$": "$.Payload.lastName",
+          "dateOfBirth.$": "$.Payload.dateOfBirth",
+          "nino.$": "$.Payload.nino"
+        }
       }
     },
     "Response Validation": {
@@ -231,19 +233,19 @@
         {
           "And": [
             {
-              "Variable": "$.firstName",
+              "Variable": "$.hmrc_response.firstName",
               "IsPresent": true
             },
             {
-              "Variable": "$.lastName",
+              "Variable": "$.hmrc_response.lastName",
               "IsPresent": true
             },
             {
-              "Variable": "$.dateOfBirth",
+              "Variable": "$.hmrc_response.dateOfBirth",
               "IsPresent": true
             },
             {
-              "Variable": "$.nino",
+              "Variable": "$.hmrc_response.nino",
               "IsPresent": true
             }
           ],
@@ -269,12 +271,12 @@
           }
         }
       },
-      "Next": "Fetch Auth Code Expiry"
+      "Next": "Fetch Auth Code Expiry",
+      "ResultPath": null
     },
     "Fetch Auth Code Expiry": {
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
-      "OutputPath": "$.Payload",
       "Parameters": {
         "Payload.$": "$",
         "FunctionName": "${CreateAuthCodeFunctionArn}"
@@ -292,11 +294,12 @@
           "BackoffRate": 2
         }
       ],
-      "Next": "Fetch Session Table Name"
+      "Next": "Fetch Session Table Name",
+      "ResultPath": "$.expiry"
     },
     "Fetch Session Table Name": {
       "Type": "Task",
-      "Next": "Set  Auth Code for Session",
+      "Next": "Set Auth Code for Session",
       "Parameters": {
         "Name": "/${CommonStackName}/SessionTableName"
       },
@@ -307,7 +310,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:updateItem",
       "Parameters": {
-        "TableName.$": "$.sessionTable.Parameter.Name",
+        "TableName.$": "$.sessionTable.Parameter.Value",
         "Key": {
           "sessionId": {
             "S.$": "$$.Execution.Input.sessionId"
@@ -319,15 +322,22 @@
             "S.$": "States.UUID()"
           },
           ":expiry": {
-            "N.$": "States.Format('{}',$.authCodeExpiry)"
+            "N.$": "States.Format('{}',$.expiry.Payload.authCodeExpiry)"
           }
         }
       },
-      "Next": "Nino check successful"
+      "Next": "Nino check successful",
+      "ResultPath": "$.setAuthCode"
     },
     "Nino check successful": {
       "Type": "Pass",
-      "End": true
+      "End": true,
+      "Parameters": {
+        "firstName.$": "$.hmrc_response.firstName",
+        "lastName.$": "$.hmrc_response.lastName",
+        "dateOfBirth.$": "$.hmrc_response.dateOfBirth",
+        "nino.$": "$.hmrc_response.nino"
+      }
     },
     "Error: HMRC came back with an error": {
       "Type": "Pass",
