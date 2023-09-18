@@ -269,6 +269,60 @@
           }
         }
       },
+      "Next": "Fetch Auth Code Expiry"
+    },
+    "Fetch Auth Code Expiry": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${CreateAuthCodeFunctionArn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Fetch Session Table Name"
+    },
+    "Fetch Session Table Name": {
+      "Type": "Task",
+      "Next": "Set  Auth Code for Session",
+      "Parameters": {
+        "Name": "/${CommonStackName}/SessionTableName"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+      "ResultPath": "$.sessionTable"
+    },
+    "Set Auth Code for Session": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName.$": "$.sessionTable.Parameter.Name",
+        "Key": {
+          "sessionId": {
+            "S.$": "$$.Execution.Input.sessionId"
+          }
+        },
+        "UpdateExpression": "SET authorizationCode = :authCode, authorizationCodeExpiryDate = :expiry",
+        "ExpressionAttributeValues": {
+          ":authCode": {
+            "S.$": "States.UUID()"
+          },
+          ":expiry": {
+            "N.$": "States.Format('{}',$.authCodeExpiry)"
+          }
+        }
+      },
       "Next": "Nino check successful"
     },
     "Nino check successful": {
