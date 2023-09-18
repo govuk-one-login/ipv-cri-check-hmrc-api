@@ -420,6 +420,7 @@ Resources:
         NinoAttemptsTable: !Ref NinoAttemptsTable
         MaxJwtTtlParameter: !Ref MaxJwtTtlParameter
         JwtTtlUnitParameter: !Ref JwtTtlUnitParameter
+        CommonStackName: !Ref CommonStackName
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
