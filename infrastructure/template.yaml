@@ -354,6 +354,20 @@ Resources:
         EntryPoints:
           - src/time-handler.ts
 
+  CreateAuthCodeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/issue-credential
+      Handler: create-auth-code-handler.lambdaHandler
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - src/create-auth-code-handler.ts
+
   NinoCheckStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -361,12 +375,14 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
+        CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
         NinoAttemptsTable: !Ref NinoAttemptsTable
         NinoUsersTable: !Ref NinoUsersTable
         NinoCheckUrl: !Ref NinoCheckUrl
         UserAgent: !Ref UserAgent
         BearerTokenName: !Ref BearerTokenName
+        CommonStackName: !Ref CommonStackName
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -375,7 +391,13 @@ Resources:
         Level: ALL
       Policies:
         - LambdaInvokePolicy:
+            FunctionName: !Ref CreateAuthCodeFunction
+        - LambdaInvokePolicy:
             FunctionName: !Ref MatchingFunction
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBWritePolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBWritePolicy:
             TableName: !Ref NinoAttemptsTable
         - DynamoDBReadPolicy:
@@ -392,6 +414,7 @@ Resources:
             Resource:
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/NinoCheckUrl"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/UserAgent"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
         - Statement:
             Effect: Allow
             Action:
@@ -467,6 +490,12 @@ Resources:
       RetentionInDays: 30
 
 Outputs:
+  CreateAuthCodeFunction:
+    Description: "Create Authorization Code Function ARN"
+    Value: !GetAtt CreateAuthCodeFunction.Arn
+  CreateAuthCodeFunctionRoleArn:
+    Description: "Create Authorization Code Function Arn"
+    Value: !GetAtt CreateAuthCodeFunctionRole.Arn
   TimeFunction:
     Description: "Time Lambda Function ARN"
     Value: !GetAtt TimeFunction.Arn
