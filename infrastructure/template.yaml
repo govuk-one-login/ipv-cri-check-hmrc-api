@@ -357,7 +357,7 @@ Resources:
   CreateAuthCodeFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/issue-credential
+      CodeUri: ../lambdas/matching
       Handler: create-auth-code-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
