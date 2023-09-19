@@ -85,16 +85,8 @@
         {
           "And": [
             {
-              "Not": {
-                "Variable": "$.check-attempts-exist.Items[0].attempts.N",
-                "StringEquals": "0"
-              }
-            },
-            {
-              "Not": {
-                "Variable": "$.check-attempts-exist.Items[0].attempts.N",
-                "StringEquals": "1"
-              }
+              "Variable": "$.check-attempts-exist.Items[0].attempts.N",
+              "StringGreaterThanEquals": "2"
             }
           ],
           "Next": "Error: Maximum number of attempts exceeded"
@@ -119,18 +111,27 @@
           }
         }
       },
-      "Next": "Query user from nino",
+      "Next": "Fetch Person Identity Table Name",
       "ResultPath": null
     },
-    "Query user from nino": {
+    "Fetch Person Identity Table Name": {
+      "Type": "Task",
+      "Next": "Query user by sessionId",
+      "Parameters": {
+        "Name": "/${CommonStackName}/PersonIdentityTableName"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+      "ResultPath": "$.personIdentityTableName"
+    },
+    "Query user by sessionId": {
       "Type": "Task",
       "Next": "Check user details exist for given nino",
       "Parameters": {
-        "TableName": "${NinoUsersTable}",
-        "KeyConditionExpression": "nino = :value",
+        "TableName.$": "$.personIdentityTableName.Parameter.Value",
+        "KeyConditionExpression": "sessionId = :value",
         "ExpressionAttributeValues": {
           ":value": {
-            "S.$": "$.nino"
+            "S.$": "$.sessionId"
           }
         }
       },
@@ -204,7 +205,11 @@
       "Parameters": {
         "sessionId.$": "$.sessionId",
         "nino.$": "$.nino",
-        "userDetails.$": "$.userDetails.Items[0]",
+        "userDetails": {
+          "firstName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
+          "lastName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
+          "dob.$": "$.userDetails.Items[0].birthDates.L[0].M.value.S"
+        },
         "userAgent.$": "$.userAgent.value",
         "apiURL.$": "$.apiURL.value",
         "oAuthToken.$": "$.oAuthToken.value"
@@ -326,8 +331,26 @@
           }
         }
       },
-      "Next": "Nino check successful",
+      "Next": "Save NINO & sessionId to nino-users table",
       "ResultPath": "$.setAuthCode"
+    },
+    "Save NINO & sessionId to nino-users table": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+      "Parameters": {
+        "TableName": "${NinoUsersTable}",
+        "Item": {
+          "sessionId": {
+            "S.$": "$$.Execution.Input.sessionId"
+          },
+          "nino": {
+            "S.$": "$.hmrc_response.nino"
+          }
+        },
+        "ConditionExpression": "attribute_not_exists(sessionId)"
+      },
+      "Next": "Nino check successful",
+      "ResultPath": "$.saveUser"
     },
     "Nino check successful": {
       "Type": "Pass",
