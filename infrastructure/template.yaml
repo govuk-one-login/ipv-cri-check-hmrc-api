@@ -320,10 +320,10 @@ Resources:
       TableName: !Sub "${AWS::StackName}-nino-users"
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
-        - AttributeName: "nino"
+        - AttributeName: "sessionId"
           AttributeType: "S"
       KeySchema:
-        - AttributeName: "nino"
+        - AttributeName: "sessionId"
           KeyType: "HASH"
 
   MatchingFunction:
@@ -449,6 +449,7 @@ Resources:
         MaxJwtTtlParameter: !Ref MaxJwtTtlParameter
         JwtTtlUnitParameter: !Ref JwtTtlUnitParameter
         CommonStackName: !Ref CommonStackName
+        NinoUsersTable: !Ref NinoUsersTable
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -460,6 +461,8 @@ Resources:
             FunctionName: !Ref TimeFunction
         - DynamoDBReadPolicy:
             TableName: !Ref NinoAttemptsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref NinoUsersTable
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBReadPolicy:
