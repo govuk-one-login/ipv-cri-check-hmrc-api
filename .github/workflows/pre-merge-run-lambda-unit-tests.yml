@@ -23,7 +23,7 @@ jobs:
           do
               names+=\"$(basename -- "$dir")\",
           done
-          echo names={\"lambdas\": [${names%,}]} >> "$GITHUB_OUTPUT"
+          echo names={\"lambda\": [${names%,}]} >> "$GITHUB_OUTPUT"
 
   run-lambda-unit-tests:
     runs-on: ubuntu-latest
