@@ -23,6 +23,8 @@ jobs:
           do
               names+=$(basename -- "$dir"),
           done
+          ls
+          echo $names
           echo names=${names%,} >> "GITHUB_OUTPUT"
 
   run-lambda-unit-tests:
