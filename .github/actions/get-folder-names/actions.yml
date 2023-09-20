@@ -1,0 +1,11 @@
+name: 'Get Folder Names'
+description: 'Get the names of the folders from the provided path.'
+inputs:
+  path:
+    description: 'Location to get folder names from '
+    required: true
+outputs:
+  folder-names:
+runs:
+  using: 'node16'
+  main: 'index.js'
