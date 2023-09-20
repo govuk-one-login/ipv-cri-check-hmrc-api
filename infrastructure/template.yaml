@@ -320,10 +320,10 @@ Resources:
       TableName: !Sub "${AWS::StackName}-nino-users"
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
-        - AttributeName: "nino"
+        - AttributeName: "sessionId"
           AttributeType: "S"
       KeySchema:
-        - AttributeName: "nino"
+        - AttributeName: "sessionId"
           KeyType: "HASH"
 
   MatchingFunction:
@@ -404,6 +404,10 @@ Resources:
             TableName: !Ref NinoAttemptsTable
         - DynamoDBReadPolicy:
             TableName: !Ref NinoUsersTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref NinoUsersTable
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${BearerTokenName}-??????
         - Statement:
@@ -415,6 +419,7 @@ Resources:
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/NinoCheckUrl"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/UserAgent"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName"
         - Statement:
             Effect: Allow
             Action:
@@ -444,6 +449,7 @@ Resources:
         MaxJwtTtlParameter: !Ref MaxJwtTtlParameter
         JwtTtlUnitParameter: !Ref JwtTtlUnitParameter
         CommonStackName: !Ref CommonStackName
+        NinoUsersTable: !Ref NinoUsersTable
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -455,6 +461,8 @@ Resources:
             FunctionName: !Ref TimeFunction
         - DynamoDBReadPolicy:
             TableName: !Ref NinoAttemptsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref NinoUsersTable
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBReadPolicy:
