@@ -32,7 +32,7 @@ jobs:
     needs: get-lambdas
     strategy:
       matrix:
-        lambda: ["${{ fromJSON(needs.get-lambdas.names) }}"]
+        lambda: ["${{ fromJSON(needs.get-lambdas.outputs.names) }}"]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
