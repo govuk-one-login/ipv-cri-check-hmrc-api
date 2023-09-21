@@ -10,21 +10,31 @@ on:
 jobs:
   pre-test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./.github/actions/get-folder-names
     outputs:
       lambda-names: ${{ steps.set-matrix.outputs.lambda-names }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        id: setup-node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: cd ./.github/actions/get-folder-names; npm ci
+        
+
       - name: Get lambda names
         id: get-lambda-names
         uses: ./.github/actions/get-folder-names
         with:
           path: "lambdas/"
+
       - name: debugging
         run: echo ${{ steps.get-lambda-names.outputs.names }}
+        
       - id: set-matrix
         run: echo "::set-output name=lambda-names::${{ steps.get-lambda-names.outputs.names }}"
     #   - name: Checkout code
