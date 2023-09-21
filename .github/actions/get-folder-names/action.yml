@@ -7,6 +7,21 @@ inputs:
 outputs:
   folder-names:
     description: "Name of all the found folders."
+    value: ${{ steps.get-folder-names.outputs.folder-names}}
 runs:
-  using: 'node16'
-  main: 'index.js'
+  using: composite
+  steps:
+    - name: Setup Node.js
+      id: setup-node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
+
+    - name: Install Dependencies
+      shell: bash
+      id: npm-ci
+      run: npm ci
+
+    - id: get-folder-names
+      shell: bash
+      run: node ${{ github.action_path }}/index.js

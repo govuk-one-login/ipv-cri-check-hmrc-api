@@ -16,18 +16,6 @@ jobs:
     outputs:
       lambda-names: ${{ steps.set-matrix.outputs.lambda-names }}
     steps:
-      - name: Setup Node.js
-        id: setup-node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: ./.github/actions/get-folder-names/package-lock.json
-
-      - name: Install Dependencies
-        id: npm-ci
-        run: npm ci
-
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Get lambda names
