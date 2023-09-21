@@ -6,7 +6,7 @@ try {
     // `who-to-greet` input defined in action metadata file
     const path = core.getInput('path');
     const folderNames = fs.readdirSync(path);
-    console.log(folders);
+    console.log(folderNames);
     // console.log(`Hello ${nameToGreet}!`);
     // const time = (new Date()).toTimeString();
     core.setOutput("folder-names", folderNames);
