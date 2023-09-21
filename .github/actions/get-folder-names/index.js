@@ -9,7 +9,7 @@ try {
     console.log(folderNames);
     // console.log(`Hello ${nameToGreet}!`);
     // const time = (new Date()).toTimeString();
-    core.setOutput("folder-names", folderNames);
+    core.setOutput("folder-names", JSON.parse(folderNames));
     // Get the JSON webhook payload for the event that triggered the workflow
     // const payload = JSON.stringify(github.context.payload, undefined, 2)
     // console.log(`The event payload: ${payload}`);

@@ -33,10 +33,10 @@ jobs:
           path: "lambdas/"
 
       - name: debugging
-        run: echo ${{ steps.get-lambda-names.outputs.names }}
-        
+        run: echo ${{ steps.get-lambda-names.outputs.folder-names }}
+
       - id: set-matrix
-        run: echo "::set-output name=lambda-names::${{ steps.get-lambda-names.outputs.names }}"
+        run: echo "::set-output name=lambda-names::${{ steps.get-lambda-names.outputs.folder-names }}"
     #   - name: Checkout code
     #     uses: actions/checkout@v3
     #   - name: Get all lambda names
