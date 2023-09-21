@@ -13,6 +13,8 @@ jobs:
     outputs:
       lambda-names: ${{ steps.set-matrix.outputs.lambda-names }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
       - name: Get lambda names
         id: get-lambda-names
         uses: ./.github/actions/get-folder-names
