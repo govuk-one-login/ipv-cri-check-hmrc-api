@@ -16,11 +16,15 @@ runs:
       uses: actions/setup-node@v3
       with:
         node-version: 20
+    
+    - name: Location
+      shell: bash
+      run: ls && echo ${{ github.action_path }}
 
     - name: Install Dependencies
       shell: bash
       id: npm-ci
-      run: npm ci
+      run: cd ${{ github.action_path }}; npm ci
 
     - id: get-folder-names
       shell: bash
