@@ -39,10 +39,10 @@ jobs:
     defaults:
       run:
         working-directory: ./lambdas/${{ matrix.lambda }}
-    needs: get-lambdas
+    needs: pre-test
     strategy:
       matrix: 
-        lambda: ${{ fromJSON(needs.get-lambdas.outputs.lambda-names) }}
+        lambda: ${{ fromJSON(needs.pre-test.outputs.lambda-names) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
