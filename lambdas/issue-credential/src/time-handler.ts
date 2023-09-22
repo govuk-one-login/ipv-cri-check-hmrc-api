@@ -46,7 +46,10 @@ const parseUnit = (value?: string): string => {
 };
 
 export class TimeHandler implements LambdaInterface {
-  public async handler(event: TimeEvent, _context: unknown): Promise<{nbf: number, expiry: number }> {
+  public async handler(
+    event: TimeEvent,
+    _context: unknown
+  ): Promise<{ nbf: number; expiry: number }> {
     try {
       return {
         nbf: this.notBeforeDate(),
