@@ -28,7 +28,7 @@ jobs:
             echo "No subdirectories found in lambdas/"
             exit 1
           fi
-          echo names=${names%,} >> "$GITHUB_OUTPUT"
+          echo names={${names%,}} >> "$GITHUB_OUTPUT"
 
       - id: set-matrix
         run: echo "lambda-names=${{ steps.get-lambda-names.outputs.names }}" >> "GITHUB_OUTPUT"
