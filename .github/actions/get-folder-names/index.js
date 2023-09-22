@@ -1,18 +1,11 @@
 const core = require('@actions/core');
-// const github = require('@actions/github');
 const fs = require('fs');
 
 try {
-    // `who-to-greet` input defined in action metadata file
     const path = core.getInput('path');
     const folderNames = fs.readdirSync(path);
-    console.log(folderNames);
-    // console.log(`Hello ${nameToGreet}!`);
-    // const time = (new Date()).toTimeString();
+    if (folderNames.length === 0) throw new Error(`No directories found in path: ${path}`)
     core.setOutput("folder-names", JSON.parse(folderNames));
-    // Get the JSON webhook payload for the event that triggered the workflow
-    // const payload = JSON.stringify(github.context.payload, undefined, 2)
-    // console.log(`The event payload: ${payload}`);
   } catch (error) {
     core.setFailed(error.message);
   }
