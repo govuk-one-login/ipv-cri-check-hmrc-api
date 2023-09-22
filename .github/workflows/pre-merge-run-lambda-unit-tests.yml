@@ -36,7 +36,7 @@ jobs:
 
 
   run-lambda-unit-tests:
-    name: Run ${{ matrix.lambda }} lambda unit test
+    name: "[${{ matrix.lambda }}] lambda unit test"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -49,13 +49,17 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.head_ref }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
+
       - name: Install Dependencies
         run: npm install
+
       - name: Run lint
         run: npm run lint
+        
       - name: Run Tests
         run: npm run test
