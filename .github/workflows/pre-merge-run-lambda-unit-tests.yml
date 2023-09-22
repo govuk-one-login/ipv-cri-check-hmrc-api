@@ -11,7 +11,7 @@ jobs:
   pre-test:
     runs-on: ubuntu-latest
     outputs:
-      lambda-names: ${{ steps.set-matrix.outputs.lambda-names }}
+      lambda-names: ${{ steps.get-lambda-names.outputs.names }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -30,8 +30,6 @@ jobs:
           fi
           echo names={${names%,}} >> "$GITHUB_OUTPUT"
 
-      - id: set-matrix
-        run: echo "lambda-names=${{ steps.get-lambda-names.outputs.names }}" >> "GITHUB_OUTPUT"
 
   run-lambda-unit-tests:
     runs-on: ubuntu-latest
@@ -41,7 +39,7 @@ jobs:
     needs: pre-test
     strategy:
       matrix: 
-        lambda: ${{ fromJSON(needs.pre-test.outputs.lambda-names) }}
+        lambda: ${{ [fromJSON(needs.pre-test.outputs.lambda-names)] }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
