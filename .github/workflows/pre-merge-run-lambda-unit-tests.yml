@@ -28,7 +28,7 @@ jobs:
             echo "No subdirectories found in lambdas/"
             exit 1
           fi
-          echo names={${names%,}} >> "$GITHUB_OUTPUT"
+          echo names=[{${names%,}}] >> "$GITHUB_OUTPUT"
 
 
   run-lambda-unit-tests:
@@ -39,7 +39,7 @@ jobs:
     needs: pre-test
     strategy:
       matrix: 
-        lambda: ${{ [fromJSON(needs.pre-test.outputs.lambda-names)] }}
+        lambda: ${{ fromJSON(needs.pre-test.outputs.lambda-names) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
