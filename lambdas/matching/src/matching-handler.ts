@@ -5,7 +5,7 @@ import { MatchEvent } from "./match-event";
 const logger = new Logger();
 
 export class MatchingHandler implements LambdaInterface {
-  public async handler(event: MatchEvent, _context: unknown): Promise<unknown> {
+  public async handler(event: MatchEvent, _context: unknown): Promise<string> {
     try {
       const response = await fetch(event.apiURL, {
         method: "POST",
