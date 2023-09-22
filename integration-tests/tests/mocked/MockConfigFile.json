@@ -3,51 +3,54 @@
     "nino_check": {
       "TestCases": {
         "HappyPathTestNoPreviousAttempt": {
-          "Query user attempts": "DynamoDbQueryNoResult",
-          "Create new user attempt entry": "CreateUserAttemptEntrySuccess",
-          "Update number of attempts by user": "UpdateUserAttemptSuccess",
-          "Query user from nino": "QueryUserNINOSuccess",
-          "Get User Agent": "GetUserAgentSuccess",
-          "Get API URL": "GetAPIURLSuccess",
+          "Query User Attempts": "DynamoDbQueryNoResult",
+          "Create new user attempt": "CreateUserAttemptEntrySuccess",
+          "Increment user attempt": "UpdateUserAttemptSuccess",
+          "Query Session": "QueryUserNINOSuccess",
+          "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
           "Update status to PASS": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
           "Fetch Session Table Name": "FetchSessionTableNameSuccess",
-          "Set Auth Code for Session": "SetAuthCodeSuccess"
+          "Set Auth Code for Session": "SetAuthCodeSuccess",
+          "Save NINO & sessionId to nino-users table": "SaveNinoSuccess"
         },
         "HappyPathTestOn2ndAttempt": {
-          "Query user attempts": "QueryUserAttemptSuccessOn2ndTry",
-          "Update number of attempts by user": "UpdateUserAttemptSuccess",
-          "Query user from nino": "QueryUserNINOSuccess",
-          "Get User Agent": "GetUserAgentSuccess",
-          "Get API URL": "GetAPIURLSuccess",
+          "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
+          "Increment user attempt": "UpdateUserAttemptSuccess",
+          "Query Session": "QueryUserNINOSuccess",
+          "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
           "Update status to PASS": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
           "Fetch Session Table Name": "FetchSessionTableNameSuccess",
-          "Set Auth Code for Session": "SetAuthCodeSuccess"
+          "Set Auth Code for Session": "SetAuthCodeSuccess",
+          "Save NINO & sessionId to nino-users table": "SaveNinoSuccess"
         },
         "InValidRequestSessionIdNotPresent": "",
         "InValidRequestNinoIdNotPresent": "",
-        "MaxiumNumberOfAttemptsExceeded": {
-          "Query user attempts": "QueryUserAttemptFailureAfterMoreThanTwoAttempts",
-          "Update number of attempts by user": "UpdateUserAttemptSuccess",
-          "Query user from nino": "QueryUserNINOSuccess",
-          "Get User Agent": "GetUserAgentSuccess",
-          "Get API URL": "GetAPIURLSuccess",
+        "MaximumNumberOfAttemptsExceeded": {
+          "Query User Attempts": "QueryUserAttemptFailureAfterMoreThanTwoAttempts",
+          "Increment user attempt": "UpdateUserAttemptSuccess",
+          "Query Session": "QueryUserNINOSuccess",
+          "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
-          "Call Matching API": "CallMatchingAPISuccess"
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
+          "Call Matching API": "CallMatchingAPISuccess",
+          "Save NINO & sessionId to nino-users table": "SaveNinoSuccess"
         },
         "UserNotFoundForGivenNino": {
-          "Query user attempts": "DynamoDbQueryNoResult",
-          "Create new user attempt entry": "CreateUserAttemptEntrySuccess",
-          "Update number of attempts by user": "UpdateUserAttemptSuccess",
-          "Query user from nino": "DynamoDbQueryNoResult",
-          "Get User Agent": "GetUserAgentSuccess",
-          "Get API URL": "GetAPIURLSuccess",
+          "Query User Attempts": "DynamoDbQueryNoResult",
+          "Create new user attempt": "CreateUserAttemptEntrySuccess",
+          "Increment user attempt": "UpdateUserAttemptSuccess",
+          "Query Session": "DynamoDbQueryNoResult",
+          "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Call Matching API": "CallMatchingAPISuccess"
         }
       }
@@ -55,6 +58,47 @@
   },
 
   "MockedResponses": {
+    "PersonIdentityTableSuccess": {
+      "0": {
+        "Return": {
+          "Parameter": {
+            "Value": "test-person-identity-table"
+          }
+        }
+      }
+    },
+    "GetAPIParametersSuccess": {
+      "0": {
+        "Return": {
+          "InvalidParameters": [],
+          "Parameters": [
+            {
+              "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/suraj-pdv-matching/NinoCheckUrl",
+              "DataType": "text",
+              "LastModifiedDate": "2023-09-19T18:10:35.937Z",
+              "Name": "/suraj-pdv-matching/NinoCheckUrl",
+              "Type": "String",
+              "Value": "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match",
+              "Version": 1
+            },
+            {
+              "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/suraj-pdv-matching/UserAgent",
+              "DataType": "text",
+              "LastModifiedDate": "2023-09-19T18:10:36.048Z",
+              "Name": "/suraj-pdv-matching/UserAgent",
+              "Type": "String",
+              "Value": "govuk-one-login",
+              "Version": 1
+            }
+          ]
+        }
+      }
+    },
+    "SaveNinoSuccess": {
+      "0": {
+        "Return": {}
+      }
+    },
     "UpdateStatusToPassSuccess": {
       "0": {
         "Return": {
