@@ -1,40 +1,10 @@
 {
   "Comment": "A description of my state machine",
-  "StartAt": "Check sessionId is present",
+  "StartAt": "Query User Attempts",
   "States": {
-    "Check sessionId is present": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Not": {
-            "Variable": "$.sessionId",
-            "IsPresent": true
-          },
-          "Next": "Error: No sessionId was provided"
-        }
-      ],
-      "Default": "Check nino is present"
-    },
-    "Error: No sessionId was provided": {
-      "Type": "Pass",
-      "End": true
-    },
-    "Check nino is present": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Not": {
-            "Variable": "$.nino",
-            "IsPresent": true
-          },
-          "Next": "Error: No nino was provided"
-        }
-      ],
-      "Default": "Query user attempts"
-    },
-    "Query user attempts": {
+    "Query User Attempts": {
       "Type": "Task",
-      "Next": "Check if user attempts exists in db",
+      "Next": "User has attempts?",
       "Parameters": {
         "TableName": "${NinoAttemptsTable}",
         "KeyConditionExpression": "id = :value",
@@ -47,18 +17,18 @@
       "Resource": "arn:aws:states:::aws-sdk:dynamodb:query",
       "ResultPath": "$.check-attempts-exist"
     },
-    "Check if user attempts exists in db": {
+    "User has attempts?": {
       "Type": "Choice",
       "Choices": [
         {
           "Variable": "$.check-attempts-exist.Count",
           "NumericGreaterThan": 0,
-          "Next": "Check user attempts is not 0 or 1"
+          "Next": "User has more than 2 attempts?"
         }
       ],
-      "Default": "Create new user attempt entry"
+      "Default": "Create new user attempt"
     },
-    "Create new user attempt entry": {
+    "Create new user attempt": {
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:putItem",
       "Parameters": {
@@ -76,25 +46,28 @@
         },
         "ConditionExpression": "attribute_not_exists(id)"
       },
-      "Next": "Update number of attempts by user",
+      "Next": "Increment user attempt",
       "ResultPath": null
     },
-    "Check user attempts is not 0 or 1": {
+    "User has more than 2 attempts?": {
       "Type": "Choice",
       "Choices": [
         {
-          "And": [
-            {
-              "Variable": "$.check-attempts-exist.Items[0].attempts.N",
-              "StringGreaterThanEquals": "2"
-            }
-          ],
-          "Next": "Error: Maximum number of attempts exceeded"
+          "Variable": "$.check-attempts-exist.Items[0].attempts.N",
+          "StringGreaterThanEquals": "2",
+          "Next": "Err: Attempts exceeded"
         }
       ],
-      "Default": "Update number of attempts by user"
+      "Default": "Increment user attempt"
     },
-    "Update number of attempts by user": {
+    "Err: Attempts exceeded": {
+      "Type": "Pass",
+      "End": true,
+      "Parameters": {
+        "error": "Maximum number of attempts exceeded"
+      }
+    },
+    "Increment user attempt": {
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:updateItem",
       "Parameters": {
@@ -111,21 +84,21 @@
           }
         }
       },
-      "Next": "Fetch Person Identity Table Name",
+      "Next": "Person Identity Table Name",
       "ResultPath": null
     },
-    "Fetch Person Identity Table Name": {
+    "Person Identity Table Name": {
       "Type": "Task",
-      "Next": "Query user by sessionId",
+      "Next": "Query Session",
       "Parameters": {
         "Name": "/${CommonStackName}/PersonIdentityTableName"
       },
       "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
       "ResultPath": "$.personIdentityTableName"
     },
-    "Query user by sessionId": {
+    "Query Session": {
       "Type": "Task",
-      "Next": "Check user details exist for given nino",
+      "Next": "User Exists?",
       "Parameters": {
         "TableName.$": "$.personIdentityTableName.Parameter.Value",
         "KeyConditionExpression": "sessionId = :value",
@@ -138,54 +111,55 @@
       "Resource": "arn:aws:states:::aws-sdk:dynamodb:query",
       "ResultPath": "$.userDetails"
     },
-    "Check user details exist for given nino": {
+    "User Exists?": {
       "Type": "Choice",
       "Choices": [
         {
-          "Not": {
-            "Variable": "$.userDetails.Count",
-            "NumericGreaterThan": 0
-          },
-          "Next": "Error: No user for given nino found"
+          "And": [
+            {
+              "Variable": "$.userDetails.Count",
+              "NumericGreaterThan": 0
+            },
+            {
+              "And": [
+                {
+                  "Variable": "$.userDetails.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
+                  "IsPresent": true
+                },
+                {
+                  "Variable": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
+                  "IsPresent": true
+                },
+                {
+                  "Variable": "$.userDetails.Items[0].birthDates.L[0].M.value.S",
+                  "IsPresent": true
+                }
+              ]
+            }
+          ],
+          "Next": "Get User Agent and API URL"
         }
       ],
-      "Default": "Get User Agent"
+      "Default": "Err: No user for nino"
     },
-    "Error: Maximum number of attempts exceeded": {
-      "Type": "Pass",
-      "End": true
-    },
-    "Error: No nino was provided": {
-      "Type": "Pass",
-      "End": true
-    },
-    "Error: No user for given nino found": {
-      "Type": "Pass",
-      "End": true
-    },
-    "Get User Agent": {
-      "Type": "Task",
-      "Next": "Get API URL",
-      "Parameters": {
-        "Name": "${UserAgent}"
-      },
-      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
-      "ResultPath": "$.userAgent",
-      "ResultSelector": {
-        "value.$": "$.Parameter.Value"
-      }
-    },
-    "Get API URL": {
+    "Get User Agent and API URL": {
       "Type": "Task",
       "Next": "Get OAuth Token",
       "Parameters": {
-        "Name": "${NinoCheckUrl}"
+        "Names": ["${UserAgent}", "${NinoCheckUrl}"]
       },
-      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
-      "ResultSelector": {
-        "value.$": "$.Parameter.Value"
+      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameters",
+      "ResultPath": "$.apiParams"
+    },
+    "Err: No user for nino": {
+      "Type": "Pass",
+      "End": true,
+      "Result": {
+        "error": "No user found for given nino"
       },
-      "ResultPath": "$.apiURL"
+      "Parameters": {
+        "error": "No user for given nino found"
+      }
     },
     "Get OAuth Token": {
       "Type": "Task",
@@ -210,8 +184,8 @@
           "lastName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
           "dob.$": "$.userDetails.Items[0].birthDates.L[0].M.value.S"
         },
-        "userAgent.$": "$.userAgent.value",
-        "apiURL.$": "$.apiURL.value",
+        "userAgent.$": "$.apiParams.Parameters[1].Value",
+        "apiURL.$": "$.apiParams.Parameters[0].Value",
         "oAuthToken.$": "$.oAuthToken.value"
       }
     },
@@ -223,14 +197,16 @@
         "FunctionName": "${MatchingFunctionArn}"
       },
       "Next": "Response Validation",
-      "ResultSelector": {
-        "hmrc_response": {
-          "firstName.$": "$.Payload.firstName",
-          "lastName.$": "$.Payload.lastName",
-          "dateOfBirth.$": "$.Payload.dateOfBirth",
-          "nino.$": "$.Payload.nino"
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Err: Matching Lambda Exception"
         }
-      }
+      ],
+      "ResultPath": "$.hmrc_response"
+    },
+    "Err: Matching Lambda Exception": {
+      "Type": "Fail"
     },
     "Response Validation": {
       "Type": "Choice",
@@ -238,26 +214,49 @@
         {
           "And": [
             {
-              "Variable": "$.hmrc_response.firstName",
+              "Variable": "$.hmrc_response.Payload.firstName",
               "IsPresent": true
             },
             {
-              "Variable": "$.hmrc_response.lastName",
+              "Variable": "$.hmrc_response.Payload.lastName",
               "IsPresent": true
             },
             {
-              "Variable": "$.hmrc_response.dateOfBirth",
+              "Variable": "$.hmrc_response.Payload.dateOfBirth",
               "IsPresent": true
             },
             {
-              "Variable": "$.hmrc_response.nino",
+              "Variable": "$.hmrc_response.Payload.nino",
               "IsPresent": true
             }
           ],
           "Next": "Update status to PASS"
         }
       ],
-      "Default": "Error: HMRC came back with an error"
+      "Default": "Contains Error?"
+    },
+    "Contains Error?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.hmrc_response.Payload.errors",
+          "IsPresent": true,
+          "Next": "Err: HMRC error"
+        },
+        {
+          "Variable": "$.hmrc_response.Payload.message",
+          "IsPresent": true,
+          "Next": "Err: Failed Auth"
+        }
+      ],
+      "Default": "Err: API Error"
+    },
+    "Err: HMRC error": {
+      "Type": "Pass",
+      "Parameters": {
+        "error.$": "$.hmrc_response.Payload.errors"
+      },
+      "End": true
     },
     "Update status to PASS": {
       "Type": "Task",
@@ -286,19 +285,6 @@
         "Payload.$": "$",
         "FunctionName": "${CreateAuthCodeFunctionArn}"
       },
-      "Retry": [
-        {
-          "ErrorEquals": [
-            "Lambda.ServiceException",
-            "Lambda.AWSLambdaException",
-            "Lambda.SdkClientException",
-            "Lambda.TooManyRequestsException"
-          ],
-          "IntervalSeconds": 2,
-          "MaxAttempts": 6,
-          "BackoffRate": 2
-        }
-      ],
       "Next": "Fetch Session Table Name",
       "ResultPath": "$.expiry"
     },
@@ -344,27 +330,39 @@
             "S.$": "$$.Execution.Input.sessionId"
           },
           "nino": {
-            "S.$": "$.hmrc_response.nino"
+            "S.$": "$.hmrc_response.Payload.nino"
           }
         },
         "ConditionExpression": "attribute_not_exists(sessionId)"
       },
+      "Next": "Response Filtering",
+      "ResultPath": "$.saveUser",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Err: Saving NINO"
+        }
+      ]
+    },
+    "Response Filtering": {
+      "Type": "Pass",
       "Next": "Nino check successful",
-      "ResultPath": "$.saveUser"
+      "Parameters": {}
+    },
+    "Err: Saving NINO": {
+      "Type": "Fail",
+      "CausePath": "$.Cause"
     },
     "Nino check successful": {
-      "Type": "Pass",
-      "End": true,
-      "Parameters": {
-        "firstName.$": "$.hmrc_response.firstName",
-        "lastName.$": "$.hmrc_response.lastName",
-        "dateOfBirth.$": "$.hmrc_response.dateOfBirth",
-        "nino.$": "$.hmrc_response.nino"
-      }
+      "Type": "Succeed"
     },
-    "Error: HMRC came back with an error": {
-      "Type": "Pass",
-      "End": true
+    "Err: API Error": {
+      "Type": "Fail",
+      "CausePath": "$.hmrc_response.Payload"
+    },
+    "Err: Failed Auth": {
+      "Type": "Fail",
+      "CausePath": "$.hmrc_response.Payload.message"
     }
   }
 }
