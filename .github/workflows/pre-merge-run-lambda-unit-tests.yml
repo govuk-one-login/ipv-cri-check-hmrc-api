@@ -1,4 +1,4 @@
-name: TypeScript Unit Tests
+name: Run All Lambda Unit Tests
 on:
   pull_request:
     types:
@@ -36,7 +36,7 @@ jobs:
 
 
   run-lambda-unit-tests:
-    name: "[${{ matrix.lambda }}] lambda unit test"
+    name: '[${{ matrix.lambda }}] lambda unit test'
     runs-on: ubuntu-latest
     defaults:
       run:
