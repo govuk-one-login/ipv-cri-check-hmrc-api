@@ -1,10 +1,11 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import { Logger } from "@aws-lambda-powertools/logger";
+import { MatchEvent } from "./match-event";
 
 const logger = new Logger();
 
 export class MatchingHandler implements LambdaInterface {
-  public async handler(event: MatchEvent, _context: unknown): Promise<any> {
+  public async handler(event: MatchEvent, _context: unknown): Promise<string> {
     try {
       const response = await fetch(event.apiURL, {
         method: "POST",
@@ -20,13 +21,12 @@ export class MatchingHandler implements LambdaInterface {
           nino: event.nino,
         }),
       });
-      try {
-        return await response.json();
-      } catch (error: any) {
-        return await response.text();
-      }
-    } catch (error: any) {
-      logger.error("Error in MatchingHandler: " + error.message);
+      return await response.json();
+    } catch (error: unknown) {
+      let message;
+      if (error instanceof Error) message = error.message;
+      else message = String(error);
+      logger.error("Error in MatchingHandler: " + message);
       throw error;
     }
   }

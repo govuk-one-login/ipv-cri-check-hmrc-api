@@ -1,4 +1,4 @@
-interface MatchEvent {
+export interface MatchEvent {
   sessionId: string;
   nino: string;
   userDetails: {

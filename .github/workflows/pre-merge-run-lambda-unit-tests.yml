@@ -1,0 +1,64 @@
+name: Run All Lambda Unit Tests
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - synchronize
+
+jobs:
+  pre-test:
+    name: Pre-test
+    runs-on: ubuntu-latest
+    outputs:
+      lambda-names: ${{ steps.get-lambda-names.outputs.names }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Get all lambda names
+        id: get-lambda-names
+        run: |
+          names=""
+          for dir in lambdas/*/
+          do
+              names+=\"$(basename -- "$dir")\",
+          done
+          if [ "$names" = "\"*\"," ]; then
+            echo "No subdirectories found in lambdas/"
+            exit 1
+          fi
+          echo names=[{${names%,}}]
+          echo names={"lambda": [${names%,}]} >> "$GITHUB_OUTPUT"
+
+  run-lambda-unit-tests:
+    name: ${{ matrix.lambda }} / lambda unit test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./lambdas/${{ matrix.lambda }}
+    needs: pre-test
+    strategy:
+      matrix: ${{ fromJSON(needs.pre-test.outputs.lambda-names) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run Tests
+        run: npm run test

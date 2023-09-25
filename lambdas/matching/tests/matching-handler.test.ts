@@ -1,4 +1,5 @@
 import { MatchingHandler } from "../src/matching-handler";
+import { MatchEvent } from "../src/match-event";
 import { Context } from "aws-lambda";
 
 describe("matching-handler", () => {
