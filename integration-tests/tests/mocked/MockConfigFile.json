@@ -3,54 +3,53 @@
     "nino_check": {
       "TestCases": {
         "HappyPathTestNoPreviousAttempt": {
-          "Query user attempts": "DynamoDbQueryNoResult",
-          "Create new user attempt entry": "DynamoDbQueryNoResult",
-          "Update number of attempts by user": "DynamoDbQueryNoResult",
-          "Fetch Person Identity Table Name": "FetchPersonIdentityTableSuccess",
-          "Query user by sessionId": "QueryUserBySessionIdSuccess",
-          "Get User Agent": "GetUserAgentSuccess",
-          "Get API URL": "GetAPIURLSuccess",
+          "Query User Attempts": "DynamoDbQueryNoResult",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
+          "Query Session": "QuerySessionSuccess",
+          "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
           "Update status to PASS": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
           "Fetch Session Table Name": "FetchSessionTableNameSuccess",
           "Set Auth Code for Session": "SetAuthCodeSuccess",
-          "Save NINO & sessionId to nino-users table": "DynamoDbQueryNoResult"
+          "Save NINO & sessionId to nino-users table": "SaveNinoSuccess"
         },
         "HappyPathTestOn2ndAttempt": {
-          "Query user attempts": "QueryUserAttemptSuccessOn2ndTry",
-          "Update number of attempts by user": "DynamoDbQueryNoResult",
-          "Fetch Person Identity Table Name": "FetchPersonIdentityTableSuccess",
-          "Query user by sessionId": "QueryUserBySessionIdSuccess",
-          "Get User Agent": "GetUserAgentSuccess",
-          "Get API URL": "GetAPIURLSuccess",
+          "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
+          "Query Session": "QuerySessionSuccess",
+          "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
           "Update status to PASS": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
           "Fetch Session Table Name": "FetchSessionTableNameSuccess",
           "Set Auth Code for Session": "SetAuthCodeSuccess",
-          "Save NINO & sessionId to nino-users table": "DynamoDbQueryNoResult"
+          "Save NINO & sessionId to nino-users table": "SaveNinoSuccess"
         },
         "InValidRequestSessionIdNotPresent": "",
         "InValidRequestNinoIdNotPresent": "",
         "MaximumNumberOfAttemptsExceeded": {
-          "Query user attempts": "QueryUserAttemptFailureAfterMoreThanTwoAttempts"
+          "Query User Attempts": "QueryUserAttemptFailureAfterMoreThanTwoAttempts"
         },
         "UserNotFoundForGivenNino": {
-          "Query user attempts": "DynamoDbQueryNoResult",
-          "Create new user attempt entry": "DynamoDbQueryNoResult",
-          "Update number of attempts by user": "DynamoDbQueryNoResult",
-          "Fetch Person Identity Table Name": "FetchPersonIdentityTableSuccess",
-          "Query user by sessionId": "DynamoDbQueryNoResult"
+          "Query User Attempts": "DynamoDbQueryNoResult",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
+          "Query Session": "DynamoDbQueryNoResult"
         }
       }
     }
   },
 
   "MockedResponses": {
-    "QueryUserBySessionIdSuccess": {
+    "QuerySessionSuccess": {
       "0": {
         "Return": {
           "Count": 1,
@@ -167,8 +166,7 @@
         }
       }
     },
-
-    "FetchPersonIdentityTableSuccess": {
+    "PersonIdentityTableSuccess": {
       "0": {
         "Return": {
           "Parameter": {
@@ -181,6 +179,38 @@
             "Version": 1
           }
         }
+      }
+    },
+    "GetAPIParametersSuccess": {
+      "0": {
+        "Return": {
+          "InvalidParameters": [],
+          "Parameters": [
+            {
+              "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/suraj-pdv-matching/NinoCheckUrl",
+              "DataType": "text",
+              "LastModifiedDate": "2023-09-19T18:10:35.937Z",
+              "Name": "/suraj-pdv-matching/NinoCheckUrl",
+              "Type": "String",
+              "Value": "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match",
+              "Version": 1
+            },
+            {
+              "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/suraj-pdv-matching/UserAgent",
+              "DataType": "text",
+              "LastModifiedDate": "2023-09-19T18:10:36.048Z",
+              "Name": "/suraj-pdv-matching/UserAgent",
+              "Type": "String",
+              "Value": "govuk-one-login",
+              "Version": 1
+            }
+          ]
+        }
+      }
+    },
+    "SaveNinoSuccess": {
+      "0": {
+        "Return": {}
       }
     },
     "UpdateStatusToPassSuccess": {
@@ -215,7 +245,6 @@
         }
       }
     },
-
     "FetchAuthCodeExpirySuccess": {
       "0": {
         "Return": {
@@ -225,7 +254,6 @@
         }
       }
     },
-
     "FetchSessionTableNameSuccess": {
       "0": {
         "Return": {
@@ -241,7 +269,6 @@
         }
       }
     },
-
     "SetAuthCodeSuccess": {
       "0": {
         "Return": {
@@ -274,17 +301,7 @@
         }
       }
     },
-
     "DynamoDbQueryNoResult": {
-      "0": {
-        "Return": {
-          "Count": 0,
-          "Items": [],
-          "ScannedCount": 0
-        }
-      }
-    },
-    "QueryUserNotFoundGivenNINO": {
       "0": {
         "Return": {
           "Count": 0,
@@ -326,66 +343,6 @@
             }
           ],
           "ScannedCount": 1
-        }
-      }
-    },
-    "CreateUserAttemptEntrySuccess": {
-      "0": {
-        "Return": {
-          "Count": 0,
-          "Items": [],
-          "ScannedCount": 0
-        }
-      }
-    },
-    "UpdateUserAttemptSuccess": {
-      "0": {
-        "Return": {
-          "Count": 0,
-          "Items": [],
-          "ScannedCount": 0
-        }
-      }
-    },
-    "QueryUserNINOSuccess": {
-      "0": {
-        "Return": {
-          "Count": 1,
-          "Items": [
-            {
-              "firstName": {
-                "S": "Jim"
-              },
-              "lastName": {
-                "S": "Ferguson"
-              },
-              "dob": {
-                "S": "1948-04-23"
-              },
-              "nino": {
-                "S": "AA000003C"
-              }
-            }
-          ],
-          "ScannedCount": 1
-        }
-      }
-    },
-    "GetUserAgentSuccess": {
-      "0": {
-        "Return": {
-          "Parameter": {
-            "Value": "govuk-one-login"
-          }
-        }
-      }
-    },
-    "GetAPIURLSuccess": {
-      "0": {
-        "Return": {
-          "Parameter": {
-            "Value": "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match"
-          }
         }
       }
     },
