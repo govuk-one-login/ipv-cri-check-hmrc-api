@@ -108,7 +108,7 @@ describe("step-function-local", () => {
 
           const responseStepFunction =
             await stnContainerHelper.startStepFunctionExecution(
-              "MaxiumNumberOfAttemptsExceeded",
+              "MaximumNumberOfAttemptsExceeded",
               input
             );
           const results = await stnContainerHelper.waitFor(
@@ -143,7 +143,7 @@ describe("step-function-local", () => {
           );
 
           expect(results[0].stateExitedEventDetails?.output).toEqual(
-            '{"nino":"AA000003D","sessionId":"12345","check-attempts-exist":{"Count":0,"Items":[],"ScannedCount":0},"userDetails":{"Count":0,"Items":[],"ScannedCount":0}}'
+            '{"nino":"AA000003D","sessionId":"12345","check-attempts-exist":{"Count":0,"Items":[],"ScannedCount":0},"personIdentityTableName":{"Parameter":{"Arn":"arn:aws:ssm:eu-west-2:404250751813:parameter/common-cri-api/PersonIdentityTableName","DataType":"text","LastModifiedDate":"2023-08-29T14:13:17.310Z","Name":"/common-cri-api/PersonIdentityTableName","Type":"String","Value":"person-identity-common-cri-api","Version":1}},"userDetails":{"Count":0,"Items":[],"ScannedCount":0}}'
           );
         });
       });
