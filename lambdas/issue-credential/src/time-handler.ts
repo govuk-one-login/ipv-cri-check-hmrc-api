@@ -46,14 +46,20 @@ const parseUnit = (value?: string): string => {
 };
 
 export class TimeHandler implements LambdaInterface {
-  public async handler(event: TimeEvent, _context: unknown): Promise<any> {
+  public async handler(
+    event: TimeEvent,
+    _context: unknown
+  ): Promise<{ nbf: number; expiry: number }> {
     try {
       return {
         nbf: this.notBeforeDate(),
         expiry: this.expiryDate(event.ttl, event.ttlUnit),
       };
-    } catch (error: any) {
-      logger.error("Error in TimeHandler: " + error.message);
+    } catch (error: unknown) {
+      let message;
+      if (error instanceof Error) message = error.message;
+      else message = String(error);
+      logger.error("Error in TimeHandler: " + message);
       throw error;
     }
   }
