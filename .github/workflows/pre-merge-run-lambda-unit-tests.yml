@@ -34,9 +34,8 @@ jobs:
           echo names=[{${names%,}}] 
           echo names={"lambda": [${names%,}]} >> "$GITHUB_OUTPUT"
 
-
   run-lambda-unit-tests:
-    name: '[${{ matrix.lambda }}] lambda unit test'
+    name: ${{ matrix.lambda }}| lambda unit test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -60,6 +59,6 @@ jobs:
 
       - name: Run lint
         run: npm run lint
-        
+
       - name: Run Tests
         run: npm run test
