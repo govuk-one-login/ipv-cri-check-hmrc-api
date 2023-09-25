@@ -15,9 +15,9 @@ export class MatchingHandler implements LambdaInterface {
           Authorization: "Bearer " + event.oAuthToken,
         },
         body: JSON.stringify({
-          firstName: event.userDetails.firstName.S,
-          lastName: event.userDetails.lastName.S,
-          dateOfBirth: event.userDetails.dob.S,
+          firstName: event.userDetails.firstName,
+          lastName: event.userDetails.lastName,
+          dateOfBirth: event.userDetails.dob,
           nino: event.nino,
         }),
       });

@@ -85,16 +85,8 @@
         {
           "And": [
             {
-              "Not": {
-                "Variable": "$.check-attempts-exist.Items[0].attempts.N",
-                "StringEquals": "0"
-              }
-            },
-            {
-              "Not": {
-                "Variable": "$.check-attempts-exist.Items[0].attempts.N",
-                "StringEquals": "1"
-              }
+              "Variable": "$.check-attempts-exist.Items[0].attempts.N",
+              "StringGreaterThanEquals": "2"
             }
           ],
           "Next": "Error: Maximum number of attempts exceeded"
@@ -119,18 +111,27 @@
           }
         }
       },
-      "Next": "Query user from nino",
+      "Next": "Fetch Person Identity Table Name",
       "ResultPath": null
     },
-    "Query user from nino": {
+    "Fetch Person Identity Table Name": {
+      "Type": "Task",
+      "Next": "Query user by sessionId",
+      "Parameters": {
+        "Name": "/${CommonStackName}/PersonIdentityTableName"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+      "ResultPath": "$.personIdentityTableName"
+    },
+    "Query user by sessionId": {
       "Type": "Task",
       "Next": "Check user details exist for given nino",
       "Parameters": {
-        "TableName": "${NinoUsersTable}",
-        "KeyConditionExpression": "nino = :value",
+        "TableName.$": "$.personIdentityTableName.Parameter.Value",
+        "KeyConditionExpression": "sessionId = :value",
         "ExpressionAttributeValues": {
           ":value": {
-            "S.$": "$.nino"
+            "S.$": "$.sessionId"
           }
         }
       },
@@ -204,7 +205,11 @@
       "Parameters": {
         "sessionId.$": "$.sessionId",
         "nino.$": "$.nino",
-        "userDetails.$": "$.userDetails.Items[0]",
+        "userDetails": {
+          "firstName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
+          "lastName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
+          "dob.$": "$.userDetails.Items[0].birthDates.L[0].M.value.S"
+        },
         "userAgent.$": "$.userAgent.value",
         "apiURL.$": "$.apiURL.value",
         "oAuthToken.$": "$.oAuthToken.value"
@@ -219,10 +224,12 @@
       },
       "Next": "Response Validation",
       "ResultSelector": {
-        "firstName.$": "$.Payload.firstName",
-        "lastName.$": "$.Payload.lastName",
-        "dateOfBirth.$": "$.Payload.dateOfBirth",
-        "nino.$": "$.Payload.nino"
+        "hmrc_response": {
+          "firstName.$": "$.Payload.firstName",
+          "lastName.$": "$.Payload.lastName",
+          "dateOfBirth.$": "$.Payload.dateOfBirth",
+          "nino.$": "$.Payload.nino"
+        }
       }
     },
     "Response Validation": {
@@ -231,19 +238,19 @@
         {
           "And": [
             {
-              "Variable": "$.firstName",
+              "Variable": "$.hmrc_response.firstName",
               "IsPresent": true
             },
             {
-              "Variable": "$.lastName",
+              "Variable": "$.hmrc_response.lastName",
               "IsPresent": true
             },
             {
-              "Variable": "$.dateOfBirth",
+              "Variable": "$.hmrc_response.dateOfBirth",
               "IsPresent": true
             },
             {
-              "Variable": "$.nino",
+              "Variable": "$.hmrc_response.nino",
               "IsPresent": true
             }
           ],
@@ -269,11 +276,91 @@
           }
         }
       },
-      "Next": "Nino check successful"
+      "Next": "Fetch Auth Code Expiry",
+      "ResultPath": null
+    },
+    "Fetch Auth Code Expiry": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${CreateAuthCodeFunctionArn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Fetch Session Table Name",
+      "ResultPath": "$.expiry"
+    },
+    "Fetch Session Table Name": {
+      "Type": "Task",
+      "Next": "Set Auth Code for Session",
+      "Parameters": {
+        "Name": "/${CommonStackName}/SessionTableName"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+      "ResultPath": "$.sessionTable"
+    },
+    "Set Auth Code for Session": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName.$": "$.sessionTable.Parameter.Value",
+        "Key": {
+          "sessionId": {
+            "S.$": "$$.Execution.Input.sessionId"
+          }
+        },
+        "UpdateExpression": "SET authorizationCode = :authCode, authorizationCodeExpiryDate = :expiry",
+        "ExpressionAttributeValues": {
+          ":authCode": {
+            "S.$": "States.UUID()"
+          },
+          ":expiry": {
+            "N.$": "States.Format('{}',$.expiry.Payload.authCodeExpiry)"
+          }
+        }
+      },
+      "Next": "Save NINO & sessionId to nino-users table",
+      "ResultPath": "$.setAuthCode"
+    },
+    "Save NINO & sessionId to nino-users table": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+      "Parameters": {
+        "TableName": "${NinoUsersTable}",
+        "Item": {
+          "sessionId": {
+            "S.$": "$$.Execution.Input.sessionId"
+          },
+          "nino": {
+            "S.$": "$.hmrc_response.nino"
+          }
+        },
+        "ConditionExpression": "attribute_not_exists(sessionId)"
+      },
+      "Next": "Nino check successful",
+      "ResultPath": "$.saveUser"
     },
     "Nino check successful": {
       "Type": "Pass",
-      "End": true
+      "End": true,
+      "Parameters": {
+        "firstName.$": "$.hmrc_response.firstName",
+        "lastName.$": "$.hmrc_response.lastName",
+        "dateOfBirth.$": "$.hmrc_response.dateOfBirth",
+        "nino.$": "$.hmrc_response.nino"
+      }
     },
     "Error: HMRC came back with an error": {
       "Type": "Pass",
