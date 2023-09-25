@@ -38,9 +38,7 @@ describe("step-function-local", () => {
               responseStepFunction
             );
 
-            expect(results[0].stateExitedEventDetails?.output).toEqual(
-              '{"firstName":"Jim","lastName":"Ferguson","dateOfBirth":"1948-04-23","nino":"AA000003D"}'
-            );
+            expect(results[0].stateExitedEventDetails?.output).toEqual("{}");
           });
         });
       });
@@ -60,13 +58,12 @@ describe("step-function-local", () => {
           const results = await stnContainerHelper.waitFor(
             (event: HistoryEvent) =>
               event?.type === "PassStateExited" &&
-              event?.stateExitedEventDetails?.name ===
-                "Error: Maximum number of attempts exceeded",
+              event?.stateExitedEventDetails?.name === "Err: Attempts exceeded",
             responseStepFunction
           );
 
           expect(results[0].stateExitedEventDetails?.output).toEqual(
-            '{"nino":"AA000003D","sessionId":"12345","check-attempts-exist":{"Count":1,"Items":[{"id":{"S":"12345"},"attempts":{"N":"2"}}],"ScannedCount":1}}'
+            '{"error":"Maximum number of attempts exceeded"}'
           );
         });
         it("should fail when user does not exist with the given nino", async () => {
