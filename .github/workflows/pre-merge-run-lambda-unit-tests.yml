@@ -35,7 +35,7 @@ jobs:
           echo names={"lambda": [${names%,}]} >> "$GITHUB_OUTPUT"
 
   run-lambda-unit-tests:
-    name: ${{ matrix.lambda }}| lambda unit test
+    name: ${{ matrix.lambda }} / lambda unit test
     runs-on: ubuntu-latest
     defaults:
       run:
