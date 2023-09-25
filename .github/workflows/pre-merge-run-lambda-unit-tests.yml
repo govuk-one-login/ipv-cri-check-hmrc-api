@@ -31,7 +31,7 @@ jobs:
             echo "No subdirectories found in lambdas/"
             exit 1
           fi
-          echo names=[{${names%,}}] 
+          echo names=[{${names%,}}]
           echo names={"lambda": [${names%,}]} >> "$GITHUB_OUTPUT"
 
   run-lambda-unit-tests:
