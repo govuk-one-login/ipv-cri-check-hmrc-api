@@ -5,15 +5,21 @@ const logger = new Logger();
 const DEFAULT_AUTHORIZATION_CODE_TTL_IN_MILLIS = 600 * 1000;
 
 export class CreateAuthCodeHandler implements LambdaInterface {
-  public async handler(_event: unknown, _context: unknown): Promise<any> {
+  public async handler(
+    _event: unknown,
+    _context: unknown
+  ): Promise<{ authCodeExpiry: number }> {
     try {
       return {
         authCodeExpiry: Math.floor(
           (Date.now() + DEFAULT_AUTHORIZATION_CODE_TTL_IN_MILLIS) / 1000
         ),
       };
-    } catch (error: any) {
-      logger.error("Error in CreateAuthCodeHandler: " + error.message);
+    } catch (error: unknown) {
+      let message;
+      if (error instanceof Error) message = error.message;
+      else message = String(error);
+      logger.error("Error in CreateAuthCodeHandler: " + message);
       throw error;
     }
   }
