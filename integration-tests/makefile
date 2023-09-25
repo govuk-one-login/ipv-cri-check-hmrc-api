@@ -44,7 +44,7 @@ failMaxAttempts:
 	aws stepfunctions start-execution \
 	--endpoint http://localhost:8083 \
 	--name happyPathExecution \
-	--state-machine ${STATE_MACHINE_ARN}#MaxiumNumberOfAttemptsExceeded \
+	--state-machine ${STATE_MACHINE_ARN}#MaximumNumberOfAttemptsExceeded \
 	--input '{ "sessionId": "12345", "nino": "AA000003D" }' \
 	--no-cli-pager
 userNotFoundNino:
