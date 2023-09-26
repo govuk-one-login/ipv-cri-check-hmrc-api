@@ -1,5 +1,5 @@
 STATE_MACHINE_NAME=nino_check
-STATE_MACHINE_DEFINITION_FILE=file://../step-functions/${STATE_MACHINE_NAME}.asl.json
+STATE_MACHINE_DEFINITION_FILE=file://../../../../step-functions/${STATE_MACHINE_NAME}.asl.json
 STATE_MACHINE_ARN=arn:aws:states:local:123456789012:stateMachine:${STATE_MACHINE_NAME}
 STATE_MACHINE_EXECUTION_ARN=arn:aws:states:local:123456789012:execution:${STATE_MACHINE_NAME}
 
@@ -38,5 +38,12 @@ userNotFoundNino:
 	--endpoint http://localhost:8083 \
 	--name happyPathExecution \
 	--state-machine ${STATE_MACHINE_ARN}#UserNotFoundForGivenNino \
+	--input '{ "sessionId": "12345", "nino": "AA000003D" }' \
+	--no-cli-pager
+HMRCAuthError:
+	aws stepfunctions start-execution \
+	--endpoint http://localhost:8083 \
+	--name happyPathExecution \
+	--state-machine ${STATE_MACHINE_ARN}#HMRCAuthError \
 	--input '{ "sessionId": "12345", "nino": "AA000003D" }' \
 	--no-cli-pager
