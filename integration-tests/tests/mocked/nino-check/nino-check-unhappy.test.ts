@@ -59,9 +59,9 @@ describe("nino-check-unhappy", () => {
       );
     });
   });
-  describe("testing Matching API error paths", () => {
-    xit("should fail when HMRC responds back with an API error");
-    xit("should fail when HMRC responds back with an exception");
+  xdescribe("testing Matching API error paths", () => {
+    xit("should fail when HMRC responds back with an API error", async () => {});
+    xit("should fail when HMRC responds back with an exception", async () => {});
     xit("should fail when HMRC responds back with an authentication error", async () => {
       const input = JSON.stringify({
         nino: "AA000003D",
