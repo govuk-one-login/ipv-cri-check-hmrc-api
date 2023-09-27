@@ -43,12 +43,32 @@
           "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Session": "DynamoDbQueryNoResult"
+        },
+        "HMRCAuthError": {
+          "Query User Attempts": "DynamoDbQueryNoResult",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
+          "Query Session": "QuerySessionSuccess",
+          "Get User Agent and API URL": "GetAPIParametersSuccess",
+          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call Matching API": "CallMatchingAPIFailAuth"
         }
       }
     }
   },
 
   "MockedResponses": {
+    "CallMatchingAPIFailAuth": {
+      "0": {
+        "Return": {
+          "Payload": {
+            "code": "INVALID_CREDENTIALS",
+            "message": "Invalid Authentication information provided"
+          }
+        }
+      }
+    },
     "QuerySessionSuccess": {
       "0": {
         "Return": {
@@ -187,19 +207,19 @@
           "InvalidParameters": [],
           "Parameters": [
             {
-              "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/suraj-pdv-matching/NinoCheckUrl",
+              "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/pdv-matching/NinoCheckUrl",
               "DataType": "text",
               "LastModifiedDate": "2023-09-19T18:10:35.937Z",
-              "Name": "/suraj-pdv-matching/NinoCheckUrl",
+              "Name": "/pdv-matching/NinoCheckUrl",
               "Type": "String",
               "Value": "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match",
               "Version": 1
             },
             {
-              "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/suraj-pdv-matching/UserAgent",
+              "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/pdv-matching/UserAgent",
               "DataType": "text",
               "LastModifiedDate": "2023-09-19T18:10:36.048Z",
-              "Name": "/suraj-pdv-matching/UserAgent",
+              "Name": "/pdv-matching/UserAgent",
               "Type": "String",
               "Value": "govuk-one-login",
               "Version": 1
@@ -220,9 +240,7 @@
             "AllHttpHeaders": {
               "Server": ["Server"],
               "Connection": ["keep-alive"],
-              "x-amzn-RequestId": [
-                "8V82HGSD060LCC4P4KITG19LBFVV4KQNSO5AEMVJF66Q9ASUAAJG"
-              ],
+              "x-amzn-RequestId": [""],
               "x-amz-crc32": ["2745614147"],
               "Content-Length": ["2"],
               "Date": ["Mon, 18 Sep 2023 12:50:38 GMT"],
@@ -235,12 +253,12 @@
               "Date": "Mon, 18 Sep 2023 12:50:38 GMT",
               "Server": "Server",
               "x-amz-crc32": "2745614147",
-              "x-amzn-RequestId": "8V82HGSD060LCC4P4KITG19LBFVV4KQNSO5AEMVJF66Q9ASUAAJG"
+              "x-amzn-RequestId": ""
             },
             "HttpStatusCode": 200
           },
           "SdkResponseMetadata": {
-            "RequestId": "8V82HGSD060LCC4P4KITG19LBFVV4KQNSO5AEMVJF66Q9ASUAAJG"
+            "RequestId": ""
           }
         }
       }
@@ -276,9 +294,7 @@
             "AllHttpHeaders": {
               "Server": ["Server"],
               "Connection": ["keep-alive"],
-              "x-amzn-RequestId": [
-                "8V82HGSD060LCC4P4KITG19LBFVV4KQNSO5AEMVJF66Q9ASUAAJG"
-              ],
+              "x-amzn-RequestId": [""],
               "x-amz-crc32": ["2745614147"],
               "Content-Length": ["2"],
               "Date": ["Mon, 18 Sep 2023 12:50:38 GMT"],
@@ -291,12 +307,12 @@
               "Date": "Mon, 18 Sep 2023 12:50:38 GMT",
               "Server": "Server",
               "x-amz-crc32": "2745614147",
-              "x-amzn-RequestId": "8V82HGSD060LCC4P4KITG19LBFVV4KQNSO5AEMVJF66Q9ASUAAJG"
+              "x-amzn-RequestId": ""
             },
             "HttpStatusCode": 200
           },
           "SdkResponseMetadata": {
-            "RequestId": "8V82HGSD060LCC4P4KITG19LBFVV4KQNSO5AEMVJF66Q9ASUAAJG"
+            "RequestId": ""
           }
         }
       }
@@ -349,7 +365,7 @@
     "GetOAuthAccessTokenSuccess": {
       "0": {
         "Return": {
-          "SecretString": "c6b5e15b1c8aa61213f7f58d3e291399"
+          "SecretString": "abc"
         }
       }
     },
