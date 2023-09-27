@@ -368,6 +368,74 @@ Resources:
         EntryPoints:
           - src/create-auth-code-handler.ts
 
+  CurrentTimeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/matching
+      Handler: current-time-handler.lambdaHandler
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - src/current-time-handler.ts
+
+  CheckSessionStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub "${AWS::StackName}-CheckSession"
+      Type: EXPRESS
+      DefinitionUri: ../step-functions/nino_check_session.asl.json
+      DefinitionSubstitutions:
+        CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
+        CommonStackName: !Ref CommonStackName
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt CheckSessionStateMachineLogGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CurrentTimeFunction
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - Statement:
+            Effect: Allow
+            Action:
+              - logs:*
+            Resource:
+              - "*"
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
+  ExecuteStateMachineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/matching
+      Handler: execute-state-machine-handler.lambdaHandler
+      Timeout: 60
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action:
+              - states:StartSyncExecution
+              - states:StartExecution
+            Resource:
+              - !Ref CheckSessionStateMachine
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - src/execute-state-machine-handler.ts
+
   NinoCheckStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -375,6 +443,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
+        CheckSessionStateMachineArn: !GetAtt CheckSessionStateMachine.Arn
         CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
         NinoAttemptsTable: !Ref NinoAttemptsTable
@@ -383,6 +452,7 @@ Resources:
         UserAgent: !Ref UserAgent
         BearerTokenName: !Ref BearerTokenName
         CommonStackName: !Ref CommonStackName
+        ExecuteStateMachineFunctionName: !Ref ExecuteStateMachineFunction
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -390,6 +460,8 @@ Resources:
         IncludeExecutionData: True
         Level: ALL
       Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ExecuteStateMachineFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref CreateAuthCodeFunction
         - LambdaInvokePolicy:
@@ -497,7 +569,19 @@ Resources:
       LogGroupName: !Sub /aws/vendedlogs/states/aws/apigateway/${AWS::StackName}-NinoIssueCredential-state-machine-logs
       RetentionInDays: 30
 
+  CheckSessionStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/aws/apigateway/${AWS::StackName}-CheckSession-state-machine-logs
+      RetentionInDays: 30
+
 Outputs:
+  CurrentTimeFunction:
+    Description: "Fetch Current Time Function Arn"
+    Value: !GetAtt CurrentTimeFunction.Arn
+  CurrentTimeFunctionRoleArn:
+    Description: "Fetch Current Time Function Role Arn"
+    Value: !GetAtt CurrentTimeFunctionRole.Arn
   CreateAuthCodeFunction:
     Description: "Create Authorization Code Function ARN"
     Value: !GetAtt CreateAuthCodeFunction.Arn
@@ -528,3 +612,9 @@ Outputs:
   NinoUsersTable:
     Description: NinoUsersTable table name
     Value: !Ref NinoUsersTable
+  ExecuteStateMachineFunction:
+    Description: "ExecuteStateMachine Lambda Function ARN"
+    Value: !GetAtt ExecuteStateMachineFunction.Arn
+  ExecuteStateMachineFunctionIamRole:
+    Description: "Implicit IAM Role created for ExecuteStateMachine function"
+    Value: !GetAtt ExecuteStateMachineFunctionRole.Arn
