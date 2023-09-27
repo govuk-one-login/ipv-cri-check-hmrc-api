@@ -14,19 +14,6 @@
         },
         "FunctionName": "${ExecuteStateMachineFunctionName}"
       },
-      "Retry": [
-        {
-          "ErrorEquals": [
-            "Lambda.ServiceException",
-            "Lambda.AWSLambdaException",
-            "Lambda.SdkClientException",
-            "Lambda.TooManyRequestsException"
-          ],
-          "IntervalSeconds": 2,
-          "MaxAttempts": 6,
-          "BackoffRate": 2
-        }
-      ],
       "Next": "Is Session Valid?",
       "ResultPath": "$.sessionCheck",
       "ResultSelector": {

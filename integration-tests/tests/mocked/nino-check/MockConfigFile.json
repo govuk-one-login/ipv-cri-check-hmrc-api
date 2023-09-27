@@ -3,6 +3,7 @@
     "nino_check": {
       "TestCases": {
         "HappyPathTestNoPreviousAttempt": {
+          "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Increment user attempt": "DynamoDbQueryNoResult",
@@ -18,6 +19,7 @@
           "Save NINO & sessionId to nino-users table": "SaveNinoSuccess"
         },
         "HappyPathTestOn2ndAttempt": {
+          "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Increment user attempt": "DynamoDbQueryNoResult",
@@ -35,9 +37,11 @@
         "InValidRequestSessionIdNotPresent": "",
         "InValidRequestNinoIdNotPresent": "",
         "MaximumNumberOfAttemptsExceeded": {
+          "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "QueryUserAttemptFailureAfterMoreThanTwoAttempts"
         },
         "UserNotFoundForGivenNino": {
+          "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Increment user attempt": "DynamoDbQueryNoResult",
@@ -45,6 +49,7 @@
           "Query Session": "DynamoDbQueryNoResult"
         },
         "HMRCAuthError": {
+          "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Increment user attempt": "DynamoDbQueryNoResult",
@@ -59,6 +64,13 @@
   },
 
   "MockedResponses": {
+    "CheckSessionSuccess": {
+      "0": {
+        "Return": {
+          "Payload": "{\"status\":\"SESSION_OK\"}"
+        }
+      }
+    },
     "CallMatchingAPIFailAuth": {
       "0": {
         "Return": {
