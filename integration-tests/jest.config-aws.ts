@@ -6,6 +6,6 @@ import type { Config } from "@jest/types";
 import commonConfig from "./jest.config.common";
 const config: Config.InitialOptions = {
   ...commonConfig,
-  testMatch: ["**/tests/aws/*.test.ts"],
+  testMatch: ["**/tests/aws/*/*.test.ts"],
 };
 export default config;
