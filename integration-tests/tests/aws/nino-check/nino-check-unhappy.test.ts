@@ -1,121 +1,114 @@
 import { stackOutputs } from "../resources/cloudformation-helper";
-import { clearItems, populateTable } from "../resources/dynamodb-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
+import { clearItems, populateTable } from "../resources/dynamodb-helper";
 
-describe("Nino Check", () => {
-  const sessionId = "12345";
-  const nino = "AA000003D";
-  const badNino = "abc";
+describe("nino-check-unhappy ", () => {
+  const input = {
+    sessionId: "123456789",
+    nino: "AB123003C",
+  };
+
   const testUser = {
-    nino: nino,
+    nino: "AB123003C",
     dob: "1948-04-23",
     firstName: "Jim",
     lastName: "Ferguson",
   };
+
+  let sessionTableName: string;
+  let personIdentityTableName: string;
+
   let output: Partial<{
-    NinoUsersTable: string;
+    CommonStackName: string;
     NinoAttemptsTable: string;
+    NinoUsersTable: string;
     NinoCheckStateMachineArn: string;
   }>;
+
   beforeEach(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
-    await populateTable(testUser, output.NinoUsersTable);
+    sessionTableName = `session-${output.CommonStackName}`;
+    personIdentityTableName = `person-identity-${output.CommonStackName}`;
+
+    await populateTable(
+      {
+        sessionId: input.sessionId,
+        expiryDate: 9999999999,
+      },
+      sessionTableName
+    );
+
+    await populateTable(
+      {
+        sessionId: input.sessionId,
+        nino: input.nino,
+        birthDates: [{ value: testUser.dob }],
+        names: [
+          {
+            nameParts: [
+              {
+                type: "GivenName",
+                value: testUser.firstName,
+              },
+              {
+                type: "FamilyName",
+                value: testUser.lastName,
+              },
+            ],
+          },
+        ],
+      },
+      personIdentityTableName
+    );
   });
 
   afterEach(async () => {
-    await clearItems(output.NinoUsersTable as string, {
-      nino: testUser.nino,
+    await clearItems(sessionTableName, {
+      sessionId: input.sessionId,
+    });
+    await clearItems(personIdentityTableName, {
+      sessionId: input.sessionId,
     });
     await clearItems(output.NinoAttemptsTable as string, {
-      id: sessionId,
+      id: input.sessionId,
+    });
+    await clearItems(output.NinoUsersTable as string, {
+      sessionId: input.sessionId,
     });
   });
 
-  describe("Unhappy User Input Paths", () => {
-    it("should fail when there is no sessionId present", async () => {
-      const startExecutionResult = await executeStepFunction(
-        {
-          nino: nino,
-        },
-        output.NinoCheckStateMachineArn
-      );
-      expect(startExecutionResult.output).toBe('{"nino":"AA000003D"}');
+  it("should fail when there is more than 2 nino check attempts", async () => {
+    await executeStepFunction(input, output.NinoCheckStateMachineArn);
+    await executeStepFunction(input, output.NinoCheckStateMachineArn);
+    const startExecutionResult = await executeStepFunction(
+      input,
+      output.NinoCheckStateMachineArn
+    );
+    expect(startExecutionResult.output).toBe(
+      '{"error":"Maximum number of attempts exceeded"}'
+    );
+  });
+
+  it("should fail when there is no user present for given nino", async () => {
+    await clearItems(personIdentityTableName, {
+      sessionId: input.sessionId,
     });
+    const startExecutionResult = await executeStepFunction(
+      input,
+      output.NinoCheckStateMachineArn
+    );
+    expect(startExecutionResult.output).toBe(
+      '{"error":"No user found for given nino"}'
+    );
+  });
 
-    it("should fail when there is no nino present", async () => {
-      const startExecutionResult = await executeStepFunction(
-        {
-          sessionId: sessionId,
-        },
-        output.NinoCheckStateMachineArn
-      );
-      expect(startExecutionResult.output).toBe('{"sessionId":"12345"}');
-    });
-
-    describe("Unhappy Nino Check Paths", () => {
-      it("should fail when there is more than 2 nino check attempts", async () => {
-        await executeStepFunction(
-          {
-            sessionId: sessionId,
-            nino: badNino,
-          },
-          output.NinoCheckStateMachineArn
-        );
-        await executeStepFunction(
-          {
-            sessionId: sessionId,
-            nino: badNino,
-          },
-          output.NinoCheckStateMachineArn
-        );
-        const startExecutionResult = await executeStepFunction(
-          {
-            sessionId: sessionId,
-            nino: badNino,
-          },
-          output.NinoCheckStateMachineArn
-        );
-        expect(startExecutionResult.output).toBe(
-          '{"sessionId":"12345","nino":"abc","check-attempts-exist":{"Count":1,"Items":[{"id":{"S":"12345"},"attempts":{"N":"2"}}],"ScannedCount":1}}'
-        );
-      });
-
-      it("should fail when there is no user present for given nino", async () => {
-        const startExecutionResult = await executeStepFunction(
-          {
-            sessionId: sessionId,
-            nino: badNino,
-          },
-          output.NinoCheckStateMachineArn
-        );
-        expect(startExecutionResult.output).toBe(
-          '{"sessionId":"12345","nino":"abc","check-attempts-exist":{"Count":0,"Items":[],"ScannedCount":0},"userDetails":{"Count":0,"Items":[],"ScannedCount":0}}'
-        );
-      });
-
-      it("should fail when there is no user in HMRC present", async () => {
-        const goodBadNino = "bad-good-nino";
-        await populateTable(
-          {
-            nino: goodBadNino,
-            dob: testUser.dob,
-            firstName: testUser.firstName,
-            lastName: testUser.lastName,
-          },
-          output.NinoUsersTable
-        );
-        const startExecutionResult = await executeStepFunction(
-          {
-            sessionId: sessionId,
-            nino: "bad-good-nino",
-          },
-          output.NinoCheckStateMachineArn
-        );
-        await clearItems(output.NinoUsersTable as string, {
-          nino: goodBadNino,
-        });
-        expect(startExecutionResult.output).toBeUndefined();
-      });
-    });
+  it("should fail when there is no user in HMRC present", async () => {
+    const startExecutionResult = await executeStepFunction(
+      input,
+      output.NinoCheckStateMachineArn
+    );
+    expect(startExecutionResult.output).toBe(
+      '{"error":"CID returned no record"}'
+    );
   });
 });
