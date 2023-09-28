@@ -34,5 +34,5 @@ export const lambdaHandler = handlerClass.handler.bind(handlerClass);
 
 type StateMachineProps = {
   stateMachineArn: string;
-  input: any;
+  input: Record<string, string>;
 };
