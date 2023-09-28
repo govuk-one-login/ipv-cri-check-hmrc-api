@@ -1,7 +1,45 @@
 {
   "Comment": "A description of my state machine",
-  "StartAt": "Query User Attempts",
+  "StartAt": "Invoke Check Session",
   "States": {
+    "Invoke Check Session": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "stateMachineArn": "${CheckSessionStateMachineArn}",
+          "input": {
+            "sessionId.$": "$.sessionId"
+          }
+        },
+        "FunctionName": "${ExecuteStateMachineFunctionName}"
+      },
+      "Next": "Is Session Valid?",
+      "ResultPath": "$.sessionCheck",
+      "ResultSelector": {
+        "result.$": "States.StringToJson($.Payload)"
+      }
+    },
+    "Is Session Valid?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Not": {
+            "Variable": "$.sessionCheck.result.status",
+            "StringMatches": "SESSION_OK"
+          },
+          "Next": "Err: Invalid Session"
+        }
+      ],
+      "Default": "Query User Attempts"
+    },
+    "Err: Invalid Session": {
+      "Type": "Pass",
+      "End": true,
+      "Parameters": {
+        "error": "Session is not valid or has expired"
+      }
+    },
     "Query User Attempts": {
       "Type": "Task",
       "Next": "User has attempts?",

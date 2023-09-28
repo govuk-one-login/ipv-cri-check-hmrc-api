@@ -1,0 +1,65 @@
+{
+  "StateMachines": {
+    "check_session": {
+      "TestCases": {
+        "HappyPath": {
+          "Fetch Current Time": "FetchCurrentTimeHappy",
+          "Fetch Session": "FetchSessionHappy"
+        },
+        "NoSessionFound": {
+          "Fetch Current Time": "FetchCurrentTimeHappy",
+          "Fetch Session": "NoResults"
+        },
+        "SessionExpired": {
+          "Fetch Current Time": "FetchCurrentTimeHappy",
+          "Fetch Session": "FetchSessionExpired"
+        }
+      }
+    }
+  },
+  "MockedResponses": {
+    "FetchCurrentTimeHappy": {
+      "0": {
+        "Return": {
+          "Payload": "1695828259"
+        }
+      }
+    },
+    "FetchSessionHappy": {
+      "0": {
+        "Return": {
+          "Count": 1,
+          "Items": [
+            {
+              "expiryDate": {
+                "N": "2695828259"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "FetchSessionExpired": {
+      "0": {
+        "Return": {
+          "Count": 1,
+          "Items": [
+            {
+              "expiryDate": {
+                "N": "0"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "NoResults": {
+      "0": {
+        "Return": {
+          "Count": 0,
+          "Items": []
+        }
+      }
+    }
+  }
+}
