@@ -579,42 +579,63 @@ Outputs:
   CurrentTimeFunction:
     Description: "Fetch Current Time Function Arn"
     Value: !GetAtt CurrentTimeFunction.Arn
+
   CurrentTimeFunctionRoleArn:
     Description: "Fetch Current Time Function Role Arn"
     Value: !GetAtt CurrentTimeFunctionRole.Arn
+
   CreateAuthCodeFunction:
     Description: "Create Authorization Code Function ARN"
     Value: !GetAtt CreateAuthCodeFunction.Arn
+
   CreateAuthCodeFunctionRoleArn:
     Description: "Create Authorization Code Function Arn"
     Value: !GetAtt CreateAuthCodeFunctionRole.Arn
+
   TimeFunction:
     Description: "Time Lambda Function ARN"
     Value: !GetAtt TimeFunction.Arn
+
   TimeFunctionRoleArn:
     Description: "TimeFunctionRole Arn"
     Value: !GetAtt TimeFunctionRole.Arn
+
   MatchingFunction:
     Description: "Matching Lambda Function ARN"
     Value: !GetAtt MatchingFunction.Arn
+
   MatchingFunctionRoleArn:
     Description: "MatchingFunctionRole Arn"
     Value: !GetAtt MatchingFunctionRole.Arn
+
   NinoCheckStateMachineArn:
     Description: "NinoCheck StateMachine Arn"
     Value: !GetAtt NinoCheckStateMachine.Arn
+
+  CheckSessionStateMachineArn:
+    Description: "Session Check StateMachine Arn"
+    Value: !GetAtt CheckSessionStateMachine.Arn
+
+  CommonStackName:
+    Description: "Common Stack Name"
+    Value: !Ref CommonStackName
+
   NinoIssueCredentialStateMachineIamRole:
     Description: "Implicit IAM Role created for Matching function"
     Value: !GetAtt NinoCheckStateMachineRole.Arn
+
   NinoAttemptsTable:
     Description: NinoAttemptsTable table name
     Value: !Ref NinoAttemptsTable
+
   NinoUsersTable:
     Description: NinoUsersTable table name
     Value: !Ref NinoUsersTable
+
   ExecuteStateMachineFunction:
     Description: "ExecuteStateMachine Lambda Function ARN"
     Value: !GetAtt ExecuteStateMachineFunction.Arn
+
   ExecuteStateMachineFunctionIamRole:
     Description: "Implicit IAM Role created for ExecuteStateMachine function"
     Value: !GetAtt ExecuteStateMachineFunctionRole.Arn
