@@ -3,7 +3,7 @@ import { SfnContainerHelper } from "./sfn-container-helper";
 
 jest.setTimeout(30_000);
 
-describe("nino-check-session", () => {
+describe("check-session", () => {
   let sfnContainer: SfnContainerHelper;
 
   beforeAll(async () => {

@@ -4,7 +4,7 @@ import path from "path";
 const EVENT_FILE = path.join(__dirname, "../../../events/sfn_valid_input.json");
 const STATE_MACHINE_FILE = path.join(
   __dirname,
-  "../../../../step-functions/nino_check_session.asl.json"
+  "../../../../step-functions/check_session.asl.json"
 );
 
 export const StepFunctionConstants = {
@@ -14,7 +14,7 @@ export const StepFunctionConstants = {
   EVENT_FILE,
   STATE_MACHINE_ASL: fs.readFileSync(STATE_MACHINE_FILE).toString(),
   EVENT_JSON_STRING: fs.readFileSync(EVENT_FILE).toString(),
-  STATE_MACHINE_NAME: "nino_check_session",
+  STATE_MACHINE_NAME: "check_session",
   AWS_ACCOUNT_ID: "123456789012",
   AWS_DEFAULT_REGION: "local",
   AWS_ACCESS_KEY_ID: "local",

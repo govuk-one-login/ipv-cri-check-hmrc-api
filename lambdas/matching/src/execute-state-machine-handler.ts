@@ -12,14 +12,13 @@ const sfnClient = new SFNClient({
 
 export class ExecuteStateMachineHandler implements LambdaInterface {
   public async handler(
-    event: any,
+    event: StateMachineProps,
     _context: unknown
   ): Promise<string | undefined> {
-    const body = event as unknown as StateMachineProps;
     try {
       const startMachineCommand = new StartSyncExecutionCommand({
-        stateMachineArn: body.stateMachineArn,
-        input: JSON.stringify(body.input),
+        stateMachineArn: event.stateMachineArn,
+        input: JSON.stringify(event.input),
       });
       const response = await sfnClient.send(startMachineCommand);
       return response.output;

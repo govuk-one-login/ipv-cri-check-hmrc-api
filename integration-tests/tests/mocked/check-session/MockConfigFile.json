@@ -1,6 +1,6 @@
 {
   "StateMachines": {
-    "nino_check_session": {
+    "check_session": {
       "TestCases": {
         "HappyPath": {
           "Fetch Current Time": "FetchCurrentTimeHappy",

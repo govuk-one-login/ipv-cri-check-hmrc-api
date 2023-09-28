@@ -387,7 +387,7 @@ Resources:
     Properties:
       Name: !Sub "${AWS::StackName}-CheckSession"
       Type: EXPRESS
-      DefinitionUri: ../step-functions/nino_check_session.asl.json
+      DefinitionUri: ../step-functions/check_session.asl.json
       DefinitionSubstitutions:
         CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
         CommonStackName: !Ref CommonStackName
