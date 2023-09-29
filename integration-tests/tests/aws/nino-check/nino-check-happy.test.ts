@@ -21,6 +21,7 @@ describe("nino-check-happy ", () => {
   let output: Partial<{
     CommonStackName: string;
     NinoAttemptsTable: string;
+    NinoUsersTable: string;
     NinoCheckStateMachineArn: string;
   }>;
 
@@ -68,10 +69,10 @@ describe("nino-check-happy ", () => {
     await clearItems(personIdentityTableName, {
       sessionId: input.sessionId,
     });
-    await clearItems("pdv-matching-nino-attempts", {
+    await clearItems(output.NinoAttemptsTable as string, {
       id: input.sessionId,
     });
-    await clearItems("pdv-matching-nino-users", {
+    await clearItems(output.NinoUsersTable as string, {
       sessionId: input.sessionId,
     });
   });
