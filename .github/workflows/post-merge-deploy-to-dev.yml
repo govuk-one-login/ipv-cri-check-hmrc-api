@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # deploy manually
-
 jobs:
   deploy:
     name: Deploy to dev
@@ -13,12 +11,18 @@ jobs:
     env:
       AWS_REGION: eu-west-2
       ENVIRONMENT: dev
+      STACK_NAME: pdv-matching
     permissions:
       id-token: write
       contents: read
     steps:
-      - name: Check out repository code
+      - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
 
       - name: Setup SAM
         uses: aws-actions/setup-sam@v2
@@ -26,17 +30,19 @@ jobs:
           version: 1.89.0
 
       - name: Assume temporary AWS role
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.DEV_GH_ACTIONS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.DEV_PRE_MERGE_GH_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: SAM Validate
+      - name: sam validate
         run: sam validate --region ${{ env.AWS_REGION }} -t infrastructure/template.yaml
 
-      - name: Deploy SAM app
-        uses: alphagov/di-devplatform-upload-action@v3.2
-        with:
-          artifact-bucket-name: "${{ secrets.DEV_ARTIFACT_SOURCE_BUCKET_NAME }}"
-          signing-profile-name: "${{ secrets.DEV_SIGNING_PROFILE_NAME }}"
-          template-file: infrastructure/template.yaml
+      - name: Install dependencies
+        run: npm --prefix integration-tests install
+
+      - name: sam build
+        run: sam build -t infrastructure/template.yaml
+
+      - name: sam deploy
+        run: sam deploy --config-file infrastructure/samconfig.toml --stack-name ${{ env.STACK_NAME }}
