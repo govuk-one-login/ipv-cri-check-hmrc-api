@@ -1,0 +1,29 @@
+name: Check PR
+
+on: pull_request
+permissions: read-all
+
+jobs:
+  run-unit-tests:
+    name: Run tests
+    uses: ./.github/workflows/run-unit-tests.yml
+
+  sonarcloud:
+    name: Code quality
+    needs: run-unit-tests
+    uses: ./.github/workflows/sonarcloud.yml
+    secrets:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
+      sonar-token: ${{ secrets.SONAR_TOKEN }}
+
+  pre-commit:
+    name: Code quality
+    uses: ./.github/workflows/pre-commit.yml
+
+  codeql:
+    name: Security
+    uses: ./.github/workflows/codeql.yml
+    permissions:
+      actions: read
+      contents: read
+      security-events: write

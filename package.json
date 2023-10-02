@@ -2,6 +2,7 @@
   "name": "di-ipv-cri-check-hmrc-api",
   "description": "",
   "workspaces": [
+    "integration-tests",
     "lambdas/*"
   ],
   "scripts": {

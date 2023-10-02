@@ -16,4 +16,5 @@ const config: Config.InitialOptions = {
     },
   },
 };
+
 export default config;

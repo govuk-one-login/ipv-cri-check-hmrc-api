@@ -8,11 +8,8 @@
     "lint:eslint": "eslint .",
     "lint": "npm run lint:prettier && npm run lint:eslint",
     "compile": "tsc",
-    "unit": "jest --config=jest.config.ts",
-    "test": "npm run compile && npm run unit"
-  },
-  "dependencies": {
-    "@aws-lambda-powertools/logger": "1.14.2",
-    "esbuild": "0.19.5"
+    "unit": "jest --silent",
+    "test": "npm run unit",
+    "coverage": "npm run unit -- --coverage"
   }
 }

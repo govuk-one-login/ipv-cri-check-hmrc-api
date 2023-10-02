@@ -1,9 +1,9 @@
 name: Package for Build
+
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
-  workflow_dispatch: # Deploy Manually
+    branches: [main]
 
 jobs:
   deploy:
@@ -42,6 +42,6 @@ jobs:
       - name: Deploy SAM app
         uses: govuk-one-login/devplatform-upload-action@v3.3
         with:
-          artifact-bucket-name: "${{ secrets.BUILD_ARTIFACT_SOURCE_BUCKET_NAME }}"
-          signing-profile-name: "${{ secrets.BUILD_SIGNING_PROFILE_NAME }}"
+          artifact-bucket-name: ${{ secrets.BUILD_ARTIFACT_SOURCE_BUCKET_NAME }}
+          signing-profile-name: ${{ secrets.BUILD_SIGNING_PROFILE_NAME }}
           working-directory: ./out
