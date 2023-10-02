@@ -9,21 +9,22 @@
 # the `language` matrix defined below to confirm you have the correct set of
 # supported CodeQL languages.
 #
-name: "CodeQL"
+name: Code quality
+permissions: read-all
 
 on:
   push:
-    branches:
-      - "main"
+    branches: [main, oj-1902-sonarcloud]
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [main]
   schedule:
+    # Every Sunday at 16:12
     - cron: "16 12 * * 0"
 
 jobs:
-  analyze:
-    name: Analyze
+  codeql:
+    name: CodeQL
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -39,7 +40,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
@@ -69,3 +70,23 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
+
+  sonarcloud:
+    name: SonarCloud
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'schedule' && github.actor != 'dependabot[bot]' }}
+
+    permissions: write-all
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
