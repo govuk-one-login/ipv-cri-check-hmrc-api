@@ -1,0 +1,42 @@
+import { CredentialSubjectBuilder } from "../src/credential-subject-builder";
+
+describe("CredentialSubjectBuilder", () => {
+  it("should create a CredentialSubject with the specified personalNumber and name", () => {
+    const credentialSubject = new CredentialSubjectBuilder()
+      .setPersonalNumber("SG1234567")
+      .addName("GivenName", "John")
+      .addName("FamilyName", "Doe")
+      .build();
+
+    expect(credentialSubject.socialSecurityRecord).toHaveLength(1);
+    expect(credentialSubject.socialSecurityRecord[0].personalNumber).toBe(
+      "SG1234567"
+    );
+    expect(credentialSubject.name).toHaveLength(1);
+    expect(credentialSubject.name[0].nameParts).toEqual([
+      { type: "GivenName", value: "John" },
+      { type: "FamilyName", value: "Doe" },
+    ]);
+  });
+
+  it("should create a CredentialSubject with multiple name parts", () => {
+    const nameParts = [
+      { type: "GivenName", value: "Alice" },
+      { type: "FamilyName", value: "Smith" },
+      { type: "GivenName", value: "John" },
+      { type: "FamilyName", value: "Smith" },
+    ];
+
+    const credentialSubject = new CredentialSubjectBuilder()
+      .setPersonalNumber("SG1234567")
+      .addNames(nameParts)
+      .build();
+
+    expect(credentialSubject.socialSecurityRecord).toHaveLength(1);
+    expect(credentialSubject.socialSecurityRecord[0].personalNumber).toBe(
+      "SG1234567"
+    );
+    expect(credentialSubject.name).toHaveLength(1);
+    expect(credentialSubject.name[0].nameParts).toEqual(nameParts);
+  });
+});
