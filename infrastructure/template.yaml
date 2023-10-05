@@ -427,6 +427,10 @@ Resources:
               - states:StartExecution
             Resource:
               - !Ref CheckSessionStateMachine
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -562,6 +566,10 @@ Resources:
             Action:
               - kms:Sign
             Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
 
   NinoIssueCredentialLogGroup:
     Type: AWS::Logs::LogGroup
