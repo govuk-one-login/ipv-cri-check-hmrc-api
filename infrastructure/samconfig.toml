@@ -1,8 +1,8 @@
 version = 0.1
 [default.deploy.parameters]
-stack_name = "pdv-matching"
+stack_name = "check-hmrc-cri-api"
 resolve_s3 = true
-s3_prefix = "pdv-matching"
+s3_prefix = "check-hmrc-cri-api"
 region = "eu-west-2"
 capabilities = "CAPABILITY_IAM"
 image_repositories = []
