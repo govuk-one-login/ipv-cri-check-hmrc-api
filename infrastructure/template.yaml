@@ -584,6 +584,33 @@ Resources:
       RetentionInDays: 30
 
 Outputs:
+  StackName:
+    Description: "CloudFormation stack name"
+    Value: !Sub "${AWS::StackName}"
+
+  ApiGatewayId:
+    Description: "API GatewayID of the Address CRI API"
+    Value: !Sub "${PublicNinoCheckApi}"
+    Export:
+      Name: !Sub ${AWS::StackName}-ApiGatewayId
+
+  PublicApiGatewayId:
+    Description: "API GatewayID of the public Address CRI API"
+    Value: !Sub "${PublicNinoCheckApi}"
+    Export:
+      Name: !Sub ${AWS::StackName}-PublicApiGatewayId
+
+  PrivateApiGatewayId:
+    Description: "API GatewayID of the private Address CRI API"
+    Value:
+      !If [
+        IsNotDevEnvironment,
+        !Ref PrivateNinoCheckApi,
+        !Ref DevOnlyNinoCheckApi,
+      ]
+    Export:
+      Name: !Sub ${AWS::StackName}-PrivateApiGatewayId
+
   CurrentTimeFunction:
     Description: "Fetch Current Time Function Arn"
     Value: !GetAtt CurrentTimeFunction.Arn
