@@ -4,6 +4,14 @@ Description: "Digital Identity IPV CRI Pdv-Matching API"
 
 Globals:
   Function:
+    VpcConfig:
+      SecurityGroupIds:
+        - !ImportValue cri-vpc-AWSServicesEndpointSecurityGroupId
+      SubnetIds:
+        [
+          !ImportValue cri-vpc-ProtectedSubnetIdA,
+          !ImportValue cri-vpc-ProtectedSubnetIdB,
+        ]
     Runtime: nodejs18.x
     Architectures:
       - arm64
@@ -441,10 +449,6 @@ Resources:
               - states:StartExecution
             Resource:
               - !Ref CheckSessionStateMachine
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
