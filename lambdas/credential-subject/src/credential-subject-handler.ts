@@ -16,7 +16,7 @@ export class CredentialSubjectHandler implements LambdaInterface {
   ): Promise<CredentialSubject> {
     try {
       return credentialSubjectBuilder
-        .setPersonalNumber(event.userInfoEvent.Items[0].nino.S)
+        .setPersonalNumber(event.nino)
         .addNames(this.convertToCredentialSubjectNames(event))
         .build();
     } catch (error: unknown) {

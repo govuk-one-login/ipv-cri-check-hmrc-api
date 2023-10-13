@@ -24,12 +24,10 @@ export type UserInfoEvent = {
             }
           ];
         };
-        nino: {
-          S: string;
-        };
       }
     ];
   };
+  nino: string;
 };
 
 export const mockUserInfoEventItem = {
@@ -52,10 +50,8 @@ export const mockUserInfoEventItem = {
             },
           ],
         },
-        nino: {
-          S: "BB000001D",
-        },
       },
     ],
   },
+  nino: "BB000001D",
 };
