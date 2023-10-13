@@ -165,8 +165,8 @@ paths:
           "200":
             statusCode: 200
             responseTemplates:
-              application/json:
-                Fn::Sub: $input.path('$').output
+              application/jwt:
+                Fn::Sub: $input.path('$').output.jwt
 
 components:
   schemas:
