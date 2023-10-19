@@ -21,7 +21,11 @@ export class MatchingHandler implements LambdaInterface {
           nino: event.nino,
         }),
       });
-      return await response.json();
+      try {
+        return await response.json();
+      } catch (error: unknown) {
+        return await response.text();
+      }
     } catch (error: unknown) {
       let message;
       if (error instanceof Error) message = error.message;
