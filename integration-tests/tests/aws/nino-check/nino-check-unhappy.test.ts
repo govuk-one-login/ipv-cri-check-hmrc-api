@@ -86,8 +86,14 @@ describe("nino-check-unhappy ", () => {
   });
 
   it("should fail when there is more than 2 nino check attempts", async () => {
-    await executeStepFunction(input, output.NinoCheckStateMachineArn);
-    await executeStepFunction(input, output.NinoCheckStateMachineArn);
+    await populateTable(
+      {
+        id: input.sessionId,
+        attempts: 2,
+      },
+      output.NinoAttemptsTable
+    );
+
     const startExecutionResult = await executeStepFunction(
       input,
       output.NinoCheckStateMachineArn
