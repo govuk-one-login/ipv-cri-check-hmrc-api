@@ -34,11 +34,28 @@
           "Set Auth Code for Session": "SetAuthCodeSuccess",
           "Save NINO & sessionId to nino-users table": "SaveNinoSuccess"
         },
-        "InValidRequestSessionIdNotPresent": "",
-        "InValidRequestNinoIdNotPresent": "",
+        "InValidRequestSessionId": {
+          "Invoke Check Session": "CheckSessionFailure"
+        },
         "MaximumNumberOfAttemptsExceeded": {
           "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "QueryUserAttemptFailureAfterMoreThanTwoAttempts"
+        },
+        "ErrorSavingInNinoDB": {
+          "Invoke Check Session": "CheckSessionSuccess",
+          "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
+          "Query Session": "QuerySessionSuccess",
+          "Get User Agent and API URL": "GetAPIParametersSuccess",
+          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call Matching API": "CallMatchingAPISuccess",
+          "Update status to PASS": "UpdateStatusToPassSuccess",
+          "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
+          "Fetch Session Table Name": "FetchSessionTableNameSuccess",
+          "Set Auth Code for Session": "SetAuthCodeSuccess",
+          "Save NINO & sessionId to nino-users table": "SaveNinoFailure"
         },
         "UserNotFoundForGivenNino": {
           "Invoke Check Session": "CheckSessionSuccess",
@@ -58,6 +75,28 @@
           "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPIFailAuth"
+        },
+        "MatchingLambdaException": {
+          "Invoke Check Session": "CheckSessionSuccess",
+          "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
+          "Query Session": "QuerySessionSuccess",
+          "Get User Agent and API URL": "GetAPIParametersSuccess",
+          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call Matching API": "CallMatchingAPIInvalidURL"
+        },
+        "HMRCError": {
+          "Invoke Check Session": "CheckSessionSuccess",
+          "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
+          "Query Session": "QuerySessionSuccess",
+          "Get User Agent and API URL": "GetAPIParametersSuccess",
+          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call Matching API": "CallMatchingAPIFailNoRecords"
         }
       }
     }
@@ -71,12 +110,28 @@
         }
       }
     },
+    "CheckSessionFailure": {
+      "0": {
+        "Return": {
+          "Payload": "{\"status\":\"SESSION_NOT_FOUND\"}"
+        }
+      }
+    },
     "CallMatchingAPIFailAuth": {
       "0": {
         "Return": {
           "Payload": {
             "code": "INVALID_CREDENTIALS",
             "message": "Invalid Authentication information provided"
+          }
+        }
+      }
+    },
+    "CallMatchingAPIFailNoRecords": {
+      "0": {
+        "Return": {
+          "Payload": {
+            "errors": "CID returned no record"
           }
         }
       }
@@ -245,6 +300,14 @@
         "Return": {}
       }
     },
+    "SaveNinoFailure": {
+      "0": {
+        "Return": {
+          "Error": "DynamoDB.ConditionalCheckFailedException",
+          "Cause": "The conditional request failed (Service: AmazonDynamoDBv2; Status Code: 400; Error Code: ConditionalCheckFailedException; Request ID: GLFM5VOVLKH9CS8PELO5C6DUHNVV4KQNSO5AEMVJF66Q9ASUAAJG; Proxy: null)"
+        }
+      }
+    },
     "UpdateStatusToPassSuccess": {
       "0": {
         "Return": {
@@ -390,6 +453,14 @@
             "dateOfBirth": "1948-04-23",
             "nino": "AA000003D"
           }
+        }
+      }
+    },
+    "CallMatchingAPIInvalidURL": {
+      "0": {
+        "Return": {
+          "Error": "TypeError",
+          "Cause": "{\"errorType\":\"TypeError\",\"errorMessage\":\"Failed to parse URL from bad-url\",\"trace\":[\"TypeError: Failed to parse URL from bad-url\",\"    at Object.fetch (node:internal/deps/undici/undici:11576:11)\",\"    at le.handler (/private/var/folders/kr/xcxbzv7d5nbfvrzcsdwf81j00000gp/T/tmpaetgolsq/src/matching-handler.ts:10:24)\"]}"
         }
       }
     }
