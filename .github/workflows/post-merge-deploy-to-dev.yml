@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch: # Deploy Manually
+
 jobs:
   deploy:
     name: Deploy to dev
