@@ -2,7 +2,7 @@ import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import { clearItems, populateTable } from "../resources/dynamodb-helper";
 
-describe("nino-check-happy ", () => {
+describe("nino-check-happy", () => {
   const input = {
     sessionId: "123456789",
     nino: "AA000003D",

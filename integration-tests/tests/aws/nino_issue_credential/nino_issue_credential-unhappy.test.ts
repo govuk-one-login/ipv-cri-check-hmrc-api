@@ -1,23 +1,15 @@
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import { clearItems, populateTable } from "../resources/dynamodb-helper";
-import {
-  getSSMParamter,
-  ssmParamterUpdate,
-} from "../resources/ssm-param-helper";
-import {
-  getSecretParamValue,
-  secretManagerUpdate,
-} from "../resources/secret-manager-helper";
 
-describe("nino-check-unhappy ", () => {
+describe("nino-issue-credential-unhappy", () => {
   const input = {
     sessionId: "123456789",
-    nino: "AB123003C",
+    nino: "AA000003D",
   };
 
   const testUser = {
-    nino: "AB123003C",
+    nino: "AA000003D",
     dob: "1948-04-23",
     firstName: "Jim",
     lastName: "Ferguson",
@@ -30,7 +22,7 @@ describe("nino-check-unhappy ", () => {
     CommonStackName: string;
     NinoAttemptsTable: string;
     NinoUsersTable: string;
-    NinoCheckStateMachineArn: string;
+    NinoIssueCredentialStateMachineArn: string;
   }>;
 
   beforeEach(async () => {
@@ -40,8 +32,20 @@ describe("nino-check-unhappy ", () => {
 
     await populateTable(
       {
-        sessionId: input.sessionId,
-        expiryDate: 9999999999,
+        sessionId: "123456789",
+        nino: "AA000003D",
+      },
+      output.NinoUsersTable
+    );
+
+    await populateTable(
+      {
+        sessionId: "123456789",
+        accessToken: "Bearer test",
+        authorizationCode: "cd8ff974-d3bc-4422-9b38-a3e5eb24adc0",
+        authorizationCodeExpiryDate: "1698925598",
+        expiryDate: "9999999999",
+        subject: "test",
       },
       sessionTableName
     );
@@ -68,6 +72,15 @@ describe("nino-check-unhappy ", () => {
       },
       personIdentityTableName
     );
+
+    await populateTable(
+      {
+        id: "123456789",
+        attempts: 3,
+        outcome: "FAIL",
+      },
+      output.NinoAttemptsTable
+    );
   });
 
   afterEach(async () => {
@@ -85,128 +98,78 @@ describe("nino-check-unhappy ", () => {
     });
   });
 
-  it("should fail when there is more than 2 nino check attempts", async () => {
-    await populateTable(
-      {
-        id: input.sessionId,
-        attempts: 2,
-      },
-      output.NinoAttemptsTable
-    );
-
-    const startExecutionResult = await executeStepFunction(
-      input,
-      output.NinoCheckStateMachineArn
-    );
-    expect(startExecutionResult.output).toBe(
-      '{"error":"Maximum number of attempts exceeded"}'
-    );
-  });
-
-  it("should fail when there is no user present for given nino", async () => {
-    await clearItems(personIdentityTableName, {
-      sessionId: input.sessionId,
-    });
-    const startExecutionResult = await executeStepFunction(
-      input,
-      output.NinoCheckStateMachineArn
-    );
-    expect(startExecutionResult.output).toBe(
-      '{"error":"No user found for given nino"}'
-    );
-  });
-
-  it("should fail when session id is invalid", async () => {
-    await clearItems(sessionTableName, {
-      sessionId: input.sessionId,
-    });
-    const startExecutionResult = await executeStepFunction(
-      input,
-      output.NinoCheckStateMachineArn
-    );
-    expect(startExecutionResult.output).toBe(
-      '{"error":"Session is not valid or has expired"}'
-    );
-    expect(startExecutionResult.status).toBe("SUCCEEDED");
-  });
-
-  it("should fail when user record already present in nino user table", async () => {
-    await populateTable(
-      {
-        sessionId: "123456789",
-        nino: "AA000003D",
-      },
-      output.NinoUsersTable
-    );
+  it("should fail when nino check is unsuccessful", async () => {
     const startExecutionResult = await executeStepFunction(
       {
-        sessionId: "123456789",
-        nino: "AA000003D",
+        bearerToken: "Bearer test",
       },
-      output.NinoCheckStateMachineArn
+      output.NinoIssueCredentialStateMachineArn
     );
 
-    expect(startExecutionResult.status).toBe("FAILED");
+    const token = JSON.parse(startExecutionResult.output as any);
+
+    const [headerEncoded, payloadEncoded, signatureEncoded] =
+      token.jwt.split(".");
+
+    const header = JSON.parse(decodeBase64(headerEncoded));
+    const payload = JSON.parse(decodeBase64(payloadEncoded));
+    const signature = decodeBase64(signatureEncoded);
+
+    expect(header.typ).toBe("JWT");
+    expect(header.alg).toBe("ES256");
+    expect(header.kid).not.toBeNull;
+
+    const evidence = payload.vc.evidence[0];
+    expect(evidence.type).toBe("IdentityCheck");
+    expect(evidence.strengthScore).toBe(2);
+    expect(evidence.validityScore).toBe(0);
+    expect(evidence.failedCheckDetails[0].checkMethod).toBe("data");
+    expect(evidence.ci[0]).toBe("D02");
+    expect(evidence.txn).not.toBeNull;
+
+    const credentialSubject = payload.vc.credentialSubject;
+    expect(credentialSubject.socialSecurityRecord[0].personalNumber).toBe(
+      testUser.nino
+    );
+    expect(credentialSubject.name[0].nameParts[0].type).toBe("GivenName");
+    expect(credentialSubject.name[0].nameParts[0].value).toBe(
+      testUser.firstName
+    );
+    expect(credentialSubject.name[0].nameParts[1].type).toBe("FamilyName");
+    expect(credentialSubject.name[0].nameParts[1].value).toBe(
+      testUser.lastName
+    );
+
+    expect(payload.vc.type[0]).toBe("VerifiableCredential");
+    expect(payload.vc.type[1]).toBe("IdentityCheckCredential");
+
+    expect(payload.vc["@context"][0]).toBe(
+      "https://www.w3.org/2018/credentials/v1"
+    );
+    expect(payload.vc["@context"][1]).toBe(
+      "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld"
+    );
+
+    expect(payload.sub).not.toBeNull;
+    expect(isValidTimestamp(payload.nbf)).toBe(true);
+    expect(payload.iss).not.toBeNull;
+    expect(isValidTimestamp(payload.exp)).toBe(true);
+    expect(payload.jti).not.toBeNull;
+
+    expect(signature).not.toBeNull;
   });
 
-  it("should fail when user nino does not match with HMRC DB", async () => {
-    const startExecutionResult = await executeStepFunction(
-      input,
-      output.NinoCheckStateMachineArn
-    );
-    expect(startExecutionResult.output).toBe(
-      '{"error":"CID returned no record"}'
-    );
-  });
+  function decodeBase64(input: string): string {
+    const base64Url = input.replace(/-/g, "+").replace(/_/g, "/");
+    const padding = input.length % 4;
+    const base64 = padding
+      ? base64Url + "==".substring(0, 4 - padding)
+      : base64Url;
 
-  it("should throw an error when url is unavailable", async () => {
-    const urlParameterName = `/${process.env.STACK_NAME}/NinoCheckUrl`;
+    return Buffer.from(base64, "base64").toString("utf-8");
+  }
 
-    const currentURL = (await getSSMParamter({
-      Name: urlParameterName,
-    })) as any;
-
-    await ssmParamterUpdate({
-      Name: urlParameterName,
-      Value: "bad-url",
-      Type: "String",
-      Overwrite: true,
-    });
-
-    const startExecutionResult = await executeStepFunction(
-      input,
-      output.NinoCheckStateMachineArn
-    );
-
-    await ssmParamterUpdate({
-      Name: urlParameterName,
-      Value: currentURL.Parameter.Value,
-      Type: "String",
-      Overwrite: true,
-    });
-
-    expect(startExecutionResult.status).toEqual("FAILED");
-  });
-  it("should throw an error when token is invalid", async () => {
-    const currentValue = (await getSecretParamValue({
-      SecretId: "HMRCBearerToken",
-    })) as any;
-
-    await secretManagerUpdate({
-      SecretId: "HMRCBearerToken",
-      SecretString: "bad-value",
-    });
-
-    const startExecutionResult = await executeStepFunction(
-      input,
-      output.NinoCheckStateMachineArn
-    );
-
-    await secretManagerUpdate({
-      SecretId: "HMRCBearerToken",
-      SecretString: currentValue.SecretString,
-    });
-
-    expect(startExecutionResult.status).toEqual("FAILED");
-  });
+  function isValidTimestamp(timestamp: number): boolean {
+    return !isNaN(new Date(timestamp).getTime());
+  }
 });
