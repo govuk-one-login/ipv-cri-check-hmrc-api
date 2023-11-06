@@ -672,6 +672,10 @@ Outputs:
     Description: "Session Check StateMachine Arn"
     Value: !GetAtt CheckSessionStateMachine.Arn
 
+  NinoIssueCredentialStateMachineArn:
+    Description: "Nino Issue Credential StateMachine Arn"
+    Value: !GetAtt NinoIssueCredentialStateMachine.Arn
+
   CommonStackName:
     Description: "Common Stack Name"
     Value: !Ref CommonStackName
