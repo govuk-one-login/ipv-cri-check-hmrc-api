@@ -13,9 +13,6 @@
     "coverage": "npm run unit -- --coverage"
   },
   "dependencies": {
-    "@aws-lambda-powertools/logger": "1.14.2",
-    "@aws-sdk/client-sfn": "^3.395.0",
-    "@aws-sdk/credential-providers": "^3.397.0",
-    "esbuild": "0.17.18"
+    "@aws-sdk/client-sfn": "^3.395.0"
   }
 }

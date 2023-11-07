@@ -17,6 +17,7 @@ Globals:
     Architectures:
       - arm64
     Timeout: 30
+    CodeUri: ..
     PermissionsBoundary: !If
       - UsePermissionsBoundary
       - !Ref PermissionsBoundary
@@ -378,58 +379,48 @@ Resources:
 
   MatchingFunction:
     Type: AWS::Serverless::Function
-    Properties:
-      Handler: lambdas/matching/src/matching-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
-        Minify: true
-        Target: "es2020"
         Sourcemap: true
+    Properties:
+      Handler: lambdas/matching/src/matching-handler.lambdaHandler
 
   TimeFunction:
     Type: AWS::Serverless::Function
-    Properties:
-      Handler: lambdas/issue-credential/src/time-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
-        Minify: true
-        Target: "es2020"
         Sourcemap: true
+    Properties:
+      Handler: lambdas/issue-credential/src/time-handler.lambdaHandler
 
   CreateAuthCodeFunction:
     Type: AWS::Serverless::Function
-    Properties:
-      Handler: lambdas/matching/src/create-auth-code-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
-        Minify: true
-        Target: "es2020"
         Sourcemap: true
+    Properties:
+      Handler: lambdas/matching/src/create-auth-code-handler.lambdaHandler
 
   CurrentTimeFunction:
     Type: AWS::Serverless::Function
-    Properties:
-      Handler: lambdas/matching/src/current-time-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
-        Minify: true
-        Target: "es2020"
         Sourcemap: true
+    Properties:
+      Handler: lambdas/matching/src/current-time-handler.lambdaHandler
 
   CredentialSubjectFunction:
     Type: AWS::Serverless::Function
-    Properties:
-      Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
-        Minify: true
-        Target: "es2020"
         Sourcemap: true
+    Properties:
+      Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
 
   CheckSessionStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -464,9 +455,12 @@ Resources:
 
   ExecuteStateMachineFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
     Properties:
-      CodeUri: ../lambdas/matching
-      Handler: execute-state-machine-handler.lambdaHandler
+      Handler: lambdas/matching/src/execute-state-machine-handler.lambdaHandler
       Timeout: 60
       Policies:
         - Statement:
@@ -476,14 +470,6 @@ Resources:
               - states:StartExecution
             Resource:
               - !Ref CheckSessionStateMachine
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: "es2020"
-        Sourcemap: true
-        EntryPoints:
-          - src/execute-state-machine-handler.ts
 
   NinoCheckStateMachine:
     Type: AWS::Serverless::StateMachine
