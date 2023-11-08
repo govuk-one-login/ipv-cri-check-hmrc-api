@@ -14,7 +14,7 @@ describe("matching-handler", () => {
       json: jest.fn().mockResolvedValueOnce({
         firstName: "Jim",
         lastName: "Ferguson",
-        dob: "1948-04-23",
+        dateOfBirth: "1948-04-23",
         nino: "AA000003D",
       }),
     });
@@ -23,18 +23,10 @@ describe("matching-handler", () => {
       sessionId: "12346",
       nino: "AA000003D",
       userDetails: {
-        firstName: {
-          S: "Jim",
-        },
-        lastName: {
-          S: "Ferguson",
-        },
-        dob: {
-          S: "1948-04-23",
-        },
-        nino: {
-          S: "AA000003D",
-        },
+        firstName: "Jim",
+        lastName:  "Ferguson",
+        dob: "1948-04-23",
+        nino: "AA000003D",
       },
       userAgent: "govuk-one-login",
       apiURL:
@@ -45,7 +37,7 @@ describe("matching-handler", () => {
     expect(result).toStrictEqual({
       firstName: "Jim",
       lastName: "Ferguson",
-      dob: "1948-04-23",
+      dateOfBirth: "1948-04-23",
       nino: "AA000003D",
     });
   });
