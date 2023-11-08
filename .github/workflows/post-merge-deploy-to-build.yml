@@ -34,9 +34,14 @@ jobs:
       - name: SAM Validate
         run: sam validate --region ${{ env.AWS_REGION }} -t infrastructure/template.yaml
 
+      - name: SAM build
+        run: |
+          mkdir out
+          sam build -t infrastructure/template.yaml -b out/
+
       - name: Deploy SAM app
         uses: govuk-one-login/devplatform-upload-action@v3.3
         with:
           artifact-bucket-name: "${{ secrets.BUILD_ARTIFACT_SOURCE_BUCKET_NAME }}"
           signing-profile-name: "${{ secrets.BUILD_SIGNING_PROFILE_NAME }}"
-          template-file: "infrastructure/template.yaml"
+          working-directory: ./out
