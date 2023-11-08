@@ -24,7 +24,7 @@ describe("matching-handler", () => {
       nino: "AA000003D",
       userDetails: {
         firstName: "Jim",
-        lastName:  "Ferguson",
+        lastName: "Ferguson",
         dob: "1948-04-23",
         nino: "AA000003D",
       },
