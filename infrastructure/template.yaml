@@ -91,6 +91,16 @@ Conditions:
     - dev
   IsNotDevEnvironment: !Not
     - Condition: IsDevEnvironment
+  IsStubEnvironment: !Or
+    - !Equals [ !Ref Environment, dev ]
+    - !Equals [ !Ref Environment, build ]
+    - !Equals [ !Ref Environment, integration ]
+  IsStagingEnvironment: !Equals
+    - !Ref Environment
+    - staging
+  IsProductionEnvironment: !Equals
+    - !Ref Environment
+    - production
 
 Resources:
   UserAgent:
@@ -105,9 +115,21 @@ Resources:
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/${AWS::StackName}/NinoCheckUrl"
-      Value: https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match
       Type: String
       Description: URL for HMRC /check endpoint
+      Value:
+        Fn::If:
+          - IsStubEnvironment
+          - Fn::Sub:
+              - "${ImposterApiUrl}/individuals/authentication/authenticator/api/match"
+              - { ImposterApiUrl: !ImportValue third-party-stubs-ImposterStubApiUrl }
+          - Fn::If:
+              - IsStagingEnvironment
+              - "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
+              - Fn::If:
+                  - IsProductionEnvironment
+                  - "https://api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
+                  - ""
 
   MaxJwtTtlParameter:
     Type: AWS::SSM::Parameter
