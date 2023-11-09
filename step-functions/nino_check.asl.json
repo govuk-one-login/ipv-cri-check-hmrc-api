@@ -4,20 +4,16 @@
   "States": {
     "Invoke Check Session": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "Parameters": {
-        "Payload": {
-          "stateMachineArn": "${CheckSessionStateMachineArn}",
-          "input": {
-            "sessionId.$": "$.sessionId"
-          }
-        },
-        "FunctionName": "${ExecuteStateMachineFunctionName}"
-      },
       "Next": "Is Session Valid?",
-      "ResultPath": "$.sessionCheck",
+      "Parameters": {
+        "StateMachineArn": "${CheckSessionStateMachineArn}",
+        "Input.$": "States.JsonToString($)"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:sfn:startSyncExecution",
       "ResultSelector": {
-        "result.$": "States.StringToJson($.Payload)"
+        "sessionId.$": "$$.Execution.Input.sessionId",
+        "nino.$": "$$.Execution.Input.nino",
+        "sessionCheck.$": "States.StringToJson($.Output)"
       }
     },
     "Is Session Valid?": {
@@ -25,7 +21,7 @@
       "Choices": [
         {
           "Not": {
-            "Variable": "$.sessionCheck.result.status",
+            "Variable": "$.sessionCheck.status",
             "StringMatches": "SESSION_OK"
           },
           "Next": "Err: Invalid Session"
