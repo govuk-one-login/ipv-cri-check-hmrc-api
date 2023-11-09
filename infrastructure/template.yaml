@@ -121,7 +121,7 @@ Resources:
         Fn::If:
           - IsStubEnvironment
           - Fn::Sub:
-              - "${ImposterApiUrl}/individuals/authentication/authenticator/api/match"
+              - "${ImposterApiUrl}/individuals/authentication/authenticator/api/match?stageName=third-party-stubs-ImposterStubFunction"
               - {
                   ImposterApiUrl: !ImportValue third-party-stubs-ImposterStubApiUrl,
                 }
