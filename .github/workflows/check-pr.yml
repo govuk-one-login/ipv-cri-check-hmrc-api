@@ -1,6 +1,10 @@
 name: Check PR
 
-on: pull_request
+on:
+  pull_request:
+  push:
+    branches: [oj-1902-sonarcloud]
+
 permissions: read-all
 
 jobs:
@@ -9,16 +13,25 @@ jobs:
     uses: ./.github/workflows/run-unit-tests.yml
 
   sonarcloud:
-    name: Code quality
+    name: SonarCloud
+    runs-on: ubuntu-latest
     needs: run-unit-tests
-    uses: ./.github/workflows/sonarcloud.yml
-    secrets:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
-      sonar-token: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Run a SonarCloud scan
+        uses: govuk-one-login/github-actions/code-quality/sonarcloud@f56c51a266f46a89ff7fc8d9068cfc7a66a3a5b4
+        with:
+          coverage-artifact: coverage
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
 
   pre-commit:
-    name: Code quality
-    uses: ./.github/workflows/pre-commit.yml
+    name: pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run pre-commit
+        uses: govuk-one-login/github-actions/code-quality/run-pre-commit@df9647d3b26270963a3c013feee09b0e72887795
+        with:
+          all-files: true
 
   codeql:
     name: Security
