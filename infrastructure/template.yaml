@@ -15,7 +15,7 @@ Globals:
     Runtime: nodejs18.x
     Architectures:
       - arm64
-    Timeout: 3
+    Timeout: 30
     PermissionsBoundary: !If
       - UsePermissionsBoundary
       - !Ref PermissionsBoundary
@@ -91,6 +91,16 @@ Conditions:
     - dev
   IsNotDevEnvironment: !Not
     - Condition: IsDevEnvironment
+  IsStubEnvironment: !Or
+    - !Equals [!Ref Environment, dev]
+    - !Equals [!Ref Environment, build]
+    - !Equals [!Ref Environment, integration]
+  IsStagingEnvironment: !Equals
+    - !Ref Environment
+    - staging
+  IsProductionEnvironment: !Equals
+    - !Ref Environment
+    - production
 
 Resources:
   UserAgent:
@@ -105,9 +115,23 @@ Resources:
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/${AWS::StackName}/NinoCheckUrl"
-      Value: https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match
       Type: String
       Description: URL for HMRC /check endpoint
+      Value:
+        Fn::If:
+          - IsStubEnvironment
+          - Fn::Sub:
+              - "${ImposterApiUrl}/individuals/authentication/authenticator/api/match"
+              - {
+                  ImposterApiUrl: !ImportValue third-party-stubs-ImposterStubApiUrl,
+                }
+          - Fn::If:
+              - IsStagingEnvironment
+              - "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
+              - Fn::If:
+                  - IsProductionEnvironment
+                  - "https://api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
+                  - ""
 
   MaxJwtTtlParameter:
     Type: AWS::SSM::Parameter
@@ -504,6 +528,13 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${BearerTokenName}-??????
+        - Statement:
+            Effect: Allow
+            Action:
+              - states:StartSyncExecution
+              - states:StartExecution
+            Resource:
+              - !Ref CheckSessionStateMachine
         - Statement:
             Effect: Allow
             Action:
