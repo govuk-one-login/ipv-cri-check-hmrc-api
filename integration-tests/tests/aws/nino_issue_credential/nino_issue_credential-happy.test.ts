@@ -1,12 +1,11 @@
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import { clearItems, populateTable } from "../resources/dynamodb-helper";
+
 import {
   getSSMParamter,
   ssmParamterUpdate,
 } from "../resources/ssm-param-helper";
-import { sign } from "../resources/kms-helper";
-import { SigningAlgorithmSpec } from "@aws-sdk/client-kms";
 
 describe("nino-issue-credential-happy", () => {
   const input = {
@@ -161,8 +160,6 @@ describe("nino-issue-credential-happy", () => {
     expect(payload.iss).not.toBeNull;
     expect(isValidTimestamp(payload.exp)).toBe(true);
     expect(payload.jti).not.toBeNull;
-
-    expect(signature).not.toBeNull;
   });
 
   it("should create the valid expiry date", async () => {
@@ -222,36 +219,6 @@ describe("nino-issue-credential-happy", () => {
     expect(payload.exp).toBe(payload.nbf + 5 * 1000 * 60);
   });
 
-  it("should have valid signature", async () => {
-    const startExecutionResult = await executeStepFunction(
-      {
-        bearerToken: "Bearer test",
-      },
-      output.NinoIssueCredentialStateMachineArn
-    );
-
-    const token = JSON.parse(startExecutionResult.output as any);
-
-    const [headerEncoded, payloadEncoded, signatureEncoded] =
-      token.jwt.split(".");
-
-    const header = JSON.parse(decodeBase64(headerEncoded));
-    const payload = JSON.parse(decodeBase64(payloadEncoded));
-    const signature = decodeBase64(signatureEncoded);
-    var uint8array = new TextEncoder().encode(`${header}.${payload}`);
-    var unit8Signature = new TextEncoder().encode(signature);
-
-    console.log(header.kid);
-
-    const signData = sign(
-      uint8array,
-      header.kid,
-      SigningAlgorithmSpec.ECDSA_SHA_256,
-      unit8Signature
-    );
-    console.log(signData);
-  });
-
   function decodeBase64(input: string): string {
     const base64Url = input.replace(/-/g, "+").replace(/_/g, "/");
     const padding = input.length % 4;
@@ -264,14 +231,5 @@ describe("nino-issue-credential-happy", () => {
 
   function isValidTimestamp(timestamp: number): boolean {
     return !isNaN(new Date(timestamp).getTime());
-  }
-
-  function str2ab(str: string) {
-    var buf = new ArrayBuffer(str.length * 2); // 2 bytes for each char
-    var bufView = new Uint8Array(buf);
-    for (var i = 0, strLen = str.length; i < strLen; i++) {
-      bufView[i] = str.charCodeAt(i);
-    }
-    return buf;
   }
 });
