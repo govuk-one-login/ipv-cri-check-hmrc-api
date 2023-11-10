@@ -106,14 +106,14 @@
     "CheckSessionSuccess": {
       "0": {
         "Return": {
-          "Payload": "{\"status\":\"SESSION_OK\"}"
+          "Output": "{\"status\": \"SESSION_OK\"}"
         }
       }
     },
     "CheckSessionFailure": {
       "0": {
         "Return": {
-          "Payload": "{\"status\":\"SESSION_NOT_FOUND\"}"
+          "Output": "{\"status\": \"SESSION_NOT_FOUND\"}"
         }
       }
     },
