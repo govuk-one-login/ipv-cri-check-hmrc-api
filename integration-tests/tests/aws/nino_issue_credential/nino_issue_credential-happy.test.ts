@@ -111,18 +111,23 @@ describe("nino-issue-credential-happy", () => {
       output.NinoIssueCredentialStateMachineArn
     );
 
+    const verifiableCredentialKmsSigningKeyId = `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`;
+
+    const currentCredentialKmsSigningKeyId = (await getSSMParamter({
+      Name: verifiableCredentialKmsSigningKeyId,
+    })) as any;
+
     const token = JSON.parse(startExecutionResult.output as any);
 
     const [headerEncoded, payloadEncoded, signatureEncoded] =
       token.jwt.split(".");
 
-    const header = JSON.parse(decodeBase64(headerEncoded));
-    const payload = JSON.parse(decodeBase64(payloadEncoded));
-    const signature = decodeBase64(signatureEncoded);
+    const header = JSON.parse(atob(headerEncoded));
+    const payload = JSON.parse(atob(payloadEncoded));
 
     expect(header.typ).toBe("JWT");
     expect(header.alg).toBe("ES256");
-    expect(header.kid).not.toBeNull;
+    expect(header.kid).toBe(currentCredentialKmsSigningKeyId.Parameter.Value);
 
     const evidence = payload.vc.evidence[0];
     expect(evidence.type).toBe("IdentityCheck");
@@ -211,23 +216,12 @@ describe("nino-issue-credential-happy", () => {
 
     const token = JSON.parse(startExecutionResult.output as any);
 
-    const [headerEncoded, payloadEncoded, signatureEncoded] =
-      token.jwt.split(".");
+    const payloadEncoded = token.jwt.split(".")[1];
 
-    const payload = JSON.parse(decodeBase64(payloadEncoded));
+    const payload = JSON.parse(atob(payloadEncoded));
 
     expect(payload.exp).toBe(payload.nbf + 5 * 1000 * 60);
   });
-
-  function decodeBase64(input: string): string {
-    const base64Url = input.replace(/-/g, "+").replace(/_/g, "/");
-    const padding = input.length % 4;
-    const base64 = padding
-      ? base64Url + "==".substring(0, 4 - padding)
-      : base64Url;
-
-    return Buffer.from(base64, "base64").toString("utf-8");
-  }
 
   function isValidTimestamp(timestamp: number): boolean {
     return !isNaN(new Date(timestamp).getTime());

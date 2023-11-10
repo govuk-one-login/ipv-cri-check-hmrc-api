@@ -76,7 +76,7 @@ describe("nino-issue-credential-unhappy", () => {
     await populateTable(
       {
         id: "123456789",
-        attempts: 3,
+        attempts: 2,
         outcome: "FAIL",
       },
       output.NinoAttemptsTable
@@ -111,9 +111,9 @@ describe("nino-issue-credential-unhappy", () => {
     const [headerEncoded, payloadEncoded, signatureEncoded] =
       token.jwt.split(".");
 
-    const header = JSON.parse(decodeBase64(headerEncoded));
-    const payload = JSON.parse(decodeBase64(payloadEncoded));
-    const signature = decodeBase64(signatureEncoded);
+    const header = JSON.parse(atob(headerEncoded));
+    const payload = JSON.parse(atob(payloadEncoded));
+    const signature = atob(signatureEncoded);
 
     expect(header.typ).toBe("JWT");
     expect(header.alg).toBe("ES256");
@@ -158,16 +158,6 @@ describe("nino-issue-credential-unhappy", () => {
 
     expect(signature).not.toBeNull;
   });
-
-  function decodeBase64(input: string): string {
-    const base64Url = input.replace(/-/g, "+").replace(/_/g, "/");
-    const padding = input.length % 4;
-    const base64 = padding
-      ? base64Url + "==".substring(0, 4 - padding)
-      : base64Url;
-
-    return Buffer.from(base64, "base64").toString("utf-8");
-  }
 
   function isValidTimestamp(timestamp: number): boolean {
     return !isNaN(new Date(timestamp).getTime());
