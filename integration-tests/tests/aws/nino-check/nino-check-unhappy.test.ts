@@ -10,7 +10,7 @@ import {
   secretManagerUpdate,
 } from "../resources/secret-manager-helper";
 
-describe("nino-check-unhappy ", () => {
+describe("nino-check-unhappy", () => {
   const input = {
     sessionId: "123456789",
     nino: "AB123003C",
