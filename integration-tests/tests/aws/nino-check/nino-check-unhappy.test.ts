@@ -194,7 +194,7 @@ describe("nino-check-unhappy", () => {
 
     await secretManagerUpdate({
       SecretId: "HMRCBearerToken",
-      SecretString: "bad-value",
+      SecretString: "badToken",
     });
 
     const startExecutionResult = await executeStepFunction(
