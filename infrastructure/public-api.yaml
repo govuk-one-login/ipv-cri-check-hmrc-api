@@ -175,12 +175,12 @@ paths:
                 #end
                 #if($err == true)
                 #set($context.responseOverride.status = 400)
+                $resp.output
                 #elseif($resp.status == "FAILED")
                 #set($context.responseOverride.status = 500)
                 $resp.cause
                 #end
                 $params.jwt
-                $resp.output
 
 components:
   schemas:
