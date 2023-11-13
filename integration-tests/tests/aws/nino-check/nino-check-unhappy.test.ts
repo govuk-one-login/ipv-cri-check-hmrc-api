@@ -10,6 +10,8 @@ import {
   secretManagerUpdate,
 } from "../resources/secret-manager-helper";
 
+jest.setTimeout(30_000);
+
 describe("nino-check-unhappy", () => {
   const input = {
     sessionId: "123456789",

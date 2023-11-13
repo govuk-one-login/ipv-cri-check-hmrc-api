@@ -2,6 +2,8 @@ import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import { clearItems, populateTable } from "../resources/dynamodb-helper";
 
+jest.setTimeout(30_000);
+
 describe("nino-issue-credential-unhappy", () => {
   const input = {
     sessionId: "123456789",
@@ -106,7 +108,7 @@ describe("nino-issue-credential-unhappy", () => {
       output.NinoIssueCredentialStateMachineArn
     );
 
-    const token = JSON.parse(startExecutionResult.output as any);
+    const token = JSON.parse(startExecutionResult.output as never);
 
     const [headerEncoded, payloadEncoded, signatureEncoded] =
       token.jwt.split(".");

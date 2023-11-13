@@ -7,6 +7,8 @@ import {
   ssmParamterUpdate,
 } from "../resources/ssm-param-helper";
 
+jest.setTimeout(30_000);
+
 describe("nino-issue-credential-happy", () => {
   const input = {
     sessionId: "123456789",
