@@ -112,7 +112,7 @@ paths:
       - name: Authorization
         in: header
         required: true
-        description: "A valid access_token (e.g.: authorization: Bearer access-token-value)."
+        description: "A valid access_token (e.g.: Authorization: Bearer <access-token-value>)."
         schema:
           type: string
     post:
@@ -180,6 +180,7 @@ paths:
                 $resp.cause
                 #end
                 $params.jwt
+                $resp.output
 
 components:
   schemas:
