@@ -2,6 +2,8 @@ import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import { clearItems, populateTable } from "../resources/dynamodb-helper";
 
+jest.setTimeout(30_000);
+
 describe("nino-check-happy", () => {
   const input = {
     sessionId: "123456789",

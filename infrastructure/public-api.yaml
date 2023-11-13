@@ -112,7 +112,7 @@ paths:
       - name: Authorization
         in: header
         required: true
-        description: "A valid access_token (e.g.: authorization: Bearer access-token-value)."
+        description: "A valid access_token (e.g.: Authorization: Bearer <access-token-value>)."
         schema:
           type: string
     post:
@@ -162,12 +162,24 @@ paths:
                 "stateMachineArn": "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-NinoIssueCredential"
               }
         responses:
-          "200":
+          default:
             statusCode: 200
             responseTemplates:
               application/jwt: |
                 #set($resp = $util.parseJson($input.body))
                 #set($params = $util.parseJson($resp.output))
+                #foreach($paramName in $params.keySet())
+                #if($paramName == 'error')
+                #set($err = true)
+                #end
+                #end
+                #if($err == true)
+                #set($context.responseOverride.status = 400)
+                $resp.output
+                #elseif($resp.status == "FAILED")
+                #set($context.responseOverride.status = 500)
+                $resp.cause
+                #end
                 $params.jwt
 
 components:
