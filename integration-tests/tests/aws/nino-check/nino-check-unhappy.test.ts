@@ -201,7 +201,7 @@ describe("nino-check-unhappy", () => {
     await secretManagerUpdate({
       SecretId: "HMRCBearerToken",
       SecretString: "badToken",
-    });
+    } as AWS.SecretsManager.GetSecretValueRequest);
 
     const startExecutionResult = await executeStepFunction(
       input,
@@ -211,7 +211,7 @@ describe("nino-check-unhappy", () => {
     await secretManagerUpdate({
       SecretId: "HMRCBearerToken",
       SecretString: currentValue,
-    });
+    } as AWS.SecretsManager.GetSecretValueRequest);
 
     expect(startExecutionResult.status).toEqual("FAILED");
   });
