@@ -559,7 +559,7 @@ Resources:
   NinoCheckStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/aws/apigateway/${AWS::StackName}-NinoCheck-state-machine-logs
+      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-NinoCheck-state-machine-logs
       RetentionInDays: 30
 
   NinoIssueCredentialStateMachine:
@@ -626,13 +626,13 @@ Resources:
   NinoIssueCredentialLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/aws/apigateway/${AWS::StackName}-NinoIssueCredential-state-machine-logs
+      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-NinoIssueCredential-state-machine-logs
       RetentionInDays: 30
 
   CheckSessionStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/aws/apigateway/${AWS::StackName}-CheckSession-state-machine-logs
+      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-CheckSession-state-machine-logs
       RetentionInDays: 30
 
 Outputs:
