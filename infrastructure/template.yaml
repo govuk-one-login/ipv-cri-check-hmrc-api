@@ -160,8 +160,8 @@ Resources:
           # Disable data trace in production to avoid logging customer sensitive information
           DataTraceEnabled: true
           MetricsEnabled: true
-          ThrottlingRateLimit: 5
-          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 200
+          ThrottlingBurstLimit: 400
       AccessLogSetting:
         DestinationArn: !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PublicNinoCheckApiAccessLogGroup}"
         Format: >-
@@ -207,8 +207,8 @@ Resources:
           HttpMethod: "*"
           DataTraceEnabled: true
           MetricsEnabled: true
-          ThrottlingRateLimit: 5
-          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 200
+          ThrottlingBurstLimit: 400
       AccessLogSetting:
         DestinationArn: !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${DevOnlyNinoCheckApiAccessLogGroup}"
         Format: >-
