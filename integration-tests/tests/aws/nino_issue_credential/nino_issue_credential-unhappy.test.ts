@@ -108,7 +108,7 @@ describe("nino-issue-credential-unhappy", () => {
       output.NinoIssueCredentialStateMachineArn
     );
 
-    const token = JSON.parse(startExecutionResult.output as never);
+    const token = JSON.parse(startExecutionResult.output as string);
 
     const [headerEncoded, payloadEncoded, signatureEncoded] =
       token.jwt.split(".");

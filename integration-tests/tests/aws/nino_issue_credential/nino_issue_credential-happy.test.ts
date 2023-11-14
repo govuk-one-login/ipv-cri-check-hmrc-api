@@ -115,21 +115,22 @@ describe("nino-issue-credential-happy", () => {
 
     const verifiableCredentialKmsSigningKeyId = `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`;
 
-    const currentCredentialKmsSigningKeyId = (await getSSMParamter({
-      Name: verifiableCredentialKmsSigningKeyId,
-    })) as any;
+    const currentCredentialKmsSigningKeyId = (
+      await getSSMParamter({
+        Name: verifiableCredentialKmsSigningKeyId,
+      })
+    ).Parameter?.Value;
 
-    const token = JSON.parse(startExecutionResult.output as any);
+    const token = JSON.parse(startExecutionResult.output as string);
 
-    const [headerEncoded, payloadEncoded, signatureEncoded] =
-      token.jwt.split(".");
+    const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
 
     const header = JSON.parse(atob(headerEncoded));
     const payload = JSON.parse(atob(payloadEncoded));
 
     expect(header.typ).toBe("JWT");
     expect(header.alg).toBe("ES256");
-    expect(header.kid).toBe(currentCredentialKmsSigningKeyId.Parameter.Value);
+    expect(header.kid).toBe(currentCredentialKmsSigningKeyId);
 
     const evidence = payload.vc.evidence[0];
     expect(evidence.type).toBe("IdentityCheck");
@@ -173,13 +174,17 @@ describe("nino-issue-credential-happy", () => {
     const maxJwtTtl = `/${process.env.STACK_NAME}/MaxJwtTtl`;
     const jwtTtlUnit = `/${process.env.STACK_NAME}/JwtTtlUnit`;
 
-    const currentMaxJwtTtl = (await getSSMParamter({
-      Name: maxJwtTtl,
-    })) as any;
+    const currentMaxJwtTtl = (
+      await getSSMParamter({
+        Name: maxJwtTtl,
+      })
+    ).Parameter?.Value;
 
-    const currentJwtTtlUnit = (await getSSMParamter({
-      Name: jwtTtlUnit,
-    })) as any;
+    const currentJwtTtlUnit = (
+      await getSSMParamter({
+        Name: jwtTtlUnit,
+      })
+    ).Parameter?.Value;
 
     await ssmParamterUpdate({
       Name: jwtTtlUnit,
@@ -204,19 +209,19 @@ describe("nino-issue-credential-happy", () => {
 
     await ssmParamterUpdate({
       Name: maxJwtTtl,
-      Value: currentMaxJwtTtl.Parameter.Value,
+      Value: currentMaxJwtTtl,
       Type: "String",
       Overwrite: true,
-    });
+    } as AWS.SSM.PutParameterRequest);
 
     await ssmParamterUpdate({
       Name: jwtTtlUnit,
-      Value: currentJwtTtlUnit.Parameter.Value,
+      Value: currentJwtTtlUnit,
       Type: "String",
       Overwrite: true,
-    });
+    } as AWS.SSM.PutParameterRequest);
 
-    const token = JSON.parse(startExecutionResult.output as any);
+    const token = JSON.parse(startExecutionResult.output as string);
 
     const payloadEncoded = token.jwt.split(".")[1];
 
@@ -225,7 +230,6 @@ describe("nino-issue-credential-happy", () => {
     expect(payload.exp).toBe(payload.nbf + 5 * 1000 * 60);
   });
 
-  function isValidTimestamp(timestamp: number): boolean {
-    return !isNaN(new Date(timestamp).getTime());
-  }
+  const isValidTimestamp = (timestamp: number) =>
+    !isNaN(new Date(timestamp).getTime());
 });

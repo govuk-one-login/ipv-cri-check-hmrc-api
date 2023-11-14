@@ -164,9 +164,11 @@ describe("nino-check-unhappy", () => {
   it("should throw an error when url is unavailable", async () => {
     const urlParameterName = `/${process.env.STACK_NAME}/NinoCheckUrl`;
 
-    const currentURL = (await getSSMParamter({
-      Name: urlParameterName,
-    })) as any;
+    const currentURL = (
+      await getSSMParamter({
+        Name: urlParameterName,
+      })
+    ).Parameter?.Value as string;
 
     await ssmParamterUpdate({
       Name: urlParameterName,
@@ -182,7 +184,7 @@ describe("nino-check-unhappy", () => {
 
     await ssmParamterUpdate({
       Name: urlParameterName,
-      Value: currentURL.Parameter.Value,
+      Value: currentURL,
       Type: "String",
       Overwrite: true,
     });
@@ -190,9 +192,11 @@ describe("nino-check-unhappy", () => {
     expect(startExecutionResult.status).toEqual("FAILED");
   });
   it("should throw an error when token is invalid", async () => {
-    const currentValue = (await getSecretParamValue({
-      SecretId: "HMRCBearerToken",
-    })) as any;
+    const currentValue = (
+      await getSecretParamValue({
+        SecretId: "HMRCBearerToken",
+      })
+    ).SecretString;
 
     await secretManagerUpdate({
       SecretId: "HMRCBearerToken",
@@ -206,7 +210,7 @@ describe("nino-check-unhappy", () => {
 
     await secretManagerUpdate({
       SecretId: "HMRCBearerToken",
-      SecretString: currentValue.SecretString,
+      SecretString: currentValue,
     });
 
     expect(startExecutionResult.status).toEqual("FAILED");
