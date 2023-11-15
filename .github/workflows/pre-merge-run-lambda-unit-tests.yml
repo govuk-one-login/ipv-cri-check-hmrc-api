@@ -20,30 +20,9 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
-      - name: Get all lambda names
-        id: get-lambda-names
-        run: |
-          names=""
-          for dir in lambdas/*/
-          do
-              names+=\"$(basename -- "$dir")\",
-          done
-          if [ "$names" = "\"*\"," ]; then
-            echo "No subdirectories found in lambdas/"
-            exit 1
-          fi
-          echo names=[{${names%,}}]
-          echo names={"lambda": [${names%,}]} >> "$GITHUB_OUTPUT"
-
   run-lambda-unit-tests:
-    name: ${{ matrix.lambda }} / lambda unit test
+    name: lambda unit test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./lambdas/${{ matrix.lambda }}
-    needs: pre-test
-    strategy:
-      matrix: ${{ fromJSON(needs.pre-test.outputs.lambda-names) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

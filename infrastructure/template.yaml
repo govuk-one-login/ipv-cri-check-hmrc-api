@@ -4,6 +4,7 @@ Description: "Digital Identity IPV CRI Pdv-Matching API"
 
 Globals:
   Function:
+    CodeUri: ..
     VpcConfig:
       SecurityGroupIds:
         - !ImportValue cri-vpc-AWSServicesEndpointSecurityGroupId
@@ -103,6 +104,23 @@ Conditions:
     - production
 
 Resources:
+  JwtSignerFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/jwt-signer/src/jwt-signer-handler.lambdaHandler
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action:
+              - kms:Sign
+            Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
+
   UserAgent:
     Type: AWS::SSM::Parameter
     Properties:
@@ -361,72 +379,57 @@ Resources:
   MatchingFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/matching
-      Handler: matching-handler.lambdaHandler
+      Handler: lambdas/matching/src/matching-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
         Target: "es2020"
         Sourcemap: true
-        EntryPoints:
-          - src/matching-handler.ts
 
   TimeFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/issue-credential
-      Handler: time-handler.lambdaHandler
+      Handler: lambdas/issue-credential/src/time-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
         Target: "es2020"
         Sourcemap: true
-        EntryPoints:
-          - src/time-handler.ts
 
   CreateAuthCodeFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/matching
-      Handler: create-auth-code-handler.lambdaHandler
+      Handler: lambdas/matching/src/create-auth-code-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
         Target: "es2020"
         Sourcemap: true
-        EntryPoints:
-          - src/create-auth-code-handler.ts
 
   CurrentTimeFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/matching
-      Handler: current-time-handler.lambdaHandler
+      Handler: lambdas/matching/src/current-time-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
         Target: "es2020"
         Sourcemap: true
-        EntryPoints:
-          - src/current-time-handler.ts
 
   CredentialSubjectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/credential-subject
-      Handler: credential-subject-handler.lambdaHandler
+      Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
         Target: "es2020"
         Sourcemap: true
-        EntryPoints:
-          - src/credential-subject-handler.ts
 
   CheckSessionStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -587,6 +590,8 @@ Resources:
             FunctionName: !Ref TimeFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref CredentialSubjectFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref JwtSignerFunction
         - DynamoDBReadPolicy:
             TableName: !Ref NinoAttemptsTable
         - DynamoDBReadPolicy:
@@ -636,6 +641,10 @@ Resources:
       RetentionInDays: 30
 
 Outputs:
+  JwtSignerFunction:
+    Description: JwtSigner Lambda Function ARN
+    Value: !GetAtt JwtSignerFunction.Arn
+
   StackName:
     Description: "CloudFormation stack name"
     Value: !Sub "${AWS::StackName}"

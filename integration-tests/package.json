@@ -23,6 +23,7 @@
   "devDependencies": {
     "@aws-sdk/client-cloudformation": "^3.405.0",
     "@aws-sdk/client-dynamodb": "^3.398.0",
+    "@aws-sdk/client-kms": "3.441.0",
     "@aws-sdk/client-sfn": "^3.405.0",
     "@aws-sdk/lib-dynamodb": "^3.398.0",
     "@types/aws-lambda": "8.10.114",
@@ -39,7 +40,6 @@
     "testcontainers": "^10.0.2",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
-    "typescript": "^5.0.4",
-    "@aws-sdk/client-kms": "3.441.0"
+    "typescript": "^5.0.4"
   }
 }
