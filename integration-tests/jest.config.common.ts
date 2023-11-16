@@ -1,15 +1,13 @@
-import type { Config } from "@jest/types";
+import type { Config } from "jest";
 
-const commonConfig: Config.InitialOptions = {
+export default {
   preset: "ts-jest",
   testEnvironment: "node",
   verbose: true,
   maxWorkers: 1,
   clearMocks: true,
-  collectCoverage: true,
   collectCoverageFrom: ["../step_functions/**/*.{js,ts}", "!**/tests/**"],
   coverageDirectory: "coverage",
-  coverageProvider: "v8",
   coveragePathIgnorePatterns: ["config.ts", "node_modules/"],
   coverageThreshold: {
     global: {
@@ -22,6 +20,4 @@ const commonConfig: Config.InitialOptions = {
   transform: {
     "^.+\\.ts?$": "ts-jest",
   },
-};
-
-export default commonConfig;
+} satisfies Config;

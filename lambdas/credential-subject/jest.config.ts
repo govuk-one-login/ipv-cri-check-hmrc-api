@@ -5,10 +5,8 @@ const config: Config.InitialOptions = {
     "^.+\\.ts?$": "ts-jest",
   },
   clearMocks: true,
-  collectCoverage: true,
   collectCoverageFrom: ["lambdas/**/*.{js,ts}", "!**/tests/**"],
   coverageDirectory: "coverage",
-  coverageProvider: "v8",
   coveragePathIgnorePatterns: ["config.ts", "node_modules/"],
   coverageThreshold: {
     global: {

@@ -1,7 +1,5 @@
-import type { Config } from "@jest/types";
+import type { Config } from "jest";
 
-const config: Config.InitialOptions = {
+export default {
   projects: ["lambdas/*/jest.config.ts"],
-};
-
-export default config;
+} satisfies Config;

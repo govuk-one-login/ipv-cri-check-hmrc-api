@@ -22,7 +22,7 @@
     "esbuild": "0.19.5"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.5",
+    "@types/jest": "^29.5.8",
     "@types/aws-lambda": "^8.10.126",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
