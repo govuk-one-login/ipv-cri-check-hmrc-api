@@ -129,6 +129,8 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-*.aws-sam/
+.aws-sam
 .DS_Store
 integration-tests/build
+build
+dotenv
