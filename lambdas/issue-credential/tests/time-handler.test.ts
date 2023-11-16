@@ -1,105 +1,72 @@
 import { TimeHandler } from "../src/time-handler";
-import { Context } from "aws-lambda";
-import { TimeEvent } from "../src/time-event";
+import { TimeUnits } from "../src/utils/time-units";
+
+const monday31st2021InMilliseconds = 1622502000000;
+const monday31st2021InSeconds = 1622502000;
+const timeHandler = new TimeHandler();
+
+jest.spyOn(Date, "now").mockReturnValue(monday31st2021InMilliseconds);
 
 describe("time-handler", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    jest.resetAllMocks();
-  });
+  it.each([
+    [10, TimeUnits.Seconds, monday31st2021InSeconds + 10],
+    [6, TimeUnits.Minutes, monday31st2021InSeconds + 6 * 60],
+    [1, TimeUnits.Hours, monday31st2021InSeconds + 60 * 60],
+    [5, TimeUnits.Days, monday31st2021InSeconds + 5 * 60 * 60 * 24],
+    [3, TimeUnits.Years, monday31st2021InSeconds + 3 * 60 * 60 * 24 * 365],
+  ])(
+    "should return a expiry that expires in %s %s",
+    async (ttlValue, ttlUnit, expectedExpiryInEpochSeconds) => {
+      const result = await timeHandler.handler(
+        {
+          ttlValue,
+          ttlUnit,
+        },
+        {}
+      );
 
-  it("should return the current time for nbf", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
-    const event = {
-      ttl: 10,
-      ttlUnit: "seconds",
-    } as TimeEvent;
-    const timeHandler = new TimeHandler();
-    const result = await timeHandler.handler(event, {} as Context);
-    expect(result.nbf).toBe(1622502000000);
-  });
+      expect(result).toEqual({
+        nbf: monday31st2021InSeconds,
+        expiry: expectedExpiryInEpochSeconds,
+      });
+    }
+  );
 
-  it("should return a expiry that expires in 10 seconds", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
-    const event = {
-      ttl: 10,
-      ttlUnit: "seconds",
-    } as TimeEvent;
-    const timeHandler = new TimeHandler();
-    const result = await timeHandler.handler(event, {} as Context);
-    expect(result).toEqual({
-      nbf: 1622502000000,
-      expiry: 1622502000000 + 10000,
-    });
-  });
+  it.each([0, null, undefined])(
+    "should return the current time in seconds for nbf and expiry if ttl is %s",
+    async (ttlValue) => {
+      const result = await timeHandler.handler(
+        {
+          ttlValue: ttlValue as number,
+          ttlUnit: TimeUnits.Seconds,
+        },
+        {}
+      );
 
-  it("should return a expiry that expires in 10 minutes", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
-    const event = {
-      ttl: 10,
-      ttlUnit: "minutes",
-    } as TimeEvent;
-    const timeHandler = new TimeHandler();
-    const result = await timeHandler.handler(event, {} as Context);
-    expect(result).toEqual({
-      nbf: 1622502000000,
-      expiry: 1622502000000 + 10 * (1000 * 60),
-    });
-  });
+      expect(result).toEqual({
+        nbf: monday31st2021InSeconds,
+        expiry: monday31st2021InSeconds,
+      });
+    }
+  );
 
-  it("should return a expiry that expires in 1 hour", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
-    const event = {
-      ttl: 1,
-      ttlUnit: "hours",
-    } as TimeEvent;
-    const timeHandler = new TimeHandler();
-    const result = await timeHandler.handler(event, {} as Context);
-    expect(result).toEqual({
-      nbf: 1622502000000,
-      expiry: 1622502000000 + 1000 * 60 * 60,
-    });
-  });
+  it.each(["unknown", "", null])(
+    "should throw when invalid %s time unit is specified",
+    (ttlUnit) => {
+      expect(
+        timeHandler.handler(
+          {
+            ttlValue: 0,
+            ttlUnit: ttlUnit as string,
+          },
+          {}
+        )
+      ).rejects.toThrow(`Time unit must be valid: ${ttlUnit}`);
+    }
+  );
 
-  it("should return a expiry that expires in 1 day", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
-    const event = {
-      ttl: 1,
-      ttlUnit: "days",
-    } as TimeEvent;
-    const timeHandler = new TimeHandler();
-    const result = await timeHandler.handler(event, {} as Context);
-    expect(result).toEqual({
-      nbf: 1622502000000,
-      expiry: 1622502000000 + 1000 * 60 * 60 * 24,
-    });
-  });
-
-  it("should return a expiry that expires in 1 month", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
-    const event = {
-      ttl: 1,
-      ttlUnit: "months",
-    } as TimeEvent;
-    const timeHandler = new TimeHandler();
-    const result = await timeHandler.handler(event, {} as Context);
-    expect(result).toEqual({
-      nbf: 1622502000000,
-      expiry: 1622502000000 + 1000 * 60 * 60 * 24 * 30,
-    });
-  });
-
-  it("should return a expiry that expires in 1 year", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
-    const event = {
-      ttl: 1,
-      ttlUnit: "years",
-    } as TimeEvent;
-    const timeHandler = new TimeHandler();
-    const result = await timeHandler.handler(event, {} as Context);
-    expect(result).toEqual({
-      nbf: 1622502000000,
-      expiry: 1622502000000 + 1000 * 60 * 60 * 24 * 365,
-    });
-  });
+  it("should throw when ttl value is negative", () =>
+    expect(
+      timeHandler.handler({ ttlValue: -1, ttlUnit: TimeUnits.Seconds }, {})
+    ).rejects.toThrow(/must be positive/));
 });
