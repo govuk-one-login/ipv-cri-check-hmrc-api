@@ -5,7 +5,9 @@ import {
   PutCommand,
 } from "@aws-sdk/lib-dynamodb";
 
-const client = new DynamoDBClient({ region: process.env.AWS_REGION });
+const client = new DynamoDBClient({
+  region: process.env.AWS_REGION,
+});
 const docClient = DynamoDBDocumentClient.from(client);
 
 export const populateTable = async (

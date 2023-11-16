@@ -6,7 +6,7 @@ export const getSSMParamter = async (params: AWS.SSM.GetParameterRequest) => {
   return await ssm.getParameter(params).promise();
 };
 
-export const ssmParamterUpdate = async (
+export const ssmParameterUpdate = async (
   params: AWS.SSM.PutParameterRequest
 ) => {
   return await ssm.putParameter(params).promise();

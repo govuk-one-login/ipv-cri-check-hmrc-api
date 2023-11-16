@@ -106,7 +106,7 @@ describe("Fails to sign a JWT", () => {
     );
 
     await expect(jwtSignerHandler.handler(event, {})).rejects.toThrow(
-      "KMS signing error: Error: KMS response does not contain a valid Signature."
+      "KMS response does not contain a valid Signature."
     );
   });
 
@@ -124,7 +124,7 @@ describe("Fails to sign a JWT", () => {
     await expect(
       jwtSignerHandler.handler(event as SignerPayLoad, {})
     ).rejects.toThrow(
-      "KMS signing error: Error: ValidationException: 1 validation error detected: Value null at 'keyId' failed to satisfy constraint: Member must not be null"
+      "ValidationException: 1 validation error detected: Value null at 'keyId' failed to satisfy constraint: Member must not be null"
     );
   });
 
@@ -132,27 +132,23 @@ describe("Fails to sign a JWT", () => {
     const event: Partial<SignerPayLoad> = { header, claimsSet };
 
     kmsClient.send.mockImplementationOnce(() =>
-      Promise.reject(new SyntaxError("Unknown error"))
+      Promise.reject(new Error("Unknown error"))
     );
 
     await expect(
       jwtSignerHandler.handler(event as SignerPayLoad, {})
-    ).rejects.toThrow(
-      "KMS response is not in JSON format. SyntaxError: Unknown error"
-    );
+    ).rejects.toThrow("Unknown error");
   });
 
-  it("Should throw an error for an unknown error during signing with KMS", async () => {
+  it("should throw due to the signature with an invalid format", async () => {
     const event: Partial<SignerPayLoad> = { header, claimsSet };
 
     kmsClient.send.mockImplementationOnce(() =>
-      Promise.reject({ Signature: "invalid-response" })
+      Promise.resolve({ Signature: new Uint8Array() })
     );
 
     await expect(
       jwtSignerHandler.handler(event as SignerPayLoad, {})
-    ).rejects.toThrow(
-      "An unknown error occurred while signing with KMS: [object Object]"
-    );
+    ).rejects.toThrow('Could not find expected "seq"');
   });
 });

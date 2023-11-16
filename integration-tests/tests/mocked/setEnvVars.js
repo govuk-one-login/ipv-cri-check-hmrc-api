@@ -12,3 +12,4 @@ process.env.STATE_MACHINE_ROLE =
 
 process.env.NINO_ATTEMPTS_TABLE = "pdv-matching-nino-attempts";
 process.env.NINO_USERS_TABLE = "pdv-matching-nino-users";
+process.env.AWS_REGION = "eu-west-2";
