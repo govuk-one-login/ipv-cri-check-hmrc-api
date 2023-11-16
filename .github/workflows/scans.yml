@@ -1,21 +1,21 @@
-name: Scan repo
+name: Scan repository
 
 on:
   push:
-    branches: [main]
+    branches: [main, oj-1902-sonarcloud]
   schedule:
     # Every Sunday at 16:12
     - cron: "16 12 * * 0"
 
 concurrency:
-  group: scan-repo-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  group: scan-repo-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 permissions: read-all
 
 jobs:
   unit-tests:
-    name: Run tests
+    name: Test coverage
     uses: ./.github/workflows/unit-tests.yml
 
   sonarcloud:
