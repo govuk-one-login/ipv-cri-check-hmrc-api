@@ -5,7 +5,7 @@ import { HttpHandlerOptions } from "@smithy/types";
 
 type AWSServiceClient<
   Input extends ServiceInputTypes,
-  Output extends ServiceOutputTypes
+  Output extends ServiceOutputTypes,
 > = Client<
   HttpHandlerOptions,
   Input,
@@ -17,7 +17,7 @@ type AWSServiceClientCommand<
   Input extends ServiceInputTypes,
   InputType extends Input,
   Output extends ServiceOutputTypes,
-  OutputType extends Output
+  OutputType extends Output,
 > = Command<
   Input,
   InputType,
@@ -30,11 +30,11 @@ export function createSendCommandWithClient<
   Input extends ServiceInputTypes,
   InputType extends Input,
   Output extends ServiceOutputTypes,
-  OutputType extends Output
+  OutputType extends Output,
 >(client: AWSServiceClient<Input, Output>) {
   return function <
     CommandInputType extends Input = InputType,
-    CommandOutputType extends Output = OutputType
+    CommandOutputType extends Output = OutputType,
   >(
     commandConstructor: new (
       input: CommandInputType
@@ -52,7 +52,7 @@ export function createSendCommandWithClient<
 
 export function createSendCommand<
   Input extends ServiceInputTypes,
-  Output extends ServiceOutputTypes
+  Output extends ServiceOutputTypes,
 >(clientConstructor: () => AWSServiceClient<Input, Output>) {
   return createSendCommandWithClient(clientConstructor());
 }
