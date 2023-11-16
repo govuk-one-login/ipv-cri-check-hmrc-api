@@ -12,16 +12,28 @@ jobs:
     name: Run tests
     uses: ./.github/workflows/unit-tests.yml
 
-  scans:
-    name: Scan
+  sonarcloud:
+    name: SonarCloud
     needs: unit-tests
-    uses: ./.github/workflows/scans.yml
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run a SonarCloud scan
+        uses: govuk-one-login/github-actions/code-quality/sonarcloud@oj-1984-add-codeql-action
+        with:
+          coverage-artifact: ${{ needs.unit-tests.outputs.coverage-artifact }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
     permissions:
       security-events: write
-    with:
-      coverage-artifact: ${{ needs.unit-tests.outputs.coverage-artifact }}
-    secrets:
-      sonar-token: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Run a CodeQL scan
+        uses: govuk-one-login/github-actions/code-quality/codeql@oj-1984-add-codeql-action
+        with:
+          languages: javascript-typescript
 
   pre-commit:
     name: pre-commit
