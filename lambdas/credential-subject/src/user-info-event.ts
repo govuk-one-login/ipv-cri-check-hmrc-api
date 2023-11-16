@@ -17,14 +17,14 @@ export type UserInfoEvent = {
                           S: string;
                         };
                       };
-                    }
+                    },
                   ];
                 };
               };
-            }
+            },
           ];
         };
-      }
+      },
     ];
   };
   nino: string;

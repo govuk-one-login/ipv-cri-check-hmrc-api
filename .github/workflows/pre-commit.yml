@@ -1,15 +1,25 @@
 name: pre-commit
 
-on: push
+on: workflow_call
+permissions: {}
+
+concurrency:
+  group: pre-commit-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: "3.11.2"
-      - uses: pre-commit/action@v3.0.0
+
+      - name: Run hooks
+        uses: pre-commit/action@v3.0.0
         with:
           extra_args: "--all-files"

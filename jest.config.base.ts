@@ -1,6 +1,6 @@
-import type { Config } from "@jest/types";
+import { Config } from "jest";
 
-const config: Config.InitialOptions = {
+export default {
   preset: "ts-jest",
   clearMocks: true,
   modulePaths: ["<rootDir>/src"],
@@ -15,5 +15,4 @@ const config: Config.InitialOptions = {
       lines: 100,
     },
   },
-};
-export default config;
+} satisfies Config;

@@ -258,9 +258,8 @@ export class SfnContainerHelper {
         new DescribeStateMachineCommand({
           stateMachineArn:
             process.env.STATE_MACHINE_ARN ||
-            ((
-              await this.createStateMachine(sfnClient)
-            ).stateMachineArn as string),
+            ((await this.createStateMachine(sfnClient))
+              .stateMachineArn as string),
         })
       );
     } catch (error: unknown) {

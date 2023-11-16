@@ -30,7 +30,7 @@ export class CredentialSubjectHandler implements LambdaInterface {
     event: UserInfoEvent
   ): Array<NamePart> => {
     return event.userInfoEvent.Items[0].names.L[0].M.nameParts.L.map(
-      (part) => ({ type: part.M.type.S, value: part.M.value.S } as NamePart)
+      (part) => ({ type: part.M.type.S, value: part.M.value.S }) as NamePart
     );
   };
 }

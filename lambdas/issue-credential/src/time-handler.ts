@@ -1,8 +1,12 @@
+import { SFNClient } from "@aws-sdk/client-sfn";
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { TimeEvent } from "./time-event";
 
 const logger = new Logger();
+
+const sfnClient = new SFNClient();
+sfnClient.destroy();
 
 const Unit = {
   Seconds: "seconds",
