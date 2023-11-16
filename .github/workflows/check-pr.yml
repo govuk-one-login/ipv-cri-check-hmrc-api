@@ -1,28 +1,27 @@
 name: Check PR
 
-on:
-  pull_request:
-  push:
-    branches: [oj-1902-sonarcloud]
-
+on: pull_request
 permissions: read-all
 
-jobs:
-  run-unit-tests:
-    name: Run tests
-    uses: ./.github/workflows/run-unit-tests.yml
+concurrency:
+  group: check-pr-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
-  sonarcloud:
-    name: SonarCloud
-    runs-on: ubuntu-latest
-    needs: run-unit-tests
-    steps:
-      - name: Run a SonarCloud scan
-        uses: govuk-one-login/github-actions/code-quality/sonarcloud@f56c51a266f46a89ff7fc8d9068cfc7a66a3a5b4
-        with:
-          coverage-artifact: coverage
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          sonar-token: ${{ secrets.SONAR_TOKEN }}
+jobs:
+  unit-tests:
+    name: Run tests
+    uses: ./.github/workflows/unit-tests.yml
+
+  scans:
+    name: Scan
+    needs: unit-tests
+    uses: ./.github/workflows/scans.yml
+    permissions:
+      security-events: write
+    with:
+      coverage-artifact: ${{ needs.unit-tests.outputs.coverage-artifact }}
+    secrets:
+      sonar-token: ${{ secrets.SONAR_TOKEN }}
 
   pre-commit:
     name: pre-commit
@@ -32,14 +31,3 @@ jobs:
         uses: govuk-one-login/github-actions/code-quality/run-pre-commit@df9647d3b26270963a3c013feee09b0e72887795
         with:
           all-files: true
-
-  codeql:
-    name: CodeQL
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    steps:
-      - name: Run a CodeQL scan
-        uses: govuk-one-login/github-actions/code-quality/codeql@oj-1984-add-codeql-action

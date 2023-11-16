@@ -1,0 +1,52 @@
+name: Scan repo
+
+on:
+  push:
+    branches: [main]
+  workflow_call:
+    inputs:
+      coverage-artifact: { type: string, required: false }
+    secrets:
+      sonar-token: { required: true }
+  schedule:
+    # Every Sunday at 16:12
+    - cron: "16 12 * * 0"
+
+concurrency:
+  group: scan-repo-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  security-events: write
+
+jobs:
+  unit-tests:
+    name: Run tests
+    if: ${{ inputs.coverage-artifact == null }}
+    uses: ./.github/workflows/unit-tests.yml
+    permissions: {}
+
+  sonarcloud:
+    name: SonarCloud
+    needs: unit-tests
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Run a SonarCloud scan
+        uses: govuk-one-login/github-actions/code-quality/sonarcloud@oj-1984-add-codeql-action
+        with:
+          coverage-artifact: ${{ inputs.coverage-artifact || needs.unit-tests.outputs.coverage-artifact }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sonar-token: ${{ secrets.SONAR_TOKEN || secrets.sonar-token }}
+
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Run a CodeQL scan
+        uses: govuk-one-login/github-actions/code-quality/codeql@oj-1984-add-codeql-action
+        with:
+          languages: javascript-typescript

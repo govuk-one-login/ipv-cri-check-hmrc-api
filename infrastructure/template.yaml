@@ -17,7 +17,6 @@ Globals:
     Architectures:
       - arm64
     Timeout: 30
-    CodeUri: ..
     PermissionsBoundary: !If
       - UsePermissionsBoundary
       - !Ref PermissionsBoundary

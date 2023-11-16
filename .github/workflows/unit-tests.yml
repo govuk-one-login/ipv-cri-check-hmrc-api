@@ -1,7 +1,12 @@
 name: Unit tests
 
-on: workflow_call
-permissions: read-all
+on:
+  workflow_call:
+    inputs:
+      coverage-artifact: { type: string, required: false, default: coverage }
+    outputs:
+      coverage-artifact:
+        value: ${{ inputs.coverage-artifact }}
 
 concurrency:
   group: unit-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
@@ -10,6 +15,8 @@ concurrency:
 defaults:
   run:
     shell: bash
+
+permissions: {}
 
 jobs:
   run-unit-tests:
@@ -25,14 +32,14 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run tests
-        run: npm run coverage
+        run: npm run test:coverage -- --config .github/jest.config.ci.ts
 
       - name: Archive coverage results
         uses: actions/upload-artifact@v3
         with:
-          name: coverage
+          name: ${{ inputs.coverage-artifact }}
           retention-days: 3
           path: coverage
