@@ -34,9 +34,12 @@ jobs:
           all-files: true
 
   codeql:
-    name: Security
-    uses: ./.github/workflows/codeql.yml
+    name: CodeQL
+    runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
       security-events: write
+    steps:
+      - name: Run a CodeQL scan
+        uses: govuk-one-login/github-actions/code-quality/codeql@oj-1984-add-codeql-action
