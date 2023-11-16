@@ -3,6 +3,7 @@ name: Unit tests
 on:
   workflow_call:
     inputs:
+      coverage-report: { type: boolean, required: false, default: false }
       coverage-artifact: { type: string, required: false, default: coverage }
     outputs:
       coverage-artifact:
@@ -38,6 +39,7 @@ jobs:
         run: npm run test:coverage -- --config .github/jest.config.ci.ts
 
       - name: Archive coverage results
+        if: ${{ inputs.coverage-report }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{ inputs.coverage-artifact }}
