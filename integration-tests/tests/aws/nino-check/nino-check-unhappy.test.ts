@@ -3,7 +3,7 @@ import { executeStepFunction } from "../resources/stepfunction-helper";
 import { clearItems, populateTable } from "../resources/dynamodb-helper";
 import {
   getSSMParamter,
-  ssmParamterUpdate,
+  ssmParameterUpdate,
 } from "../resources/ssm-param-helper";
 import {
   getSecretParamValue,
@@ -170,7 +170,7 @@ describe("nino-check-unhappy", () => {
       })
     ).Parameter?.Value as string;
 
-    await ssmParamterUpdate({
+    await ssmParameterUpdate({
       Name: urlParameterName,
       Value: "bad-url",
       Type: "String",
@@ -182,7 +182,7 @@ describe("nino-check-unhappy", () => {
       output.NinoCheckStateMachineArn
     );
 
-    await ssmParamterUpdate({
+    await ssmParameterUpdate({
       Name: urlParameterName,
       Value: currentURL,
       Type: "String",
