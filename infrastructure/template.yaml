@@ -1,87 +1,41 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Transform: AWS::Serverless-2016-10-31
-Description: "Digital Identity IPV CRI Pdv-Matching API"
+Description: Digital Identity IPV CRI Pdv-Matching API
+Transform: [AWS::LanguageExtensions, AWS::Serverless-2016-10-31]
 
-Globals:
-  Function:
-    CodeUri: ..
-    VpcConfig:
-      SecurityGroupIds:
-        - !ImportValue cri-vpc-AWSServicesEndpointSecurityGroupId
-      SubnetIds:
-        [
-          !ImportValue cri-vpc-ProtectedSubnetIdA,
-          !ImportValue cri-vpc-ProtectedSubnetIdB,
-        ]
-    Runtime: nodejs18.x
-    Architectures:
-      - arm64
-    Timeout: 30
-    PermissionsBoundary: !If
-      - UsePermissionsBoundary
-      - !Ref PermissionsBoundary
-      - !Ref AWS::NoValue
-    CodeSigningConfigArn: !If
-      - EnforceCodeSigning
-      - !Ref CodeSigningConfigArn
-      - !Ref AWS::NoValue
-    Environment:
-      Variables:
-        AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
-        DT_CONNECTION_AUTH_TOKEN: !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
-          - SecretArn:
-              !FindInMap [
-                EnvironmentConfiguration,
-                !Ref Environment,
-                dynatraceSecretArn,
-              ]
-        DT_CONNECTION_BASE_URL: !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}"
-          - SecretArn:
-              !FindInMap [
-                EnvironmentConfiguration,
-                !Ref Environment,
-                dynatraceSecretArn,
-              ]
-        DT_CLUSTER_ID: !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
-          - SecretArn:
-              !FindInMap [
-                EnvironmentConfiguration,
-                !Ref Environment,
-                dynatraceSecretArn,
-              ]
-        DT_LOG_COLLECTION_AUTH_TOKEN: !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}"
-          - SecretArn:
-              !FindInMap [
-                EnvironmentConfiguration,
-                !Ref Environment,
-                dynatraceSecretArn,
-              ]
-        DT_TENANT: !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
-          - SecretArn:
-              !FindInMap [
-                EnvironmentConfiguration,
-                !Ref Environment,
-                dynatraceSecretArn,
-              ]
-        DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: "true"
-    Layers:
-      - !Sub
-        - "{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}"
-        - SecretArn:
-            !FindInMap [
-              EnvironmentConfiguration,
-              !Ref Environment,
-              dynatraceSecretArn,
-            ]
+Parameters:
+  BearerTokenName:
+    Type: String
+    Default: HMRCBearerToken
+    Description: >-
+      The name of the bearer token parameter.
+      Temporary solution to be changed once cross account behaviour implemented.
+  Environment:
+    Type: String
+    AllowedValues: [dev, build, staging, integration, production]
+  CommonStackName:
+    Type: String
+    Default: common-cri-api
+    Description: The name of the stack containing the common CRI lambdas/infra
+  CodeSigningConfigArn:
+    Type: String
+    Default: ""
+  PermissionsBoundary:
+    Type: String
+    Default: ""
+
+Conditions:
+  EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
+  UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, ""]]
+  IsDevEnvironment: !Equals [!Ref Environment, dev]
+  IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
+  IsProductionEnvironment: !Equals [!Ref Environment, production]
+  IsStagingOrIntegrationEnvironment: !Or
+    - !Equals [!Ref Environment, staging]
+    - !Equals [!Ref Environment, integration]
 
 Mappings:
   # Only numeric values should be assigned here
-  MaxJwtTtlMapping:
+  MaxJwtTtl:
     Environment:
       dev: 2
       build: 2
@@ -90,7 +44,7 @@ Mappings:
       production: 6
 
   # Permitted values: SECONDS,MINUTES,HOURS,DAYS,MONTHS,YEARS
-  JwtTtlUnitMapping:
+  JwtTtlUnit:
     Environment:
       dev: HOURS
       build: HOURS
@@ -98,72 +52,52 @@ Mappings:
       integration: MONTHS
       production: MONTHS
 
-  # Adding Dynatarce Lambda layer
-  EnvironmentConfiguration:
-    dev:
-      dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
-    build:
-      dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
-    staging:
-      dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
-    integration:
-      dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
-    production:
-      dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
+  Dynatrace:
+    SecretArn:
+      dev: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
+      build: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
+      staging: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
+      integration: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
+      production: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
 
-Parameters:
-  CodeSigningEnabled:
-    Type: "String"
-    Default: "true"
-  CodeSigningConfigArn:
-    Type: String
-    Default: "none"
-    Description: >
-      The ARN of the Code Signing Config to use, provided by the deployment pipeline
-  BearerTokenName:
-    Description: "The name of the bearer token parameter"
-    Type: String
-    # Temporary - solution to be changed once cross account behaviour implemented
-    Default: "HMRCBearerToken"
-  PermissionsBoundary:
-    Description: "The ARN of the permissions boundary to apply when creating IAM roles"
-    Type: String
-    Default: "none"
-  Environment:
-    Description: "The environment type"
-    Type: "String"
-    AllowedValues:
-      - "dev"
-      - "build"
-      - "staging"
-      - "integration"
-      - "production"
-    ConstraintDescription: must be dev, build, staging, integration or production
-  CommonStackName:
-    Description: "The name of the stack containing the common CRI lambdas/infra"
-    Type: String
-    Default: "common-cri-api"
-
-Conditions:
-  EnforceCodeSigning: !Equals
-    - !Ref CodeSigningEnabled
-    - true
-  UsePermissionsBoundary:
-    Fn::Not:
-      - Fn::Equals:
-          - !Ref PermissionsBoundary
-          - "none"
-  IsDevEnvironment: !Equals
-    - !Ref Environment
-    - dev
-  IsNotDevEnvironment: !Not
-    - Condition: IsDevEnvironment
-  IsStagingOrIntegrationEnvironment: !Or
-    - !Equals [!Ref Environment, staging]
-    - !Equals [!Ref Environment, integration]
-  IsProductionEnvironment: !Equals
-    - !Ref Environment
-    - production
+Globals:
+  Function:
+    Timeout: 30
+    CodeUri: ..
+    Runtime: nodejs18.x
+    Architectures: [arm64]
+    PermissionsBoundary:
+      !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
+    VpcConfig:
+      SecurityGroupIds:
+        - !ImportValue cri-vpc-AWSServicesEndpointSecurityGroupId
+      SubnetIds:
+        - !ImportValue cri-vpc-ProtectedSubnetIdA
+        - !ImportValue cri-vpc-ProtectedSubnetIdB
+    Layers:
+      - !Sub
+        - "{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}"
+        - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
+    Environment:
+      Variables:
+        NODE_OPTIONS: --enable-source-maps
+        AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
+        DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: true
+        DT_CONNECTION_AUTH_TOKEN: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
+          - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
+        DT_CONNECTION_BASE_URL: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}"
+          - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
+        DT_CLUSTER_ID: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
+          - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
+        DT_LOG_COLLECTION_AUTH_TOKEN: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}"
+          - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
+        DT_TENANT: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
+          - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
 
 Resources:
   JwtSignerFunction:
@@ -171,57 +105,55 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
-        Minify: true
-        Target: "es2020"
         Sourcemap: true
     Properties:
       Handler: lambdas/jwt-signer/src/jwt-signer-handler.lambdaHandler
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Policies:
         - Statement:
             Effect: Allow
-            Action:
-              - kms:Sign
+            Action: kms:Sign
             Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
 
   UserAgent:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${AWS::StackName}/UserAgent"
-      Value: govuk-one-login
       Type: String
+      Name: !Sub /${AWS::StackName}/UserAgent
+      Value: govuk-one-login
       Description: User agent for HMRC requests
 
   NinoCheckUrl:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${AWS::StackName}/NinoCheckUrl"
       Type: String
+      Name: !Sub /${AWS::StackName}/NinoCheckUrl
       Description: URL for HMRC /check endpoint
-      Value:
-        Fn::If:
-          - IsStagingOrIntegrationEnvironment
-          - "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
-          - Fn::If:
-              - IsProductionEnvironment
-              - "https://api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
-              - Fn::Sub:
-                  - "${ImposterApiUrl}/individuals/authentication/authenticator/api/match"
-                  - ImposterApiUrl: !ImportValue third-party-stubs-ImposterStubApiUrl
+      Value: !If
+        - IsStagingOrIntegrationEnvironment
+        - "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
+        - !If
+          - IsProductionEnvironment
+          - "https://api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
+          - !Sub
+            - "${ImposterApiUrl}/individuals/authentication/authenticator/api/match"
+            - ImposterApiUrl: !ImportValue third-party-stubs-ImposterStubApiUrl
 
   MaxJwtTtlParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${AWS::StackName}/MaxJwtTtl"
       Type: String
-      Value: !FindInMap [MaxJwtTtlMapping, Environment, !Ref "Environment"]
-      Description: default time to live for an JWT in (seconds)
+      Name: !Sub /${AWS::StackName}/MaxJwtTtl
+      Value: !FindInMap [MaxJwtTtl, Environment, !Ref Environment]
+      Description: Default time to live for an JWT in (seconds)
 
   JwtTtlUnitParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${AWS::StackName}/JwtTtlUnit"
       Type: String
-      Value: !FindInMap [JwtTtlUnitMapping, Environment, !Ref Environment]
+      Name: !Sub /${AWS::StackName}/JwtTtlUnit
+      Value: !FindInMap [JwtTtlUnit, Environment, !Ref Environment]
       Description: The unit for the time-to-live for an JWT e.g. (MONTHS)
 
   PublicNinoCheckApi:
@@ -238,29 +170,28 @@ Resources:
           ThrottlingRateLimit: 200
           ThrottlingBurstLimit: 400
       AccessLogSetting:
-        DestinationArn: !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PublicNinoCheckApiAccessLogGroup}"
-        Format: >-
-          {
-          "requestId":"$context.requestId",
-          "ip":"$context.identity.sourceIp",
-          "requestTime":"$context.requestTime",
-          "httpMethod":"$context.httpMethod",
-          "path":"$context.path",
-          "routeKey":"$context.routeKey",
-          "status":"$context.status",
-          "protocol":"$context.protocol",
-          "responseLatency":"$context.responseLatency",
-          "responseLength":"$context.responseLength"
-          }
+        DestinationArn: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PublicNinoCheckApiAccessLogGroup}
+        Format:
+          Fn::ToJsonString:
+            requestId: $context.requestId
+            ip: $context.identity.sourceIp
+            requestTime: $context.requestTime
+            httpMethod: $context.httpMethod
+            path: $context.path
+            routeKey: $context.routeKey
+            status: $context.status
+            protocol: $context.protocol
+            responseLatency: $context.responseLatency
+            responseLength: $context.responseLength
       TracingEnabled: true
-      Name: !Sub "${AWS::StackName}-public"
+      Name: !Sub ${AWS::StackName}-public
       StageName: !Ref Environment
       DefinitionBody:
-        openapi: "3.1.0"
+        openapi: 3.1.0
         Fn::Transform:
           Name: AWS::Include
           Parameters:
-            Location: "./public-api.yaml"
+            Location: ./public-api.yaml
       OpenApiVersion: 3.1.0
       EndpointConfiguration:
         Type: REGIONAL
@@ -285,29 +216,28 @@ Resources:
           ThrottlingRateLimit: 200
           ThrottlingBurstLimit: 400
       AccessLogSetting:
-        DestinationArn: !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${DevOnlyNinoCheckApiAccessLogGroup}"
-        Format: >-
-          {
-          "requestId":"$context.requestId",
-          "ip":"$context.identity.sourceIp",
-          "requestTime":"$context.requestTime",
-          "httpMethod":"$context.httpMethod",
-          "path":"$context.path",
-          "routeKey":"$context.routeKey",
-          "status":"$context.status",
-          "protocol":"$context.protocol",
-          "responseLatency":"$context.responseLatency",
-          "responseLength":"$context.responseLength"
-          }
+        DestinationArn: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${DevOnlyNinoCheckApiAccessLogGroup}
+        Format:
+          Fn::ToJsonString:
+            requestId: $context.requestId
+            ip: $context.identity.sourceIp
+            requestTime: $context.requestTime
+            httpMethod: $context.httpMethod
+            path: $context.path
+            routeKey: $context.routeKey
+            status: $context.status
+            protocol: $context.protocol
+            responseLatency: $context.responseLatency
+            responseLength: $context.responseLength
       TracingEnabled: true
-      Name: !Sub "${AWS::StackName}-dev-only-private"
+      Name: !Sub ${AWS::StackName}-dev-only-private
       StageName: !Ref Environment
       DefinitionBody:
-        openapi: "3.1.0"
+        openapi: 3.1.0
         Fn::Transform:
           Name: AWS::Include
           Parameters:
-            Location: "./private-api.yaml"
+            Location: ./private-api.yaml
       OpenApiVersion: 3.1.0
       EndpointConfiguration:
         Type: REGIONAL
@@ -334,43 +264,41 @@ Resources:
           ThrottlingRateLimit: 200
           ThrottlingBurstLimit: 400
       AccessLogSetting:
-        DestinationArn: !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PrivateNinoCheckApiAccessLogGroup}"
-        Format: >-
-          {
-          "requestId":"$context.requestId",
-          "ip":"$context.identity.sourceIp",
-          "requestTime":"$context.requestTime",
-          "httpMethod":"$context.httpMethod",
-          "path":"$context.path",
-          "routeKey":"$context.routeKey",
-          "status":"$context.status",
-          "protocol":"$context.protocol",
-          "responseLatency":"$context.responseLatency",
-          "responseLength":"$context.responseLength"
-          }
+        DestinationArn: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PrivateNinoCheckApiAccessLogGroup}
+        Format:
+          Fn::ToJsonString:
+            requestId: $context.requestId
+            ip: $context.identity.sourceIp
+            requestTime: $context.requestTime
+            httpMethod: $context.httpMethod
+            path: $context.path
+            routeKey: $context.routeKey
+            status: $context.status
+            protocol: $context.protocol
+            responseLatency: $context.responseLatency
+            responseLength: $context.responseLength
       TracingEnabled: true
-      Name: !Sub "${AWS::StackName}-private"
+      Name: !Sub ${AWS::StackName}-private
       StageName: !Ref Environment
       DefinitionBody:
-        openapi: "3.0.1" # workaround to get `sam validate` to work
+        openapi: 3.0.1 # workaround to get `sam validate` to work
         paths: # workaround to get `sam validate` to work
           /never-created:
             options: {} # workaround to get `sam validate` to work
         Fn::Transform:
           Name: AWS::Include
           Parameters:
-            Location: "./private-api.yaml"
+            Location: ./private-api.yaml
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: PRIVATE
       Auth:
         ResourcePolicy:
           CustomStatements:
-            - Action: "execute-api:Invoke"
+            - Action: execute-api:Invoke
               Effect: Allow
               Principal: "*"
-              Resource:
-                - "execute-api:/*"
+              Resource: "execute-api:/*"
 
   PrivateNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -384,115 +312,111 @@ Resources:
     Properties:
       Description: Role to allow API gateway to execute step function
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: 2012-10-17
         Statement:
           - Effect: Allow
+            Action: sts:AssumeRole
             Principal:
-              Service:
-                - apigateway.amazonaws.com
-            Action:
-              - "sts:AssumeRole"
+              Service: apigateway.amazonaws.com
       Policies:
         - PolicyName: AllowStateMachineInvoke
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: 2012-10-17
             Statement:
               - Effect: Allow
-                Action:
-                  - "states:StartExecution"
-                  - "states:StartSyncExecution"
                 Resource: "*"
-      PermissionsBoundary:
-        !If [
-          UsePermissionsBoundary,
-          !Ref PermissionsBoundary,
-          !Ref AWS::NoValue,
-        ]
+                Action:
+                  - states:StartExecution
+                  - states:StartSyncExecution
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
 
   NinoAttemptsTable:
-    Type: "AWS::DynamoDB::Table"
+    Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub "${AWS::StackName}-nino-attempts"
-      BillingMode: "PAY_PER_REQUEST"
+      TableName: !Sub ${AWS::StackName}-nino-attempts
+      BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: "id"
-          AttributeType: "S"
+        - AttributeName: id
+          AttributeType: S
       KeySchema:
-        - AttributeName: "id"
-          KeyType: "HASH"
+        - AttributeName: id
+          KeyType: HASH
 
   NinoUsersTable:
-    Type: "AWS::DynamoDB::Table"
+    Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub "${AWS::StackName}-nino-users"
-      BillingMode: "PAY_PER_REQUEST"
+      TableName: !Sub ${AWS::StackName}-nino-users
+      BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: "sessionId"
-          AttributeType: "S"
+        - AttributeName: sessionId
+          AttributeType: S
       KeySchema:
-        - AttributeName: "sessionId"
-          KeyType: "HASH"
+        - AttributeName: sessionId
+          KeyType: HASH
 
   MatchingFunction:
     Type: AWS::Serverless::Function
-    Properties:
-      Handler: lambdas/matching/src/matching-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
-        Minify: true
-        Target: "es2020"
         Sourcemap: true
+    Properties:
+      Handler: lambdas/matching/src/matching-handler.lambdaHandler
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
 
   TimeFunction:
     Type: AWS::Serverless::Function
-    Properties:
-      Handler: lambdas/issue-credential/src/time-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
-        Minify: true
-        Target: "es2020"
         Sourcemap: true
+    Properties:
+      Handler: lambdas/issue-credential/src/time-handler.lambdaHandler
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
 
   CreateAuthCodeFunction:
     Type: AWS::Serverless::Function
-    Properties:
-      Handler: lambdas/matching/src/create-auth-code-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
-        Minify: true
-        Target: "es2020"
         Sourcemap: true
+    Properties:
+      Handler: lambdas/matching/src/create-auth-code-handler.lambdaHandler
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
 
   CurrentTimeFunction:
     Type: AWS::Serverless::Function
-    Properties:
-      Handler: lambdas/matching/src/current-time-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
-        Minify: true
-        Target: "es2020"
         Sourcemap: true
+    Properties:
+      Handler: lambdas/matching/src/current-time-handler.lambdaHandler
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
 
   CredentialSubjectFunction:
     Type: AWS::Serverless::Function
-    Properties:
-      Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
-        Minify: true
-        Target: "es2020"
         Sourcemap: true
+    Properties:
+      Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
 
   CheckSessionStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      Name: !Sub "${AWS::StackName}-CheckSession"
       Type: EXPRESS
+      Name: !Sub ${AWS::StackName}-CheckSession
       DefinitionUri: ../step-functions/check_session.asl.json
       DefinitionSubstitutions:
         CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
@@ -510,10 +434,8 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - Statement:
             Effect: Allow
-            Action:
-              - logs:*
-            Resource:
-              - "*"
+            Action: logs:*
+            Resource: "*"
       PermissionsBoundary: !If
         - UsePermissionsBoundary
         - !Ref PermissionsBoundary
@@ -522,11 +444,11 @@ Resources:
   NinoCheckStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      Name: !Sub "${AWS::StackName}-NinoCheck"
       Type: EXPRESS
+      Name: !Sub ${AWS::StackName}-NinoCheck
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
-        CheckSessionStateMachineArn: !GetAtt CheckSessionStateMachine.Arn
+        CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
         NinoAttemptsTable: !Ref NinoAttemptsTable
@@ -575,16 +497,14 @@ Resources:
               - ssm:GetParameters
               - ssm:GetParameter
             Resource:
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/NinoCheckUrl"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/UserAgent"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName"
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/NinoCheckUrl
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/UserAgent
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName
         - Statement:
             Effect: Allow
-            Action:
-              - logs:*
-            Resource:
-              - "*"
+            Action: logs:*
+            Resource: "*"
       PermissionsBoundary: !If
         - UsePermissionsBoundary
         - !Ref PermissionsBoundary
@@ -599,8 +519,8 @@ Resources:
   NinoIssueCredentialStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      Name: !Sub "${AWS::StackName}-NinoIssueCredential"
       Type: EXPRESS
+      Name: !Sub ${AWS::StackName}-NinoIssueCredential
       DefinitionUri: ../step-functions/nino_issue_credential.asl.json
       DefinitionSubstitutions:
         TimeFunctionArn: !GetAtt TimeFunction.Arn
@@ -637,22 +557,19 @@ Resources:
               - ssm:GetParameters
               - ssm:GetParameter
             Resource:
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/JwtTtlUnit"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/JwtTtlUnit
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer
         - Statement:
             Effect: Allow
-            Action:
-              - logs:*
-            Resource:
-              - "*"
+            Action: logs:*
+            Resource: "*"
         - Statement:
             Effect: Allow
-            Action:
-              - kms:Sign
+            Action: kms:Sign
             Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
       PermissionsBoundary: !If
         - UsePermissionsBoundary
@@ -676,83 +593,92 @@ Outputs:
     Description: JwtSigner Lambda Function ARN
     Value: !GetAtt JwtSignerFunction.Arn
 
-  StackName:
-    Description: "CloudFormation stack name"
-    Value: !Sub "${AWS::StackName}"
-
   ApiGatewayId:
-    Description: "API GatewayID of the Address CRI API"
-    Value: !Sub "${PublicNinoCheckApi}"
+    Description: API GatewayID of the Address CRI API
+    Value: !Ref PublicNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-ApiGatewayId
 
   PublicApiGatewayId:
-    Description: "API GatewayID of the public Address CRI API"
-    Value: !Sub "${PublicNinoCheckApi}"
+    Description: API GatewayID of the public Address CRI API
+    Value: !Ref PublicNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-PublicApiGatewayId
 
   PrivateApiGatewayId:
-    Description: "API GatewayID of the private Address CRI API"
-    Value:
-      !If [
-        IsNotDevEnvironment,
-        !Ref PrivateNinoCheckApi,
-        !Ref DevOnlyNinoCheckApi,
-      ]
+    Description: API GatewayID of the private Address CRI API
+    Value: !If
+      - IsNotDevEnvironment
+      - !Ref PrivateNinoCheckApi
+      - !Ref DevOnlyNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-PrivateApiGatewayId
 
   CurrentTimeFunction:
-    Description: "Fetch Current Time Function Arn"
+    Description: Fetch Current Time Function ARN
     Value: !GetAtt CurrentTimeFunction.Arn
 
   CurrentTimeFunctionRoleArn:
-    Description: "Fetch Current Time Function Role Arn"
+    Description: Fetch Current Time Function Role ARN
     Value: !GetAtt CurrentTimeFunctionRole.Arn
 
   CreateAuthCodeFunction:
-    Description: "Create Authorization Code Function ARN"
+    Description: Create Authorization Code Function ARN
     Value: !GetAtt CreateAuthCodeFunction.Arn
 
   CreateAuthCodeFunctionRoleArn:
-    Description: "Create Authorization Code Function Arn"
+    Description: Create Authorization Code Function ARN
     Value: !GetAtt CreateAuthCodeFunctionRole.Arn
 
+  # Delete when this is not used
   TimeFunction:
-    Description: "Time Lambda Function ARN"
+    Description: Time Lambda Function ARN
+    Value: !GetAtt TimeFunction.Arn
+
+  TimeFunctionArn:
+    Description: Time Lambda Function ARN
     Value: !GetAtt TimeFunction.Arn
 
   TimeFunctionRoleArn:
-    Description: "TimeFunctionRole Arn"
+    Description: TimeFunctionRole ARN
     Value: !GetAtt TimeFunctionRole.Arn
 
+  # Delete when this is not used
   MatchingFunction:
-    Description: "Matching Lambda Function ARN"
+    Description: Matching Lambda Function ARN
+    Value: !GetAtt MatchingFunction.Arn
+
+  MatchingFunctionArn:
+    Description: Matching Lambda Function ARN
     Value: !GetAtt MatchingFunction.Arn
 
   MatchingFunctionRoleArn:
-    Description: "MatchingFunctionRole Arn"
+    Description: MatchingFunctionRole ARN
     Value: !GetAtt MatchingFunctionRole.Arn
 
   NinoCheckStateMachineArn:
-    Description: "NinoCheck StateMachine Arn"
-    Value: !GetAtt NinoCheckStateMachine.Arn
+    Description: NINO Check state machine ARN
+    Value: !Ref NinoCheckStateMachine
 
   CheckSessionStateMachineArn:
-    Description: "Session Check StateMachine Arn"
-    Value: !GetAtt CheckSessionStateMachine.Arn
+    Description: Session Check state machine ARN
+    Value: !Ref CheckSessionStateMachine
 
   NinoIssueCredentialStateMachineArn:
-    Description: "Nino Issue Credential StateMachine Arn"
-    Value: !GetAtt NinoIssueCredentialStateMachine.Arn
+    Description: NINO Issue Credential state machine ARN
+    Value: !Ref NinoIssueCredentialStateMachine
 
   CommonStackName:
-    Description: "Common Stack Name"
+    Description: Common Stack Name
     Value: !Ref CommonStackName
 
+  # Delete when this is not used
   NinoIssueCredentialStateMachineIamRole:
-    Description: "Implicit IAM Role created for Matching function"
+    Description: Implicit IAM Role created for Matching function
+    Value: !GetAtt NinoCheckStateMachineRole.Arn
+
+  NinoIssueCredentialStateMachineIamRoleArn:
+    Description: Implicit IAM Role created for Matching function
     Value: !GetAtt NinoCheckStateMachineRole.Arn
 
   NinoAttemptsTable:
