@@ -5,8 +5,7 @@ const config: Config.InitialOptions = {
   clearMocks: true,
   modulePaths: ["<rootDir>/src"],
   collectCoverageFrom: ["<rootDir>/src/**/*"],
-  testPathIgnorePatterns: ["./build/*"],
-  testMatch: ["<rootDir>/tests/*"],
+  testMatch: ["<rootDir>/tests/**/*.test.ts"],
   coverageThreshold: {
     global: {
       statements: 100,
