@@ -1,14 +1,15 @@
 {
-  "name": "di-ipv-cri-check-hmrc-api",
+  "name": "ipv-cri-check-hmrc-api",
   "description": "",
   "workspaces": [
+    "integration-tests",
     "lambdas/*"
   ],
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "unit": "jest --silent",
-    "test": "npm run unit",
+    "test": "npm run unit --",
     "test:coverage": "npm run unit -- --coverage",
     "sam:validate": "cd infrastructure && sam validate && sam validate --lint",
     "sam:build": "cd infrastructure && sam build"
