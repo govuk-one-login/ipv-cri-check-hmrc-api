@@ -11,7 +11,7 @@ import {
   kid,
   largeClaimsSet,
   publicVerifyingJwk,
-} from "../src/test-data";
+} from "./test-data";
 
 const kmsClient = jest.mocked(KMSClient).prototype;
 const jwtSignerHandler = new JwtSignerHandler(kmsClient);
