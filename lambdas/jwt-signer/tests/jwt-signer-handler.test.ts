@@ -12,7 +12,8 @@ import {
   kid,
   largeClaimsSet,
   publicVerifyingJwk,
-} from "../src/test-data";
+} from "./test-data";
+
 let mockedKMSClient: jest.MockedObjectDeep<typeof KMSClient>;
 
 beforeEach(() => {
