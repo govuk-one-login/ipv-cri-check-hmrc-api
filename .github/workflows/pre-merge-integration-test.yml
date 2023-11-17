@@ -1,12 +1,8 @@
 name: Pre-Merge Integration Tests
+
 on:
+  workflow_dispatch:
   pull_request:
-    types:
-      - opened
-      - reopened
-      - ready_for_review
-      - synchronize
-  workflow_dispatch: # Deploy Manually
 
 jobs:
   test:
@@ -40,10 +36,12 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: sam validate
-        run: sam validate --region ${{ env.AWS_REGION }} -t infrastructure/template.yaml
+        run: |
+          sam validate -t infrastructure/template.yaml
+          sam validate -t infrastructure/template.yaml --lint
 
       - name: Install dependencies
-        run: npm --prefix integration-tests install
+        run: npm install --workspace integration-tests --include-workspace-root
 
       - name: sam build
         run: sam build -t infrastructure/template.yaml
@@ -52,10 +50,10 @@ jobs:
         run: sam deploy --config-file infrastructure/samconfig.toml --stack-name ${{ env.STACK_NAME }}
 
       - name: Run mocked tests
-        run: npm --prefix integration-tests run test:mocked
+        run: npm run test:mocked --workspace integration-tests
 
       - name: Run AWS tests
-        run: npm --prefix integration-tests run test:aws
+        run: npm run test:aws --workspace integration-tests
 
       - name: Delete test stack
         if: success()
