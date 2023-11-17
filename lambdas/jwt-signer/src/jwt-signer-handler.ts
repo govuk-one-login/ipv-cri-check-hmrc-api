@@ -1,6 +1,6 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import { createHash } from "crypto";
-import sigFormatter from "ecdsa-sig-formatter";
+import * as sigFormatter from "ecdsa-sig-formatter";
 import { fromEnv } from "@aws-sdk/credential-providers";
 import { SignerPayLoad } from "./signer-payload";
 import { SignageType } from "./signage-type";

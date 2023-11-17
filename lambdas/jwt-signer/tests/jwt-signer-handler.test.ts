@@ -1,7 +1,7 @@
 import { KMSClient } from "@aws-sdk/client-kms";
 import { JwtSignerHandler } from "../src/jwt-signer-handler";
 import { Context } from "aws-lambda";
-import sigFormatter from "ecdsa-sig-formatter";
+import * as sigFormatter from "ecdsa-sig-formatter";
 import { SignerPayLoad } from "../src/signer-payload";
 import { importJWK, jwtVerify } from "jose";
 import {
@@ -14,34 +14,30 @@ import {
   publicVerifyingJwk,
 } from "./test-data";
 
-let mockedKMSClient: jest.MockedObjectDeep<typeof KMSClient>;
+let kmsClient: jest.Mocked<KMSClient>;
 
 beforeEach(() => {
-  mockedKMSClient = jest.mocked(KMSClient);
+  kmsClient = { send: jest.fn() } as unknown as jest.Mocked<KMSClient>;
 });
-afterEach(() => jest.clearAllMocks());
 
 describe("jwt-signer-handler", () => {
   describe("succeed in signing a jwt", () => {
     describe("with RAW signage mode", () => {
       it("should verify a signed jwt message smaller than 4096", async () => {
         const event: SignerPayLoad = { kid, header, claimsSet };
-        const jwtSignerHandler = new JwtSignerHandler(
-          mockedKMSClient.prototype
-        );
+        const jwtSignerHandler = new JwtSignerHandler(kmsClient);
         const signatureBuffer = sigFormatter.joseToDer(joseSignature, "ES256");
-        const spy = jest.spyOn(mockedKMSClient.prototype, "send");
-        spy.mockImplementationOnce(() =>
-          Promise.resolve({
-            Signature: signatureBuffer,
-          })
-        );
-        const signature = await jwtSignerHandler.handler(event, {} as Context);
 
+        kmsClient.send.mockImplementationOnce(() =>
+          Promise.resolve({ Signature: signatureBuffer })
+        );
+
+        const signature = await jwtSignerHandler.handler(event, {} as Context);
         const publicSigningVerifyingKey = await importJWK(
           publicVerifyingJwk,
           "ES256"
         );
+
         const { payload } = await jwtVerify(
           `${header}.${claimsSet}.${signature}`,
           publicSigningVerifyingKey,
@@ -49,14 +45,16 @@ describe("jwt-signer-handler", () => {
             algorithms: ["ES256"],
           }
         );
+
         expect(signature).not.toBeUndefined();
-        expect(spy).toHaveBeenCalledWith(
+        expect(kmsClient.send).toHaveBeenCalledWith(
           expect.objectContaining({
             input: expect.objectContaining({
               MessageType: "RAW",
             }),
           })
         );
+
         expect(payload).toEqual({
           aud: "https://review-a.dev.account.gov.uk",
           client_id: "ipv-core-stub-aws-build",
@@ -99,29 +97,27 @@ describe("jwt-signer-handler", () => {
         });
       });
     });
+
     describe("using DIGEST signing mode", () => {
       it("should verify a large signed jwt with claimset greater than 4096x", async () => {
         const event: SignerPayLoad = { kid, header, claimsSet: largeClaimsSet };
-        const jwtSignerHandler = new JwtSignerHandler(
-          mockedKMSClient.prototype
-        );
-
+        const jwtSignerHandler = new JwtSignerHandler(kmsClient);
         const signatureBuffer = sigFormatter.joseToDer(
           joseLargeClaimsSetSignature,
           "ES256"
         );
-        const spy = jest.spyOn(mockedKMSClient.prototype, "send");
-        spy.mockImplementationOnce(() =>
-          Promise.resolve({
-            Signature: signatureBuffer,
-          })
+
+        kmsClient.send.mockImplementationOnce(() =>
+          Promise.resolve({ Signature: signatureBuffer })
         );
+
         const signature = await jwtSignerHandler.handler(event, {} as Context);
 
         const publicSigningVerifyingKey = await importJWK(
           publicVerifyingJwk,
           "ES256"
         );
+
         const { payload } = await jwtVerify(
           `${header}.${event.claimsSet}.${signature}`,
           publicSigningVerifyingKey,
@@ -129,28 +125,30 @@ describe("jwt-signer-handler", () => {
             algorithms: ["ES256"],
           }
         );
+
         expect(signature).not.toBeUndefined();
-        expect(spy).toHaveBeenCalledWith(
+        expect(kmsClient.send).toHaveBeenCalledWith(
           expect.objectContaining({
             input: expect.objectContaining({
               MessageType: "DIGEST",
             }),
           })
         );
+
         expect(payload).toEqual(
           JSON.parse(Buffer.from(event.claimsSet, "base64").toString())
         );
       });
     });
   });
+
   describe("does not sign a jwt", () => {
     it("should error when signature is undefined", async () => {
       const event: SignerPayLoad = { kid, header, claimsSet };
-      const jwtSignerHandler = new JwtSignerHandler(mockedKMSClient.prototype);
-      jest.spyOn(mockedKMSClient.prototype, "send").mockImplementationOnce(() =>
-        Promise.resolve({
-          Signature: undefined,
-        })
+      const jwtSignerHandler = new JwtSignerHandler(kmsClient);
+
+      kmsClient.send.mockImplementationOnce(() =>
+        Promise.resolve({ Signature: undefined })
       );
 
       await expect(
@@ -159,52 +157,57 @@ describe("jwt-signer-handler", () => {
         "KMS signing error: Error: KMS response does not contain a valid Signature."
       );
     });
+
     it("should fail when key Id is missing", async () => {
       const event: Partial<SignerPayLoad> = { header, claimsSet };
-      const kmsClient = new KMSClient({ region: "eu-west-2" });
       const jwtSignerHandler = new JwtSignerHandler(kmsClient);
-      const mockSignCommand = jest.fn().mockReturnValue({
-        Signature: new Uint8Array(),
-      });
-      kmsClient.send = mockSignCommand;
 
-      mockSignCommand.mockRejectedValueOnce(
-        new Error(
-          "ValidationException: 1 validation error detected: Value null at 'keyId' failed to satisfy constraint: Member must not be null"
-        )
-      );
+      kmsClient.send = jest
+        .fn()
+        .mockReturnValue({
+          Signature: new Uint8Array(),
+        })
+        .mockRejectedValueOnce(
+          new Error(
+            "ValidationException: 1 validation error detected: Value null at 'keyId' failed to satisfy constraint: Member must not be null"
+          )
+        );
+
       await expect(
         jwtSignerHandler.handler(event as SignerPayLoad, {} as Context)
       ).rejects.toThrow(
         "KMS signing error: Error: ValidationException: 1 validation error detected: Value null at 'keyId' failed to satisfy constraint: Member must not be null"
       );
     });
+
     it("should throw an error if KMS response is not in JSON format", async () => {
       const event: Partial<SignerPayLoad> = { header, claimsSet };
-      const kmsClient = new KMSClient({ region: "eu-west-2" });
       const jwtSignerHandler = new JwtSignerHandler(kmsClient);
-      const mockSignCommand = jest.fn().mockReturnValue({
-        Signature: new Uint8Array(),
-      });
-      kmsClient.send = mockSignCommand;
-      mockSignCommand.mockRejectedValueOnce(new SyntaxError("Unknown error"));
+
+      kmsClient.send = jest
+        .fn()
+        .mockReturnValue({
+          Signature: new Uint8Array(),
+        })
+        .mockRejectedValueOnce(new SyntaxError("Unknown error"));
+
       await expect(
         jwtSignerHandler.handler(event as SignerPayLoad, {} as Context)
       ).rejects.toThrow(
         "KMS response is not in JSON format. SyntaxError: Unknown error"
       );
     });
+
     it("should throw an error for an unknown error during signing with KMS", async () => {
       const event: Partial<SignerPayLoad> = { header, claimsSet };
-      const kmsClient = new KMSClient({ region: "eu-west-2" });
       const jwtSignerHandler = new JwtSignerHandler(kmsClient);
 
-      const mockSignCommand = jest.fn().mockReturnValue({
-        Signature: new Uint8Array(),
-      });
-
-      kmsClient.send = mockSignCommand;
-      mockSignCommand.mockRejectedValueOnce({ Signature: "invalid-response" });
+      kmsClient.send = jest
+        .fn()
+        .mockReturnValue({
+          Signature: new Uint8Array(),
+        })
+        .mockRejectedValueOnce({ Signature: "invalid-response" });
 
       await expect(
         jwtSignerHandler.handler(event as SignerPayLoad, {} as Context)
