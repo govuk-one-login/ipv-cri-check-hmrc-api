@@ -1,4 +1,5 @@
 import { base64url } from "jose";
+
 interface Address {
   buildingNumber: string;
   buildingName: string;
@@ -9,6 +10,7 @@ interface Address {
 }
 
 export const kid = "0976c11e-8ef3-4659-b7f2-ee0b842b85bd";
+
 export const header = base64url.encode(
   JSON.stringify({
     kid,
@@ -16,6 +18,7 @@ export const header = base64url.encode(
     alg: "ES256",
   })
 );
+
 export const claimsSet = base64url.encode(
   JSON.stringify({
     sub: "urn:fdc:gov.uk:2022:0df67954-5537-4c98-92d9-e95f0b2e6f44",
@@ -58,31 +61,25 @@ export const claimsSet = base64url.encode(
     iat: 1697516406,
   })
 );
-export const generateFixedString = (length = 10): string => {
-  const charset =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  return Array.from(
-    { length },
-    (_, index) => charset[index % charset.length]
-  ).join("");
+
+const generateFixedString = (length: number = 10) =>
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".substring(
+    0,
+    length
+  );
+
+const fixedAddressSection: Address = {
+  buildingNumber: generateFixedString(),
+  buildingName: generateFixedString(),
+  streetName: generateFixedString(),
+  addressLocality: generateFixedString(),
+  postalCode: generateFixedString(),
+  validFrom: "2021-01-01",
 };
 
-const generateRandomAddressSection = (): Address => {
-  return {
-    buildingNumber: generateFixedString(),
-    buildingName: generateFixedString(),
-    streetName: generateFixedString(),
-    addressLocality: generateFixedString(),
-    postalCode: generateFixedString(),
-    validFrom: "2021-01-01",
-  };
-};
-const generateRandomAddressSections = (numSections: number): Address[] => {
-  return Array.from({ length: numSections }, generateRandomAddressSection);
-};
 const numAdditionalSections = 15;
-const additionalAddressSections = generateRandomAddressSections(
-  numAdditionalSections
+const additionalAddressSections = Array(numAdditionalSections).fill(
+  fixedAddressSection
 );
 
 export const largeClaimsSet = base64url.encode(
@@ -128,6 +125,7 @@ export const largeClaimsSet = base64url.encode(
     iat: 1697516406,
   })
 );
+
 export const publicVerifyingJwk = {
   kty: "EC",
   use: "sig",
@@ -136,7 +134,9 @@ export const publicVerifyingJwk = {
   x: "A84nU-ZLSFNs8VI6VXkunvWwRx-T3gAXvw2JPRrP78c",
   y: "ElcRbqkXk-XBnhYC55hApLY9oGnZA5H5MUlqe02gGXA",
 };
+
 export const joseSignature =
   "BiUZkuU4MFE8zg5zpghGdn-g-uepv14qXAXal4vpgnAk0qZSutsRFvhw_YNRoVwxsacBA6RCEHrHmYpTxsJ9sQ";
+
 export const joseLargeClaimsSetSignature =
   "Lz57KV7UC1jY_zabLAiIkXkhktmV0Gwg7rG2Z05roY-Ow150MmfDWbVavcpGP8do88MebxM47H-0q30F-CfB2A";
