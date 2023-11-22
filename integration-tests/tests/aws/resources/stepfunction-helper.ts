@@ -1,16 +1,18 @@
 import { SFNClient, StartSyncExecutionCommand } from "@aws-sdk/client-sfn";
+import { createSendCommand } from "./aws-helper";
 
-const sfnClient = new SFNClient({
-  region: process.env.AWS_REGION,
-});
-export const executeStepFunction = async (
-  input: Record<string, unknown>,
-  stateMachineArn?: string
-) => {
-  return await sfnClient.send(
-    new StartSyncExecutionCommand({
-      stateMachineArn,
-      input: JSON.stringify(input),
+const sendCommand = createSendCommand(
+  () =>
+    new SFNClient({
+      region: process.env.AWS_REGION,
     })
-  );
-};
+);
+
+export const executeStepFunction = async (
+  stateMachineArn: string,
+  input: Record<string, unknown> = {}
+) =>
+  sendCommand(StartSyncExecutionCommand, {
+    stateMachineArn,
+    input: JSON.stringify(input),
+  });

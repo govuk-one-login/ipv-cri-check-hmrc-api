@@ -4,28 +4,29 @@ import {
   DynamoDBDocumentClient,
   PutCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { createSendCommand } from "./aws-helper";
 
-const client = new DynamoDBClient({ region: process.env.AWS_REGION });
-const docClient = DynamoDBDocumentClient.from(client);
+type Keys = Record<string, unknown>;
+type TableRecords = { tableName: string; items: Keys };
 
-export const populateTable = async (
-  testUser: Record<string, unknown>,
-  tableName?: string
-) => {
-  const command = new PutCommand({
-    TableName: tableName,
-    Item: testUser,
-  });
-  return await docClient.send(command);
-};
+const sendCommand = createSendCommand(() =>
+  DynamoDBDocumentClient.from(
+    new DynamoDBClient({ region: process.env.AWS_REGION })
+  )
+);
 
-export const clearItems = async (
-  tableName: string,
-  key: Record<string, unknown>
-) => {
-  const command = new DeleteCommand({
-    TableName: tableName,
-    Key: key,
-  });
-  return await docClient.send(command);
-};
+export const populateTable = (tableName: string, items: Keys) =>
+  sendCommand(PutCommand, { TableName: tableName, Item: items });
+
+export const populateTables = (...tableRecords: TableRecords[]) =>
+  Promise.all(
+    tableRecords.map((record) => populateTable(record.tableName, record.items))
+  );
+
+export const clearItems = (tableName: string, items: Keys) =>
+  sendCommand(DeleteCommand, { TableName: tableName, Key: items });
+
+export const clearItemsFromTables = (...tableRecords: TableRecords[]) =>
+  Promise.all(
+    tableRecords.map((record) => clearItems(record.tableName, record.items))
+  );

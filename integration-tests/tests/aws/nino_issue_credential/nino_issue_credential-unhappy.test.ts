@@ -1,6 +1,9 @@
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
-import { clearItems, populateTable } from "../resources/dynamodb-helper";
+import {
+  clearItemsFromTables,
+  populateTables,
+} from "../resources/dynamodb-helper";
 
 jest.setTimeout(30_000);
 
@@ -32,80 +35,86 @@ describe("nino-issue-credential-unhappy", () => {
     sessionTableName = `session-${output.CommonStackName}`;
     personIdentityTableName = `person-identity-${output.CommonStackName}`;
 
-    await populateTable(
+    await populateTables(
       {
-        sessionId: "123456789",
-        nino: "AA000003D",
+        tableName: output.NinoUsersTable as string,
+        items: {
+          sessionId: "123456789",
+          nino: "AA000003D",
+        },
       },
-      output.NinoUsersTable
-    );
-
-    await populateTable(
       {
-        sessionId: "123456789",
-        accessToken: "Bearer test",
-        authorizationCode: "cd8ff974-d3bc-4422-9b38-a3e5eb24adc0",
-        authorizationCodeExpiryDate: "1698925598",
-        expiryDate: "9999999999",
-        subject: "test",
+        tableName: sessionTableName,
+        items: {
+          sessionId: "123456789",
+          accessToken: "Bearer test",
+          authorizationCode: "cd8ff974-d3bc-4422-9b38-a3e5eb24adc0",
+          authorizationCodeExpiryDate: "1698925598",
+          expiryDate: "9999999999",
+          subject: "test",
+        },
       },
-      sessionTableName
-    );
-
-    await populateTable(
       {
-        sessionId: input.sessionId,
-        nino: input.nino,
-        birthDates: [{ value: testUser.dob }],
-        names: [
-          {
-            nameParts: [
-              {
-                type: "GivenName",
-                value: testUser.firstName,
-              },
-              {
-                type: "FamilyName",
-                value: testUser.lastName,
-              },
-            ],
-          },
-        ],
+        tableName: personIdentityTableName,
+        items: {
+          sessionId: input.sessionId,
+          nino: input.nino,
+          birthDates: [{ value: testUser.dob }],
+          names: [
+            {
+              nameParts: [
+                {
+                  type: "GivenName",
+                  value: testUser.firstName,
+                },
+                {
+                  type: "FamilyName",
+                  value: testUser.lastName,
+                },
+              ],
+            },
+          ],
+        },
       },
-      personIdentityTableName
-    );
-
-    await populateTable(
       {
-        id: "123456789",
-        attempts: 2,
-        outcome: "FAIL",
-      },
-      output.NinoAttemptsTable
+        tableName: output.NinoAttemptsTable as string,
+        items: {
+          id: "123456789",
+          attempts: 2,
+          outcome: "FAIL",
+        },
+      }
     );
   });
 
-  afterEach(async () => {
-    await clearItems(sessionTableName, {
-      sessionId: input.sessionId,
-    });
-    await clearItems(personIdentityTableName, {
-      sessionId: input.sessionId,
-    });
-    await clearItems(output.NinoAttemptsTable as string, {
-      id: input.sessionId,
-    });
-    await clearItems(output.NinoUsersTable as string, {
-      sessionId: input.sessionId,
-    });
-  });
+  afterEach(
+    async () =>
+      await clearItemsFromTables(
+        {
+          tableName: sessionTableName,
+          items: { sessionId: input.sessionId },
+        },
+        {
+          tableName: personIdentityTableName,
+          items: { sessionId: input.sessionId },
+        },
+        {
+          tableName: output.NinoUsersTable as string,
+          items: { sessionId: input.sessionId },
+        },
+        {
+          tableName: output.NinoAttemptsTable as string,
+          items: { id: input.sessionId },
+        }
+      )
+  );
 
   it("should fail when nino check is unsuccessful", async () => {
     const startExecutionResult = await executeStepFunction(
+      output.NinoIssueCredentialStateMachineArn as string,
       {
         bearerToken: "Bearer test",
-      },
-      output.NinoIssueCredentialStateMachineArn
+      }
     );
 
     const token = JSON.parse(startExecutionResult.output as string);
