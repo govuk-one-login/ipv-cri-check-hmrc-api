@@ -140,7 +140,7 @@ Resources:
               - "https://api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
               - Fn::Sub:
                   - "${ImposterApiUrl}/individuals/authentication/authenticator/api/match"
-                  - ImposterApiUrl: !ImportValue third-party-stubs-ImposterStubApiUrl,
+                  - ImposterApiUrl: !ImportValue third-party-stubs-ImposterStubApiUrl
 
   MaxJwtTtlParameter:
     Type: AWS::SSM::Parameter
