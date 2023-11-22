@@ -96,9 +96,9 @@ Conditions:
     - !Equals [!Ref Environment, dev]
     - !Equals [!Ref Environment, build]
     - !Equals [!Ref Environment, integration]
-  IsStagingEnvironment: !Equals
-    - !Ref Environment
-    - staging
+  IsStagingOrIntegrationEnvironment: !Or
+    - !Equals [!Ref Environment, staging]
+    - !Equals [!Ref Environment, integration]
   IsProductionEnvironment: !Equals
     - !Ref Environment
     - production
@@ -144,7 +144,7 @@ Resources:
                   ImposterApiUrl: !ImportValue third-party-stubs-ImposterStubApiUrl,
                 }
           - Fn::If:
-              - IsStagingEnvironment
+              - IsStagingOrIntegrationEnvironment
               - "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
               - Fn::If:
                   - IsProductionEnvironment
