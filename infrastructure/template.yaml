@@ -92,10 +92,6 @@ Conditions:
     - dev
   IsNotDevEnvironment: !Not
     - Condition: IsDevEnvironment
-  IsStubEnvironment: !Or
-    - !Equals [!Ref Environment, dev]
-    - !Equals [!Ref Environment, build]
-    - !Equals [!Ref Environment, integration]
   IsStagingOrIntegrationEnvironment: !Or
     - !Equals [!Ref Environment, staging]
     - !Equals [!Ref Environment, integration]
@@ -137,19 +133,14 @@ Resources:
       Description: URL for HMRC /check endpoint
       Value:
         Fn::If:
-          - IsStubEnvironment
-          - Fn::Sub:
-              - "${ImposterApiUrl}/individuals/authentication/authenticator/api/match"
-              - {
-                  ImposterApiUrl: !ImportValue third-party-stubs-ImposterStubApiUrl,
-                }
+          - IsStagingOrIntegrationEnvironment
+          - "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
           - Fn::If:
-              - IsStagingOrIntegrationEnvironment
-              - "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
-              - Fn::If:
-                  - IsProductionEnvironment
-                  - "https://api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
-                  - ""
+              - IsProductionEnvironment
+              - "https://api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
+              - Fn::Sub:
+                  - "${ImposterApiUrl}/individuals/authentication/authenticator/api/match"
+                  - ImposterApiUrl: !ImportValue third-party-stubs-ImposterStubApiUrl,
 
   MaxJwtTtlParameter:
     Type: AWS::SSM::Parameter
