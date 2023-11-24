@@ -39,11 +39,6 @@ let sessionTableName: string;
 let personIdentityTableName: string;
 
 beforeEach(async () => {
-  await secretsManager.updateSecret({
-    SecretId: "HMRCBearerToken",
-    SecretString: "goodToken",
-  });
-
   output = await stackOutputs(process.env.STACK_NAME);
   sessionTableName = `session-${output.CommonStackName}`;
   personIdentityTableName = `person-identity-${output.CommonStackName}`;
@@ -168,7 +163,7 @@ it("should fail when user record already present in nino user table", async () =
   expect(startExecutionResult.status).toBe("FAILED");
 });
 
-it("should fail when user nino does not match with HMRC DB", async () => {
+it("should fail when user NINO does not match with HMRC DB", async () => {
   const startExecutionResult = await executeStepFunction(
     output.NinoCheckStateMachineArn as string,
     input
@@ -179,32 +174,50 @@ it("should fail when user nino does not match with HMRC DB", async () => {
   );
 });
 
-it("should throw an error when url is unavailable", async () => {
+describe("NINO check URL is unavailable", () => {
   const urlParameterName = `/${process.env.STACK_NAME}/NinoCheckUrl`;
-  const currentURL = (await getSSMParameter(urlParameterName)) as string;
+  let currentURL: string;
 
-  await updateSSMParameter(urlParameterName, "bad-url");
-
-  const startExecutionResult = await executeStepFunction(
-    output.NinoCheckStateMachineArn as string,
-    input
-  );
-
-  await updateSSMParameter(urlParameterName, currentURL);
-
-  expect(startExecutionResult.status).toEqual("FAILED");
-});
-
-it("should throw an error when token is invalid", async () => {
-  await secretsManager.updateSecret({
-    SecretId: "HMRCBearerToken",
-    SecretString: "badToken",
+  beforeAll(async () => {
+    currentURL = (await getSSMParameter(urlParameterName)) as string;
+    await updateSSMParameter(urlParameterName, "bad-url");
   });
 
-  const startExecutionResult = await executeStepFunction(
-    output.NinoCheckStateMachineArn as string,
-    input
+  afterAll(async () => await updateSSMParameter(urlParameterName, currentURL));
+
+  it("should throw an error when URL is unavailable", async () => {
+    const startExecutionResult = await executeStepFunction(
+      output.NinoCheckStateMachineArn as string,
+      input
+    );
+
+    expect(startExecutionResult.status).toEqual("FAILED");
+  });
+});
+
+describe("HMRC bearer token is invalid", () => {
+  beforeAll(
+    async () =>
+      await secretsManager.updateSecret({
+        SecretId: "HMRCBearerToken",
+        SecretString: "badToken",
+      })
   );
 
-  expect(startExecutionResult.status).toEqual("FAILED");
+  afterAll(
+    async () =>
+      await secretsManager.updateSecret({
+        SecretId: "HMRCBearerToken",
+        SecretString: "goodToken",
+      })
+  );
+
+  it("should throw an error when token is invalid", async () => {
+    const startExecutionResult = await executeStepFunction(
+      output.NinoCheckStateMachineArn as string,
+      input
+    );
+
+    expect(startExecutionResult.status).toEqual("FAILED");
+  });
 });
