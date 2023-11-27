@@ -1,8 +1,7 @@
-import { Config } from "@jest/types";
+import { Config } from "jest";
 import baseConfig from "../../jest.config.base";
 
-const config: Config.InitialOptions = {
+export default {
   ...baseConfig,
   displayName: "lambdas/jwt-signer",
-};
-export default config;
+} satisfies Config;

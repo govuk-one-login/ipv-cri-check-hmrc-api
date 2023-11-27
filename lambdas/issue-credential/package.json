@@ -1,18 +1,13 @@
 {
   "name": "issue-credential",
-  "version": "1.0.0",
   "description": "",
   "scripts": {
-    "lint:prettier": "prettier --check .",
-    "lint:prettier-fix": "npx prettier --write .",
-    "lint:eslint": "eslint .",
-    "lint": "npm run lint:prettier && npm run lint:eslint",
-    "compile": "tsc",
-    "unit": "jest --config=jest.config.ts",
-    "test": "npm run compile && npm run unit"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "unit": "jest --silent",
+    "test": "npm run unit --",
+    "test:coverage": "npm run unit -- --coverage",
+    "compile": "tsc"
   },
-  "dependencies": {
-    "@aws-lambda-powertools/logger": "1.14.2",
-    "esbuild": "0.19.5"
-  }
+  "dependencies": {}
 }

@@ -1,12 +1,8 @@
 name: Pre-Merge Integration Tests
+
 on:
+  workflow_dispatch:
   pull_request:
-    types:
-      - opened
-      - reopened
-      - ready_for_review
-      - synchronize
-  workflow_dispatch: # Deploy Manually
 
 jobs:
   test:
@@ -28,10 +24,11 @@ jobs:
         with:
           node-version: 18.x
 
-      - name: Setup SAM
-        uses: aws-actions/setup-sam@v2
-        with:
-          version: 1.74.0
+      - name: Install dependencies
+        run: npm install --workspace integration-tests --include-workspace-root
+
+      - name: Run mocked tests
+        run: npm run test:mocked --workspace integration-tests
 
       - name: Assume temporary AWS role
         uses: aws-actions/configure-aws-credentials@v4
@@ -39,23 +36,24 @@ jobs:
           role-to-assume: ${{ secrets.DEV_PRE_MERGE_GH_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: sam validate
-        run: sam validate --region ${{ env.AWS_REGION }} -t infrastructure/template.yaml
+      - name: Setup SAM
+        uses: aws-actions/setup-sam@v2
+        with:
+          version: 1.74.0
 
-      - name: Install dependencies
-        run: npm --prefix integration-tests install
+      - name: SAM validate
+        run: |
+          sam validate -t infrastructure/template.yaml
+          sam validate -t infrastructure/template.yaml --lint
 
-      - name: sam build
+      - name: SAM build
         run: sam build -t infrastructure/template.yaml
 
-      - name: sam deploy
+      - name: SAM deploy
         run: sam deploy --config-file infrastructure/samconfig.toml --stack-name ${{ env.STACK_NAME }}
 
-      - name: Run mocked tests
-        run: npm --prefix integration-tests run test:mocked
-
       - name: Run AWS tests
-        run: npm --prefix integration-tests run test:aws
+        run: npm run test:aws --workspace integration-tests
 
       - name: Delete test stack
         if: success()
