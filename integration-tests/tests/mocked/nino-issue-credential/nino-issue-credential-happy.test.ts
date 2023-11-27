@@ -70,7 +70,7 @@ describe("nino-issue-credential-happy", () => {
     );
 
     const [, payloadEncoded] = JSON.parse(
-      results[0].stateExitedEventDetails?.output as any
+      results[0].stateExitedEventDetails?.output as string
     ).jwt.split(".");
 
     const payload = JSON.parse(decode(payloadEncoded));

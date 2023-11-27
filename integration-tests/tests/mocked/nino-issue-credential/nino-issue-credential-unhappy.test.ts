@@ -35,8 +35,7 @@ describe("nino-issue-credential-unhappy", () => {
       results[0].stateExitedEventDetails?.output as never
     );
 
-    const [headerEncoded, payloadEncoded, signatureEncoded] =
-      token.jwt.split(".");
+    const [, payloadEncoded] = token.jwt.split(".");
 
     const payload = JSON.parse(atob(payloadEncoded));
     const evidence = payload.vc.evidence[0];
