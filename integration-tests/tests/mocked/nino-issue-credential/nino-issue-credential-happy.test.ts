@@ -3,6 +3,44 @@ import { SfnContainerHelper } from "./sfn-container-helper";
 
 jest.setTimeout(30_000);
 
+const decode = (value: string) =>
+  Buffer.from(value, "base64").toString("utf-8");
+
+const expectedPayload = {
+  iss: "0976c11e-8ef3-4659-b7f2-ee0b842b85bd",
+  jti: expect.any(String),
+  sub: "test",
+  vc: {
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld",
+    ],
+    credentialSubject: {
+      name: [
+        {
+          nameParts: [
+            { type: "GivenName", value: "Jim" },
+            { type: "FamilyName", value: "Ferguson" },
+          ],
+        },
+      ],
+      socialSecurityRecord: [{ personalNumber: "AA000003D" }],
+    },
+    evidence: [
+      {
+        checkDetails: [
+          { checkMethod: "data", identityCheckPolicy: "published" },
+        ],
+        strengthScore: 2,
+        txn: expect.any(String),
+        type: "IdentityCheck",
+        validityScore: 2,
+      },
+    ],
+    type: ["VerifiableCredential", "IdentityCheckCredential"],
+  },
+};
+
 describe("nino-issue-credential-happy", () => {
   let sfnContainer: SfnContainerHelper;
 
@@ -30,8 +68,12 @@ describe("nino-issue-credential-happy", () => {
         event?.stateExitedEventDetails?.name === "Create Signed JWT",
       responseStepFunction
     );
-    expect(results[0].stateExitedEventDetails?.output).toEqual(
-      '{"jwt":"eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6IjA5NzZjMTFlLThlZjMtNDY1OS1iN2YyLWVlMGI4NDJiODViZCJ9.eyJ2YyI6eyJldmlkZW5jZSI6W3sidHlwZSI6IklkZW50aXR5Q2hlY2siLCJzdHJlbmd0aFNjb3JlIjoyLCJ2YWxpZGl0eVNjb3JlIjoyLCJjaGVja0RldGFpbHMiOlt7ImNoZWNrTWV0aG9kIjoiZGF0YSIsImlkZW50aXR5Q2hlY2tQb2xpY3kiOiJwdWJsaXNoZWQifV0sInR4biI6ImM4ODFjMzY5LTQ4ZTktNDIxOS1iZTg1LWYyMzZlNTJhMDg4MCJ9XSwiY3JlZGVudGlhbFN1YmplY3QiOnsic29jaWFsU2VjdXJpdHlSZWNvcmQiOlt7InBlcnNvbmFsTnVtYmVyIjoiQUEwMDAwMDNEIn1dLCJuYW1lIjpbeyJuYW1lUGFydHMiOlt7InR5cGUiOiJHaXZlbk5hbWUiLCJ2YWx1ZSI6IkppbSJ9LHsidHlwZSI6IkZhbWlseU5hbWUiLCJ2YWx1ZSI6IkZlcmd1c29uIn1dfV19LCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiSWRlbnRpdHlDaGVja0NyZWRlbnRpYWwiXSwiQGNvbnRleHQiOlsiaHR0cHM6Ly93d3cudzMub3JnLzIwMTgvY3JlZGVudGlhbHMvdjEiLCJodHRwczovL3ZvY2FiLmxvbmRvbi5jbG91ZGFwcHMuZGlnaXRhbC9jb250ZXh0cy9pZGVudGl0eS12MS5qc29ubGQiXX0sInN1YiI6InRlc3QiLCJuYmYiOjE2OTk5NjQ5NTYxMzEsImlzcyI6IjA5NzZjMTFlLThlZjMtNDY1OS1iN2YyLWVlMGI4NDJiODViZCIsImV4cCI6MTY5OTk3MjE1NjEzMSwianRpIjoidXJuOnV1aWQ6OGUyYjVlZTEtM2NmZC00MTQ2LWExZjItMzhjNDJlOTIzNzQ5In0=.MEYCIQA/Pzw/Pz8pPz9zPzEpPz92KiQ/P0g/VkxLWz8/OjQECgIhAD8BPzI/Pxg/eT8/ZD8oPz5kCC4/Kz8/P34/WT8XPyc/"}'
-    );
+
+    const [, payloadEncoded] = JSON.parse(
+      results[0].stateExitedEventDetails?.output as any
+    ).jwt.split(".");
+
+    const payload = JSON.parse(decode(payloadEncoded));
+    expect(payload).toEqual(expect.objectContaining(expectedPayload));
   });
 });

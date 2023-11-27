@@ -40,7 +40,6 @@ describe("nino-issue-credential-unhappy", () => {
 
     const payload = JSON.parse(atob(payloadEncoded));
     const evidence = payload.vc.evidence[0];
-    console.log(evidence);
     expect(evidence.type).toBe("IdentityCheck");
     expect(evidence.strengthScore).toBe(2);
     expect(evidence.validityScore).toBe(0);

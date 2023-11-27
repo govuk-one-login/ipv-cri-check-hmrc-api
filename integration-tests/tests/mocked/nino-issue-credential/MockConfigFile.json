@@ -16,7 +16,7 @@
           "Fetch exp time and NBF": "FetchExpTimeAndNBF",
           "Fetch User NINO Attempts": "FetchUserNINOAttempts",
           "Add Type to VC": "AddTypeToVC",
-          "Sign VC claimset": "SignVCClaimset"
+          "Sign VC claimsSet": "SignVCClaimSet"
         },
         "UnHappyPath": {
           "Fetch Max JWT TTL": "FetchMaxJWTTTL",
@@ -32,7 +32,7 @@
           "Fetch exp time and NBF": "FetchExpTimeAndNBF",
           "Fetch User NINO Attempts": "FetchFailedUserNINOAttempts",
           "Add Type to VC": "AddFailTypeToVC",
-          "Sign VC claimset": "SignVCClaimset"
+          "Sign VC claimsSet": "SignVCClaimSet"
         }
       }
     }
@@ -463,12 +463,40 @@
         }
       }
     },
-    "SignVCClaimset": {
+    "SignVCClaimSet": {
       "0": {
         "Return": {
-          "KeyId": "arn:aws:kms:eu-west-2:562670266496:key/0976c11e-8ef3-4659-b7f2-ee0b842b85bd",
-          "Signature": "0F\u0002!\u0000\ufffd\ufffd<\ufffd\ufffd\ufffd)\ufffd\ufffds\ufffd1)\ufffd\ufffdv*$\ufffd\ufffdH\ufffdVLK[\ufffd\ufffd:4\u0004\n\u0002!\u0000\ufffd\u0001\ufffd2\ufffd\ufffd\u0018\ufffdy\ufffd\ufffdd\ufffd(\ufffd>d\b.\ufffd+\ufffd\ufffd\ufffd~\ufffdY\ufffd\u0017\ufffd'\ufffd",
-          "SigningAlgorithm": "ECDSA_SHA_256"
+          "ExecutedVersion": "$LATEST",
+          "Payload": "__RJ4lV8PxPSYrK7lIR082zcpY33dW1Hwz6h5b0DRZQrOLg5ua3PEasVhfOamuMV8r0fvsHFpGH-D8eFs6CCsA",
+          "SdkHttpMetadata": {
+            "AllHttpHeaders": {
+              "X-Amz-Executed-Version": ["$LATEST"],
+              "x-amzn-Remapped-Content-Length": ["0"],
+              "Connection": ["keep-alive"],
+              "x-amzn-RequestId": ["20229acd-1926-4994-be1f-752b8767e4bb"],
+              "Content-Length": ["88"],
+              "Date": ["Thu, 23 Nov 2023 15:55:38 GMT"],
+              "X-Amzn-Trace-Id": [
+                "root=1-655f75f9-27f6647873d4d7973877b13e;sampled=0;lineage=43496acb:0"
+              ],
+              "Content-Type": ["application/json"]
+            },
+            "HttpHeaders": {
+              "Connection": "keep-alive",
+              "Content-Length": "88",
+              "Content-Type": "application/json",
+              "Date": "Thu, 23 Nov 2023 15:55:38 GMT",
+              "X-Amz-Executed-Version": "$LATEST",
+              "x-amzn-Remapped-Content-Length": "0",
+              "x-amzn-RequestId": "20229acd-1926-4994-be1f-752b8767e4bb",
+              "X-Amzn-Trace-Id": "root=1-655f75f9-27f6647873d4d7973877b13e;sampled=0;lineage=43496acb:0"
+            },
+            "HttpStatusCode": 200
+          },
+          "SdkResponseMetadata": {
+            "RequestId": "20229acd-1926-4994-be1f-752b8767e4bb"
+          },
+          "StatusCode": 200
         }
       }
     }
