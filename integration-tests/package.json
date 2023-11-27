@@ -1,15 +1,15 @@
 {
   "name": "check-hmrc-api-integration-tests",
   "scripts": {
-    "lint:prettier-fix": "pre-commit run prettier --all-files",
-    "lint:eslint": "eslint ..",
-    "compile": "tsc",
-    "unit:all": "jest --config=jest.config.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "unit:all": "jest --config=jest.config.ts --runInBand",
     "unit:aws": "jest --config=jest.config-aws.ts --runInBand",
     "unit:mocked": "jest --config=jest.config-mocked.ts --runInBand",
-    "test:all": "npm run compile && npm run unit:all",
-    "test:aws": "npm run compile && npm run unit:aws",
-    "test:mocked": "npm run compile && npm run unit:mocked"
+    "test:all": "npm run unit:all",
+    "test:aws": "npm run unit:aws",
+    "test:mocked": "npm run unit:mocked",
+    "compile": "tsc"
   },
   "dependencies": {},
   "devDependencies": {

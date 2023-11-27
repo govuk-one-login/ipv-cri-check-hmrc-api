@@ -24,10 +24,11 @@ jobs:
         with:
           node-version: 18.x
 
-      - name: Setup SAM
-        uses: aws-actions/setup-sam@v2
-        with:
-          version: 1.74.0
+      - name: Install dependencies
+        run: npm install --workspace integration-tests --include-workspace-root
+
+      - name: Run mocked tests
+        run: npm run test:mocked --workspace integration-tests
 
       - name: Assume temporary AWS role
         uses: aws-actions/configure-aws-credentials@v4
@@ -35,22 +36,21 @@ jobs:
           role-to-assume: ${{ secrets.DEV_PRE_MERGE_GH_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: sam validate
+      - name: Setup SAM
+        uses: aws-actions/setup-sam@v2
+        with:
+          version: 1.74.0
+
+      - name: SAM validate
         run: |
           sam validate -t infrastructure/template.yaml
           sam validate -t infrastructure/template.yaml --lint
 
-      - name: Install dependencies
-        run: npm install --workspace integration-tests --include-workspace-root
-
-      - name: sam build
+      - name: SAM build
         run: sam build -t infrastructure/template.yaml
 
-      - name: sam deploy
+      - name: SAM deploy
         run: sam deploy --config-file infrastructure/samconfig.toml --stack-name ${{ env.STACK_NAME }}
-
-      - name: Run mocked tests
-        run: npm run test:mocked --workspace integration-tests
 
       - name: Run AWS tests
         run: npm run test:aws --workspace integration-tests
