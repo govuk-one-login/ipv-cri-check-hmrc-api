@@ -1,55 +1,59 @@
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
-import { clearItems, populateTable } from "../resources/dynamodb-helper";
 import {
-  getSSMParamter,
-  ssmParamterUpdate,
+  clearItems,
+  clearItemsFromTables,
+  populateTable,
+  populateTables,
+} from "../resources/dynamodb-helper";
+import {
+  getSSMParameter,
+  updateSSMParameter,
 } from "../resources/ssm-param-helper";
-import {
-  getSecretParamValue,
-  secretManagerUpdate,
-} from "../resources/secret-manager-helper";
+import { SecretsManager } from "@aws-sdk/client-secrets-manager";
 
 jest.setTimeout(30_000);
 
-describe("nino-check-unhappy", () => {
-  const input = {
-    sessionId: "123456789",
-    nino: "AB123003C",
-  };
+const secretsManager = new SecretsManager();
 
-  const testUser = {
-    nino: "AB123003C",
-    dob: "1948-04-23",
-    firstName: "Jim",
-    lastName: "Ferguson",
-  };
+const input = {
+  sessionId: "123456789",
+  nino: "AB123003C",
+};
 
-  let sessionTableName: string;
-  let personIdentityTableName: string;
+const testUser = {
+  nino: "AB123003C",
+  dob: "1948-04-23",
+  firstName: "Jim",
+  lastName: "Ferguson",
+};
 
-  let output: Partial<{
-    CommonStackName: string;
-    NinoAttemptsTable: string;
-    NinoUsersTable: string;
-    NinoCheckStateMachineArn: string;
-  }>;
+let output: Partial<{
+  CommonStackName: string;
+  NinoAttemptsTable: string;
+  NinoUsersTable: string;
+  NinoCheckStateMachineArn: string;
+}>;
 
-  beforeEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    sessionTableName = `session-${output.CommonStackName}`;
-    personIdentityTableName = `person-identity-${output.CommonStackName}`;
+let sessionTableName: string;
+let personIdentityTableName: string;
 
-    await populateTable(
-      {
+beforeEach(async () => {
+  output = await stackOutputs(process.env.STACK_NAME);
+  sessionTableName = `session-${output.CommonStackName}`;
+  personIdentityTableName = `person-identity-${output.CommonStackName}`;
+
+  await populateTables(
+    {
+      tableName: sessionTableName,
+      items: {
         sessionId: input.sessionId,
         expiryDate: 9999999999,
       },
-      sessionTableName
-    );
-
-    await populateTable(
-      {
+    },
+    {
+      tableName: personIdentityTableName,
+      items: {
         sessionId: input.sessionId,
         nino: input.nino,
         birthDates: [{ value: testUser.dob }],
@@ -68,150 +72,151 @@ describe("nino-check-unhappy", () => {
           },
         ],
       },
-      personIdentityTableName
-    );
-  });
+    }
+  );
+});
 
-  afterEach(async () => {
-    await clearItems(sessionTableName, {
-      sessionId: input.sessionId,
-    });
-    await clearItems(personIdentityTableName, {
-      sessionId: input.sessionId,
-    });
-    await clearItems(output.NinoAttemptsTable as string, {
-      id: input.sessionId,
-    });
-    await clearItems(output.NinoUsersTable as string, {
-      sessionId: input.sessionId,
-    });
-  });
-
-  it("should fail when there is more than 2 nino check attempts", async () => {
-    await populateTable(
+afterEach(
+  async () =>
+    await clearItemsFromTables(
       {
-        id: input.sessionId,
-        attempts: 2,
+        tableName: sessionTableName,
+        items: { sessionId: input.sessionId },
       },
-      output.NinoAttemptsTable
-    );
-
-    const startExecutionResult = await executeStepFunction(
-      input,
-      output.NinoCheckStateMachineArn
-    );
-    expect(startExecutionResult.output).toBe(
-      '{"error":"Maximum number of attempts exceeded"}'
-    );
-  });
-
-  it("should fail when there is no user present for given nino", async () => {
-    await clearItems(personIdentityTableName, {
-      sessionId: input.sessionId,
-    });
-    const startExecutionResult = await executeStepFunction(
-      input,
-      output.NinoCheckStateMachineArn
-    );
-    expect(startExecutionResult.output).toBe(
-      '{"error":"No user found for given nino"}'
-    );
-  });
-
-  it("should fail when session id is invalid", async () => {
-    await clearItems(sessionTableName, {
-      sessionId: input.sessionId,
-    });
-    const startExecutionResult = await executeStepFunction(
-      input,
-      output.NinoCheckStateMachineArn
-    );
-    expect(startExecutionResult.output).toBe(
-      '{"error":"Session is not valid or has expired"}'
-    );
-    expect(startExecutionResult.status).toBe("SUCCEEDED");
-  });
-
-  it("should fail when user record already present in nino user table", async () => {
-    await populateTable(
       {
-        sessionId: "123456789",
-        nino: "AA000003D",
+        tableName: personIdentityTableName,
+        items: { sessionId: input.sessionId },
       },
-      output.NinoUsersTable
-    );
-    const startExecutionResult = await executeStepFunction(
       {
-        sessionId: "123456789",
-        nino: "AA000003D",
+        tableName: output.NinoUsersTable as string,
+        items: { sessionId: input.sessionId },
       },
-      output.NinoCheckStateMachineArn
-    );
+      {
+        tableName: output.NinoAttemptsTable as string,
+        items: { id: input.sessionId },
+      }
+    )
+);
 
-    expect(startExecutionResult.status).toBe("FAILED");
+it("should fail when there is more than 2 nino check attempts", async () => {
+  await populateTable(output.NinoAttemptsTable as string, {
+    id: input.sessionId,
+    attempts: 2,
   });
 
-  it("should fail when user nino does not match with HMRC DB", async () => {
-    const startExecutionResult = await executeStepFunction(
-      input,
-      output.NinoCheckStateMachineArn
-    );
-    expect(startExecutionResult.output).toBe(
-      '{"error":"CID returned no record"}'
-    );
+  const startExecutionResult = await executeStepFunction(
+    output.NinoCheckStateMachineArn as string,
+    input
+  );
+
+  expect(startExecutionResult.output).toBe(
+    '{"error":"Maximum number of attempts exceeded"}'
+  );
+});
+
+it("should fail when there is no user present for given nino", async () => {
+  await clearItems(personIdentityTableName, {
+    sessionId: input.sessionId,
   });
 
-  it("should throw an error when url is unavailable", async () => {
-    const urlParameterName = `/${process.env.STACK_NAME}/NinoCheckUrl`;
+  const startExecutionResult = await executeStepFunction(
+    output.NinoCheckStateMachineArn as string,
+    input
+  );
 
-    const currentURL = (
-      await getSSMParamter({
-        Name: urlParameterName,
-      })
-    ).Parameter?.Value as string;
+  expect(startExecutionResult.output).toBe(
+    '{"error":"No user found for given nino"}'
+  );
+});
 
-    await ssmParamterUpdate({
-      Name: urlParameterName,
-      Value: "bad-url",
-      Type: "String",
-      Overwrite: true,
-    });
+it("should fail when session id is invalid", async () => {
+  await clearItems(sessionTableName, {
+    sessionId: input.sessionId,
+  });
 
+  const startExecutionResult = await executeStepFunction(
+    output.NinoCheckStateMachineArn as string,
+    input
+  );
+
+  expect(startExecutionResult.output).toBe(
+    '{"error":"Session is not valid or has expired"}'
+  );
+
+  expect(startExecutionResult.status).toBe("SUCCEEDED");
+});
+
+it("should fail when user record already present in nino user table", async () => {
+  await populateTable(output.NinoUsersTable as string, {
+    sessionId: "123456789",
+    nino: "AA000003D",
+  });
+
+  const startExecutionResult = await executeStepFunction(
+    output.NinoCheckStateMachineArn as string,
+    {
+      sessionId: "123456789",
+      nino: "AA000003D",
+    }
+  );
+
+  expect(startExecutionResult.status).toBe("FAILED");
+});
+
+it("should fail when user NINO does not match with HMRC DB", async () => {
+  const startExecutionResult = await executeStepFunction(
+    output.NinoCheckStateMachineArn as string,
+    input
+  );
+
+  expect(startExecutionResult.output).toBe(
+    '{"error":"CID returned no record"}'
+  );
+});
+
+describe("NINO check URL is unavailable", () => {
+  const urlParameterName = `/${process.env.STACK_NAME}/NinoCheckUrl`;
+  let currentURL: string;
+
+  beforeAll(async () => {
+    currentURL = (await getSSMParameter(urlParameterName)) as string;
+    await updateSSMParameter(urlParameterName, "bad-url");
+  });
+
+  afterAll(async () => await updateSSMParameter(urlParameterName, currentURL));
+
+  it("should throw an error when URL is unavailable", async () => {
     const startExecutionResult = await executeStepFunction(
-      input,
-      output.NinoCheckStateMachineArn
+      output.NinoCheckStateMachineArn as string,
+      input
     );
-
-    await ssmParamterUpdate({
-      Name: urlParameterName,
-      Value: currentURL,
-      Type: "String",
-      Overwrite: true,
-    });
 
     expect(startExecutionResult.status).toEqual("FAILED");
   });
-  it("should throw an error when token is invalid", async () => {
-    const currentValue = (
-      await getSecretParamValue({
+});
+
+describe("HMRC bearer token is invalid", () => {
+  beforeAll(
+    async () =>
+      await secretsManager.updateSecret({
         SecretId: "HMRCBearerToken",
+        SecretString: "badToken",
       })
-    ).SecretString;
+  );
 
-    await secretManagerUpdate({
-      SecretId: "HMRCBearerToken",
-      SecretString: "badToken",
-    } as AWS.SecretsManager.GetSecretValueRequest);
+  afterAll(
+    async () =>
+      await secretsManager.updateSecret({
+        SecretId: "HMRCBearerToken",
+        SecretString: "goodToken",
+      })
+  );
 
+  it("should throw an error when token is invalid", async () => {
     const startExecutionResult = await executeStepFunction(
-      input,
-      output.NinoCheckStateMachineArn
+      output.NinoCheckStateMachineArn as string,
+      input
     );
-
-    await secretManagerUpdate({
-      SecretId: "HMRCBearerToken",
-      SecretString: currentValue,
-    } as AWS.SecretsManager.GetSecretValueRequest);
 
     expect(startExecutionResult.status).toEqual("FAILED");
   });

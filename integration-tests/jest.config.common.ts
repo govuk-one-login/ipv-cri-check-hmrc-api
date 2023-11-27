@@ -4,7 +4,6 @@ const commonConfig: Config.InitialOptions = {
   preset: "ts-jest",
   testEnvironment: "node",
   verbose: true,
-  maxWorkers: 1,
   clearMocks: true,
   collectCoverage: true,
   collectCoverageFrom: ["../step_functions/**/*.{js,ts}", "!**/tests/**"],
