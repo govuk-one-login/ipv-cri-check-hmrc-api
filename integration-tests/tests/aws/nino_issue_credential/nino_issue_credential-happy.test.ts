@@ -1,11 +1,13 @@
+import { JWK, importJWK, jwtVerify } from "jose";
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import { clearItems, populateTable } from "../resources/dynamodb-helper";
-
+import { createPublicKey } from "crypto";
 import {
   getSSMParamter,
-  ssmParamterUpdate,
+  ssmParameterUpdate,
 } from "../resources/ssm-param-helper";
+import { getPublicKey } from "../resources/kms-helper";
 
 jest.setTimeout(30_000);
 
@@ -31,6 +33,46 @@ describe("nino-issue-credential-happy", () => {
     NinoUsersTable: string;
     NinoIssueCredentialStateMachineArn: string;
   }>;
+
+  const decode = (value: string) =>
+    Buffer.from(value, "base64").toString("utf-8");
+  const isValidTimestamp = (timestamp?: number) =>
+    !isNaN(new Date(timestamp as number).getTime());
+
+  const expectedPayload = {
+    iss: "0976c11e-8ef3-4659-b7f2-ee0b842b85bd",
+    jti: expect.any(String),
+    sub: "test",
+    vc: {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld",
+      ],
+      credentialSubject: {
+        name: [
+          {
+            nameParts: [
+              { type: "GivenName", value: "Jim" },
+              { type: "FamilyName", value: "Ferguson" },
+            ],
+          },
+        ],
+        socialSecurityRecord: [{ personalNumber: "AA000003D" }],
+      },
+      evidence: [
+        {
+          checkDetails: [
+            { checkMethod: "data", identityCheckPolicy: "published" },
+          ],
+          strengthScore: 2,
+          txn: expect.any(String),
+          type: "IdentityCheck",
+          validityScore: 2,
+        },
+      ],
+      type: ["VerifiableCredential", "IdentityCheckCredential"],
+    },
+  };
 
   beforeEach(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
@@ -91,145 +133,141 @@ describe("nino-issue-credential-happy", () => {
   });
 
   afterEach(async () => {
-    await clearItems(sessionTableName, {
-      sessionId: input.sessionId,
-    });
-    await clearItems(personIdentityTableName, {
-      sessionId: input.sessionId,
-    });
+    const tables = [
+      sessionTableName,
+      personIdentityTableName,
+      output.NinoUsersTable,
+    ];
+
+    for (const table of tables) {
+      await clearItems(table as string, {
+        sessionId: input.sessionId,
+      });
+    }
+
     await clearItems(output.NinoAttemptsTable as string, {
       id: input.sessionId,
-    });
-    await clearItems(output.NinoUsersTable as string, {
-      sessionId: input.sessionId,
     });
   });
 
   it("should create signed JWT when nino check is successful", async () => {
-    const startExecutionResult = await executeStepFunction(
-      {
-        bearerToken: "Bearer test",
-      },
-      output.NinoIssueCredentialStateMachineArn
-    );
-
-    const verifiableCredentialKmsSigningKeyId = `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`;
-
-    const currentCredentialKmsSigningKeyId = (
-      await getSSMParamter({
-        Name: verifiableCredentialKmsSigningKeyId,
-      })
-    ).Parameter?.Value;
-
+    const startExecutionResult = await getExecutionResult("Bearer test");
     const token = JSON.parse(startExecutionResult.output as string);
 
+    const vcKmsSigningKeyId = `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`;
     const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
 
-    const header = JSON.parse(atob(headerEncoded));
-    const payload = JSON.parse(atob(payloadEncoded));
+    const header = JSON.parse(decode(headerEncoded));
+    const payload = JSON.parse(decode(payloadEncoded));
 
-    expect(header.typ).toBe("JWT");
-    expect(header.alg).toBe("ES256");
-    expect(header.kid).toBe(currentCredentialKmsSigningKeyId);
+    expect(header).toEqual({
+      typ: "JWT",
+      alg: "ES256",
+      kid: await getSSMParameterValue(vcKmsSigningKeyId),
+    });
 
-    const evidence = payload.vc.evidence[0];
-    expect(evidence.type).toBe("IdentityCheck");
-    expect(evidence.strengthScore).toBe(2);
-    expect(evidence.validityScore).toBe(2);
-    expect(evidence.checkDetails[0].checkMethod).toBe("data");
-    expect(evidence.checkDetails[0].identityCheckPolicy).toBe("published");
-    expect(evidence.txn).not.toBeNull;
-
-    const credentialSubject = payload.vc.credentialSubject;
-    expect(credentialSubject.socialSecurityRecord[0].personalNumber).toBe(
-      testUser.nino
-    );
-    expect(credentialSubject.name[0].nameParts[0].type).toBe("GivenName");
-    expect(credentialSubject.name[0].nameParts[0].value).toBe(
-      testUser.firstName
-    );
-    expect(credentialSubject.name[0].nameParts[1].type).toBe("FamilyName");
-    expect(credentialSubject.name[0].nameParts[1].value).toBe(
-      testUser.lastName
-    );
-
-    expect(payload.vc.type[0]).toBe("VerifiableCredential");
-    expect(payload.vc.type[1]).toBe("IdentityCheckCredential");
-
-    expect(payload.vc["@context"][0]).toBe(
-      "https://www.w3.org/2018/credentials/v1"
-    );
-    expect(payload.vc["@context"][1]).toBe(
-      "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld"
-    );
-
-    expect(payload.sub).not.toBeNull;
-    expect(isValidTimestamp(payload.nbf)).toBe(true);
-    expect(payload.iss).not.toBeNull;
     expect(isValidTimestamp(payload.exp)).toBe(true);
-    expect(payload.jti).not.toBeNull;
+    expect(isValidTimestamp(payload.nbf)).toBe(true);
+    expect(payload).toEqual(expect.objectContaining(expectedPayload));
   });
 
   it("should create the valid expiry date", async () => {
     const maxJwtTtl = `/${process.env.STACK_NAME}/MaxJwtTtl`;
     const jwtTtlUnit = `/${process.env.STACK_NAME}/JwtTtlUnit`;
 
-    const currentMaxJwtTtl = (
-      await getSSMParamter({
-        Name: maxJwtTtl,
-      })
-    ).Parameter?.Value;
+    const currentMaxJwtTtl = await getSSMParameterValue(maxJwtTtl);
+    const currentJwtTtlUnit = await getSSMParameterValue(jwtTtlUnit);
 
-    const currentJwtTtlUnit = (
-      await getSSMParamter({
-        Name: jwtTtlUnit,
-      })
-    ).Parameter?.Value;
+    await updateSSMParameter({ name: jwtTtlUnit, value: "MINUTES" });
+    await updateSSMParameter({ name: maxJwtTtl, value: "5" });
 
-    await ssmParamterUpdate({
-      Name: jwtTtlUnit,
-      Value: "MINUTES",
-      Type: "String",
-      Overwrite: true,
-    });
+    const startExecutionResult = await getExecutionResult("Bearer test");
 
-    await ssmParamterUpdate({
-      Name: maxJwtTtl,
-      Value: "5",
-      Type: "String",
-      Overwrite: true,
-    });
+    await updateSSMParameter({ name: maxJwtTtl, value: currentMaxJwtTtl });
+    await updateSSMParameter({ name: jwtTtlUnit, value: currentJwtTtlUnit });
 
-    const startExecutionResult = await executeStepFunction(
+    const token = JSON.parse(startExecutionResult.output as string);
+    const payload = JSON.parse(decode(token.jwt.split(".")[1]));
+
+    expect(payload.exp).toBeCloseTo(payload.nbf + 5 * 1000 * 60);
+  });
+
+  it("should have valid signature", async () => {
+    const vcKmsSigningKeyId = `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`;
+    const authenticationAlg = `/${output.CommonStackName}/clients/ipv-core-stub-aws-build/jwtAuthentication/authenticationAlg`;
+
+    const startExecutionResult = await getExecutionResult("Bearer test");
+
+    const token = JSON.parse(startExecutionResult.output as string);
+    const [header, jwtPayload, signature] = token.jwt.split(".");
+
+    const kid = await getSSMParameterValue(vcKmsSigningKeyId);
+    const alg = await getSSMParameterValue(authenticationAlg);
+
+    const signingPublicJwk = await createSigningPublicJWK(kid, alg);
+    const publicVerifyingJwk = await importJWK(
+      signingPublicJwk,
+      signingPublicJwk?.alg || alg
+    );
+
+    const { payload } = await jwtVerify(
+      `${header}.${jwtPayload}.${decode(signature)}`,
+      publicVerifyingJwk,
+      { algorithms: [alg] }
+    );
+
+    expect(isValidTimestamp(payload.exp)).toBe(true);
+    expect(isValidTimestamp(payload.nbf)).toBe(true);
+    expect(payload).toEqual(expect.objectContaining(expectedPayload));
+  });
+
+  async function getExecutionResult(token: string) {
+    return await executeStepFunction(
       {
-        bearerToken: "Bearer test",
+        bearerToken: token,
       },
       output.NinoIssueCredentialStateMachineArn
     );
+  }
 
-    await ssmParamterUpdate({
-      Name: maxJwtTtl,
-      Value: currentMaxJwtTtl,
-      Type: "String",
-      Overwrite: true,
-    } as AWS.SSM.PutParameterRequest);
+  async function createSigningPublicJWK(
+    kid: string | undefined,
+    alg: string
+  ): Promise<JWK> {
+    const key = Buffer.from(
+      (await getPublicKey(kid as string)).PublicKey as Uint8Array
+    );
 
-    await ssmParamterUpdate({
-      Name: jwtTtlUnit,
-      Value: currentJwtTtlUnit,
-      Type: "String",
-      Overwrite: true,
-    } as AWS.SSM.PutParameterRequest);
+    const signingPublicJwk = createPublicKey({
+      key,
+      type: "spki",
+      format: "der",
+    }).export({ format: "jwk" });
 
-    const token = JSON.parse(startExecutionResult.output as string);
+    return {
+      ...signingPublicJwk,
+      use: "sig",
+      kid,
+      alg,
+    };
+  }
 
-    const payloadEncoded = token.jwt.split(".")[1];
+  async function getSSMParameterValue(name: string): Promise<string> {
+    return (await getSSMParamter({ Name: name })).Parameter?.Value as string;
+  }
 
-    const payload = JSON.parse(atob(payloadEncoded));
-
-    expect(payload.exp).toBe(payload.nbf + 5 * 1000 * 60);
-  });
-
-  const isValidTimestamp = (timestamp: number) =>
-    !isNaN(new Date(timestamp).getTime());
+  async function updateSSMParameter(options: {
+    name: string;
+    value: string;
+    Type?: string;
+    Overwrite?: boolean;
+  }) {
+    const { name, value, Type = "String", Overwrite = true } = options;
+    await ssmParameterUpdate({
+      Name: name,
+      Value: value,
+      Type,
+      Overwrite,
+    });
+  }
 });

@@ -7,5 +7,6 @@ import commonConfig from "./jest.config.common";
 const config: Config.InitialOptions = {
   ...commonConfig,
   testMatch: ["**/tests/aws/*/*.test.ts"],
+  setupFiles: ["<rootDir>/tests/aws/setEnvVars.js"],
 };
 export default config;

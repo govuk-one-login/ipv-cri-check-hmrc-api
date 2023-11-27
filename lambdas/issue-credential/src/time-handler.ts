@@ -4,48 +4,56 @@ import { TimeEvent } from "./time-event";
 
 const logger = new Logger();
 
-const Unit = {
-  Seconds: "seconds",
-  Minutes: "minutes",
-  Hours: "hours",
-  Days: "days",
-  Months: "months",
-  Years: "years",
-  None: "none",
-};
-
-const convert = (unit?: string): number => {
-  switch (unit) {
-    case Unit.Seconds:
-      return 1000;
-    case Unit.Minutes:
-      return 1000 * 60;
-    case Unit.Hours:
-      return 1000 * 60 * 60;
-    case Unit.Days:
-      return 1000 * 60 * 60 * 24;
-    case Unit.Months:
-      return 1000 * 60 * 60 * 24 * 30;
-    case Unit.Years:
-      return 1000 * 60 * 60 * 24 * 365;
-    case Unit.None:
-      return 1;
-    default:
-      throw new Error(`Unexpected time-to-live unit encountered: ${unit}`);
-  }
-};
-
-const parseUnit = (value?: string): string => {
-  const unitKey = Object.keys(Unit).find(
-    (key) => Unit[key as keyof typeof Unit] === value?.toLowerCase()
-  );
-  if (unitKey) {
-    return Unit[unitKey as keyof typeof Unit];
-  }
-  throw new Error(`ttlUnit must be valid: ${value}`);
-};
+enum Unit {
+  Seconds = "seconds",
+  Minutes = "minutes",
+  Hours = "hours",
+  Days = "days",
+  Months = "months",
+  Years = "years",
+  None = "none",
+}
 
 export class TimeHandler implements LambdaInterface {
+  private readonly timeInSecs: number;
+
+  constructor() {
+    this.timeInSecs = this.msToSeconds(Date.now());
+  }
+
+  private msToSeconds(ms: number): number {
+    return Math.floor(ms / 1000);
+  }
+
+  private convert(unit: Unit): number {
+    switch (unit) {
+      case Unit.Seconds:
+        return 1000;
+      case Unit.Minutes:
+        return 1000 * 60;
+      case Unit.Hours:
+        return 1000 * 60 * 60;
+      case Unit.Days:
+        return 1000 * 60 * 60 * 24;
+      case Unit.Months:
+        return 1000 * 60 * 60 * 24 * 30;
+      case Unit.Years:
+        return 1000 * 60 * 60 * 24 * 365;
+      case Unit.None:
+        return 1;
+      default:
+        throw new Error(`Unexpected time-to-live unit encountered: ${unit}`);
+    }
+  }
+
+  private parseUnit(value?: string): Unit {
+    const unit = value?.toLowerCase() as Unit;
+    if (Object.values(Unit).includes(unit)) {
+      return unit;
+    }
+    throw new Error(`ttlUnit must be valid: ${value}`);
+  }
+
   public async handler(
     event: TimeEvent,
     _context: unknown
@@ -64,10 +72,12 @@ export class TimeHandler implements LambdaInterface {
     }
   }
 
-  expiryDate = (ttl: number, unit: string) =>
-    Date.now() + ttl * convert(parseUnit(unit));
+  private expiryDate = (ttl: number, unit: string): number => {
+    const convertedTTL = ttl * this.convert(this.parseUnit(unit));
+    return this.timeInSecs + convertedTTL;
+  };
 
-  notBeforeDate = () => Date.now();
+  private notBeforeDate = (): number => this.timeInSecs;
 }
 
 const handlerClass = new TimeHandler();

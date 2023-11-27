@@ -4,6 +4,8 @@ import sigFormatter from "ecdsa-sig-formatter";
 import { fromEnv } from "@aws-sdk/credential-providers";
 import { SignerPayLoad } from "./signer-payload";
 import { SignageType } from "./signage-type";
+import { Logger } from "@aws-lambda-powertools/logger";
+
 import {
   KMSClient,
   MessageType,
@@ -11,6 +13,7 @@ import {
   SigningAlgorithmSpec,
 } from "@aws-sdk/client-kms";
 
+const logger = new Logger();
 export class JwtSignerHandler implements LambdaInterface {
   constructor(private kmsClient: KMSClient) {}
 
@@ -55,15 +58,10 @@ export class JwtSignerHandler implements LambdaInterface {
 
       return signingResponse.Signature;
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        throw new Error(`KMS response is not in JSON format. ${error}`);
-      } else if (error instanceof Error) {
-        throw new Error(`KMS signing error: ${error}`);
-      } else {
-        throw new Error(
-          `An unknown error occurred while signing with KMS: ${error}`
-        );
-      }
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(`Error in JwtSignerHandler: ${errorMessage}`);
+      throw error;
     }
   }
 

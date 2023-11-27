@@ -610,6 +610,7 @@ Resources:
         JwtTtlUnitParameter: !Ref JwtTtlUnitParameter
         CommonStackName: !Ref CommonStackName
         NinoUsersTable: !Ref NinoUsersTable
+        JwtSignerFunction: !GetAtt JwtSignerFunction.Arn
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:

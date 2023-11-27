@@ -1,0 +1,504 @@
+{
+  "StateMachines": {
+    "nino_issue_credential": {
+      "TestCases": {
+        "HappyPath": {
+          "Fetch Max JWT TTL": "FetchMaxJWTTTL",
+          "Fetch JWT TTL Unit": "FetchJWTTTLUnit",
+          "Fetch VC KMS Signing Key": "FetchVCKMSSigningKey",
+          "Fetch Issuer Value": "FetchIssuerValue",
+          "Fetch Person Identity Table Name": "FetchPersonIdentityTableName",
+          "Fetch Session Table Name": "FetchSessionTableName",
+          "Query Session Item": "QuerySessionItem",
+          "Fetch details from person identity": "FetchDetailsFromPersonIdentity",
+          "Fetch Nino": "FetchNino",
+          "Create Credential Subject": "CreateCredentialSubject",
+          "Fetch exp time and NBF": "FetchExpTimeAndNBF",
+          "Fetch User NINO Attempts": "FetchUserNINOAttempts",
+          "Add Type to VC": "AddTypeToVC",
+          "Sign VC claimsSet": "SignVCClaimSet"
+        },
+        "UnHappyPath": {
+          "Fetch Max JWT TTL": "FetchMaxJWTTTL",
+          "Fetch JWT TTL Unit": "FetchJWTTTLUnit",
+          "Fetch VC KMS Signing Key": "FetchVCKMSSigningKey",
+          "Fetch Issuer Value": "FetchIssuerValue",
+          "Fetch Person Identity Table Name": "FetchPersonIdentityTableName",
+          "Fetch Session Table Name": "FetchSessionTableName",
+          "Query Session Item": "QuerySessionItem",
+          "Fetch details from person identity": "FetchDetailsFromPersonIdentity",
+          "Fetch Nino": "FetchNino",
+          "Create Credential Subject": "CreateCredentialSubject",
+          "Fetch exp time and NBF": "FetchExpTimeAndNBF",
+          "Fetch User NINO Attempts": "FetchFailedUserNINOAttempts",
+          "Add Type to VC": "AddFailTypeToVC",
+          "Sign VC claimsSet": "SignVCClaimSet"
+        }
+      }
+    }
+  },
+  "MockedResponses": {
+    "FetchMaxJWTTTL": {
+      "0": {
+        "Return": {
+          "Parameter": {
+            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/rahul-check-hmrc/MaxJwtTtl",
+            "DataType": "text",
+            "LastModifiedDate": "2023-11-10T10:49:46.775Z",
+            "Name": "/rahul-check-hmrc/MaxJwtTtl",
+            "Type": "String",
+            "Value": "2",
+            "Version": 60
+          }
+        }
+      }
+    },
+    "FetchJWTTTLUnit": {
+      "0": {
+        "Return": {
+          "Parameter": {
+            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/rahul-check-hmrc/JwtTtlUnit",
+            "DataType": "text",
+            "LastModifiedDate": "2023-11-10T10:49:46.910Z",
+            "Name": "/rahul-check-hmrc/JwtTtlUnit",
+            "Type": "String",
+            "Value": "HOURS",
+            "Version": 61
+          }
+        }
+      }
+    },
+    "FetchVCKMSSigningKey": {
+      "0": {
+        "Return": {
+          "Parameter": {
+            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/common-cri-api/verifiableCredentialKmsSigningKeyId",
+            "DataType": "text",
+            "LastModifiedDate": "2023-09-29T14:33:14.960Z",
+            "Name": "/common-cri-api/verifiableCredentialKmsSigningKeyId",
+            "Type": "String",
+            "Value": "0976c11e-8ef3-4659-b7f2-ee0b842b85bd",
+            "Version": 1
+          }
+        }
+      }
+    },
+    "FetchIssuerValue": {
+      "0": {
+        "Return": {
+          "Parameter": {
+            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/common-cri-api/verifiableCredentialKmsSigningKeyId",
+            "DataType": "text",
+            "LastModifiedDate": "2023-09-29T14:33:14.960Z",
+            "Name": "/common-cri-api/verifiableCredentialKmsSigningKeyId",
+            "Type": "String",
+            "Value": "0976c11e-8ef3-4659-b7f2-ee0b842b85bd",
+            "Version": 1
+          }
+        }
+      }
+    },
+    "FetchPersonIdentityTableName": {
+      "0": {
+        "Return": {
+          "Parameter": {
+            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/common-cri-api/PersonIdentityTableName",
+            "DataType": "text",
+            "LastModifiedDate": "2023-09-29T14:33:14.785Z",
+            "Name": "/common-cri-api/PersonIdentityTableName",
+            "Type": "String",
+            "Value": "person-identity-common-cri-api",
+            "Version": 1
+          }
+        }
+      }
+    },
+    "FetchSessionTableName": {
+      "0": {
+        "Return": {
+          "Parameter": {
+            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/common-cri-api/SessionTableName",
+            "DataType": "text",
+            "LastModifiedDate": "2023-09-29T14:33:14.925Z",
+            "Name": "/common-cri-api/SessionTableName",
+            "Type": "String",
+            "Value": "session-common-cri-api",
+            "Version": 1
+          }
+        }
+      }
+    },
+    "QuerySessionItem": {
+      "0": {
+        "Return": {
+          "Count": 1,
+          "Items": [
+            {
+              "subject": {
+                "S": "test"
+              },
+              "sessionId": {
+                "S": "123456789"
+              },
+              "accessToken": {
+                "S": "Bearer test"
+              }
+            }
+          ],
+          "ScannedCount": 1
+        }
+      }
+    },
+    "FetchDetailsFromPersonIdentity": {
+      "0": {
+        "Return": {
+          "Count": 1,
+          "Items": [
+            {
+              "names": {
+                "L": [
+                  {
+                    "M": {
+                      "nameParts": {
+                        "L": [
+                          {
+                            "M": {
+                              "type": {
+                                "S": "GivenName"
+                              },
+                              "value": {
+                                "S": "Jim"
+                              }
+                            }
+                          },
+                          {
+                            "M": {
+                              "type": {
+                                "S": "FamilyName"
+                              },
+                              "value": {
+                                "S": "Ferguson"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              "sessionId": {
+                "S": "123456789"
+              },
+              "birthDates": {
+                "L": [
+                  {
+                    "M": {
+                      "value": {
+                        "S": "1948-04-23"
+                      }
+                    }
+                  }
+                ]
+              },
+              "nino": {
+                "S": "AA000003D"
+              }
+            }
+          ],
+          "ScannedCount": 1
+        }
+      }
+    },
+    "FetchNino": {
+      "0": {
+        "Return": {
+          "Item": {
+            "sessionId": {
+              "S": "123456789"
+            },
+            "nino": {
+              "S": "AA000003D"
+            }
+          },
+          "SdkHttpMetadata": {
+            "AllHttpHeaders": {
+              "Server": ["Server"],
+              "Connection": ["keep-alive"],
+              "x-amzn-RequestId": [
+                "UBN5LMPIPOSG6VVSNBII02TEJFVV4KQNSO5AEMVJF66Q9ASUAAJG"
+              ],
+              "x-amz-crc32": ["3691538148"],
+              "Content-Length": ["65"],
+              "Date": ["Tue, 14 Nov 2023 12:29:15 GMT"],
+              "Content-Type": ["application/x-amz-json-1.0"]
+            },
+            "HttpHeaders": {
+              "Connection": "keep-alive",
+              "Content-Length": "65",
+              "Content-Type": "application/x-amz-json-1.0",
+              "Date": "Tue, 14 Nov 2023 12:29:15 GMT",
+              "Server": "Server",
+              "x-amz-crc32": "3691538148",
+              "x-amzn-RequestId": "UBN5LMPIPOSG6VVSNBII02TEJFVV4KQNSO5AEMVJF66Q9ASUAAJG"
+            },
+            "HttpStatusCode": 200
+          },
+          "SdkResponseMetadata": {
+            "RequestId": "UBN5LMPIPOSG6VVSNBII02TEJFVV4KQNSO5AEMVJF66Q9ASUAAJG"
+          }
+        }
+      }
+    },
+    "CreateCredentialSubject": {
+      "0": {
+        "Return": {
+          "ExecutedVersion": "$LATEST",
+          "Payload": {
+            "socialSecurityRecord": [
+              {
+                "personalNumber": "AA000003D"
+              }
+            ],
+            "name": [
+              {
+                "nameParts": [
+                  {
+                    "type": "GivenName",
+                    "value": "Jim"
+                  },
+                  {
+                    "type": "FamilyName",
+                    "value": "Ferguson"
+                  }
+                ]
+              }
+            ]
+          },
+          "SdkHttpMetadata": {
+            "AllHttpHeaders": {
+              "X-Amz-Executed-Version": ["$LATEST"],
+              "x-amzn-Remapped-Content-Length": ["0"],
+              "Connection": ["keep-alive"],
+              "x-amzn-RequestId": ["1ea2ffe5-3bf3-4907-88ea-8d2aeb974ed9"],
+              "Content-Length": ["158"],
+              "Date": ["Tue, 14 Nov 2023 12:29:16 GMT"],
+              "X-Amzn-Trace-Id": [
+                "root=1-6553681b-2b7cbbce403466dc6c23dc13;sampled=0;lineage=acbd3b6c:0"
+              ],
+              "Content-Type": ["application/json"]
+            },
+            "HttpHeaders": {
+              "Connection": "keep-alive",
+              "Content-Length": "158",
+              "Content-Type": "application/json",
+              "Date": "Tue, 14 Nov 2023 12:29:16 GMT",
+              "X-Amz-Executed-Version": "$LATEST",
+              "x-amzn-Remapped-Content-Length": "0",
+              "x-amzn-RequestId": "1ea2ffe5-3bf3-4907-88ea-8d2aeb974ed9",
+              "X-Amzn-Trace-Id": "root=1-6553681b-2b7cbbce403466dc6c23dc13;sampled=0;lineage=acbd3b6c:0"
+            },
+            "HttpStatusCode": 200
+          },
+          "SdkResponseMetadata": {
+            "RequestId": "1ea2ffe5-3bf3-4907-88ea-8d2aeb974ed9"
+          },
+          "StatusCode": 200
+        }
+      }
+    },
+    "FetchExpTimeAndNBF": {
+      "0": {
+        "Return": {
+          "ExecutedVersion": "$LATEST",
+          "Payload": {
+            "nbf": 1699964956131,
+            "expiry": 1699972156131
+          },
+          "SdkHttpMetadata": {
+            "AllHttpHeaders": {
+              "X-Amz-Executed-Version": ["$LATEST"],
+              "x-amzn-Remapped-Content-Length": ["0"],
+              "Connection": ["keep-alive"],
+              "x-amzn-RequestId": ["9c68a67e-6091-48a7-ac92-53af1da8677b"],
+              "Content-Length": ["44"],
+              "Date": ["Tue, 14 Nov 2023 12:29:16 GMT"],
+              "X-Amzn-Trace-Id": [
+                "root=1-6553681b-1f7e69db5b5a8ccd6c13a903;sampled=0;lineage=9be44ed0:0"
+              ],
+              "Content-Type": ["application/json"]
+            },
+            "HttpHeaders": {
+              "Connection": "keep-alive",
+              "Content-Length": "44",
+              "Content-Type": "application/json",
+              "Date": "Tue, 14 Nov 2023 12:29:16 GMT",
+              "X-Amz-Executed-Version": "$LATEST",
+              "x-amzn-Remapped-Content-Length": "0",
+              "x-amzn-RequestId": "9c68a67e-6091-48a7-ac92-53af1da8677b",
+              "X-Amzn-Trace-Id": "root=1-6553681b-1f7e69db5b5a8ccd6c13a903;sampled=0;lineage=9be44ed0:0"
+            },
+            "HttpStatusCode": 200
+          },
+          "SdkResponseMetadata": {
+            "RequestId": "9c68a67e-6091-48a7-ac92-53af1da8677b"
+          },
+          "StatusCode": 200
+        }
+      }
+    },
+    "FetchUserNINOAttempts": {
+      "0": {
+        "Return": {
+          "Count": 1,
+          "Items": [
+            {
+              "id": {
+                "S": "123456789"
+              },
+              "outcome": {
+                "S": "PASS"
+              },
+              "attempts": {
+                "N": "1"
+              }
+            }
+          ],
+          "ScannedCount": 1
+        }
+      }
+    },
+    "FetchFailedUserNINOAttempts": {
+      "0": {
+        "Return": {
+          "Count": 1,
+          "Items": [
+            {
+              "id": {
+                "S": "123456789"
+              },
+              "outcome": {
+                "S": "FAIL"
+              },
+              "attempts": {
+                "N": "2"
+              }
+            }
+          ],
+          "ScannedCount": 1
+        }
+      }
+    },
+    "AddTypeToVC": {
+      "0": {
+        "Return": {
+          "Count": 1,
+          "Items": [
+            {
+              "id": {
+                "S": "123456789"
+              },
+              "outcome": {
+                "S": "PASS"
+              },
+              "attempts": {
+                "N": "1"
+              }
+            }
+          ],
+          "ScannedCount": 1
+        }
+      }
+    },
+    "AddFailTypeToVC": {
+      "0": {
+        "Return": {
+          "bearerToken": "Bearer test",
+          "MaxJwtTTL": {
+            "value": "2"
+          },
+          "JwtTtlUnit": {
+            "value": "HOURS"
+          },
+          "kid": {
+            "value": "0976c11e-8ef3-4659-b7f2-ee0b842b85bd"
+          },
+          "issuer": {
+            "value": "0976c11e-8ef3-4659-b7f2-ee0b842b85bd"
+          },
+          "personIdentityTableName": {
+            "value": "person-identity-common-cri-api"
+          },
+          "sessionTable": {
+            "value": "session-common-cri-api"
+          },
+          "querySession": {
+            "subject": "test",
+            "sessionId": "123456789"
+          },
+          "check-attempts-exist": {
+            "Count": 1,
+            "Items": [
+              {
+                "id": {
+                  "S": "123456789"
+                },
+                "outcome": {
+                  "S": "FAIL"
+                },
+                "attempts": {
+                  "N": "2"
+                }
+              }
+            ],
+            "ScannedCount": 1
+          },
+          "vctype": {
+            "type": ["VerifiableCredential", "IdentityCheckCredential"],
+            "@context": [
+              "https://www.w3.org/2018/credentials/v1",
+              "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld"
+            ]
+          }
+        }
+      }
+    },
+    "SignVCClaimSet": {
+      "0": {
+        "Return": {
+          "ExecutedVersion": "$LATEST",
+          "Payload": "__RJ4lV8PxPSYrK7lIR082zcpY33dW1Hwz6h5b0DRZQrOLg5ua3PEasVhfOamuMV8r0fvsHFpGH-D8eFs6CCsA",
+          "SdkHttpMetadata": {
+            "AllHttpHeaders": {
+              "X-Amz-Executed-Version": ["$LATEST"],
+              "x-amzn-Remapped-Content-Length": ["0"],
+              "Connection": ["keep-alive"],
+              "x-amzn-RequestId": ["20229acd-1926-4994-be1f-752b8767e4bb"],
+              "Content-Length": ["88"],
+              "Date": ["Thu, 23 Nov 2023 15:55:38 GMT"],
+              "X-Amzn-Trace-Id": [
+                "root=1-655f75f9-27f6647873d4d7973877b13e;sampled=0;lineage=43496acb:0"
+              ],
+              "Content-Type": ["application/json"]
+            },
+            "HttpHeaders": {
+              "Connection": "keep-alive",
+              "Content-Length": "88",
+              "Content-Type": "application/json",
+              "Date": "Thu, 23 Nov 2023 15:55:38 GMT",
+              "X-Amz-Executed-Version": "$LATEST",
+              "x-amzn-Remapped-Content-Length": "0",
+              "x-amzn-RequestId": "20229acd-1926-4994-be1f-752b8767e4bb",
+              "X-Amzn-Trace-Id": "root=1-655f75f9-27f6647873d4d7973877b13e;sampled=0;lineage=43496acb:0"
+            },
+            "HttpStatusCode": 200
+          },
+          "SdkResponseMetadata": {
+            "RequestId": "20229acd-1926-4994-be1f-752b8767e4bb"
+          },
+          "StatusCode": 200
+        }
+      }
+    }
+  }
+}

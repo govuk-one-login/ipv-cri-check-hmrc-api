@@ -3,24 +3,27 @@ import { Context } from "aws-lambda";
 import { TimeEvent } from "../src/time-event";
 
 describe("time-handler", () => {
+  const mon31st2021InMilliseconds = 1622502000000;
+  const mon31st2021InSeconds = 1622502000;
+
   beforeEach(() => {
     jest.clearAllMocks();
     jest.resetAllMocks();
   });
 
   it("should return the current time for nbf", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
+    jest.spyOn(Date, "now").mockReturnValue(mon31st2021InMilliseconds);
     const event = {
       ttl: 10,
       ttlUnit: "seconds",
     } as TimeEvent;
     const timeHandler = new TimeHandler();
     const result = await timeHandler.handler(event, {} as Context);
-    expect(result.nbf).toBe(1622502000000);
+    expect(result.nbf).toBe(mon31st2021InSeconds);
   });
 
   it("should return a expiry that expires in 10 seconds", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
+    jest.spyOn(Date, "now").mockReturnValue(mon31st2021InMilliseconds);
     const event = {
       ttl: 10,
       ttlUnit: "seconds",
@@ -28,13 +31,13 @@ describe("time-handler", () => {
     const timeHandler = new TimeHandler();
     const result = await timeHandler.handler(event, {} as Context);
     expect(result).toEqual({
-      nbf: 1622502000000,
-      expiry: 1622502000000 + 10000,
+      nbf: mon31st2021InSeconds,
+      expiry: mon31st2021InSeconds + 10000,
     });
   });
 
   it("should return a expiry that expires in 10 minutes", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
+    jest.spyOn(Date, "now").mockReturnValue(mon31st2021InMilliseconds);
     const event = {
       ttl: 10,
       ttlUnit: "minutes",
@@ -42,13 +45,13 @@ describe("time-handler", () => {
     const timeHandler = new TimeHandler();
     const result = await timeHandler.handler(event, {} as Context);
     expect(result).toEqual({
-      nbf: 1622502000000,
-      expiry: 1622502000000 + 10 * (1000 * 60),
+      nbf: mon31st2021InSeconds,
+      expiry: mon31st2021InSeconds + 10 * (1000 * 60),
     });
   });
 
   it("should return a expiry that expires in 1 hour", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
+    jest.spyOn(Date, "now").mockReturnValue(mon31st2021InMilliseconds);
     const event = {
       ttl: 1,
       ttlUnit: "hours",
@@ -56,13 +59,13 @@ describe("time-handler", () => {
     const timeHandler = new TimeHandler();
     const result = await timeHandler.handler(event, {} as Context);
     expect(result).toEqual({
-      nbf: 1622502000000,
-      expiry: 1622502000000 + 1000 * 60 * 60,
+      nbf: mon31st2021InSeconds,
+      expiry: mon31st2021InSeconds + 1000 * 60 * 60,
     });
   });
 
   it("should return a expiry that expires in 1 day", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
+    jest.spyOn(Date, "now").mockReturnValue(mon31st2021InMilliseconds);
     const event = {
       ttl: 1,
       ttlUnit: "days",
@@ -70,13 +73,13 @@ describe("time-handler", () => {
     const timeHandler = new TimeHandler();
     const result = await timeHandler.handler(event, {} as Context);
     expect(result).toEqual({
-      nbf: 1622502000000,
-      expiry: 1622502000000 + 1000 * 60 * 60 * 24,
+      nbf: mon31st2021InSeconds,
+      expiry: mon31st2021InSeconds + 1000 * 60 * 60 * 24,
     });
   });
 
   it("should return a expiry that expires in 1 month", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
+    jest.spyOn(Date, "now").mockReturnValue(mon31st2021InMilliseconds);
     const event = {
       ttl: 1,
       ttlUnit: "months",
@@ -84,13 +87,13 @@ describe("time-handler", () => {
     const timeHandler = new TimeHandler();
     const result = await timeHandler.handler(event, {} as Context);
     expect(result).toEqual({
-      nbf: 1622502000000,
-      expiry: 1622502000000 + 1000 * 60 * 60 * 24 * 30,
+      nbf: mon31st2021InSeconds,
+      expiry: mon31st2021InSeconds + 1000 * 60 * 60 * 24 * 30,
     });
   });
 
   it("should return a expiry that expires in 1 year", async () => {
-    jest.spyOn(Date, "now").mockReturnValue(1622502000000);
+    jest.spyOn(Date, "now").mockReturnValue(mon31st2021InMilliseconds);
     const event = {
       ttl: 1,
       ttlUnit: "years",
@@ -98,8 +101,8 @@ describe("time-handler", () => {
     const timeHandler = new TimeHandler();
     const result = await timeHandler.handler(event, {} as Context);
     expect(result).toEqual({
-      nbf: 1622502000000,
-      expiry: 1622502000000 + 1000 * 60 * 60 * 24 * 365,
+      nbf: mon31st2021InSeconds,
+      expiry: mon31st2021InSeconds + 1000 * 60 * 60 * 24 * 365,
     });
   });
 });
