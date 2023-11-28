@@ -3,12 +3,12 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "unit:all": "jest --config=jest.config.ts --runInBand",
-    "unit:aws": "jest --config=jest.config-aws.ts --runInBand",
-    "unit:mocked": "jest --config=jest.config-mocked.ts --runInBand",
-    "test:all": "npm run unit:all",
-    "test:aws": "npm run unit:aws",
-    "test:mocked": "npm run unit:mocked",
+    "unit:all": "jest --runInBand",
+    "unit:aws": "jest --select-projects integration-tests/aws --runInBand",
+    "unit:mocked": "jest --select-projects integration-tests/mocked --runInBand",
+    "test:all": "npm run unit:all --",
+    "test:aws": "npm run unit:aws --",
+    "test:mocked": "npm run unit:mocked --",
     "compile": "tsc"
   },
   "dependencies": {},
@@ -21,6 +21,8 @@
     "@aws-sdk/client-sfn": "^3.405.0",
     "@aws-sdk/lib-dynamodb": "^3.398.0",
     "aws-testing-library": "^4.0.6",
-    "testcontainers": "^10.0.2"
+    "testcontainers": "^10.0.2",
+    "jest": "28.1.3",
+    "ts-jest": "28.0.8"
   }
 }
