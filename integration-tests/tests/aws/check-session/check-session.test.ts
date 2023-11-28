@@ -1,20 +1,13 @@
 import { describeStack, StackInfo } from "../resources/cloudformation-helper";
-import { clearItems, populateTable } from "../resources/dynamodb-helper";
+import { populateTable } from "../resources/dynamodb-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
-import { input as stubInput } from "../resources/session-helper";
+import { clearSession, input as stubInput } from "../resources/session-helper";
 
 const input = stubInput();
 let stack: StackInfo;
 
-beforeAll(async () => {
-  stack = await describeStack();
-});
-
-afterEach(async () => {
-  await clearItems(stack.sessionTableName, {
-    sessionId: input.sessionId,
-  });
-});
+beforeAll(async () => (stack = await describeStack()));
+afterEach(async () => clearSession(stack, input));
 
 it("should return SESSION_OK when session has not expired", async () => {
   await populateTable(stack.sessionTableName, {

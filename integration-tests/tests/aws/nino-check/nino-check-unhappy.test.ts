@@ -2,7 +2,6 @@ import { describeStack, StackInfo } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import {
   clearItems,
-  clearItemsFromTables,
   populateTable,
   populateTables,
 } from "../resources/dynamodb-helper";
@@ -11,74 +10,30 @@ import {
   updateSSMParameter,
 } from "../resources/ssm-param-helper";
 import { SecretsManager } from "@aws-sdk/client-secrets-manager";
-import { input as stubInput, user as stubUser } from "../resources/session-helper";
+import {
+  clearSession,
+  input as stubInput,
+  personIdentityData,
+  sessionData,
+} from "../resources/session-helper";
 
 jest.setTimeout(30_000);
 
 const input = stubInput();
-const user = stubUser(input);
+const invalidInput = stubInput("AB123003C");
+const secretsManager = new SecretsManager();
 let stack: StackInfo;
 
-const secretsManager = new SecretsManager();
-
-beforeAll(async () => {
-  stack = await describeStack();
-});
+beforeAll(async () => (stack = await describeStack()));
 
 beforeEach(async () => {
   await populateTables(
-    {
-      tableName: stack.sessionTableName,
-      items: {
-        sessionId: input.sessionId,
-        expiryDate: 9999999999,
-      },
-    },
-    {
-      tableName: stack.personIdentityTableName,
-      items: {
-        sessionId: input.sessionId,
-        nino: input.nino,
-        birthDates: [{ value: user.dob }],
-        names: [
-          {
-            nameParts: [
-              {
-                type: "GivenName",
-                value: user.firstName,
-              },
-              {
-                type: "FamilyName",
-                value: user.lastName,
-              },
-            ],
-          },
-        ],
-      },
-    }
+    personIdentityData(stack, input),
+    sessionData(stack, input)
   );
 });
 
-afterEach(async () => {
-  await clearItemsFromTables(
-    {
-      tableName: stack.sessionTableName,
-      items: { sessionId: input.sessionId },
-    },
-    {
-      tableName: stack.personIdentityTableName,
-      items: { sessionId: input.sessionId },
-    },
-    {
-      tableName: stack.outputs.NinoUsersTable as string,
-      items: { sessionId: input.sessionId },
-    },
-    {
-      tableName: stack.outputs.NinoAttemptsTable as string,
-      items: { id: input.sessionId },
-    }
-  );
-});
+afterEach(async () => await clearSession(stack, input));
 
 it("should fail when there is more than 2 nino check attempts", async () => {
   await populateTable(stack.outputs.NinoAttemptsTable as string, {
@@ -148,7 +103,7 @@ it("should fail when user record already present in nino user table", async () =
 it("should fail when user NINO does not match with HMRC DB", async () => {
   const startExecutionResult = await executeStepFunction(
     stack.outputs.NinoCheckStateMachineArn as string,
-    input
+    invalidInput
   );
 
   expect(startExecutionResult.output).toBe(
