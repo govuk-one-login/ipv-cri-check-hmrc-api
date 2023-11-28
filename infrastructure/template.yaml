@@ -11,6 +11,7 @@ Parameters:
       Temporary solution to be changed once cross account behaviour implemented.
   Environment:
     Type: String
+    Default: dev
     AllowedValues: [dev, build, staging, integration, production]
   CommonStackName:
     Type: String

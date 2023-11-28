@@ -6,9 +6,4 @@ s3_prefix = "check-hmrc-cri-api"
 region = "eu-west-2"
 capabilities = "CAPABILITY_IAM"
 image_repositories = []
-parameter_overrides = [
-    "BearerTokenName=HMRCBearerToken",
-    "Environment=dev",
-    "CommonStackName=common-cri-api",
-    "CodeSigningEnabled=false"
-]
+parameter_overrides = []
