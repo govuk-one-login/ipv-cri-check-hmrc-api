@@ -48,6 +48,15 @@ jobs:
           sam validate -t ../infrastructure/template.yaml
           sam validate -t ../infrastructure/template.yaml --lint
 
+      - name: Cache SAM dependencies
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-sam-int-tests-${{ hashFiles('**/package-lock.json', 'infrastructure/template.yaml') }}
+          restore-keys: ${{ runner.os }}-sam-int-tests-
+          path: |
+            **/.aws-sam
+            !**/.aws-sam/build
+
       - name: SAM build
         run: sam build -t ../infrastructure/template.yaml --cached --parallel
 
