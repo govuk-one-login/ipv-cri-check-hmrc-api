@@ -21,6 +21,9 @@
         "FunctionName": "${CurrentTimeFunctionArn}"
       },
       "Next": "Fetch Session",
+      "ResultSelector": {
+        "value.$": "$.Payload"
+      },
       "ResultPath": "$.currentTime"
     },
     "Fetch Session": {
@@ -36,13 +39,17 @@
         }
       },
       "Resource": "arn:aws:states:::aws-sdk:dynamodb:query",
+      "ResultSelector": {
+        "count.$": "$.Count",
+        "items.$": "$.Items"
+      },
       "ResultPath": "$.sessionQuery"
     },
     "Check Session Exists": {
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.sessionQuery.Count",
+          "Variable": "$.sessionQuery.count",
           "NumericLessThanEquals": 0,
           "Next": "Err: No session found"
         }
@@ -53,8 +60,8 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.currentTime.Payload",
-          "StringGreaterThanPath": "$.sessionQuery.Items[0].expiryDate.N",
+          "Variable": "$.currentTime.value",
+          "StringGreaterThanPath": "$.sessionQuery.items[0].expiryDate.N",
           "Next": "Err: Session Expired"
         }
       ],
