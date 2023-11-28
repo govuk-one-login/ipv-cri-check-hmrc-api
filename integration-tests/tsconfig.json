@@ -3,6 +3,7 @@
     "experimentalDecorators": true,
     "target": "es2022",
     "strict": true,
+    "noEmit": true,
     "preserveConstEnums": true,
     "sourceMap": true,
     "module": "es2022",
