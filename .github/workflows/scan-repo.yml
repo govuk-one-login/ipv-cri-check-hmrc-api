@@ -1,0 +1,45 @@
+name: Scan repository
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Every Monday at 9am
+    - cron: "0 9 * * 1"
+
+concurrency:
+  group: scan-repo-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions: read-all
+
+jobs:
+  unit-tests:
+    name: Test coverage
+    uses: ./.github/workflows/unit-tests.yml
+    with:
+      coverage-report: true
+
+  sonarcloud:
+    name: SonarCloud
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run a SonarCloud scan
+        uses: govuk-one-login/github-actions/code-quality/sonarcloud@b2b6fc5df355031fd08cef37fa13a93670a45899
+        with:
+          coverage-artifact: ${{ needs.unit-tests.outputs.coverage-artifact }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Run a CodeQL scan
+        uses: govuk-one-login/github-actions/code-quality/codeql@b2b6fc5df355031fd08cef37fa13a93670a45899
+        with:
+          languages: javascript-typescript

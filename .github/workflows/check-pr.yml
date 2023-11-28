@@ -1,0 +1,22 @@
+name: Check PR
+
+on: pull_request
+permissions: read-all
+
+concurrency:
+  group: check-pr-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Run tests
+    uses: ./.github/workflows/unit-tests.yml
+
+  pre-commit:
+    name: pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run pre-commit
+        uses: govuk-one-login/github-actions/code-quality/run-pre-commit@b2b6fc5df355031fd08cef37fa13a93670a45899
+        with:
+          all-files: true
