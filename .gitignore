@@ -103,6 +103,7 @@ dist
 # vuepress v2.x temp and cache directory
 .temp
 .cache
+.DS_Store
 
 # Docusaurus cache and generated files
 .docusaurus
@@ -130,7 +131,7 @@ dist
 .pnp.*
 
 .aws-sam
-.DS_Store
 integration-tests/build
 build
 dotenv
+coverage

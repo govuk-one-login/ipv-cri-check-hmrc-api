@@ -1,5 +1,5 @@
 # http://EditorConfig.org
-# https://gds-way.cloudapps.digital/manuals/programming-languages/editorconfig
+# https://gds-way.digital.cabinet-office.gov.uk/manuals/programming-languages/editorconfig
 root = true
 
 [*.java]

@@ -4,6 +4,10 @@ on:
   workflow_dispatch:
   pull_request:
 
+defaults:
+  run:
+    working-directory: integration-tests
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -22,13 +26,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18.x
+          cache: npm
 
       - name: Install dependencies
-        run: npm install --workspace integration-tests --include-workspace-root
+        run: npm ci --include-workspace-root
 
       - name: Run mocked tests
-        run: npm run test:mocked --workspace integration-tests
+        run: npm run test:mocked -- --config jest.config.ci.ts
 
       - name: Assume temporary AWS role
         uses: aws-actions/configure-aws-credentials@v4
@@ -43,17 +47,17 @@ jobs:
 
       - name: SAM validate
         run: |
-          sam validate -t infrastructure/template.yaml
-          sam validate -t infrastructure/template.yaml --lint
+          sam validate -t ../infrastructure/template.yaml
+          sam validate -t ../infrastructure/template.yaml --lint
 
       - name: SAM build
-        run: sam build -t infrastructure/template.yaml
+        run: sam build -t ../infrastructure/template.yaml --cached --parallel
 
       - name: SAM deploy
-        run: sam deploy --config-file infrastructure/samconfig.toml --stack-name ${{ env.STACK_NAME }}
+        run: sam deploy --config-file ../infrastructure/samconfig.toml --stack-name ${{ env.STACK_NAME }}
 
       - name: Run AWS tests
-        run: npm run test:aws --workspace integration-tests
+        run: npm run test:aws -- --config jest.config.ci.ts
 
       - name: Delete test stack
         if: success()
