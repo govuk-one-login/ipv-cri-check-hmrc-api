@@ -1,74 +1,62 @@
-import { stackOutputs } from "../resources/cloudformation-helper";
+import { describeStack, StackInfo } from "../resources/cloudformation-helper";
 import { clearItems, populateTable } from "../resources/dynamodb-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
+import { input as stubInput } from "../resources/session-helper";
 
-describe("check-session", () => {
-  const input = {
-    sessionId: "123456789",
-  };
+const input = stubInput();
+let stack: StackInfo;
 
-  let output: Partial<{
-    CommonStackName: string;
-    CheckSessionStateMachineArn: string;
-  }>;
+beforeAll(async () => {
+  stack = await describeStack();
+});
 
-  let sessionTableName: string;
+afterEach(async () => {
+  await clearItems(stack.sessionTableName, {
+    sessionId: input.sessionId,
+  });
+});
 
-  beforeEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    sessionTableName = `session-${output.CommonStackName}`;
+it("should return SESSION_OK when session has not expired", async () => {
+  await populateTable(stack.sessionTableName, {
+    sessionId: input.sessionId,
+    expiryDate: 9999999999,
   });
 
-  afterEach(async () => {
-    await clearItems(sessionTableName, {
-      sessionId: input.sessionId,
-    });
+  const startExecutionResult = await executeStepFunction(
+    stack.outputs.CheckSessionStateMachineArn as string,
+    input
+  );
+
+  expect(startExecutionResult.output).toBe('{"status":"SESSION_OK"}');
+});
+
+it("should return SESSION_NOT_FOUND when sessionId does not exist", async () => {
+  const startExecutionResult = await executeStepFunction(
+    stack.outputs.CheckSessionStateMachineArn as string,
+    input
+  );
+
+  expect(startExecutionResult.output).toBe('{"status":"SESSION_NOT_FOUND"}');
+});
+
+it("should return SESSION_EXPIRED when session has expired", async () => {
+  await populateTable(stack.sessionTableName, {
+    sessionId: input.sessionId,
+    expiryDate: 0,
   });
 
-  it("should return SESSION_OK when session has not expired", async () => {
-    await populateTable(sessionTableName, {
-      sessionId: input.sessionId,
-      expiryDate: 9999999999,
-    });
+  const startExecutionResult = await executeStepFunction(
+    stack.outputs.CheckSessionStateMachineArn as string,
+    input
+  );
 
-    const startExecutionResult = await executeStepFunction(
-      output.CheckSessionStateMachineArn as string,
-      input
-    );
+  expect(startExecutionResult.output).toBe('{"status":"SESSION_EXPIRED"}');
+});
 
-    expect(startExecutionResult.output).toBe('{"status":"SESSION_OK"}');
-  });
+it("should return SESSION_NOT_PROVIDED when sessionId is missing", async () => {
+  const startExecutionResult = await executeStepFunction(
+    stack.outputs.CheckSessionStateMachineArn as string
+  );
 
-  it("should return SESSION_NOT_FOUND when sessionId does not exist", async () => {
-    const startExecutionResult = await executeStepFunction(
-      output.CheckSessionStateMachineArn as string,
-      input
-    );
-
-    expect(startExecutionResult.output).toBe('{"status":"SESSION_NOT_FOUND"}');
-  });
-
-  it("should return SESSION_EXPIRED when session has expired", async () => {
-    await populateTable(sessionTableName, {
-      sessionId: input.sessionId,
-      expiryDate: 0,
-    });
-
-    const startExecutionResult = await executeStepFunction(
-      output.CheckSessionStateMachineArn as string,
-      input
-    );
-
-    expect(startExecutionResult.output).toBe('{"status":"SESSION_EXPIRED"}');
-  });
-
-  it("should return SESSION_NOT_PROVIDED when sessionId is missing", async () => {
-    const startExecutionResult = await executeStepFunction(
-      output.CheckSessionStateMachineArn as string
-    );
-
-    expect(startExecutionResult.output).toBe(
-      '{"status":"SESSION_NOT_PROVIDED"}'
-    );
-  });
+  expect(startExecutionResult.output).toBe('{"status":"SESSION_NOT_PROVIDED"}');
 });
