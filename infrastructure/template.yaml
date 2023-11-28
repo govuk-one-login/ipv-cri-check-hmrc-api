@@ -565,9 +565,6 @@ Outputs:
   NinoIssueCredentialStateMachineArn:
     Description: NINO Issue Credential state machine ARN
     Value: !Ref NinoIssueCredentialStateMachine
-  CommonStackName:
-    Description: Common Stack Name
-    Value: !Ref CommonStackName
   NinoAttemptsTable:
     Description: NinoAttemptsTable table name
     Value: !Ref NinoAttemptsTable

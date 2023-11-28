@@ -7,7 +7,6 @@ import { createSendCommand } from "./aws-helper";
 export type StackInfo = Awaited<ReturnType<typeof describeStack>>;
 
 type Outputs = Partial<{
-  CommonStackName: string;
   NinoAttemptsTable: string;
   NinoUsersTable: string;
   NinoCheckStateMachineArn: string;
@@ -57,6 +56,7 @@ export async function describeStack() {
   return {
     sessionTableName: `session-${commonStackName}`,
     personIdentityTableName: `person-identity-${commonStackName}`,
+    verifiableCredentialKmsSigningKeyId: `/${commonStackName}/verifiableCredentialKmsSigningKeyId`,
     outputs: outputs,
   };
 }

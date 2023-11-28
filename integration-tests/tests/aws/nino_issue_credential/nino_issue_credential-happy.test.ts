@@ -66,10 +66,8 @@ it("should create signed JWT when nino check is successful", async () => {
     }
   );
 
-  const verifiableCredentialKmsSigningKeyId = `/${stack.outputs.CommonStackName}/verifiableCredentialKmsSigningKeyId`;
-
   const currentCredentialKmsSigningKeyId = await getSSMParameter(
-    verifiableCredentialKmsSigningKeyId
+    stack.verifiableCredentialKmsSigningKeyId
   );
 
   const token = JSON.parse(startExecutionResult.output as string);
