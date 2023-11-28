@@ -589,22 +589,16 @@ Resources:
       RetentionInDays: 30
 
 Outputs:
-  JwtSignerFunction:
-    Description: JwtSigner Lambda Function ARN
-    Value: !GetAtt JwtSignerFunction.Arn
-
   ApiGatewayId:
     Description: API GatewayID of the Address CRI API
     Value: !Ref PublicNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-ApiGatewayId
-
   PublicApiGatewayId:
     Description: API GatewayID of the public Address CRI API
     Value: !Ref PublicNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-PublicApiGatewayId
-
   PrivateApiGatewayId:
     Description: API GatewayID of the private Address CRI API
     Value: !If
@@ -613,78 +607,21 @@ Outputs:
       - !Ref DevOnlyNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-PrivateApiGatewayId
-
-  CurrentTimeFunction:
-    Description: Fetch Current Time Function ARN
-    Value: !GetAtt CurrentTimeFunction.Arn
-
-  CurrentTimeFunctionRoleArn:
-    Description: Fetch Current Time Function Role ARN
-    Value: !GetAtt CurrentTimeFunctionRole.Arn
-
-  CreateAuthCodeFunction:
-    Description: Create Authorization Code Function ARN
-    Value: !GetAtt CreateAuthCodeFunction.Arn
-
-  CreateAuthCodeFunctionRoleArn:
-    Description: Create Authorization Code Function ARN
-    Value: !GetAtt CreateAuthCodeFunctionRole.Arn
-
-  # Delete when this is not used
-  TimeFunction:
-    Description: Time Lambda Function ARN
-    Value: !GetAtt TimeFunction.Arn
-
-  TimeFunctionArn:
-    Description: Time Lambda Function ARN
-    Value: !GetAtt TimeFunction.Arn
-
-  TimeFunctionRoleArn:
-    Description: TimeFunctionRole ARN
-    Value: !GetAtt TimeFunctionRole.Arn
-
-  # Delete when this is not used
-  MatchingFunction:
-    Description: Matching Lambda Function ARN
-    Value: !GetAtt MatchingFunction.Arn
-
-  MatchingFunctionArn:
-    Description: Matching Lambda Function ARN
-    Value: !GetAtt MatchingFunction.Arn
-
-  MatchingFunctionRoleArn:
-    Description: MatchingFunctionRole ARN
-    Value: !GetAtt MatchingFunctionRole.Arn
-
   NinoCheckStateMachineArn:
     Description: NINO Check state machine ARN
     Value: !Ref NinoCheckStateMachine
-
   CheckSessionStateMachineArn:
     Description: Session Check state machine ARN
     Value: !Ref CheckSessionStateMachine
-
   NinoIssueCredentialStateMachineArn:
     Description: NINO Issue Credential state machine ARN
     Value: !Ref NinoIssueCredentialStateMachine
-
   CommonStackName:
     Description: Common Stack Name
     Value: !Ref CommonStackName
-
-  # Delete when this is not used
-  NinoIssueCredentialStateMachineIamRole:
-    Description: Implicit IAM Role created for Matching function
-    Value: !GetAtt NinoCheckStateMachineRole.Arn
-
-  NinoIssueCredentialStateMachineIamRoleArn:
-    Description: Implicit IAM Role created for Matching function
-    Value: !GetAtt NinoCheckStateMachineRole.Arn
-
   NinoAttemptsTable:
     Description: NinoAttemptsTable table name
     Value: !Ref NinoAttemptsTable
-
   NinoUsersTable:
     Description: NinoUsersTable table name
     Value: !Ref NinoUsersTable
