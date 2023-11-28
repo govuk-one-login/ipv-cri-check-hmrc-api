@@ -1,8 +1,6 @@
 import { HistoryEvent } from "@aws-sdk/client-sfn";
 import { SfnContainerHelper } from "./sfn-container-helper";
 
-jest.setTimeout(60_000);
-
 describe("nino-check-happy", () => {
   let sfnContainer: SfnContainerHelper;
 

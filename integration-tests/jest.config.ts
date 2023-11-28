@@ -6,5 +6,6 @@ export default {
   projects: ["tests/*/jest.config.ts"],
   testMatch: ["<rootDir>/**/*.test.ts"],
   collectCoverage: false,
+  testTimeout: 30_000,
   modulePaths: [],
 } satisfies Config;

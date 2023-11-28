@@ -8,8 +8,6 @@ import {
   sessionData,
 } from "../resources/session-helper";
 
-jest.setTimeout(30_000);
-
 const input = stubInput();
 let stack: StackInfo;
 

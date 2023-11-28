@@ -17,8 +17,6 @@ import {
   sessionData,
 } from "../resources/session-helper";
 
-jest.setTimeout(30_000);
-
 const input = stubInput();
 const invalidInput = stubInput("AB123003C");
 const secretsManager = new SecretsManager();

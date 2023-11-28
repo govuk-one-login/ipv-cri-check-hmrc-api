@@ -9,8 +9,6 @@ import {
   user as testUser,
 } from "../resources/session-helper";
 
-jest.setTimeout(30_000);
-
 const input = stubInput();
 const user = testUser(input);
 let stack: StackInfo;

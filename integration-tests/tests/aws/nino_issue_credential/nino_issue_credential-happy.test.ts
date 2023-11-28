@@ -14,8 +14,6 @@ import {
 } from "../resources/session-helper";
 import { describeStack, StackInfo } from "../resources/cloudformation-helper";
 
-jest.setTimeout(30_000);
-
 const input = stubInput();
 const user = testUser(input);
 let stack: StackInfo;
