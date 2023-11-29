@@ -1,22 +1,43 @@
 name: Check PR
 
 on: pull_request
-permissions: read-all
-
-concurrency:
-  group: check-pr-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
+permissions: {}
 
 jobs:
-  unit-tests:
-    name: Run tests
-    uses: ./.github/workflows/unit-tests.yml
-
   pre-commit:
     name: pre-commit
     runs-on: ubuntu-latest
+    concurrency:
+      group: pre-commit-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: true
     steps:
       - name: Run pre-commit
-        uses: govuk-one-login/github-actions/code-quality/run-pre-commit@b2b6fc5df355031fd08cef37fa13a93670a45899
+        uses: govuk-one-login/github-actions/code-quality/run-pre-commit@fab13cb0e145fa98f1ca3fb7737fd2de1a34b4e3
         with:
           all-files: true
+
+  unit-tests:
+    name: Run tests
+    uses: ./.github/workflows/run-unit-tests.yml
+
+  mocked-tests:
+    name: Run tests
+    uses: ./.github/workflows/run-mocked-tests.yml
+
+  deploy:
+    name: Preview
+    uses: ./.github/workflows/deploy-branch.yml
+    permissions:
+      id-token: write
+      contents: read
+
+  aws-tests:
+    name: Run tests
+    needs: deploy
+    uses: ./.github/workflows/run-aws-tests.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      stack-name: ${{ needs.deploy.outputs.stack-name }}
+      aws-region: ${{ needs.deploy.outputs.aws-region }}
