@@ -20,7 +20,7 @@ defaults:
 permissions: {}
 
 jobs:
-  run-unit-tests:
+  run-tests:
     name: Unit
     runs-on: ubuntu-latest
     steps:
