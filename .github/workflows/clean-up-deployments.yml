@@ -1,0 +1,43 @@
+name: Clean up deployments
+run-name: Delete stale deployments
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every weekday at 10am
+    - cron: "0 10 * * 1-5"
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency: deploy-development-${{ github.head_ref || github.ref_name }}
+
+jobs:
+  delete-stacks:
+    name: Delete stale stacks
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - name: Assume AWS Role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.DEPLOYMENT_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - name: Get stale preview stacks
+        uses: govuk-one-login/github-actions/sam/get-stale-stacks@fab13cb0e145fa98f1ca3fb7737fd2de1a34b4e3
+        with:
+          threshold-days: 14
+          stack-name-filter: preview-check-hmrc-api
+          stack-tag-filters: |
+            cri:deployment-source=github-actions
+            cri:stack-type=preview
+          description: preview
+          env-var-name: STACKS
+
+      - name: Delete stacks
+        uses: govuk-one-login/github-actions/sam/delete-stacks@fab13cb0e145fa98f1ca3fb7737fd2de1a34b4e3
+        with:
+          stack-names: ${{ env.STACKS }}
+          verbose: true
