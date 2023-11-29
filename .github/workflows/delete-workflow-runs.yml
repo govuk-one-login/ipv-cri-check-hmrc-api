@@ -1,0 +1,24 @@
+name: Delete workflow runs
+
+on:
+  workflow_dispatch:
+#  push:
+#    branches: [ delete-workflow-runs ]
+
+permissions:
+  actions: write
+
+jobs:
+  delete-workflow-runs:
+    name: Delete workflow runs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: govuk-one-login/ipv-cri-check-hmrc-api
+          retain_days: 0
+          keep_minimum_runs: 0
+          delete_workflow_pattern: <name of the workflow to clean up>
+          dry_run: true
