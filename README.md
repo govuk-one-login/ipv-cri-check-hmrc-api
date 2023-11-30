@@ -4,7 +4,7 @@ HMRC Check Credential Issuer API
 
 ## Integration Tests
 
-There are 3 types of Integration Tests:
+There are 2 types of Integration Tests: Mocked and AWS
 
 ### AWS
 
@@ -20,11 +20,23 @@ To run these tests the following environment variables are needed:
 Temporary credentials can be found by going to the [AWS start page](https://uk-digital-identity.awsapps.com/start#/), selecting the account and clicking
 "Command line or programmatic access"
 
-To run the tests: `npm run test:aws`
+To run the tests against a stack deployed in AWS, authenticate to the correct account and run
+
+`STACK_NAME=<stack-name> npm run test:aws --workspace integration-tests`
+
+You can omit the `--workspace` parameter if the current working directory is `integration-tests`
 
 ### Mocked
 
-These tests run locally on your system. To run: `npm run test:mocked`
+Mocked are not true integration-test, all AWS service integrations are mocked, it is a
+a step function path flow test which checks all paths through step function states, tasks and mocked service integrations are wired as expected and correctly.
+
+These tests run locally on your system and need the Docker agent to be running in the background before the execution begins.
+
+To run the mocked step function tests run
+`npm run test:mocked --workspace integration-tests`
+
+You can omit the `--workspace` parameter if the current working directory is `integration-tests`.\_
 
 ### MAKE
 
