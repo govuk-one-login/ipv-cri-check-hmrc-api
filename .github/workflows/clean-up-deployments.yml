@@ -26,7 +26,7 @@ jobs:
           aws-region: eu-west-2
 
       - name: Get stale preview stacks
-        uses: govuk-one-login/github-actions/sam/get-stale-stacks@fab13cb0e145fa98f1ca3fb7737fd2de1a34b4e3
+        uses: govuk-one-login/github-actions/sam/get-stale-stacks@d233e5a687f5c816b19bb25991d5709658b29ebc
         with:
           threshold-days: 14
           stack-name-filter: preview-check-hmrc-api
@@ -37,7 +37,7 @@ jobs:
           env-var-name: STACKS
 
       - name: Delete stacks
-        uses: govuk-one-login/github-actions/sam/delete-stacks@fab13cb0e145fa98f1ca3fb7737fd2de1a34b4e3
+        uses: govuk-one-login/github-actions/sam/delete-stacks@d233e5a687f5c816b19bb25991d5709658b29ebc
         with:
           stack-names: ${{ env.STACKS }}
           verbose: true
