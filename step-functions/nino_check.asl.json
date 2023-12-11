@@ -128,13 +128,16 @@
         "Name": "/${CommonStackName}/PersonIdentityTableName"
       },
       "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+      "ResultSelector": {
+        "value.$": "$.Parameter.Value"
+      },
       "ResultPath": "$.personIdentityTableName"
     },
     "Query Session": {
       "Type": "Task",
       "Next": "User Exists?",
       "Parameters": {
-        "TableName.$": "$.personIdentityTableName.Parameter.Value",
+        "TableName.$": "$.personIdentityTableName.value",
         "KeyConditionExpression": "sessionId = :value",
         "ExpressionAttributeValues": {
           ":value": {
@@ -183,6 +186,10 @@
         "Names": ["${UserAgent}", "${NinoCheckUrl}"]
       },
       "Resource": "arn:aws:states:::aws-sdk:ssm:getParameters",
+      "ResultSelector": {
+        "apiURL.$": "$.Parameters[0].Value",
+        "userAgent.$": "$.Parameters[1].Value"
+      },
       "ResultPath": "$.apiParams"
     },
     "Err: No user for nino": {
@@ -218,8 +225,8 @@
           "lastName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
           "dob.$": "$.userDetails.Items[0].birthDates.L[0].M.value.S"
         },
-        "userAgent.$": "$.apiParams.Parameters[1].Value",
-        "apiURL.$": "$.apiParams.Parameters[0].Value",
+        "userAgent.$": "$.apiParams.userAgent",
+        "apiURL.$": "$.apiParams.apiURL",
         "oAuthToken.$": "$.oAuthToken.value"
       }
     },
@@ -237,6 +244,9 @@
           "Next": "Err: Matching Lambda Exception"
         }
       ],
+      "ResultSelector": {
+        "payload.$": "$.Payload"
+      },
       "ResultPath": "$.hmrc_response"
     },
     "Err: Matching Lambda Exception": {
@@ -248,19 +258,19 @@
         {
           "And": [
             {
-              "Variable": "$.hmrc_response.Payload.firstName",
+              "Variable": "$.hmrc_response.payload.firstName",
               "IsPresent": true
             },
             {
-              "Variable": "$.hmrc_response.Payload.lastName",
+              "Variable": "$.hmrc_response.payload.lastName",
               "IsPresent": true
             },
             {
-              "Variable": "$.hmrc_response.Payload.dateOfBirth",
+              "Variable": "$.hmrc_response.payload.dateOfBirth",
               "IsPresent": true
             },
             {
-              "Variable": "$.hmrc_response.Payload.nino",
+              "Variable": "$.hmrc_response.payload.nino",
               "IsPresent": true
             }
           ],
@@ -273,12 +283,12 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.hmrc_response.Payload.errors",
+          "Variable": "$.hmrc_response.payload.errors",
           "IsPresent": true,
           "Next": "Err: HMRC error"
         },
         {
-          "Variable": "$.hmrc_response.Payload.message",
+          "Variable": "$.hmrc_response.payload.message",
           "IsPresent": true,
           "Next": "Err: Failed Auth"
         }
@@ -288,7 +298,7 @@
     "Err: HMRC error": {
       "Type": "Pass",
       "Parameters": {
-        "error.$": "$.hmrc_response.Payload.errors"
+        "error.$": "$.hmrc_response.payload.errors"
       },
       "End": true
     },
@@ -320,6 +330,9 @@
         "FunctionName": "${CreateAuthCodeFunctionArn}"
       },
       "Next": "Fetch Session Table Name",
+      "ResultSelector": {
+        "payload.$": "$.Payload"
+      },
       "ResultPath": "$.expiry"
     },
     "Fetch Session Table Name": {
@@ -329,13 +342,16 @@
         "Name": "/${CommonStackName}/SessionTableName"
       },
       "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+      "ResultSelector": {
+        "value.$": "$.Parameter.Value"
+      },
       "ResultPath": "$.sessionTable"
     },
     "Set Auth Code for Session": {
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:updateItem",
       "Parameters": {
-        "TableName.$": "$.sessionTable.Parameter.Value",
+        "TableName.$": "$.sessionTable.value",
         "Key": {
           "sessionId": {
             "S.$": "$$.Execution.Input.sessionId"
@@ -347,7 +363,7 @@
             "S.$": "States.UUID()"
           },
           ":expiry": {
-            "N.$": "States.Format('{}',$.expiry.Payload.authCodeExpiry)"
+            "N.$": "States.Format('{}',$.expiry.payload.authCodeExpiry)"
           }
         }
       },
@@ -364,7 +380,7 @@
             "S.$": "$$.Execution.Input.sessionId"
           },
           "nino": {
-            "S.$": "$.hmrc_response.Payload.nino"
+            "S.$": "$.hmrc_response.payload.nino"
           }
         },
         "ConditionExpression": "attribute_not_exists(sessionId)"
@@ -392,11 +408,11 @@
     },
     "Err: API Error": {
       "Type": "Fail",
-      "CausePath": "$.hmrc_response.Payload"
+      "CausePath": "$.hmrc_response.payload"
     },
     "Err: Failed Auth": {
       "Type": "Fail",
-      "CausePath": "$.hmrc_response.Payload.message"
+      "CausePath": "$.hmrc_response.payload.message"
     }
   }
 }
