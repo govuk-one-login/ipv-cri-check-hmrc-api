@@ -26,6 +26,41 @@ describe("nino-issue-credential-happy", () => {
     lastName: "Ferguson",
   };
 
+  const expectedPayload = {
+    iss: "0976c11e-8ef3-4659-b7f2-ee0b842b85bd",
+    jti: expect.any(String),
+    sub: "test",
+    vc: {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld",
+      ],
+      credentialSubject: {
+        name: [
+          {
+            nameParts: [
+              { type: "GivenName", value: "Jim" },
+              { type: "FamilyName", value: "Ferguson" },
+            ],
+          },
+        ],
+        socialSecurityRecord: [{ personalNumber: "AA000003D" }],
+      },
+      evidence: [
+        {
+          checkDetails: [
+            { checkMethod: "data", identityCheckPolicy: "published" },
+          ],
+          strengthScore: 2,
+          txn: expect.any(String),
+          type: "IdentityCheck",
+          validityScore: 2,
+        },
+      ],
+      type: ["VerifiableCredential", "IdentityCheckCredential"],
+    },
+  };
+
   let sessionTableName: string;
   let personIdentityTableName: string;
 
@@ -123,59 +158,24 @@ describe("nino-issue-credential-happy", () => {
       }
     );
 
-    const verifiableCredentialKmsSigningKeyId = `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`;
-
     const currentCredentialKmsSigningKeyId = await getSSMParameter(
-      verifiableCredentialKmsSigningKeyId
+      `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
     );
 
     const token = JSON.parse(startExecutionResult.output as string);
 
     const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
+    const header = JSON.parse(base64decode(headerEncoded));
+    const payload = JSON.parse(base64decode(payloadEncoded));
 
-    const header = JSON.parse(atob(headerEncoded));
-    const payload = JSON.parse(atob(payloadEncoded));
-
-    expect(header.typ).toBe("JWT");
-    expect(header.alg).toBe("ES256");
-    expect(header.kid).toBe(currentCredentialKmsSigningKeyId);
-
-    const evidence = payload.vc.evidence[0];
-    expect(evidence.type).toBe("IdentityCheck");
-    expect(evidence.strengthScore).toBe(2);
-    expect(evidence.validityScore).toBe(2);
-    expect(evidence.checkDetails[0].checkMethod).toBe("data");
-    expect(evidence.checkDetails[0].identityCheckPolicy).toBe("published");
-    expect(evidence.txn).not.toBeNull;
-
-    const credentialSubject = payload.vc.credentialSubject;
-    expect(credentialSubject.socialSecurityRecord[0].personalNumber).toBe(
-      testUser.nino
-    );
-    expect(credentialSubject.name[0].nameParts[0].type).toBe("GivenName");
-    expect(credentialSubject.name[0].nameParts[0].value).toBe(
-      testUser.firstName
-    );
-    expect(credentialSubject.name[0].nameParts[1].type).toBe("FamilyName");
-    expect(credentialSubject.name[0].nameParts[1].value).toBe(
-      testUser.lastName
-    );
-
-    expect(payload.vc.type[0]).toBe("VerifiableCredential");
-    expect(payload.vc.type[1]).toBe("IdentityCheckCredential");
-
-    expect(payload.vc["@context"][0]).toBe(
-      "https://www.w3.org/2018/credentials/v1"
-    );
-    expect(payload.vc["@context"][1]).toBe(
-      "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld"
-    );
-
-    expect(payload.sub).not.toBeNull;
-    expect(isValidTimestamp(payload.nbf)).toBe(true);
-    expect(payload.iss).not.toBeNull;
+    expect(header).toEqual({
+      typ: "JWT",
+      alg: "ES256",
+      kid: currentCredentialKmsSigningKeyId,
+    });
     expect(isValidTimestamp(payload.exp)).toBe(true);
-    expect(payload.jti).not.toBeNull;
+    expect(isValidTimestamp(payload.nbf)).toBe(true);
+    expect(payload).toEqual(expect.objectContaining(expectedPayload));
   });
 
   it("should create the valid expiry date", async () => {
@@ -208,11 +208,13 @@ describe("nino-issue-credential-happy", () => {
 
     const payloadEncoded = token.jwt.split(".")[1];
 
-    const payload = JSON.parse(atob(payloadEncoded));
+    const payload = JSON.parse(base64decode(payloadEncoded));
 
     expect(payload.exp).toBe(payload.nbf + 5 * 60);
   });
 
   const isValidTimestamp = (timestamp: number) =>
     !isNaN(new Date(timestamp).getTime());
+  const base64decode = (value: string) =>
+    Buffer.from(value, "base64").toString("utf-8");
 });
