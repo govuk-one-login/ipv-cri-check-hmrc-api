@@ -24,7 +24,7 @@ jobs:
       artifact-name: ${{ steps.build.outputs.artifact-name }}
     steps:
       - name: Build SAM application
-        uses: govuk-one-login/github-actions/sam/build-application@fab13cb0e145fa98f1ca3fb7737fd2de1a34b4e3
+        uses: govuk-one-login/github-actions/sam/build-application@d233e5a687f5c816b19bb25991d5709658b29ebc
         id: build
         with:
           template: infrastructure/template.yaml
@@ -47,7 +47,7 @@ jobs:
       stack-name: ${{ steps.deploy.outputs.stack-name }}
     steps:
       - name: Deploy stack
-        uses: govuk-one-login/github-actions/sam/deploy-stack@fab13cb0e145fa98f1ca3fb7737fd2de1a34b4e3
+        uses: govuk-one-login/github-actions/sam/deploy-stack@d233e5a687f5c816b19bb25991d5709658b29ebc
         id: deploy
         with:
           sam-deployment-bucket: ${{ vars.DEPLOYMENT_ARTIFACTS_BUCKET }}
