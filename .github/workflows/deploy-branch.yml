@@ -64,5 +64,4 @@ jobs:
             cri:application=Orange
             cri:deployment-source=github-actions
           parameters: |
-            CodeSigningEnabled=false
             Environment=dev
