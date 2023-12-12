@@ -448,8 +448,8 @@ Resources:
               - ssm:GetParameters
               - ssm:GetParameter
             Resource:
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/NinoCheckUrl
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/UserAgent
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${NinoCheckUrl}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${UserAgent}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName
         - Statement:
@@ -509,8 +509,8 @@ Resources:
               - ssm:GetParameters
               - ssm:GetParameter
             Resource:
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/JwtTtlUnit
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${MaxJwtTtlParameter}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${JwtTtlUnitParameter}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName
