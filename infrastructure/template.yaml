@@ -153,7 +153,7 @@ Resources:
           ThrottlingRateLimit: 200
           ThrottlingBurstLimit: 400
       AccessLogSetting:
-        DestinationArn: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PublicNinoCheckApiAccessLogGroup}
+        DestinationArn: !GetAtt PublicNinoCheckApiAccessLogGroup.Arn
         Format:
           Fn::ToJsonString:
             requestId: $context.requestId
@@ -198,7 +198,7 @@ Resources:
           ThrottlingRateLimit: 200
           ThrottlingBurstLimit: 400
       AccessLogSetting:
-        DestinationArn: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PrivateNinoCheckApiAccessLogGroup}
+        DestinationArn: !GetAtt PrivateNinoCheckApiAccessLogGroup.Arn
         Format:
           Fn::ToJsonString:
             requestId: $context.requestId
@@ -464,7 +464,7 @@ Resources:
   NinoCheckStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/aws/apigateway/${AWS::StackName}-NinoCheck-state-machine-logs
+      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs
       RetentionInDays: 30
 
   NinoIssueCredentialStateMachine:
@@ -537,7 +537,7 @@ Resources:
   CheckSessionStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/apigateway/${AWS::StackName}-CheckSession-state-machine-logs
+      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs
       RetentionInDays: 30
 
 Outputs:
