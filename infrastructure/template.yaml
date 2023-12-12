@@ -28,7 +28,6 @@ Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
   UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, ""]]
   IsDevEnvironment: !Equals [!Ref Environment, dev]
-  IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
   IsProductionEnvironment: !Equals [!Ref Environment, production]
   IsStagingOrIntegrationEnvironment: !Or
     - !Equals [!Ref Environment, staging]
@@ -101,22 +100,6 @@ Globals:
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
 
 Resources:
-  JwtSignerFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/jwt-signer/src/jwt-signer-handler.lambdaHandler
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-      Policies:
-        - Statement:
-            Effect: Allow
-            Action: kms:Sign
-            Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
-
   UserAgent:
     Type: AWS::SSM::Parameter
     Properties:
@@ -165,7 +148,6 @@ Resources:
         - LoggingLevel: INFO
           ResourcePath: "/*"
           HttpMethod: "*"
-          # Disable data trace in production to avoid logging customer sensitive information
           DataTraceEnabled: true
           MetricsEnabled: true
           ThrottlingRateLimit: 200
@@ -188,12 +170,12 @@ Resources:
       Name: !Sub ${AWS::StackName}-public
       StageName: !Ref Environment
       DefinitionBody:
-        openapi: 3.1.0
+        openapi: 3.0.1
         Fn::Transform:
           Name: AWS::Include
           Parameters:
-            Location: ./public-api.yaml
-      OpenApiVersion: 3.1.0
+            Location: public-api.yaml
+      OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
 
@@ -203,63 +185,14 @@ Resources:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs
       RetentionInDays: 30
 
-  DevOnlyNinoCheckApi:
+  PrivateNinoCheckApi:
     Type: AWS::Serverless::Api
-    Condition: IsDevEnvironment
     Properties:
-      Description: Private Dev NINO Check CRI API
+      Description: Private NINO Check CRI API
       MethodSettings:
         - LoggingLevel: INFO
           ResourcePath: "/*"
           HttpMethod: "*"
-          DataTraceEnabled: true
-          MetricsEnabled: true
-          ThrottlingRateLimit: 200
-          ThrottlingBurstLimit: 400
-      AccessLogSetting:
-        DestinationArn: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${DevOnlyNinoCheckApiAccessLogGroup}
-        Format:
-          Fn::ToJsonString:
-            requestId: $context.requestId
-            ip: $context.identity.sourceIp
-            requestTime: $context.requestTime
-            httpMethod: $context.httpMethod
-            path: $context.path
-            routeKey: $context.routeKey
-            status: $context.status
-            protocol: $context.protocol
-            responseLatency: $context.responseLatency
-            responseLength: $context.responseLength
-      TracingEnabled: true
-      Name: !Sub ${AWS::StackName}-dev-only-private
-      StageName: !Ref Environment
-      DefinitionBody:
-        openapi: 3.1.0
-        Fn::Transform:
-          Name: AWS::Include
-          Parameters:
-            Location: ./private-api.yaml
-      OpenApiVersion: 3.1.0
-      EndpointConfiguration:
-        Type: REGIONAL
-
-  DevOnlyNinoCheckApiAccessLogGroup:
-    Type: AWS::Logs::LogGroup
-    Condition: IsDevEnvironment
-    Properties:
-      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${DevOnlyNinoCheckApi}-dev-only-AccessLogs
-      RetentionInDays: 30
-
-  PrivateNinoCheckApi:
-    Type: AWS::Serverless::Api
-    Condition: IsNotDevEnvironment
-    Properties:
-      Description: Private NINO check CRI API
-      MethodSettings:
-        - ResourcePath: "/*"
-          LoggingLevel: INFO
-          HttpMethod: "*"
-          # Disable data trace in production to avoid logging customer sensitive information
           DataTraceEnabled: true
           MetricsEnabled: true
           ThrottlingRateLimit: 200
@@ -282,28 +215,29 @@ Resources:
       Name: !Sub ${AWS::StackName}-private
       StageName: !Ref Environment
       DefinitionBody:
-        openapi: 3.0.1 # workaround to get `sam validate` to work
+        openapi: 3.0.1
         paths: # workaround to get `sam validate` to work
           /never-created:
-            options: {} # workaround to get `sam validate` to work
+            options: {}
         Fn::Transform:
           Name: AWS::Include
           Parameters:
-            Location: ./private-api.yaml
+            Location: private-api.yaml
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
-        Type: PRIVATE
+        Type: !If [IsDevEnvironment, REGIONAL, PRIVATE]
       Auth:
-        ResourcePolicy:
-          CustomStatements:
-            - Action: execute-api:Invoke
-              Effect: Allow
-              Principal: "*"
-              Resource: "execute-api:/*"
+        ResourcePolicy: !If
+          - IsDevEnvironment
+          - !Ref AWS::NoValue
+          - CustomStatements:
+              - Effect: Allow
+                Resource: execute-api:/*
+                Action: execute-api:Invoke
+                Principal: "*"
 
   PrivateNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
-    Condition: IsNotDevEnvironment
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs
       RetentionInDays: 30
@@ -357,6 +291,22 @@ Resources:
       KeySchema:
         - AttributeName: sessionId
           KeyType: HASH
+
+  JwtSignerFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/jwt-signer/src/jwt-signer-handler.lambdaHandler
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action: kms:Sign
+            Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
 
   MatchingFunction:
     Type: AWS::Serverless::Function
@@ -597,16 +547,13 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-ApiGatewayId
   PublicApiGatewayId:
-    Description: API GatewayID of the public Address CRI API
+    Description: API Gateway ID of the public Address CRI API
     Value: !Ref PublicNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-PublicApiGatewayId
   PrivateApiGatewayId:
-    Description: API GatewayID of the private Address CRI API
-    Value: !If
-      - IsNotDevEnvironment
-      - !Ref PrivateNinoCheckApi
-      - !Ref DevOnlyNinoCheckApi
+    Description: API Gateway ID of the private Address CRI API
+    Value: !Ref PrivateNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-PrivateApiGatewayId
   NinoCheckStateMachineArn:
