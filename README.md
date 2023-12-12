@@ -24,19 +24,19 @@ To run the tests against a stack deployed in AWS, authenticate to the correct ac
 
 `STACK_NAME=<stack-name> npm run test:aws --workspace integration-tests`
 
-You can omit the `--workspace` parameter if the current working directory is `integration-tests`
+_You can omit the `--workspace` parameter if the current working directory is `integration-tests`._
 
 ### Mocked
 
-Mocked are not true integration-test, all AWS service integrations are mocked, it is a
-a step function path flow test which checks all paths through step function states, tasks and mocked service integrations are wired as expected and correctly.
+In mocked tests, all AWS service integrations are mocked, and only the step function path flow is checked to verify all
+the paths through step function states. Tasks and mocked service integrations are wired to return the expected responses.
 
 These tests run locally on your system and need the Docker agent to be running in the background before the execution begins.
 
 To run the mocked step function tests run
 `npm run test:mocked --workspace integration-tests`
 
-You can omit the `--workspace` parameter if the current working directory is `integration-tests`.\_
+_You can omit the `--workspace` parameter if the current working directory is `integration-tests`._
 
 ### MAKE
 
