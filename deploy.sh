@@ -2,6 +2,7 @@
 set -eu
 
 stack_name="${1:-}"
+common_stack_name="${2:-}"
 
 if ! [[ "$stack_name" ]]; then
   echo "😱 Stack name expected as first argument, e.g. ./deploy.sh pdv-matching-user1"
@@ -26,4 +27,5 @@ sam deploy --stack-name "$stack_name" \
   cri:application=Orange \
   cri:deployment-source=manual \
   --parameter-overrides \
+  ${common_stack_name:+CommonStackName=$common_stack_name} \
   Environment=dev

@@ -11,7 +11,7 @@ permissions:
   id-token: write
   contents: read
 
-concurrency: deploy-development-${{ github.head_ref || github.ref_name }}
+concurrency: cleanup-dev-${{ github.head_ref || github.ref_name }}
 
 jobs:
   delete-stacks:
@@ -37,6 +37,7 @@ jobs:
           env-var-name: STACKS
 
       - name: Delete stacks
+        if: ${{ env.STACKS != null }}
         uses: govuk-one-login/github-actions/sam/delete-stacks@d233e5a687f5c816b19bb25991d5709658b29ebc
         with:
           stack-names: ${{ env.STACKS }}
