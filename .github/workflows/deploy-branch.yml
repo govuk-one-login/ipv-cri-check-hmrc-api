@@ -59,7 +59,7 @@ jobs:
           artifact-path: .aws-sam/build
           artifact-name: ${{ needs.build.outputs.artifact-name }}
           tags: |
-            cri:component=check-hmrc-api
+            cri:component=ipv-cri-check-hmrc-api
             cri:stack-type=preview
             cri:application=Orange
             cri:deployment-source=github-actions
