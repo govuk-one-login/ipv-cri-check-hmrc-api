@@ -4,6 +4,9 @@ set -eu
 stack_name="${1:-}"
 common_stack_name="${2:-}"
 
+test
+
+
 if ! [[ "$stack_name" ]]; then
   echo "😱 Stack name expected as first argument, e.g. ./deploy.sh pdv-matching-user1"
   exit 1
