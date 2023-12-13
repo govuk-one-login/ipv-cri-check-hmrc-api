@@ -210,7 +210,7 @@ describe("nino-issue-credential-happy", () => {
 
     const payload = JSON.parse(atob(payloadEncoded));
 
-    expect(payload.exp).toBe(payload.nbf + 5 * 1000 * 60);
+    expect(payload.exp).toBe(payload.nbf + 5 * 60);
   });
 
   const isValidTimestamp = (timestamp: number) =>
