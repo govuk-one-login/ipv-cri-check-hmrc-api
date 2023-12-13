@@ -4,7 +4,7 @@ set -eu
 stack_name="${1:-}"
 common_stack_name="${2:-}"
 
-test
+test 2
 
 
 if ! [[ "$stack_name" ]]; then
