@@ -1,4 +1,4 @@
-import { Config } from "jest";
+import type { Config } from "jest";
 
 export default {
   projects: ["lambdas/*/jest.config.ts"],
