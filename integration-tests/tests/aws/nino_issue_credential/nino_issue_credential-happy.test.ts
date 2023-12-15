@@ -1,3 +1,5 @@
+import { JWK, importJWK, jwtVerify } from "jose";
+import { createPublicKey } from "crypto";
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import {
@@ -10,6 +12,7 @@ import {
   getSSMParameters,
   updateSSMParameters,
 } from "../resources/ssm-param-helper";
+import { getPublicKey } from "../resources/kms-helper";
 
 jest.setTimeout(30_000);
 
@@ -151,12 +154,7 @@ describe("nino-issue-credential-happy", () => {
   );
 
   it("should create signed JWT when nino check is successful", async () => {
-    const startExecutionResult = await executeStepFunction(
-      output.NinoIssueCredentialStateMachineArn as string,
-      {
-        bearerToken: "Bearer test",
-      }
-    );
+    const startExecutionResult = await getExecutionResult("Bearer test");
 
     const currentCredentialKmsSigningKeyId = await getSSMParameter(
       `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
@@ -183,8 +181,8 @@ describe("nino-issue-credential-happy", () => {
     const jwtTtlUnit = `/${process.env.STACK_NAME}/JwtTtlUnit`;
 
     const [currentMaxJwtTtl, currentJwtTtlUnit] = await getSSMParameters(
-      `/${process.env.STACK_NAME}/MaxJwtTtl`,
-      `/${process.env.STACK_NAME}/JwtTtlUnit`
+      maxJwtTtl,
+      jwtTtlUnit
     );
 
     await updateSSMParameters(
@@ -192,12 +190,7 @@ describe("nino-issue-credential-happy", () => {
       { name: jwtTtlUnit, value: "MINUTES" }
     );
 
-    const startExecutionResult = await executeStepFunction(
-      output.NinoIssueCredentialStateMachineArn as string,
-      {
-        bearerToken: "Bearer test",
-      }
-    );
+    const startExecutionResult = await getExecutionResult("Bearer test");
 
     await updateSSMParameters(
       { name: maxJwtTtl, value: currentMaxJwtTtl as string },
@@ -205,16 +198,70 @@ describe("nino-issue-credential-happy", () => {
     );
 
     const token = JSON.parse(startExecutionResult.output as string);
-
     const payloadEncoded = token.jwt.split(".")[1];
-
     const payload = JSON.parse(base64decode(payloadEncoded));
 
     expect(payload.exp).toBe(payload.nbf + 5 * 60);
   });
 
+  it("should have valid signature", async () => {
+    const kid = (await getSSMParameter(
+      `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
+    )) as string;
+    const alg = (await getSSMParameter(
+      `/${output.CommonStackName}/clients/ipv-core-stub-aws-build/jwtAuthentication/authenticationAlg`
+    )) as string;
+
+    const startExecutionResult = await getExecutionResult("Bearer test");
+    const token = JSON.parse(startExecutionResult.output as string);
+    const [header, jwtPayload, signature] = token.jwt.split(".");
+
+    const signingPublicJwk = await createSigningPublicJWK(kid, alg);
+    const publicVerifyingJwk = await importJWK(
+      signingPublicJwk,
+      signingPublicJwk?.alg || alg
+    );
+
+    const { payload } = await jwtVerify(
+      `${header}.${jwtPayload}.${base64decode(signature)}`,
+      publicVerifyingJwk,
+      { algorithms: [alg] }
+    );
+
+    expect(isValidTimestamp(payload.exp || 0)).toBe(true);
+    expect(isValidTimestamp(payload.nbf || 0)).toBe(true);
+    expect(payload).toEqual(expect.objectContaining(expectedPayload));
+  });
+
+  const getExecutionResult = async (token: string) =>
+    executeStepFunction(output.NinoIssueCredentialStateMachineArn as string, {
+      bearerToken: token,
+    });
+
   const isValidTimestamp = (timestamp: number) =>
     !isNaN(new Date(timestamp).getTime());
+
   const base64decode = (value: string) =>
     Buffer.from(value, "base64").toString("utf-8");
+
+  const createSigningPublicJWK = async (
+    kid: string,
+    alg: string
+  ): Promise<JWK> => {
+    const publicKey = await getPublicKey(kid as string);
+    const key = Buffer.from(publicKey as unknown as Uint8Array);
+
+    const signingPublicJwk = createPublicKey({
+      key,
+      type: "spki",
+      format: "der",
+    }).export({ format: "jwk" });
+
+    return {
+      ...signingPublicJwk,
+      use: "sig",
+      kid,
+      alg,
+    };
+  };
 });
