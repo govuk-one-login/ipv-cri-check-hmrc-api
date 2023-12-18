@@ -123,7 +123,7 @@
     },
     "Person Identity Table Name": {
       "Type": "Task",
-      "Next": "Query Session",
+      "Next": "Query Person Identity Table",
       "Parameters": {
         "Name": "/${CommonStackName}/PersonIdentityTableName"
       },
@@ -133,7 +133,7 @@
       },
       "ResultPath": "$.personIdentityTableName"
     },
-    "Query Session": {
+    "Query Person Identity Table": {
       "Type": "Task",
       "Next": "User Exists?",
       "Parameters": {
@@ -177,7 +177,7 @@
           "Next": "Get User Agent and API URL"
         }
       ],
-      "Default": "Err: No user for nino"
+      "Default": "Err: No user found in Person Identity"
     },
     "Get User Agent and API URL": {
       "Type": "Task",
@@ -192,7 +192,7 @@
       },
       "ResultPath": "$.apiParams"
     },
-    "Err: No user for nino": {
+    "Err: No user found in Person Identity": {
       "Type": "Pass",
       "End": true,
       "Result": {
@@ -237,7 +237,7 @@
         "Payload.$": "$",
         "FunctionName": "${MatchingFunctionArn}"
       },
-      "Next": "Response Validation",
+      "Next": "Check HTTP Status Code",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -252,28 +252,12 @@
     "Err: Matching Lambda Exception": {
       "Type": "Fail"
     },
-    "Response Validation": {
+    "Check HTTP Status Code": {
       "Type": "Choice",
       "Choices": [
         {
-          "And": [
-            {
-              "Variable": "$.hmrc_response.payload.firstName",
-              "IsPresent": true
-            },
-            {
-              "Variable": "$.hmrc_response.payload.lastName",
-              "IsPresent": true
-            },
-            {
-              "Variable": "$.hmrc_response.payload.dateOfBirth",
-              "IsPresent": true
-            },
-            {
-              "Variable": "$.hmrc_response.payload.nino",
-              "IsPresent": true
-            }
-          ],
+          "Variable": "$.hmrc_response.payload.status",
+          "NumericEquals": 200,
           "Next": "Update status to PASS"
         }
       ],
@@ -283,12 +267,12 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.hmrc_response.payload.errors",
+          "Variable": "$.hmrc_response.payload.body.errors",
           "IsPresent": true,
           "Next": "Err: HMRC error"
         },
         {
-          "Variable": "$.hmrc_response.payload.message",
+          "Variable": "$.hmrc_response.payload.body.message",
           "IsPresent": true,
           "Next": "Err: Failed Auth"
         }
@@ -298,7 +282,7 @@
     "Err: HMRC error": {
       "Type": "Pass",
       "Parameters": {
-        "error.$": "$.hmrc_response.payload.errors"
+        "error.$": "$.hmrc_response.payload.body.errors"
       },
       "End": true
     },
@@ -380,7 +364,7 @@
             "S.$": "$$.Execution.Input.sessionId"
           },
           "nino": {
-            "S.$": "$.hmrc_response.payload.nino"
+            "S.$": "$.hmrc_response.payload.body.nino"
           }
         },
         "ConditionExpression": "attribute_not_exists(sessionId)"
@@ -412,7 +396,7 @@
     },
     "Err: Failed Auth": {
       "Type": "Fail",
-      "CausePath": "$.hmrc_response.payload.message"
+      "CausePath": "$.hmrc_response.payload.body.message"
     }
   }
 }
