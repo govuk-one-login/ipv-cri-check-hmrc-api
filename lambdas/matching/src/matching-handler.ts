@@ -5,7 +5,10 @@ import { MatchEvent } from "./match-event";
 const logger = new Logger();
 
 export class MatchingHandler implements LambdaInterface {
-  public async handler(event: MatchEvent, _context: unknown): Promise<string> {
+  public async handler(
+    event: MatchEvent,
+    _context: unknown
+  ): Promise<{ status: number; body: string }> {
     try {
       const response = await fetch(event.apiURL, {
         method: "POST",
@@ -22,9 +25,15 @@ export class MatchingHandler implements LambdaInterface {
         }),
       });
       try {
-        return await response.json();
+        return {
+          status: response.status,
+          body: await response.json(),
+        };
       } catch (error: unknown) {
-        return await response.text();
+        return {
+          status: response.status,
+          body: await response.text(),
+        };
       }
     } catch (error: unknown) {
       let message;
