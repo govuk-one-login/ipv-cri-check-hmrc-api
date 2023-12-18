@@ -8,7 +8,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
-          "Query Session": "QuerySessionSuccess",
+          "Query Person Identity Table": "QuerySessionSuccess",
           "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
@@ -24,7 +24,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
-          "Query Session": "QuerySessionSuccess",
+          "Query Person Identity Table": "QuerySessionSuccess",
           "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
@@ -47,7 +47,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
-          "Query Session": "QuerySessionSuccess",
+          "Query Person Identity Table": "QuerySessionSuccess",
           "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
@@ -63,7 +63,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
-          "Query Session": "DynamoDbQueryNoResult"
+          "Query Person Identity Table": "DynamoDbQueryNoResult"
         },
         "HMRCAuthError": {
           "Invoke Check Session": "CheckSessionSuccess",
@@ -71,7 +71,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
-          "Query Session": "QuerySessionSuccess",
+          "Query Person Identity Table": "QuerySessionSuccess",
           "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPIFailAuth"
@@ -82,7 +82,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
-          "Query Session": "QuerySessionSuccess",
+          "Query Person Identity Table": "QuerySessionSuccess",
           "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPIInvalidURL"
@@ -93,7 +93,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
-          "Query Session": "QuerySessionSuccess",
+          "Query Person Identity Table": "QuerySessionSuccess",
           "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPIFailNoRecords"
@@ -121,8 +121,11 @@
       "0": {
         "Return": {
           "Payload": {
-            "code": "INVALID_CREDENTIALS",
-            "message": "Invalid Authentication information provided"
+            "status": "400",
+            "body": {
+              "code": "INVALID_CREDENTIALS",
+              "message": "Invalid Authentication information provided"
+            }
           }
         }
       }
@@ -131,7 +134,10 @@
       "0": {
         "Return": {
           "Payload": {
-            "errors": "CID returned no record"
+            "status": "400",
+            "body": {
+              "errors": "CID returned no record"
+            }
           }
         }
       }
@@ -448,10 +454,13 @@
       "0": {
         "Return": {
           "Payload": {
-            "firstName": "Jim",
-            "lastName": "Ferguson",
-            "dateOfBirth": "1948-04-23",
-            "nino": "AA000003D"
+            "status": 200,
+            "body": {
+              "firstName": "Jim",
+              "lastName": "Ferguson",
+              "dateOfBirth": "1948-04-23",
+              "nino": "AA000003D"
+            }
           }
         }
       }
