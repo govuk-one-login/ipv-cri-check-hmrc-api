@@ -84,7 +84,8 @@ describe("nino-check-unhappy", () => {
     const results = await sfnContainer.waitFor(
       (event: HistoryEvent) =>
         event?.type === "PassStateExited" &&
-        event?.stateExitedEventDetails?.name === "Err: No user for nino",
+        event?.stateExitedEventDetails?.name ===
+          "Err: No user found in Person Identity",
       responseStepFunction
     );
     expect(results[0].stateExitedEventDetails?.output).toEqual(

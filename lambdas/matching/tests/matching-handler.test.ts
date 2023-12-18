@@ -17,6 +17,7 @@ describe("matching-handler", () => {
         dateOfBirth: "1948-04-23",
         nino: "AA000003D",
       }),
+      status: 200,
     });
     const matchingHandler = new MatchingHandler();
     const event = {
@@ -34,7 +35,8 @@ describe("matching-handler", () => {
       oAuthToken: "123",
     } as MatchEvent;
     const result = await matchingHandler.handler(event, {} as Context);
-    expect(result).toStrictEqual({
+    expect(result.status).toBe(200);
+    expect(result.body).toStrictEqual({
       firstName: "Jim",
       lastName: "Ferguson",
       dateOfBirth: "1948-04-23",
