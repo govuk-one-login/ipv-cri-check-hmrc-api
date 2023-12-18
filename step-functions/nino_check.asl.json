@@ -41,7 +41,7 @@
       "Next": "User has attempts?",
       "Parameters": {
         "TableName": "${NinoAttemptsTable}",
-        "KeyConditionExpression": "id = :value",
+        "KeyConditionExpression": "sessionId = :value",
         "ExpressionAttributeValues": {
           ":value": {
             "S.$": "$.sessionId"
@@ -60,39 +60,18 @@
           "Next": "User has more than 2 attempts?"
         }
       ],
-      "Default": "Create new user attempt"
-    },
-    "Create new user attempt": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::dynamodb:putItem",
-      "Parameters": {
-        "TableName": "${NinoAttemptsTable}",
-        "Item": {
-          "id": {
-            "S.$": "$.sessionId"
-          },
-          "attempts": {
-            "N": "0"
-          },
-          "outcome": {
-            "S": "FAIL"
-          }
-        },
-        "ConditionExpression": "attribute_not_exists(id)"
-      },
-      "Next": "Increment user attempt",
-      "ResultPath": null
+      "Default": "Person Identity Table Name"
     },
     "User has more than 2 attempts?": {
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.check-attempts-exist.Items[0].attempts.N",
+          "Variable": "$.check-attempts-exist.Count",
           "StringGreaterThanEquals": "2",
           "Next": "Err: Attempts exceeded"
         }
       ],
-      "Default": "Increment user attempt"
+      "Default": "Person Identity Table Name"
     },
     "Err: Attempts exceeded": {
       "Type": "Pass",
@@ -100,26 +79,6 @@
       "Parameters": {
         "error": "Maximum number of attempts exceeded"
       }
-    },
-    "Increment user attempt": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::dynamodb:updateItem",
-      "Parameters": {
-        "TableName": "${NinoAttemptsTable}",
-        "Key": {
-          "id": {
-            "S.$": "$.sessionId"
-          }
-        },
-        "UpdateExpression": "ADD attempts :attempts",
-        "ExpressionAttributeValues": {
-          ":attempts": {
-            "N": "1"
-          }
-        }
-      },
-      "Next": "Person Identity Table Name",
-      "ResultPath": null
     },
     "Person Identity Table Name": {
       "Type": "Task",
@@ -258,10 +217,33 @@
         {
           "Variable": "$.hmrc_response.payload.status",
           "NumericEquals": 200,
-          "Next": "Update status to PASS"
+          "Next": "Store Successful Attempt"
         }
       ],
       "Default": "Contains Error?"
+    },
+    "Store Successful Attempt": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+      "Parameters": {
+        "TableName": "${NinoAttemptsTable}",
+        "Item": {
+          "sessionId": {
+            "S.$": "$$.Execution.Input.sessionId"
+          },
+          "timestamp": {
+            "S.$": "$$.State.EnteredTime"
+          },
+          "status": {
+            "N": "States.Format('{}', $.hmrc_response.payload.status)"
+          },
+          "attempt": {
+            "S": "PASS"
+          }
+        }
+      },
+      "Next": "Fetch Auth Code Expiry",
+      "ResultPath": null
     },
     "Contains Error?": {
       "Type": "Choice",
@@ -285,26 +267,6 @@
         "error.$": "$.hmrc_response.payload.body.errors"
       },
       "End": true
-    },
-    "Update status to PASS": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::dynamodb:updateItem",
-      "Parameters": {
-        "TableName": "${NinoAttemptsTable}",
-        "Key": {
-          "id": {
-            "S.$": "$$.Execution.Input.sessionId"
-          }
-        },
-        "UpdateExpression": "SET outcome = :outcome",
-        "ExpressionAttributeValues": {
-          ":outcome": {
-            "S": "PASS"
-          }
-        }
-      },
-      "Next": "Fetch Auth Code Expiry",
-      "ResultPath": null
     },
     "Fetch Auth Code Expiry": {
       "Type": "Task",
