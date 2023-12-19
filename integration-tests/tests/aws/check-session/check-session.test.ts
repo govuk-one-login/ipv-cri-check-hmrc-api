@@ -4,7 +4,7 @@ import { executeStepFunction } from "../resources/stepfunction-helper";
 
 describe("check-session", () => {
   const input = {
-    sessionId: "123456789",
+    sessionId: "session-test",
   };
 
   let output: Partial<{

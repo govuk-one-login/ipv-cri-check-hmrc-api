@@ -3,6 +3,7 @@ import { createPublicKey } from "crypto";
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import {
+  clearAttemptsTable,
   clearItemsFromTables,
   populateTables,
 } from "../resources/dynamodb-helper";
@@ -18,7 +19,7 @@ jest.setTimeout(30_000);
 
 describe("nino-issue-credential-happy", () => {
   const input = {
-    sessionId: "123456789",
+    sessionId: "issue-credential-happy",
     nino: "AA000003D",
   };
 
@@ -83,15 +84,15 @@ describe("nino-issue-credential-happy", () => {
       {
         tableName: output.NinoUsersTable as string,
         items: {
-          sessionId: "123456789",
+          sessionId: input.sessionId,
           nino: "AA000003D",
         },
       },
       {
         tableName: sessionTableName,
         items: {
-          sessionId: "123456789",
-          accessToken: "Bearer test",
+          sessionId: input.sessionId,
+          accessToken: "Bearer happy",
           authorizationCode: "cd8ff974-d3bc-4422-9b38-a3e5eb24adc0",
           authorizationCodeExpiryDate: "1698925598",
           expiryDate: "9999999999",
@@ -123,7 +124,8 @@ describe("nino-issue-credential-happy", () => {
       {
         tableName: output.NinoAttemptsTable as string,
         items: {
-          id: "123456789",
+          sessionId: input.sessionId,
+          timestamp: Date.now().toString(),
           attempts: 1,
           outcome: "PASS",
         },
@@ -131,30 +133,26 @@ describe("nino-issue-credential-happy", () => {
     );
   });
 
-  afterEach(
-    async () =>
-      await clearItemsFromTables(
-        {
-          tableName: sessionTableName,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: personIdentityTableName,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: output.NinoUsersTable as string,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: output.NinoAttemptsTable as string,
-          items: { id: input.sessionId },
-        }
-      )
-  );
+  afterEach(async () => {
+    await clearItemsFromTables(
+      {
+        tableName: sessionTableName,
+        items: { sessionId: input.sessionId },
+      },
+      {
+        tableName: personIdentityTableName,
+        items: { sessionId: input.sessionId },
+      },
+      {
+        tableName: output.NinoUsersTable as string,
+        items: { sessionId: input.sessionId },
+      }
+    );
+    await clearAttemptsTable(input.sessionId, output.NinoAttemptsTable);
+  });
 
   it("should create signed JWT when nino check is successful", async () => {
-    const startExecutionResult = await getExecutionResult("Bearer test");
+    const startExecutionResult = await getExecutionResult("Bearer happy");
 
     const currentCredentialKmsSigningKeyId = await getSSMParameter(
       `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
@@ -190,7 +188,7 @@ describe("nino-issue-credential-happy", () => {
       { name: jwtTtlUnit, value: "MINUTES" }
     );
 
-    const startExecutionResult = await getExecutionResult("Bearer test");
+    const startExecutionResult = await getExecutionResult("Bearer happy");
 
     await updateSSMParameters(
       { name: maxJwtTtl, value: currentMaxJwtTtl as string },
@@ -212,7 +210,7 @@ describe("nino-issue-credential-happy", () => {
       `/${output.CommonStackName}/clients/ipv-core-stub-aws-build/jwtAuthentication/authenticationAlg`
     )) as string;
 
-    const startExecutionResult = await getExecutionResult("Bearer test");
+    const startExecutionResult = await getExecutionResult("Bearer happy");
     const token = JSON.parse(startExecutionResult.output as string);
     const [header, jwtPayload, signature] = token.jwt.split(".");
 

@@ -41,7 +41,7 @@
       "Next": "User has attempts?",
       "Parameters": {
         "TableName": "${NinoAttemptsTable}",
-        "KeyConditionExpression": "id = :value",
+        "KeyConditionExpression": "sessionId = :value",
         "ExpressionAttributeValues": {
           ":value": {
             "S.$": "$.sessionId"
@@ -60,39 +60,18 @@
           "Next": "User has more than 2 attempts?"
         }
       ],
-      "Default": "Create new user attempt"
-    },
-    "Create new user attempt": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::dynamodb:putItem",
-      "Parameters": {
-        "TableName": "${NinoAttemptsTable}",
-        "Item": {
-          "id": {
-            "S.$": "$.sessionId"
-          },
-          "attempts": {
-            "N": "0"
-          },
-          "outcome": {
-            "S": "FAIL"
-          }
-        },
-        "ConditionExpression": "attribute_not_exists(id)"
-      },
-      "Next": "Increment user attempt",
-      "ResultPath": null
+      "Default": "Person Identity Table Name"
     },
     "User has more than 2 attempts?": {
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.check-attempts-exist.Items[0].attempts.N",
-          "StringGreaterThanEquals": "2",
+          "Variable": "$.check-attempts-exist.Count",
+          "NumericGreaterThanEquals": 2,
           "Next": "Err: Attempts exceeded"
         }
       ],
-      "Default": "Increment user attempt"
+      "Default": "Person Identity Table Name"
     },
     "Err: Attempts exceeded": {
       "Type": "Pass",
@@ -100,26 +79,6 @@
       "Parameters": {
         "error": "Maximum number of attempts exceeded"
       }
-    },
-    "Increment user attempt": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::dynamodb:updateItem",
-      "Parameters": {
-        "TableName": "${NinoAttemptsTable}",
-        "Key": {
-          "id": {
-            "S.$": "$.sessionId"
-          }
-        },
-        "UpdateExpression": "ADD attempts :attempts",
-        "ExpressionAttributeValues": {
-          ":attempts": {
-            "N": "1"
-          }
-        }
-      },
-      "Next": "Person Identity Table Name",
-      "ResultPath": null
     },
     "Person Identity Table Name": {
       "Type": "Task",
@@ -237,7 +196,7 @@
         "Payload.$": "$",
         "FunctionName": "${MatchingFunctionArn}"
       },
-      "Next": "Check HTTP Status Code",
+      "Next": "Successful match?",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -252,59 +211,95 @@
     "Err: Matching Lambda Exception": {
       "Type": "Fail"
     },
-    "Check HTTP Status Code": {
+    "Successful match?": {
       "Type": "Choice",
       "Choices": [
         {
           "Variable": "$.hmrc_response.payload.status",
-          "NumericEquals": 200,
-          "Next": "Update status to PASS"
+          "StringEquals": "200",
+          "Next": "Store Successful Attempt"
         }
       ],
       "Default": "Contains Error?"
     },
-    "Contains Error?": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Variable": "$.hmrc_response.payload.body.errors",
-          "IsPresent": true,
-          "Next": "Err: HMRC error"
-        },
-        {
-          "Variable": "$.hmrc_response.payload.body.message",
-          "IsPresent": true,
-          "Next": "Err: Failed Auth"
-        }
-      ],
-      "Default": "Err: API Error"
-    },
-    "Err: HMRC error": {
-      "Type": "Pass",
-      "Parameters": {
-        "error.$": "$.hmrc_response.payload.body.errors"
-      },
-      "End": true
-    },
-    "Update status to PASS": {
+    "Store Successful Attempt": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
       "Parameters": {
         "TableName": "${NinoAttemptsTable}",
-        "Key": {
-          "id": {
+        "Item": {
+          "sessionId": {
             "S.$": "$$.Execution.Input.sessionId"
-          }
-        },
-        "UpdateExpression": "SET outcome = :outcome",
-        "ExpressionAttributeValues": {
-          ":outcome": {
+          },
+          "timestamp": {
+            "S.$": "$$.State.EnteredTime"
+          },
+          "status": {
+            "N.$": "$.hmrc_response.payload.status"
+          },
+          "attempt": {
             "S": "PASS"
           }
         }
       },
       "Next": "Fetch Auth Code Expiry",
       "ResultPath": null
+    },
+    "Contains Error?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "And": [
+            {
+              "Variable": "$.hmrc_response.payload.status",
+              "StringEquals": "401"
+            },
+            {
+              "Variable": "$.hmrc_response.payload.body.errors",
+              "IsPresent": true
+            }
+          ],
+          "Next": "Store Failed Match Attempt"
+        },
+        {
+          "Variable": "$.hmrc_response.payload.body.code",
+          "StringEquals": "INVALID_CREDENTIALS",
+          "Next": "Err: Failed Auth"
+        }
+      ],
+      "Default": "Err: API Error"
+    },
+    "Store Failed Match Attempt": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+      "Parameters": {
+        "TableName": "${NinoAttemptsTable}",
+        "Item": {
+          "sessionId": {
+            "S.$": "$$.Execution.Input.sessionId"
+          },
+          "timestamp": {
+            "S.$": "$$.State.EnteredTime"
+          },
+          "status": {
+            "N.$": "$.hmrc_response.payload.status"
+          },
+          "text": {
+            "S.$": "$.hmrc_response.payload.body.errors"
+          },
+          "attempt": {
+            "S": "FAIL"
+          }
+        }
+      },
+      "Next": "Send Retry"
+    },
+    "Send Retry": {
+      "Type": "Pass",
+      "End": true,
+      "Parameters": {
+        "httpStatus": "424"
+      }
     },
     "Fetch Auth Code Expiry": {
       "Type": "Task",
@@ -366,26 +361,15 @@
           "nino": {
             "S.$": "$.hmrc_response.payload.body.nino"
           }
-        },
-        "ConditionExpression": "attribute_not_exists(sessionId)"
+        }
       },
       "Next": "Response Filtering",
-      "ResultPath": "$.saveUser",
-      "Catch": [
-        {
-          "ErrorEquals": ["States.ALL"],
-          "Next": "Err: Saving NINO"
-        }
-      ]
+      "ResultPath": "$.saveUser"
     },
     "Response Filtering": {
       "Type": "Pass",
       "Next": "Nino check successful",
       "Parameters": {}
-    },
-    "Err: Saving NINO": {
-      "Type": "Fail",
-      "CausePath": "$.Cause"
     },
     "Nino check successful": {
       "Type": "Succeed"
