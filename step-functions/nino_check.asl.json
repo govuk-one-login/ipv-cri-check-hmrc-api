@@ -196,7 +196,7 @@
         "Payload.$": "$",
         "FunctionName": "${MatchingFunctionArn}"
       },
-      "Next": "Check HTTP Status Code",
+      "Next": "Successful match?",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -211,16 +211,16 @@
     "Err: Matching Lambda Exception": {
       "Type": "Fail"
     },
-    "Check HTTP Status Code": {
+    "Successful match?": {
       "Type": "Choice",
       "Choices": [
         {
           "Variable": "$.hmrc_response.payload.status",
-          "NumericEquals": 200,
+          "StringEquals": "200",
           "Next": "Store Successful Attempt"
         }
       ],
-      "Default": "Contains Error?"
+      "Default": "Is Deceased?"
     },
     "Store Successful Attempt": {
       "Type": "Task",
@@ -235,7 +235,7 @@
             "S.$": "$$.State.EnteredTime"
           },
           "status": {
-            "N": "States.Format('{}', $.hmrc_response.payload.status)"
+            "N.$": "$.hmrc_response.payload.status"
           },
           "attempt": {
             "S": "PASS"
@@ -249,24 +249,93 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.hmrc_response.payload.body.errors",
-          "IsPresent": true,
-          "Next": "Err: HMRC error"
+          "And": [
+            {
+              "Variable": "$.hmrc_response.payload.status",
+              "StringEquals": "401"
+            },
+            {
+              "Variable": "$.hmrc_response.payload.body.errors",
+              "IsPresent": true
+            }
+          ],
+          "Next": "Store Failed Match Attempt"
         },
         {
-          "Variable": "$.hmrc_response.payload.body.message",
-          "IsPresent": true,
+          "Variable": "$.hmrc_response.payload.body.code",
+          "StringEquals": "INVALID_CREDENTIALS",
           "Next": "Err: Failed Auth"
         }
       ],
       "Default": "Err: API Error"
     },
-    "Err: HMRC error": {
-      "Type": "Pass",
+    "Store Failed Match Attempt": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
       "Parameters": {
-        "error.$": "$.hmrc_response.payload.body.errors"
+        "TableName": "${NinoAttemptsTable}",
+        "Item": {
+          "sessionId": {
+            "S.$": "$$.Execution.Input.sessionId"
+          },
+          "timestamp": {
+            "S.$": "$$.State.EnteredTime"
+          },
+          "status": {
+            "N.$": "$.hmrc_response.payload.status"
+          },
+          "text": {
+            "S.$": "$.hmrc_response.payload.body.errors"
+          },
+          "attempt": {
+            "S": "FAIL"
+          }
+        }
       },
-      "End": true
+      "Next": "Send Retry"
+    },
+    "Is Deceased?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.hmrc_response.payload.status",
+          "StringEquals": "424",
+          "Next": "Store Matched with Deceased Attempt"
+        }
+      ],
+      "Default": "Contains Error?"
+    },
+    "Store Matched with Deceased Attempt": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+      "Parameters": {
+        "TableName": "${NinoAttemptsTable}",
+        "Item": {
+          "sessionId": {
+            "S.$": "$$.Execution.Input.sessionId"
+          },
+          "timestamp": {
+            "S.$": "$$.State.EnteredTime"
+          },
+          "status": {
+            "N.$": "$.hmrc_response.payload.status"
+          },
+          "text": {
+            "S": "Matched with Deceased"
+          },
+          "attempt": {
+            "S": "FAIL"
+          }
+        }
+      },
+      "Next": "Send Retry"
+    },
+    "Send Retry": {
+      "Type": "Pass",
+      "End": true,
+      "Parameters": {
+        "ValueEnteredInForm": "{\n \"httpStatus\": \"424\" \n}"
+      }
     },
     "Fetch Auth Code Expiry": {
       "Type": "Task",
@@ -328,26 +397,15 @@
           "nino": {
             "S.$": "$.hmrc_response.payload.body.nino"
           }
-        },
-        "ConditionExpression": "attribute_not_exists(sessionId)"
+        }
       },
       "Next": "Response Filtering",
-      "ResultPath": "$.saveUser",
-      "Catch": [
-        {
-          "ErrorEquals": ["States.ALL"],
-          "Next": "Err: Saving NINO"
-        }
-      ]
+      "ResultPath": "$.saveUser"
     },
     "Response Filtering": {
       "Type": "Pass",
       "Next": "Nino check successful",
       "Parameters": {}
-    },
-    "Err: Saving NINO": {
-      "Type": "Fail",
-      "CausePath": "$.Cause"
     },
     "Nino check successful": {
       "Type": "Succeed"
