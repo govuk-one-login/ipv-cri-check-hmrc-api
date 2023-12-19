@@ -3,6 +3,7 @@ import { createPublicKey } from "crypto";
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import {
+  clearAttemptsTable,
   clearItemsFromTables,
   populateTables,
 } from "../resources/dynamodb-helper";
@@ -131,27 +132,23 @@ describe("nino-issue-credential-happy", () => {
     );
   });
 
-  afterEach(
-    async () =>
-      await clearItemsFromTables(
-        {
-          tableName: sessionTableName,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: personIdentityTableName,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: output.NinoUsersTable as string,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: output.NinoAttemptsTable as string,
-          items: { id: input.sessionId },
-        }
-      )
-  );
+  afterEach(async () => {
+    await clearItemsFromTables(
+      {
+        tableName: sessionTableName,
+        items: { sessionId: input.sessionId },
+      },
+      {
+        tableName: personIdentityTableName,
+        items: { sessionId: input.sessionId },
+      },
+      {
+        tableName: output.NinoUsersTable as string,
+        items: { sessionId: input.sessionId },
+      }
+    );
+    await clearAttemptsTable(output.NinoAttemptsTable, input.sessionId);
+  });
 
   it("should create signed JWT when nino check is successful", async () => {
     const startExecutionResult = await getExecutionResult("Bearer test");

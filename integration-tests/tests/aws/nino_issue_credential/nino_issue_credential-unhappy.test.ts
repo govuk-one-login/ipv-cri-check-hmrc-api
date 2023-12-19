@@ -1,6 +1,7 @@
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import {
+  clearAttemptsTable,
   clearItemsFromTables,
   populateTables,
 } from "../resources/dynamodb-helper";
@@ -87,27 +88,23 @@ describe("nino-issue-credential-unhappy", () => {
     );
   });
 
-  afterEach(
-    async () =>
-      await clearItemsFromTables(
-        {
-          tableName: sessionTableName,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: personIdentityTableName,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: output.NinoUsersTable as string,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: output.NinoAttemptsTable as string,
-          items: { id: input.sessionId },
-        }
-      )
-  );
+  afterEach(async () => {
+    await clearItemsFromTables(
+      {
+        tableName: sessionTableName,
+        items: { sessionId: input.sessionId },
+      },
+      {
+        tableName: personIdentityTableName,
+        items: { sessionId: input.sessionId },
+      },
+      {
+        tableName: output.NinoUsersTable as string,
+        items: { sessionId: input.sessionId },
+      }
+    );
+    await clearAttemptsTable(output.NinoAttemptsTable, input.sessionId);
+  });
 
   it("should fail when nino check is unsuccessful", async () => {
     const startExecutionResult = await executeStepFunction(
