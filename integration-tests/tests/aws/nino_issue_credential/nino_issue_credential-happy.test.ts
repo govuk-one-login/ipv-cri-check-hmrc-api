@@ -19,7 +19,7 @@ jest.setTimeout(30_000);
 
 describe("nino-issue-credential-happy", () => {
   const input = {
-    sessionId: "123456789",
+    sessionId: "issue-credential-happy",
     nino: "AA000003D",
   };
 
@@ -84,14 +84,14 @@ describe("nino-issue-credential-happy", () => {
       {
         tableName: output.NinoUsersTable as string,
         items: {
-          sessionId: "123456789",
+          sessionId: input.sessionId,
           nino: "AA000003D",
         },
       },
       {
         tableName: sessionTableName,
         items: {
-          sessionId: "123456789",
+          sessionId: input.sessionId,
           accessToken: "Bearer test",
           authorizationCode: "cd8ff974-d3bc-4422-9b38-a3e5eb24adc0",
           authorizationCodeExpiryDate: "1698925598",
@@ -124,7 +124,8 @@ describe("nino-issue-credential-happy", () => {
       {
         tableName: output.NinoAttemptsTable as string,
         items: {
-          id: "123456789",
+          sessionId: input.sessionId,
+          timestamp: Date.now().toString(),
           attempts: 1,
           outcome: "PASS",
         },

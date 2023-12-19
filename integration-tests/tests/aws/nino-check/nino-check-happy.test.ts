@@ -10,7 +10,7 @@ jest.setTimeout(30_000);
 
 describe("nino-check-happy", () => {
   const input = {
-    sessionId: "123456789",
+    sessionId: "check-happy",
     nino: "AA000003D",
   };
 

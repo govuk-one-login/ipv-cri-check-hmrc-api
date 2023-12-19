@@ -18,7 +18,7 @@ jest.setTimeout(30_000);
 const secretsManager = new SecretsManager();
 
 const input = {
-  sessionId: "123456789",
+  sessionId: "check-unhappy",
   nino: "AB123003C",
 };
 
