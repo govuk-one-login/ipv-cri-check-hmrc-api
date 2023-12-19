@@ -2,6 +2,7 @@ import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import {
   clearItemsFromTables,
+  clearAttemptsTable,
   populateTables,
 } from "../resources/dynamodb-helper";
 
@@ -68,27 +69,23 @@ describe("nino-check-happy", () => {
     );
   });
 
-  afterEach(
-    async () =>
-      await clearItemsFromTables(
-        {
-          tableName: sessionTableName,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: personIdentityTableName,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: output.NinoUsersTable as string,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: output.NinoAttemptsTable as string,
-          items: { id: input.sessionId },
-        }
-      )
-  );
+  afterEach(async () => {
+    await clearItemsFromTables(
+      {
+        tableName: sessionTableName,
+        items: { sessionId: input.sessionId },
+      },
+      {
+        tableName: personIdentityTableName,
+        items: { sessionId: input.sessionId },
+      },
+      {
+        tableName: output.NinoUsersTable as string,
+        items: { sessionId: input.sessionId },
+      }
+    );
+    await clearAttemptsTable(output.NinoAttemptsTable, input.sessionId);
+  });
 
   it("should execute nino step function 1st attempt", async () => {
     const startExecutionResult = await executeStepFunction(
@@ -113,9 +110,7 @@ describe("nino-check-happy", () => {
       input
     );
 
-    expect(firstExecutionResult.output).toBe(
-      '{"error":"CID returned no record"}'
-    );
+    expect(firstExecutionResult.output).toBe('{"httpStatus":"424"}');
 
     expect(secondExecutionResult.output).toBe("{}");
   });
