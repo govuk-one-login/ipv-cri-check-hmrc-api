@@ -92,7 +92,7 @@ describe("nino-issue-credential-happy", () => {
         tableName: sessionTableName,
         items: {
           sessionId: input.sessionId,
-          accessToken: "Bearer test",
+          accessToken: "Bearer happy",
           authorizationCode: "cd8ff974-d3bc-4422-9b38-a3e5eb24adc0",
           authorizationCodeExpiryDate: "1698925598",
           expiryDate: "9999999999",
@@ -152,7 +152,7 @@ describe("nino-issue-credential-happy", () => {
   });
 
   it("should create signed JWT when nino check is successful", async () => {
-    const startExecutionResult = await getExecutionResult("Bearer test");
+    const startExecutionResult = await getExecutionResult("Bearer happy");
 
     const currentCredentialKmsSigningKeyId = await getSSMParameter(
       `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
@@ -188,7 +188,7 @@ describe("nino-issue-credential-happy", () => {
       { name: jwtTtlUnit, value: "MINUTES" }
     );
 
-    const startExecutionResult = await getExecutionResult("Bearer test");
+    const startExecutionResult = await getExecutionResult("Bearer happy");
 
     await updateSSMParameters(
       { name: maxJwtTtl, value: currentMaxJwtTtl as string },
@@ -210,7 +210,7 @@ describe("nino-issue-credential-happy", () => {
       `/${output.CommonStackName}/clients/ipv-core-stub-aws-build/jwtAuthentication/authenticationAlg`
     )) as string;
 
-    const startExecutionResult = await getExecutionResult("Bearer test");
+    const startExecutionResult = await getExecutionResult("Bearer happy");
     const token = JSON.parse(startExecutionResult.output as string);
     const [header, jwtPayload, signature] = token.jwt.split(".");
 

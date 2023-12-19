@@ -48,7 +48,7 @@ describe("nino-issue-credential-unhappy", () => {
         tableName: sessionTableName,
         items: {
           sessionId: input.sessionId,
-          accessToken: "Bearer test",
+          accessToken: "Bearer unhappy",
           authorizationCode: "cd8ff974-d3bc-4422-9b38-a3e5eb24adc0",
           authorizationCodeExpiryDate: "1698925598",
           expiryDate: "9999999999",
@@ -111,7 +111,7 @@ describe("nino-issue-credential-unhappy", () => {
     const startExecutionResult = await executeStepFunction(
       output.NinoIssueCredentialStateMachineArn as string,
       {
-        bearerToken: "Bearer test",
+        bearerToken: "Bearer unhappy",
       }
     );
 
