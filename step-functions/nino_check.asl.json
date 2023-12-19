@@ -220,7 +220,7 @@
           "Next": "Store Successful Attempt"
         }
       ],
-      "Default": "Is Deceased?"
+      "Default": "Contains Error?"
     },
     "Store Successful Attempt": {
       "Type": "Task",
@@ -286,42 +286,6 @@
           },
           "text": {
             "S.$": "$.hmrc_response.payload.body.errors"
-          },
-          "attempt": {
-            "S": "FAIL"
-          }
-        }
-      },
-      "Next": "Send Retry"
-    },
-    "Is Deceased?": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Variable": "$.hmrc_response.payload.status",
-          "StringEquals": "424",
-          "Next": "Store Matched with Deceased Attempt"
-        }
-      ],
-      "Default": "Contains Error?"
-    },
-    "Store Matched with Deceased Attempt": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::dynamodb:putItem",
-      "Parameters": {
-        "TableName": "${NinoAttemptsTable}",
-        "Item": {
-          "sessionId": {
-            "S.$": "$$.Execution.Input.sessionId"
-          },
-          "timestamp": {
-            "S.$": "$$.State.EnteredTime"
-          },
-          "status": {
-            "N.$": "$.hmrc_response.payload.status"
-          },
-          "text": {
-            "S": "Matched with Deceased"
           },
           "attempt": {
             "S": "FAIL"
