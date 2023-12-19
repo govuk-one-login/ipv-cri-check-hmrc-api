@@ -104,7 +104,7 @@ describe("nino-issue-credential-unhappy", () => {
         items: { sessionId: input.sessionId },
       }
     );
-    await clearAttemptsTable(output.NinoAttemptsTable, input.sessionId);
+    await clearAttemptsTable(input.sessionId, output.NinoAttemptsTable);
   });
 
   it("should fail when nino check is unsuccessful", async () => {

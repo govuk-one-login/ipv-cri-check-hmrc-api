@@ -28,8 +28,8 @@ export const clearItems = (tableName: string, items: Keys) =>
   sendCommand(DeleteCommand, { TableName: tableName, Key: items });
 
 export async function clearAttemptsTable(
-  tableName: string | undefined,
-  sessionId: string
+  sessionId: string,
+  tableName?: string
 ) {
   if (tableName) {
     const query = await sendCommand(QueryCommand, {

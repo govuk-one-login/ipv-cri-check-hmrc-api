@@ -84,7 +84,7 @@ describe("nino-check-happy", () => {
         items: { sessionId: input.sessionId },
       }
     );
-    await clearAttemptsTable(output.NinoAttemptsTable, input.sessionId);
+    await clearAttemptsTable(input.sessionId, output.NinoAttemptsTable);
   });
 
   it("should execute nino step function 1st attempt", async () => {

@@ -92,7 +92,7 @@ afterEach(async () => {
       items: { sessionId: input.sessionId },
     }
   );
-  await clearAttemptsTable(output.NinoAttemptsTable, input.sessionId);
+  await clearAttemptsTable(input.sessionId, output.NinoAttemptsTable);
 });
 
 it("should fail when there is more than 2 nino check attempts", async () => {

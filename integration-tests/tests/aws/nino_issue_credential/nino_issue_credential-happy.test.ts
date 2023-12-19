@@ -148,7 +148,7 @@ describe("nino-issue-credential-happy", () => {
         items: { sessionId: input.sessionId },
       }
     );
-    await clearAttemptsTable(output.NinoAttemptsTable, input.sessionId);
+    await clearAttemptsTable(input.sessionId, output.NinoAttemptsTable);
   });
 
   it("should create signed JWT when nino check is successful", async () => {
