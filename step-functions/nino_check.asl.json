@@ -67,7 +67,7 @@
       "Choices": [
         {
           "Variable": "$.check-attempts-exist.Count",
-          "StringGreaterThanEquals": "2",
+          "NumericGreaterThanEquals": 2,
           "Next": "Err: Attempts exceeded"
         }
       ],
@@ -334,7 +334,7 @@
       "Type": "Pass",
       "End": true,
       "Parameters": {
-        "ValueEnteredInForm": "{\n \"httpStatus\": \"424\" \n}"
+        "httpStatus": "424"
       }
     },
     "Fetch Auth Code Expiry": {
