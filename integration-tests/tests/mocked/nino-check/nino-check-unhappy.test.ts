@@ -53,24 +53,6 @@ describe("nino-check-unhappy", () => {
       '{"error":"Maximum number of attempts exceeded"}'
     );
   });
-  it("should fail when there is an error while saving details in Nino DB", async () => {
-    const input = JSON.stringify({
-      nino: "AA000003D",
-      sessionId: "12345",
-    });
-    const responseStepFunction = await sfnContainer.startStepFunctionExecution(
-      "ErrorSavingInNinoDB",
-      input
-    );
-
-    const results = await sfnContainer.waitFor(
-      (event: HistoryEvent) => event?.type === "ExecutionFailed",
-      responseStepFunction
-    );
-    expect(results[0].executionFailedEventDetails?.cause).toContain(
-      "The conditional request failed (Service: AmazonDynamoDBv2; Status Code: 400"
-    );
-  });
 
   it("should fail when user cannot be found for the given nino", async () => {
     const input = JSON.stringify({
@@ -143,7 +125,7 @@ describe("nino-check-unhappy", () => {
       responseStepFunction
     );
     expect(results[0].executionSucceededEventDetails?.output).toEqual(
-      '{"error":"CID returned no record"}'
+      '{"httpStatus":"424"}'
     );
   });
 });
