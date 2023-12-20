@@ -34,7 +34,7 @@ describe("nino-check-happy", () => {
       responseStepFunction
     );
     expect(results[0].stateExitedEventDetails?.output).toEqual(
-      '{"httpStatus": 200}'
+      '{"httpStatus":200}'
     );
   });
 });
