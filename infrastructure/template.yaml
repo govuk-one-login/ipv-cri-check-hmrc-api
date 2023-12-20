@@ -274,11 +274,15 @@ Resources:
       TableName: !Sub ${AWS::StackName}-nino-attempts
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: id
+        - AttributeName: sessionId
+          AttributeType: S
+        - AttributeName: timestamp
           AttributeType: S
       KeySchema:
-        - AttributeName: id
+        - AttributeName: sessionId
           KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
 
   NinoUsersTable:
     Type: AWS::DynamoDB::Table
