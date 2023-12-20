@@ -31,7 +31,7 @@ const testUser = {
 
 let output: Partial<{
   CommonStackName: string;
-  NinoAttemptsTable: string;
+  UserAttemptsTable: string;
   NinoUsersTable: string;
   NinoCheckStateMachineArn: string;
 }>;
@@ -92,16 +92,16 @@ afterEach(async () => {
       items: { sessionId: input.sessionId },
     }
   );
-  await clearAttemptsTable(input.sessionId, output.NinoAttemptsTable);
+  await clearAttemptsTable(input.sessionId, output.UserAttemptsTable);
 });
 
 it("should fail when there is more than 2 nino check attempts", async () => {
-  await populateTable(output.NinoAttemptsTable as string, {
+  await populateTable(output.UserAttemptsTable as string, {
     sessionId: input.sessionId,
     timestamp: Date.now().toString(),
   });
 
-  await populateTable(output.NinoAttemptsTable as string, {
+  await populateTable(output.UserAttemptsTable as string, {
     sessionId: input.sessionId,
     timestamp: Date.now().toString(),
   });

@@ -40,7 +40,7 @@
       "Type": "Task",
       "Next": "User has attempts?",
       "Parameters": {
-        "TableName": "${NinoAttemptsTable}",
+        "TableName": "${UserAttemptsTable}",
         "KeyConditionExpression": "sessionId = :value",
         "ExpressionAttributeValues": {
           ":value": {
@@ -226,7 +226,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:putItem",
       "Parameters": {
-        "TableName": "${NinoAttemptsTable}",
+        "TableName": "${UserAttemptsTable}",
         "Item": {
           "sessionId": {
             "S.$": "$$.Execution.Input.sessionId"
@@ -273,7 +273,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:putItem",
       "Parameters": {
-        "TableName": "${NinoAttemptsTable}",
+        "TableName": "${UserAttemptsTable}",
         "Item": {
           "sessionId": {
             "S.$": "$$.Execution.Input.sessionId"
