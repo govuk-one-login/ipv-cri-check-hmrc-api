@@ -3,7 +3,6 @@ import {
   DeleteCommand,
   DynamoDBDocumentClient,
   PutCommand,
-  QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { createSendCommand } from "./aws-helper";
 
@@ -26,29 +25,6 @@ export const populateTables = (...tableRecords: TableRecords[]) =>
 
 export const clearItems = (tableName: string, items: Keys) =>
   sendCommand(DeleteCommand, { TableName: tableName, Key: items });
-
-export async function clearAttemptsTable(
-  sessionId: string,
-  tableName?: string
-) {
-  if (tableName) {
-    const query = await sendCommand(QueryCommand, {
-      TableName: tableName,
-      KeyConditionExpression: "sessionId = :sessionId",
-      ExpressionAttributeValues: {
-        ":sessionId": sessionId,
-      },
-    });
-    if (query.Items) {
-      query.Items.forEach((item) => {
-        clearItems(tableName, {
-          sessionId: item.sessionId,
-          timestamp: item.timestamp,
-        });
-      });
-    }
-  }
-}
 
 export const clearItemsFromTables = (...tableRecords: TableRecords[]) =>
   Promise.all(

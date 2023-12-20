@@ -8,7 +8,7 @@ export class MatchingHandler implements LambdaInterface {
   public async handler(
     event: MatchEvent,
     _context: unknown
-  ): Promise<{ status: string; body: string }> {
+  ): Promise<{ status: number; body: string }> {
     try {
       const response = await fetch(event.apiURL, {
         method: "POST",
@@ -26,12 +26,12 @@ export class MatchingHandler implements LambdaInterface {
       });
       try {
         return {
-          status: response.status.toString(),
+          status: response.status,
           body: await response.json(),
         };
       } catch (error: unknown) {
         return {
-          status: response.status.toString(),
+          status: response.status,
           body: await response.text(),
         };
       }

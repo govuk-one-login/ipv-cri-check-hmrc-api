@@ -6,12 +6,13 @@
           "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
-          "Store Successful Attempt": "UpdateStatusToPassSuccess",
+          "Update status to PASS": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
           "Fetch Session Table Name": "FetchSessionTableNameSuccess",
           "Set Auth Code for Session": "SetAuthCodeSuccess",
@@ -21,12 +22,13 @@
           "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
           "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
-          "Store Successful Attempt": "UpdateStatusToPassSuccess",
+          "Update status to PASS": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
           "Fetch Session Table Name": "FetchSessionTableNameSuccess",
           "Set Auth Code for Session": "SetAuthCodeSuccess",
@@ -39,10 +41,27 @@
           "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "QueryUserAttemptFailureAfterMoreThanTwoAttempts"
         },
+        "ErrorSavingInNinoDB": {
+          "Invoke Check Session": "CheckSessionSuccess",
+          "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
+          "Query Person Identity Table": "QuerySessionSuccess",
+          "Get User Agent and API URL": "GetAPIParametersSuccess",
+          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call Matching API": "CallMatchingAPISuccess",
+          "Update status to PASS": "UpdateStatusToPassSuccess",
+          "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
+          "Fetch Session Table Name": "FetchSessionTableNameSuccess",
+          "Set Auth Code for Session": "SetAuthCodeSuccess",
+          "Save NINO & sessionId to nino-users table": "SaveNinoFailure"
+        },
         "UserNotFoundForGivenNino": {
           "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "DynamoDbQueryNoResult"
         },
@@ -50,6 +69,7 @@
           "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get User Agent and API URL": "GetAPIParametersSuccess",
@@ -60,6 +80,7 @@
           "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
           "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get User Agent and API URL": "GetAPIParametersSuccess",
@@ -70,12 +91,12 @@
           "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
           "Create new user attempt": "DynamoDbQueryNoResult",
+          "Increment user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get User Agent and API URL": "GetAPIParametersSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
-          "Call Matching API": "CallMatchingAPIFailNoRecords",
-          "Store Failed Match Attempt": "DynamoDbQueryNoResult"
+          "Call Matching API": "CallMatchingAPIFailNoRecords"
         }
       }
     }
@@ -113,7 +134,7 @@
       "0": {
         "Return": {
           "Payload": {
-            "status": "401",
+            "status": "400",
             "body": {
               "errors": "CID returned no record"
             }
@@ -407,7 +428,18 @@
     "QueryUserAttemptFailureAfterMoreThanTwoAttempts": {
       "0": {
         "Return": {
-          "Count": 2
+          "Count": 1,
+          "Items": [
+            {
+              "id": {
+                "S": "12345"
+              },
+              "attempts": {
+                "N": "2"
+              }
+            }
+          ],
+          "ScannedCount": 1
         }
       }
     },
@@ -422,7 +454,7 @@
       "0": {
         "Return": {
           "Payload": {
-            "status": "200",
+            "status": 200,
             "body": {
               "firstName": "Jim",
               "lastName": "Ferguson",
