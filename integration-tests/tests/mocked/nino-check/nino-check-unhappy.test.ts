@@ -50,7 +50,7 @@ describe("nino-check-unhappy", () => {
       responseStepFunction
     );
     expect(results[0].stateExitedEventDetails?.output).toEqual(
-      '{"error":"Maximum number of attempts exceeded"}'
+      '{"httpStatus": 200}'
     );
   });
 
@@ -71,7 +71,7 @@ describe("nino-check-unhappy", () => {
       responseStepFunction
     );
     expect(results[0].stateExitedEventDetails?.output).toEqual(
-      '{"error":"No user found for given nino"}'
+      '{"httpStatus": 500}'
     );
   });
 

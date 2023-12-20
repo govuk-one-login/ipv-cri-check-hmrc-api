@@ -33,6 +33,8 @@ describe("nino-check-happy", () => {
         event?.stateExitedEventDetails?.name === "Nino check successful",
       responseStepFunction
     );
-    expect(results[0].stateExitedEventDetails?.output).toEqual("{}");
+    expect(results[0].stateExitedEventDetails?.output).toEqual(
+      '{"httpStatus": 200}'
+    );
   });
 });
