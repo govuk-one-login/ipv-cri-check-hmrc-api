@@ -26,7 +26,7 @@ describe("nino-check-happy", () => {
 
   let output: Partial<{
     CommonStackName: string;
-    NinoAttemptsTable: string;
+    UserAttemptsTable: string;
     NinoUsersTable: string;
     NinoCheckStateMachineArn: string;
   }>;
@@ -84,7 +84,7 @@ describe("nino-check-happy", () => {
         items: { sessionId: input.sessionId },
       }
     );
-    await clearAttemptsTable(input.sessionId, output.NinoAttemptsTable);
+    await clearAttemptsTable(input.sessionId, output.UserAttemptsTable);
   });
 
   it("should execute nino step function 1st attempt", async () => {

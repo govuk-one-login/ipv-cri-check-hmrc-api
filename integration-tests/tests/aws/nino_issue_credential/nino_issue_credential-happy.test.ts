@@ -70,7 +70,7 @@ describe("nino-issue-credential-happy", () => {
 
   let output: Partial<{
     CommonStackName: string;
-    NinoAttemptsTable: string;
+    UserAttemptsTable: string;
     NinoUsersTable: string;
     NinoIssueCredentialStateMachineArn: string;
   }>;
@@ -122,7 +122,7 @@ describe("nino-issue-credential-happy", () => {
         },
       },
       {
-        tableName: output.NinoAttemptsTable as string,
+        tableName: output.UserAttemptsTable as string,
         items: {
           sessionId: input.sessionId,
           timestamp: Date.now().toString(),
@@ -148,7 +148,7 @@ describe("nino-issue-credential-happy", () => {
         items: { sessionId: input.sessionId },
       }
     );
-    await clearAttemptsTable(input.sessionId, output.NinoAttemptsTable);
+    await clearAttemptsTable(input.sessionId, output.UserAttemptsTable);
   });
 
   it("should create signed JWT when nino check is successful", async () => {

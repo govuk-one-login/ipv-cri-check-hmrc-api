@@ -26,7 +26,7 @@ describe("nino-issue-credential-unhappy", () => {
 
   let output: Partial<{
     CommonStackName: string;
-    NinoAttemptsTable: string;
+    UserAttemptsTable: string;
     NinoUsersTable: string;
     NinoIssueCredentialStateMachineArn: string;
   }>;
@@ -78,7 +78,7 @@ describe("nino-issue-credential-unhappy", () => {
         },
       },
       {
-        tableName: output.NinoAttemptsTable as string,
+        tableName: output.UserAttemptsTable as string,
         items: {
           sessionId: input.sessionId,
           timestamp: Date.now().toString(),
@@ -104,7 +104,7 @@ describe("nino-issue-credential-unhappy", () => {
         items: { sessionId: input.sessionId },
       }
     );
-    await clearAttemptsTable(input.sessionId, output.NinoAttemptsTable);
+    await clearAttemptsTable(input.sessionId, output.UserAttemptsTable);
   });
 
   it("should fail when nino check is unsuccessful", async () => {
