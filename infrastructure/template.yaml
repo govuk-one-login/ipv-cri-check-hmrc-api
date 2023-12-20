@@ -546,28 +546,28 @@ Resources:
 
 Outputs:
   ApiGatewayId:
-    Description: API GatewayID of the Address CRI API
+    Description: API GatewayID of the Nino Check HMRC CRI API
     Value: !Ref PublicNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-ApiGatewayId
   PublicApiGatewayId:
-    Description: API Gateway ID of the public Address CRI API
+    Description: API Gateway ID of the public Nino Check HMRC CRI API
     Value: !Ref PublicNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-PublicApiGatewayId
   PrivateApiGatewayId:
-    Description: API Gateway ID of the private Address CRI API
+    Description: API Gateway ID of the private Nino Check HMRC API
     Value: !Ref PrivateNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-PrivateApiGatewayId
   NinoCheckStateMachineArn:
-    Description: NINO Check state machine ARN
+    Description: Nino Check state machine ARN
     Value: !Ref NinoCheckStateMachine
   CheckSessionStateMachineArn:
     Description: Session Check state machine ARN
     Value: !Ref CheckSessionStateMachine
   NinoIssueCredentialStateMachineArn:
-    Description: NINO Issue Credential state machine ARN
+    Description: Nino Issue Credential state machine ARN
     Value: !Ref NinoIssueCredentialStateMachine
   CommonStackName:
     Description: Common Stack Name
