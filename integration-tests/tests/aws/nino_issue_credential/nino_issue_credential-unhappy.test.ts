@@ -1,7 +1,6 @@
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import {
-  clearAttemptsTable,
   clearItemsFromTables,
   populateTables,
 } from "../resources/dynamodb-helper";
@@ -10,7 +9,7 @@ jest.setTimeout(30_000);
 
 describe("nino-issue-credential-unhappy", () => {
   const input = {
-    sessionId: "issue-credential-unhappy",
+    sessionId: "123456789",
     nino: "AA000003D",
   };
 
@@ -40,15 +39,15 @@ describe("nino-issue-credential-unhappy", () => {
       {
         tableName: output.NinoUsersTable as string,
         items: {
-          sessionId: input.sessionId,
+          sessionId: "123456789",
           nino: "AA000003D",
         },
       },
       {
         tableName: sessionTableName,
         items: {
-          sessionId: input.sessionId,
-          accessToken: "Bearer unhappy",
+          sessionId: "123456789",
+          accessToken: "Bearer test",
           authorizationCode: "cd8ff974-d3bc-4422-9b38-a3e5eb24adc0",
           authorizationCodeExpiryDate: "1698925598",
           expiryDate: "9999999999",
@@ -80,8 +79,7 @@ describe("nino-issue-credential-unhappy", () => {
       {
         tableName: output.NinoAttemptsTable as string,
         items: {
-          sessionId: input.sessionId,
-          timestamp: Date.now().toString(),
+          id: "123456789",
           attempts: 2,
           outcome: "FAIL",
         },
@@ -89,29 +87,33 @@ describe("nino-issue-credential-unhappy", () => {
     );
   });
 
-  afterEach(async () => {
-    await clearItemsFromTables(
-      {
-        tableName: sessionTableName,
-        items: { sessionId: input.sessionId },
-      },
-      {
-        tableName: personIdentityTableName,
-        items: { sessionId: input.sessionId },
-      },
-      {
-        tableName: output.NinoUsersTable as string,
-        items: { sessionId: input.sessionId },
-      }
-    );
-    await clearAttemptsTable(input.sessionId, output.NinoAttemptsTable);
-  });
+  afterEach(
+    async () =>
+      await clearItemsFromTables(
+        {
+          tableName: sessionTableName,
+          items: { sessionId: input.sessionId },
+        },
+        {
+          tableName: personIdentityTableName,
+          items: { sessionId: input.sessionId },
+        },
+        {
+          tableName: output.NinoUsersTable as string,
+          items: { sessionId: input.sessionId },
+        },
+        {
+          tableName: output.NinoAttemptsTable as string,
+          items: { id: input.sessionId },
+        }
+      )
+  );
 
   it("should fail when nino check is unsuccessful", async () => {
     const startExecutionResult = await executeStepFunction(
       output.NinoIssueCredentialStateMachineArn as string,
       {
-        bearerToken: "Bearer unhappy",
+        bearerToken: "Bearer test",
       }
     );
 

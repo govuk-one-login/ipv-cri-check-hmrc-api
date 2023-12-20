@@ -35,7 +35,7 @@ describe("matching-handler", () => {
       oAuthToken: "123",
     } as MatchEvent;
     const result = await matchingHandler.handler(event, {} as Context);
-    expect(result.status).toBe("200");
+    expect(result.status).toBe(200);
     expect(result.body).toStrictEqual({
       firstName: "Jim",
       lastName: "Ferguson",
