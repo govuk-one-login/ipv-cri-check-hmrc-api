@@ -276,6 +276,9 @@ Resources:
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
 
   NinoUsersTable:
     Type: AWS::DynamoDB::Table
