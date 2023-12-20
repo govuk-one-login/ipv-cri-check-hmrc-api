@@ -33,7 +33,7 @@
       "Type": "Pass",
       "End": true,
       "Parameters": {
-        "error": "Session is not valid or has expired"
+        "httpStatus": 400
       }
     },
     "Query User Attempts": {
@@ -77,7 +77,7 @@
       "Type": "Pass",
       "End": true,
       "Parameters": {
-        "error": "Maximum number of attempts exceeded"
+        "httpStatus": 200
       }
     },
     "Person Identity Table Name": {
@@ -154,11 +154,8 @@
     "Err: No user found in Person Identity": {
       "Type": "Pass",
       "End": true,
-      "Result": {
-        "error": "No user found for given nino"
-      },
       "Parameters": {
-        "error": "No user for given nino found"
+        "httpStatus": 500
       }
     },
     "Get OAuth Token": {
@@ -298,7 +295,7 @@
       "Type": "Pass",
       "End": true,
       "Parameters": {
-        "httpStatus": "424"
+        "httpStatus": 422
       }
     },
     "Fetch Auth Code Expiry": {
@@ -369,18 +366,18 @@
     "Response Filtering": {
       "Type": "Pass",
       "Next": "Nino check successful",
-      "Parameters": {}
+      "Parameters": {
+        "httpStatus": 200
+      }
     },
     "Nino check successful": {
       "Type": "Succeed"
     },
     "Err: API Error": {
-      "Type": "Fail",
-      "CausePath": "$.hmrc_response.payload"
+      "Type": "Fail"
     },
     "Err: Failed Auth": {
-      "Type": "Fail",
-      "CausePath": "$.hmrc_response.payload.body.message"
+      "Type": "Fail"
     }
   }
 }
