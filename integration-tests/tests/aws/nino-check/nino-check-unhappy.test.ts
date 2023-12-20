@@ -1,7 +1,6 @@
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { executeStepFunction } from "../resources/stepfunction-helper";
 import {
-  clearAttemptsTable,
   clearItems,
   clearItemsFromTables,
   populateTable,
@@ -18,7 +17,7 @@ jest.setTimeout(30_000);
 const secretsManager = new SecretsManager();
 
 const input = {
-  sessionId: "check-unhappy",
+  sessionId: "123456789",
   nino: "AB123003C",
 };
 
@@ -77,33 +76,32 @@ beforeEach(async () => {
   );
 });
 
-afterEach(async () => {
-  await clearItemsFromTables(
-    {
-      tableName: sessionTableName,
-      items: { sessionId: input.sessionId },
-    },
-    {
-      tableName: personIdentityTableName,
-      items: { sessionId: input.sessionId },
-    },
-    {
-      tableName: output.NinoUsersTable as string,
-      items: { sessionId: input.sessionId },
-    }
-  );
-  await clearAttemptsTable(input.sessionId, output.NinoAttemptsTable);
-});
+afterEach(
+  async () =>
+    await clearItemsFromTables(
+      {
+        tableName: sessionTableName,
+        items: { sessionId: input.sessionId },
+      },
+      {
+        tableName: personIdentityTableName,
+        items: { sessionId: input.sessionId },
+      },
+      {
+        tableName: output.NinoUsersTable as string,
+        items: { sessionId: input.sessionId },
+      },
+      {
+        tableName: output.NinoAttemptsTable as string,
+        items: { id: input.sessionId },
+      }
+    )
+);
 
 it("should fail when there is more than 2 nino check attempts", async () => {
   await populateTable(output.NinoAttemptsTable as string, {
-    sessionId: input.sessionId,
-    timestamp: Date.now().toString(),
-  });
-
-  await populateTable(output.NinoAttemptsTable as string, {
-    sessionId: input.sessionId,
-    timestamp: Date.now().toString(),
+    id: input.sessionId,
+    attempts: 2,
   });
 
   const startExecutionResult = await executeStepFunction(
@@ -148,13 +146,32 @@ it("should fail when session id is invalid", async () => {
   expect(startExecutionResult.status).toBe("SUCCEEDED");
 });
 
+it("should fail when user record already present in nino user table", async () => {
+  await populateTable(output.NinoUsersTable as string, {
+    sessionId: "123456789",
+    nino: "AA000003D",
+  });
+
+  const startExecutionResult = await executeStepFunction(
+    output.NinoCheckStateMachineArn as string,
+    {
+      sessionId: "123456789",
+      nino: "AA000003D",
+    }
+  );
+
+  expect(startExecutionResult.status).toBe("FAILED");
+});
+
 it("should fail when user NINO does not match with HMRC DB", async () => {
   const startExecutionResult = await executeStepFunction(
     output.NinoCheckStateMachineArn as string,
     input
   );
 
-  expect(startExecutionResult.output).toBe('{"httpStatus":"424"}');
+  expect(startExecutionResult.output).toBe(
+    '{"error":"CID returned no record"}'
+  );
 });
 
 describe("NINO check URL is unavailable", () => {
