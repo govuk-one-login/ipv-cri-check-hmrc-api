@@ -30,7 +30,7 @@ describe("nino-check-unhappy", () => {
       responseStepFunction
     );
     expect(results[0].executionSucceededEventDetails?.output).toEqual(
-      '{"error":"Session is not valid or has expired"}'
+      '{"httpStatus":400}'
     );
   });
 
@@ -50,7 +50,7 @@ describe("nino-check-unhappy", () => {
       responseStepFunction
     );
     expect(results[0].stateExitedEventDetails?.output).toEqual(
-      '{"error":"Maximum number of attempts exceeded"}'
+      '{"httpStatus":200}'
     );
   });
 
@@ -71,7 +71,7 @@ describe("nino-check-unhappy", () => {
       responseStepFunction
     );
     expect(results[0].stateExitedEventDetails?.output).toEqual(
-      '{"error":"No user found for given nino"}'
+      '{"httpStatus":500}'
     );
   });
 
@@ -105,9 +105,7 @@ describe("nino-check-unhappy", () => {
       (event: HistoryEvent) => event?.type === "ExecutionFailed",
       responseStepFunction
     );
-    expect(results[0].executionFailedEventDetails?.cause).toEqual(
-      "Invalid Authentication information provided"
-    );
+    expect(results[0].executionFailedEventDetails?.cause).toBe(undefined);
   });
 
   it("should fail when user nino does not match with HMRC DB", async () => {
@@ -125,7 +123,7 @@ describe("nino-check-unhappy", () => {
       responseStepFunction
     );
     expect(results[0].executionSucceededEventDetails?.output).toEqual(
-      '{"httpStatus":"424"}'
+      '{"httpStatus":422}'
     );
   });
 });

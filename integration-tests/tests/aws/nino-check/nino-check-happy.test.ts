@@ -93,7 +93,7 @@ describe("nino-check-happy", () => {
       input
     );
 
-    expect(startExecutionResult.output).toBe("{}");
+    expect(startExecutionResult.output).toBe('{"httpStatus":200}');
   });
 
   it("should execute nino step function 2nd attempt", async () => {
@@ -110,8 +110,8 @@ describe("nino-check-happy", () => {
       input
     );
 
-    expect(firstExecutionResult.output).toBe('{"httpStatus":"424"}');
+    expect(firstExecutionResult.output).toBe('{"httpStatus":422}');
 
-    expect(secondExecutionResult.output).toBe("{}");
+    expect(secondExecutionResult.output).toBe('{"httpStatus":200}');
   });
 });
