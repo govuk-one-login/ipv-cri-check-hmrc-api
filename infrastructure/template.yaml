@@ -274,6 +274,18 @@ Resources:
       TableName: !Sub ${AWS::StackName}-nino-attempts
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  UserAttemptsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-user-attempts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
         - AttributeName: sessionId
           AttributeType: S
         - AttributeName: timestamp
@@ -406,7 +418,7 @@ Resources:
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
-        NinoAttemptsTable: !Ref NinoAttemptsTable
+        UserAttemptsTable: !Ref UserAttemptsTable
         NinoUsersTable: !Ref NinoUsersTable
         NinoCheckUrl: !Ref NinoCheckUrl
         UserAgent: !Ref UserAgent
@@ -428,9 +440,9 @@ Resources:
         - DynamoDBWritePolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBWritePolicy:
-            TableName: !Ref NinoAttemptsTable
+            TableName: !Ref UserAttemptsTable
         - DynamoDBReadPolicy:
-            TableName: !Ref NinoAttemptsTable
+            TableName: !Ref UserAttemptsTable
         - DynamoDBReadPolicy:
             TableName: !Ref NinoUsersTable
         - DynamoDBWritePolicy:
@@ -480,7 +492,7 @@ Resources:
       DefinitionSubstitutions:
         TimeFunctionArn: !GetAtt TimeFunction.Arn
         CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
-        NinoAttemptsTable: !Ref NinoAttemptsTable
+        UserAttemptsTable: !Ref UserAttemptsTable
         MaxJwtTtlParameter: !Ref MaxJwtTtlParameter
         JwtTtlUnitParameter: !Ref JwtTtlUnitParameter
         CommonStackName: !Ref CommonStackName
@@ -500,7 +512,7 @@ Resources:
         - LambdaInvokePolicy:
             FunctionName: !Ref JwtSignerFunction
         - DynamoDBReadPolicy:
-            TableName: !Ref NinoAttemptsTable
+            TableName: !Ref UserAttemptsTable
         - DynamoDBReadPolicy:
             TableName: !Ref NinoUsersTable
         - DynamoDBReadPolicy:
@@ -572,9 +584,9 @@ Outputs:
   CommonStackName:
     Description: Common Stack Name
     Value: !Ref CommonStackName
-  NinoAttemptsTable:
-    Description: NinoAttemptsTable table name
-    Value: !Ref NinoAttemptsTable
+  UserAttemptsTable:
+    Description: UserAttemptsTable table name
+    Value: !Ref UserAttemptsTable
   NinoUsersTable:
     Description: NinoUsersTable table name
     Value: !Ref NinoUsersTable
