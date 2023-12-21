@@ -489,6 +489,7 @@ Resources:
       Name: !Sub ${AWS::StackName}-NinoIssueCredential
       DefinitionUri: ../step-functions/nino_issue_credential.asl.json
       DefinitionSubstitutions:
+        CiMappingFunctionArn: !GetAtt CiMappingFunction.Arn
         TimeFunctionArn: !GetAtt TimeFunction.Arn
         CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
         UserAttemptsTable: !Ref UserAttemptsTable
@@ -504,6 +505,8 @@ Resources:
         IncludeExecutionData: True
         Level: ALL
       Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CiMappingFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref TimeFunction
         - LambdaInvokePolicy:
