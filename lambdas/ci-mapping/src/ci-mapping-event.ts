@@ -1,4 +1,4 @@
 export interface CiMappingEvent {
-  ci_mapping: string;
-  hmrc_errors: string;
+  ci_mapping: string[];
+  hmrc_errors: string[];
 }

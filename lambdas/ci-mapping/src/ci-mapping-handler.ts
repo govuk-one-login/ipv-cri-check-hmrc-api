@@ -20,13 +20,12 @@ export class CiMappingHandler implements LambdaInterface {
 }
 
 function getCIsForHmrcErrors(event: CiMappingEvent): Array<string> {
-  const hmrcErrors = event.hmrc_errors.split(",");
-  const ciMappings = event.ci_mapping.split("||");
   return Array.from(
     new Set(
-      ciMappings.flatMap((ci) => {
+      event.ci_mapping.flatMap((ci) => {
         const [ciKey, ciValue] = ci.split(":");
-        return hmrcErrors
+        return event.hmrc_errors
+          .flatMap((error) => error.split(",").map((e) => e.trim()))
           .filter((hmrcError) => ciKey.includes(hmrcError))
           .map(() => ciValue);
       })
