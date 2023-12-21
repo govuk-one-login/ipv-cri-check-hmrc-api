@@ -25,7 +25,9 @@ function getCIsForHmrcErrors(event: CiMappingEvent): Array<string> {
       event.ci_mapping.flatMap((ci) => {
         const [ciKey, ciValue] = ci.split(":");
         return event.hmrc_errors
-          .flatMap((error) => error.split(",").map((e) => e.trim()))
+          .flatMap((hmrc_error) =>
+            hmrc_error.split(",").map((hmrc_error) => hmrc_error.trim())
+          )
           .filter((hmrcError) => ciKey.includes(hmrcError))
           .map(() => ciValue);
       })
