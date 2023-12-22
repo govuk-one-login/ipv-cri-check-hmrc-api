@@ -9,7 +9,7 @@ const testCiMapping = [
 ];
 
 describe("ci-mapping-handler", () => {
-  it("should return the correct CI for a given input", async () => {
+  it("should return the mapped CI for a single matching hmrc_error in ci_mapping", async () => {
     const event = {
       ci_mapping: testCiMapping,
       hmrc_errors: ["aaaa"],
@@ -21,12 +21,12 @@ describe("ci-mapping-handler", () => {
     expect(result).toEqual(["ci_1"]);
   });
 
-  it.each([["bbbb"], ["cccc"]])(
-    "should return correct CI value",
-    async ([input]) => {
+  it.each([[["bbbb"], [["cccc"]]]])(
+    "should not return ci_2 for input '%s'",
+    async (input) => {
       const event = {
         ci_mapping: testCiMapping,
-        hmrc_errors: [input],
+        hmrc_errors: input,
       } as CiMappingEvent;
       const ciMappingHandler = new CiMappingHandler();
 
@@ -36,21 +36,12 @@ describe("ci-mapping-handler", () => {
     }
   );
 
-  it.each([
-    [
-      "eeee",
-      ["eeee", "ffff"],
-      ["eeee", "ffff", "gggg"],
-      ["ffff"],
-      ["gggg"],
-      ["eeee", "gggg"],
-    ],
-  ])(
-    "should return correct CI value in the same group for when errors",
-    async ([input]) => {
+  it.each([[["eeee", "ffff"]], [["eeee", "ffff", "gggg"]], [["eeee", "gggg"]]])(
+    "should not return duplicate CIs for input [%s]",
+    async (input) => {
       const event = {
         ci_mapping: testCiMapping,
-        hmrc_errors: [input],
+        hmrc_errors: input,
       } as CiMappingEvent;
       const ciMappingHandler = new CiMappingHandler();
 
@@ -60,7 +51,7 @@ describe("ci-mapping-handler", () => {
     }
   );
 
-  it("should return multiple CIs when they are different", async () => {
+  it("should return multiple CIs when input contains different groups", async () => {
     const event = {
       ci_mapping: testCiMapping,
       hmrc_errors: ["aaaa,gggg"],
@@ -70,5 +61,43 @@ describe("ci-mapping-handler", () => {
     const result = await ciMappingHandler.handler(event, {} as Context);
 
     expect(result).toEqual(["ci_1", "ci_3"]);
+  });
+
+  it("should not produce a CI if there are no hmrc_errors", async () => {
+    const event = {
+      ci_mapping: testCiMapping,
+      hmrc_errors: [],
+    } as CiMappingEvent;
+    const ciMappingHandler = new CiMappingHandler();
+
+    const result = await ciMappingHandler.handler(event, {} as Context);
+
+    expect(result).toEqual([]);
+  });
+
+  it("should throw an error when no matching hmrc_error for any ci_mapping", async () => {
+    const event = {
+      ci_mapping: testCiMapping,
+      hmrc_errors: ["not-a-mapped-error"],
+    } as CiMappingEvent;
+    const ciMappingHandler = new CiMappingHandler();
+
+    await expect(
+      ciMappingHandler.handler(event, {} as Context)
+    ).rejects.toThrowError("No matching hmrc_error for any ci_mapping");
+  });
+
+  it("should throw an error when not all items in hmrc_errors have matching ci_mapping", async () => {
+    const event = {
+      ci_mapping: testCiMapping,
+      hmrc_errors: ["not-a-mapped-error", "aaaa"],
+    } as CiMappingEvent;
+    const ciMappingHandler = new CiMappingHandler();
+
+    await expect(
+      ciMappingHandler.handler(event, {} as Context)
+    ).rejects.toThrowError(
+      "Not all items in hmrc_errors have matching ci_mapping"
+    );
   });
 });
