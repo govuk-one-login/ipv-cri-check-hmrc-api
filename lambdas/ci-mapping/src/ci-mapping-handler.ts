@@ -20,19 +20,33 @@ export class CiMappingHandler implements LambdaInterface {
 }
 
 function getCIsForHmrcErrors(event: CiMappingEvent): Array<string> {
-  return Array.from(
-    new Set(
-      event.ci_mapping.flatMap((ci) => {
-        const [ciKey, ciValue] = ci.split(":");
-        return event.hmrc_errors
-          .flatMap((hmrc_error) =>
-            hmrc_error.split(",").map((hmrc_error) => hmrc_error.trim())
-          )
-          .filter((hmrcError) => ciKey.includes(hmrcError))
-          .map(() => ciValue);
-      })
-    )
-  );
+  if (event.hmrc_errors.length === 0) {
+    return [];
+  }
+  let totalHmrcErrors = 0;
+  const result: Array<string> = [];
+  event.hmrc_errors.forEach((hmrcError) => {
+    const hmrcErrorParts = hmrcError
+      .split(",")
+      .map((hmrcError) => hmrcError.trim());
+    totalHmrcErrors += hmrcErrorParts.length;
+    event.ci_mapping.forEach((ci) => {
+      const [ciKey, ciValue] = ci.split(":");
+      const ciKeyValues = ciKey.split(",").map((value) => value.trim());
+      hmrcErrorParts.forEach((hmrcError) => {
+        if (ciKeyValues.includes(hmrcError)) {
+          result.push(ciValue);
+        }
+      });
+    });
+  });
+  if (result.length === 0) {
+    throw new Error("No matching hmrc_error for any ci_mapping");
+  }
+  if (result.length != totalHmrcErrors) {
+    throw new Error("Not all items in hmrc_errors have matching ci_mapping");
+  }
+  return Array.from(new Set(result));
 }
 
 const handlerClass = new CiMappingHandler();
