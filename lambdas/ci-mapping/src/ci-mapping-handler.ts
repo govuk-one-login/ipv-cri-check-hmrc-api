@@ -1,9 +1,16 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
-import { CiMappingEvent } from "./ci-mapping-event";
+import {
+  CiMappingEvent,
+  HMRC_ERRORS_ABSENT,
+  validateInputs,
+} from "./ci-mapping-event-validator";
 import { Logger } from "@aws-lambda-powertools/logger";
+import {
+  getHmrcErrsCiRecord,
+  deduplicateValues,
+} from "./utils/ci-mapping-util";
 
 const logger = new Logger();
-
 export class CiMappingHandler implements LambdaInterface {
   public async handler(
     event: CiMappingEvent,
@@ -13,41 +20,35 @@ export class CiMappingHandler implements LambdaInterface {
       return getCIsForHmrcErrors(event);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
+      if (message === HMRC_ERRORS_ABSENT) {
+        return [];
+      }
       logger.error(`Error in CiMappingHandler: ${message}`);
+
       throw error;
     }
   }
 }
 
-function getCIsForHmrcErrors(event: CiMappingEvent): Array<string> {
-  if (event.hmrc_errors.length === 0) {
-    return [];
-  }
-  let totalHmrcErrors = 0;
-  const result: Array<string> = [];
-  event.hmrc_errors.forEach((hmrcError) => {
-    const hmrcErrorParts = hmrcError
-      .split(",")
-      .map((hmrcError) => hmrcError.trim());
-    totalHmrcErrors += hmrcErrorParts.length;
-    event.ci_mapping.forEach((ci) => {
-      const [ciKey, ciValue] = ci.split(":");
-      const ciKeyValues = ciKey.split(",").map((value) => value.trim());
-      hmrcErrorParts.forEach((hmrcError) => {
-        if (ciKeyValues.includes(hmrcError)) {
-          result.push(ciValue);
-        }
-      });
-    });
+const getCIsForHmrcErrors = (event: CiMappingEvent): Array<string> => {
+  const { ci_mappings, hmrc_errors } = validateInputs(event);
+
+  const contraIndicators = ci_mappings?.flatMap((ci) => {
+    const { mappedHmrcErrors, ciValue } = getHmrcErrsCiRecord(ci);
+
+    return hmrc_errors
+      .flatMap((hmrcError) => hmrcError)
+      .filter((hmrcError) =>
+        mappedHmrcErrors
+          .split(",")
+          .map((value) => value.trim())
+          .includes(hmrcError)
+      )
+      .map(() => ciValue.trim());
   });
-  if (result.length === 0) {
-    throw new Error("No matching hmrc_error for any ci_mapping");
-  }
-  if (result.length != totalHmrcErrors) {
-    throw new Error("Not all items in hmrc_errors have matching ci_mapping");
-  }
-  return Array.from(new Set(result));
-}
+
+  return deduplicateValues(contraIndicators);
+};
 
 const handlerClass = new CiMappingHandler();
 export const lambdaHandler = handlerClass.handler.bind(handlerClass);
