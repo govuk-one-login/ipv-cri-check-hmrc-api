@@ -26,6 +26,13 @@ happy2ndTry:
 	--state-machine ${STATE_MACHINE_ARN}#HappyPathTestOn2ndAttempt \
 	--input '{ "sessionId": "12345", "nino": "AA000003D" }' \
 	--no-cli-pager
+deceased:
+	aws stepfunctions start-execution \
+	--endpoint http://localhost:8083 \
+	--name happyPathExecution \
+	--state-machine ${STATE_MACHINE_ARN}#DeceasedTest \
+	--input '{ "sessionId": "12345", "nino": "AA000003D" }' \
+	--no-cli-pager
 invalidSessionID:
 	aws stepfunctions start-execution \
 	--endpoint http://localhost:8083 \

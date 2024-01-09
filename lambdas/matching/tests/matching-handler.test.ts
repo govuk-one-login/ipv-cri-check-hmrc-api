@@ -11,6 +11,9 @@ describe("matching-handler", () => {
   it("should return a matching response for a given nino and user", async () => {
     global.fetch = jest.fn();
     (global.fetch as jest.Mock).mockResolvedValueOnce({
+      headers: {
+        get: jest.fn().mockReturnValueOnce("application/json"),
+      },
       json: jest.fn().mockResolvedValueOnce({
         firstName: "Jim",
         lastName: "Ferguson",
@@ -42,5 +45,62 @@ describe("matching-handler", () => {
       dateOfBirth: "1948-04-23",
       nino: "AA000003D",
     });
+  });
+  it("should return text when content type is not json", async () => {
+    global.fetch = jest.fn();
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      headers: {
+        get: jest.fn().mockReturnValueOnce(""),
+      },
+      text: jest.fn().mockResolvedValueOnce("Test Text"),
+      status: 200,
+    });
+    const matchingHandler = new MatchingHandler();
+    const event = {
+      sessionId: "12346",
+      nino: "AA000003D",
+      userDetails: {
+        firstName: "Jim",
+        lastName: "Ferguson",
+        dob: "1948-04-23",
+        nino: "AA000003D",
+      },
+      userAgent: "govuk-one-login",
+      apiURL:
+        "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match",
+      oAuthToken: "123",
+    } as MatchEvent;
+    const result = await matchingHandler.handler(event, {} as Context);
+    expect(result.status).toBe("200");
+    expect(result.body).toStrictEqual("Test Text");
+  });
+
+  it("should return an error message when has no content-type and has no body", async () => {
+    global.fetch = jest.fn();
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      headers: {
+        get: jest.fn().mockReturnValueOnce(""),
+      },
+      status: 200,
+    });
+    const matchingHandler = new MatchingHandler();
+    const event = {
+      sessionId: "12346",
+      nino: "AA000003D",
+      userDetails: {
+        firstName: "Jim",
+        lastName: "Ferguson",
+        dob: "1948-04-23",
+        nino: "AA000003D",
+      },
+      userAgent: "govuk-one-login",
+      apiURL:
+        "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match",
+      oAuthToken: "123",
+    } as MatchEvent;
+
+    await expect(
+      matchingHandler.handler(event, {} as Context)
+    ).rejects.toThrow();
   });
 });
