@@ -40,15 +40,15 @@ describe("nino-check-unhappy", () => {
       sessionId: "12345",
     });
     const responseStepFunction = await sfnContainer.startStepFunctionExecution(
-        "DeceasedTest",
-        input
+      "DeceasedTest",
+      input
     );
     const results = await sfnContainer.waitFor(
-        (event: HistoryEvent) => event?.type === "ExecutionSucceeded",
-        responseStepFunction
+      (event: HistoryEvent) => event?.type === "ExecutionSucceeded",
+      responseStepFunction
     );
     expect(results[0].executionSucceededEventDetails?.output).toEqual(
-        '{"httpStatus":422}'
+      '{"httpStatus":422}'
     );
   });
 
