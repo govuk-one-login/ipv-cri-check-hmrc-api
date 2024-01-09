@@ -1,7 +1,7 @@
 import { HistoryEvent } from "@aws-sdk/client-sfn";
 import { SfnContainerHelper } from "./sfn-container-helper";
 
-jest.setTimeout(60_000);
+jest.setTimeout(30_000);
 
 const decode = (value: string) =>
   Buffer.from(value, "base64").toString("utf-8");

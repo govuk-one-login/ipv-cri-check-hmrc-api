@@ -14,8 +14,7 @@
           "Fetch Nino": "FetchNino",
           "Create Credential Subject": "CreateCredentialSubject",
           "Fetch exp time and NBF": "FetchExpTimeAndNBF",
-          "Fetch User NINO Attempts": "FetchUserNINOAttempts",
-          "Add Type to VC": "AddTypeToVC",
+          "Fetch Failed Attempts": "FetchFailedAttempts",
           "Sign VC claimsSet": "SignVCClaimSet"
         },
         "UnHappyPath": {
@@ -30,8 +29,9 @@
           "Fetch Nino": "FetchNino",
           "Create Credential Subject": "CreateCredentialSubject",
           "Fetch exp time and NBF": "FetchExpTimeAndNBF",
-          "Fetch User NINO Attempts": "FetchFailedUserNINOAttempts",
-          "Add Type to VC": "AddFailTypeToVC",
+          "Fetch Failed Attempts": "FetchExceededFailedAttempts",
+          "Fetch Contra Indicator Mappings": "FetchContraIndicatorMappings",
+          "Fetch CI": "FetchCI",
           "Sign VC claimsSet": "SignVCClaimSet"
         }
       }
@@ -347,7 +347,7 @@
         }
       }
     },
-    "FetchUserNINOAttempts": {
+    "FetchFailedAttempts": {
       "0": {
         "Return": {
           "Count": 1,
@@ -368,98 +368,93 @@
         }
       }
     },
-    "FetchFailedUserNINOAttempts": {
+    "FetchExceededFailedAttempts": {
       "0": {
         "Return": {
-          "Count": 1,
+          "Count": 2,
           "Items": [
             {
-              "id": {
-                "S": "123456789"
+              "text": {
+                "S": "DOB does not match CID"
               },
-              "outcome": {
+              "sessionId": {
+                "S": "issue-credential-unhappy"
+              },
+              "attempt": {
                 "S": "FAIL"
               },
-              "attempts": {
-                "N": "2"
+              "timestamp": {
+                "S": "1704723616968"
               }
-            }
-          ],
-          "ScannedCount": 1
-        }
-      }
-    },
-    "AddTypeToVC": {
-      "0": {
-        "Return": {
-          "Count": 1,
-          "Items": [
+            },
             {
-              "id": {
-                "S": "123456789"
+              "text": {
+                "S": "DOB does not match CID"
               },
-              "outcome": {
-                "S": "PASS"
+              "sessionId": {
+                "S": "issue-credential-unhappy"
               },
-              "attempts": {
-                "N": "1"
+              "attempt": {
+                "S": "FAIL"
+              },
+              "timestamp": {
+                "S": "1704723616969"
               }
             }
           ],
-          "ScannedCount": 1
+          "ScannedCount": 2
         }
       }
     },
-    "AddFailTypeToVC": {
+    "FetchContraIndicatorMappings": {
       "0": {
         "Return": {
-          "bearerToken": "Bearer test",
-          "MaxJwtTTL": {
-            "value": "2"
-          },
-          "JwtTtlUnit": {
-            "value": "HOURS"
-          },
-          "kid": {
-            "value": "0976c11e-8ef3-4659-b7f2-ee0b842b85bd"
-          },
-          "issuer": {
-            "value": "0976c11e-8ef3-4659-b7f2-ee0b842b85bd"
-          },
-          "personIdentityTableName": {
-            "value": "person-identity-common-cri-api"
-          },
-          "sessionTable": {
-            "value": "session-common-cri-api"
-          },
-          "querySession": {
-            "subject": "test",
-            "sessionId": "123456789"
-          },
-          "check-attempts-exist": {
-            "Count": 1,
-            "Items": [
-              {
-                "id": {
-                  "S": "123456789"
-                },
-                "outcome": {
-                  "S": "FAIL"
-                },
-                "attempts": {
-                  "N": "2"
-                }
-              }
-            ],
-            "ScannedCount": 1
-          },
-          "vctype": {
-            "type": ["VerifiableCredential", "IdentityCheckCredential"],
-            "@context": [
-              "https://www.w3.org/2018/credentials/v1",
-              "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld"
-            ]
+          "Parameter": {
+            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/check-hmrc-cri-api/contraindicationMappings",
+            "DataType": "text",
+            "LastModifiedDate": "2024-01-08T12:08:17.491Z",
+            "Name": "/check-hmrc-cri-api/contraindicationMappings",
+            "Type": "String",
+            "Value": "DOB does not exist in the request,First Name does not exist in the request,Last Name does not exist in the request,Nino does not exist in the request,DOB does not exist in CID,First Name does not exist in CID,Last Name does not exist in CID,Nino does not exist in CID,CID returned no record:D02||DOB does not match CID,First Name does not match CID,Last Name does not match CID,NINO does not match CID,Matching produced more than one match:N01||Request to create account for a deceased user:T03",
+            "Version": 2
           }
+        }
+      }
+    },
+    "FetchCI": {
+      "0": {
+        "Return": {
+          "ExecutedVersion": "$LATEST",
+          "Payload": ["N01"],
+          "SdkHttpMetadata": {
+            "AllHttpHeaders": {
+              "X-Amz-Executed-Version": ["$LATEST"],
+              "x-amzn-Remapped-Content-Length": ["0"],
+              "Connection": ["keep-alive"],
+              "x-amzn-RequestId": ["8d137f0e-31be-4d30-a09e-85da3197dbb9"],
+              "Content-Length": ["7"],
+              "Date": ["Mon, 08 Jan 2024 14:20:19 GMT"],
+              "X-Amzn-Trace-Id": [
+                "root=1-659c04a2-6e34b4cf4e19d19b75684a75;sampled=0;lineage=499fa3f8:0"
+              ],
+              "Content-Type": ["application/json"]
+            },
+            "HttpHeaders": {
+              "Connection": "keep-alive",
+              "Content-Length": "7",
+              "Content-Type": "application/json",
+              "Date": "Mon, 08 Jan 2024 14:20:19 GMT",
+              "X-Amz-Executed-Version": "$LATEST",
+              "x-amzn-Remapped-Content-Length": "0",
+              "x-amzn-RequestId": "8d137f0e-31be-4d30-a09e-85da3197dbb9",
+              "X-Amzn-Trace-Id": "root=1-659c04a2-6e34b4cf4e19d19b75684a75;sampled=0;lineage=499fa3f8:0"
+            },
+            "HttpStatusCode": 200
+          },
+          "SdkResponseMetadata": {
+            "RequestId": "8d137f0e-31be-4d30-a09e-85da3197dbb9"
+          },
+          "StatusCode": 200
         }
       }
     },
