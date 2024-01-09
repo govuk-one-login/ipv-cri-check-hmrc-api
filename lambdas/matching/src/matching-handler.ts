@@ -24,12 +24,13 @@ export class MatchingHandler implements LambdaInterface {
           nino: event.nino,
         }),
       });
-      try {
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
         return {
           status: response.status.toString(),
           body: await response.json(),
         };
-      } catch (error: unknown) {
+      } else {
         return {
           status: response.status.toString(),
           body: await response.text(),
