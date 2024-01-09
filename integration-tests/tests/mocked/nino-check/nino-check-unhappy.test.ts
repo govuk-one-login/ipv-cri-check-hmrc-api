@@ -34,6 +34,24 @@ describe("nino-check-unhappy", () => {
     );
   });
 
+  it("should fail when user is deceased is invalid", async () => {
+    const input = JSON.stringify({
+      nino: "AA000003D",
+      sessionId: "12345",
+    });
+    const responseStepFunction = await sfnContainer.startStepFunctionExecution(
+        "DeceasedTest",
+        input
+    );
+    const results = await sfnContainer.waitFor(
+        (event: HistoryEvent) => event?.type === "ExecutionSucceeded",
+        responseStepFunction
+    );
+    expect(results[0].executionSucceededEventDetails?.output).toEqual(
+        '{"httpStatus":422}'
+    );
+  });
+
   it("should fail when there are more than two check attempts", async () => {
     const input = JSON.stringify({
       nino: "AA000003D",

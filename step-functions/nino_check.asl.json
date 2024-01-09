@@ -259,6 +259,11 @@
           "Next": "Store Failed Match Attempt"
         },
         {
+          "Variable": "$.hmrc_response.payload.status",
+          "StringEquals": "424",
+          "Next": "Store Deceased Attempt"
+        },
+        {
           "Variable": "$.hmrc_response.payload.body.code",
           "StringEquals": "INVALID_CREDENTIALS",
           "Next": "Err: Failed Auth"
@@ -378,6 +383,31 @@
     },
     "Err: Failed Auth": {
       "Type": "Fail"
+    },
+    "Store Deceased Attempt": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+      "Parameters": {
+        "TableName": "${UserAttemptsTable}",
+        "Item": {
+          "sessionId": {
+            "S.$": "$$.Execution.Input.sessionId"
+          },
+          "timestamp": {
+            "S.$": "$$.State.EnteredTime"
+          },
+          "status": {
+            "N.$": "$.hmrc_response.payload.status"
+          },
+          "text": {
+            "S.$": "$.hmrc_response.payload.body"
+          },
+          "attempt": {
+            "S": "FAIL"
+          }
+        }
+      },
+      "Next": "Send Retry"
     }
   }
 }

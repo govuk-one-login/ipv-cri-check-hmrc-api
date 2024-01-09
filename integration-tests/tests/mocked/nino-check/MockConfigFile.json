@@ -2,6 +2,17 @@
   "StateMachines": {
     "nino_check": {
       "TestCases": {
+        "DeceasedTest": {
+          "Invoke Check Session": "CheckSessionSuccess",
+          "Query User Attempts": "DynamoDbQueryNoResult",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
+          "Query Person Identity Table": "QuerySessionSuccess",
+          "Get User Agent and API URL": "GetAPIParametersSuccess",
+          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call Matching API": "CallMatchingDeceasedAPIFail",
+          "Store Deceased Attempt": "DynamoDbQueryNoResult"
+        },
         "HappyPathTestNoPreviousAttempt": {
           "Invoke Check Session": "CheckSessionSuccess",
           "Query User Attempts": "DynamoDbQueryNoResult",
@@ -429,6 +440,16 @@
               "dateOfBirth": "1948-04-23",
               "nino": "AA000003D"
             }
+          }
+        }
+      }
+    },
+    "CallMatchingDeceasedAPIFail": {
+      "0": {
+        "Return": {
+          "Payload": {
+            "status": "424",
+            "body": "Request to create account for a deceased user"
           }
         }
       }
