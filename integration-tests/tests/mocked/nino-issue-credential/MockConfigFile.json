@@ -425,7 +425,7 @@
       "0": {
         "Return": {
           "ExecutedVersion": "$LATEST",
-          "Payload": ["N01"],
+          "Payload": ["AAA"],
           "SdkHttpMetadata": {
             "AllHttpHeaders": {
               "X-Amz-Executed-Version": ["$LATEST"],
