@@ -462,7 +462,7 @@
       "0": {
         "Return": {
           "ExecutedVersion": "$LATEST",
-          "Payload": "__RJ4lV8PxPSYrK7lIR082zcpY33dW1Hwz6h5b0DRZQrOLg5ua3PEasVhfOamuMV8r0fvsHFpGH-D8eFs6CCsA",
+          "Payload": "",
           "SdkHttpMetadata": {
             "AllHttpHeaders": {
               "X-Amz-Executed-Version": ["$LATEST"],

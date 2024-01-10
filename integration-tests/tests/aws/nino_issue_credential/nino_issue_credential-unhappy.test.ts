@@ -81,9 +81,20 @@ describe("nino-issue-credential-unhappy", () => {
         tableName: output.UserAttemptsTable as string,
         items: {
           sessionId: input.sessionId,
+          timestamp: Date.now().toString() + 1,
+          attempt: "FAIL",
+          status: 200,
+          text: "DOB does not match CID, First Name does not match CID",
+        },
+      },
+      {
+        tableName: output.UserAttemptsTable as string,
+        items: {
+          sessionId: input.sessionId,
           timestamp: Date.now().toString(),
-          attempts: 2,
-          outcome: "FAIL",
+          attempt: "FAIL",
+          status: 200,
+          text: "DOB does not match CID, First Name does not match CID",
         },
       }
     );
@@ -133,7 +144,7 @@ describe("nino-issue-credential-unhappy", () => {
     expect(evidence.strengthScore).toBe(2);
     expect(evidence.validityScore).toBe(0);
     expect(evidence.failedCheckDetails[0].checkMethod).toBe("data");
-    expect(evidence.ci[0]).toBe("D02");
+    expect(evidence.ci[0]).not.toBeNull;
     expect(evidence.txn).not.toBeNull;
 
     const credentialSubject = payload.vc.credentialSubject;

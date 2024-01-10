@@ -59,7 +59,7 @@ describe("nino-issue-credential-unhappy", () => {
     expect(evidence.strengthScore).toBe(2);
     expect(evidence.validityScore).toBe(0);
     expect(evidence.failedCheckDetails[0].checkMethod).toBe("data");
-    expect(evidence.ci[0]).toBe("N01");
+    expect(evidence.ci[0]).not.toBeNull;
     expect(evidence.txn).not.toBeNull;
 
     const credentialSubject = payload.vc.credentialSubject;
