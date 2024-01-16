@@ -236,7 +236,7 @@ Resources:
             Location: private-api.yaml
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
-        Type: !If [IsDevEnvironment, REGIONAL, PRIVATE]
+        Type: !If [IsDevEnvironment, PRIVATE, PRIVATE]
       Auth:
         ResourcePolicy: !If
           - IsDevEnvironment
