@@ -236,11 +236,15 @@ Resources:
             Location: private-api.yaml
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
-        Type: !If [IsDevEnvironment, REGIONAL, PRIVATE]
+        Type: !If [IsDevEnvironment, PRIVATE, PRIVATE]
       Auth:
         ResourcePolicy: !If
           - IsDevEnvironment
-          - !Ref AWS::NoValue
+          - CustomStatements:
+              - Effect: Allow
+                Resource: execute-api:/*
+                Action: execute-api:Invoke
+                Principal: "*"
           - CustomStatements:
               - Effect: Allow
                 Resource: execute-api:/*
