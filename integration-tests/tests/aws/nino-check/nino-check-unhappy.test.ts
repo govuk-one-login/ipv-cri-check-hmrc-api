@@ -30,6 +30,18 @@ describe("nino-check-unhappy", () => {
     lastName: "Ferguson",
   };
 
+  const inputDeceased = {
+    sessionId: "check-unhappy",
+    nino: "DeceasedNino",
+  };
+
+  const testDeceasedUser = {
+    nino: "DeceasedNino",
+    dob: "1948-04-23",
+    firstName: "Jim",
+    lastName: "Ferguson",
+  };
+
   let output: Partial<{
     CommonStackName: string;
     UserAttemptsTable: string;
@@ -142,6 +154,38 @@ describe("nino-check-unhappy", () => {
     expect(startExecutionResult.output).toBe('{"httpStatus":400}');
 
     expect(startExecutionResult.status).toBe("SUCCEEDED");
+  });
+
+  it("should fail when user is deceased", async () => {
+    await populateTables({
+      tableName: personIdentityTableName,
+      items: {
+        sessionId: inputDeceased.sessionId,
+        nino: inputDeceased.nino,
+        birthDates: [{ value: testDeceasedUser.dob }],
+        names: [
+          {
+            nameParts: [
+              {
+                type: "GivenName",
+                value: testDeceasedUser.firstName,
+              },
+              {
+                type: "FamilyName",
+                value: testDeceasedUser.lastName,
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    const startExecutionResult = await executeStepFunction(
+      output.NinoCheckStateMachineArn as string,
+      inputDeceased
+    );
+
+    expect(startExecutionResult.output).toBe('{"httpStatus":422}');
   });
 
   it("should fail when user NINO does not match with HMRC DB", async () => {
