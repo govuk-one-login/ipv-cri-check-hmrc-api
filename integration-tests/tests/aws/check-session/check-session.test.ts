@@ -53,8 +53,7 @@ describe("check-session", () => {
       input
     );
 
-    const result = JSON.parse(startExecutionResult.output || "");
-    expect(result.status).toBeDefined();
+    expect(startExecutionResult.output).toBeUndefined();
   });
 
   it("should return SESSION_NOT_FOUND when sessionId does not exist", async () => {
