@@ -33,6 +33,9 @@
             {
               "expiryDate": {
                 "N": "2695828259"
+              },
+              "clientId": {
+                "S": "exampleClientId"
               }
             }
           ]

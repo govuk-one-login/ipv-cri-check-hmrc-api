@@ -97,6 +97,7 @@ describe("nino-issue-credential-happy", () => {
           authorizationCodeExpiryDate: "1698925598",
           expiryDate: "9999999999",
           subject: "test",
+          clientId: "exampleClientId",
         },
       },
       {

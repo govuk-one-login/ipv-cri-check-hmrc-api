@@ -382,7 +382,6 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       Type: EXPRESS
-      Name: !Sub ${AWS::StackName}-CheckSession
       DefinitionUri: ../step-functions/check_session.asl.json
       DefinitionSubstitutions:
         CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
@@ -411,7 +410,6 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       Type: EXPRESS
-      Name: !Sub ${AWS::StackName}-NinoCheck
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
@@ -486,7 +484,6 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       Type: EXPRESS
-      Name: !Sub ${AWS::StackName}-NinoIssueCredential
       DefinitionUri: ../step-functions/nino_issue_credential.asl.json
       DefinitionSubstitutions:
         CiMappingFunctionArn: !GetAtt CiMappingFunction.Arn

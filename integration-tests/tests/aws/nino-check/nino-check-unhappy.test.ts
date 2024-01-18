@@ -51,6 +51,7 @@ describe("nino-check-unhappy", () => {
         items: {
           sessionId: input.sessionId,
           expiryDate: 9999999999,
+          clientId: "exampleClientId",
         },
       },
       {

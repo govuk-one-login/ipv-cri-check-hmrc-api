@@ -42,6 +42,7 @@ describe("nino-issue-credential-unhappy", () => {
         items: {
           sessionId: input.sessionId,
           nino: "AA000003D",
+          clientId: "exampleClientId",
         },
       },
       {
