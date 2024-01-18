@@ -85,7 +85,8 @@
       "Type": "Pass",
       "End": true,
       "Parameters": {
-        "status": "SESSION_OK"
+        "status": "SESSION_OK",
+        "clientId.$": "$.sessionQuery.items[0].clientId.S"
       }
     },
     "Err: No sessionId provided": {
