@@ -36,7 +36,9 @@ describe("check-session", () => {
       input
     );
 
-    expect(startExecutionResult.output).toBe('{"status":"SESSION_OK"}');
+    const result = JSON.parse(startExecutionResult.output || "");
+    expect(result.status).toBe("SESSION_OK");
+    expect(result.clientId).toBeDefined();
   });
 
   it("should return SESSION_NOT_FOUND when sessionId does not exist", async () => {
