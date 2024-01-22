@@ -12,7 +12,8 @@ Parameters:
   Environment:
     Type: String
     Default: dev
-    AllowedValues: [dev, build, staging, integration, production]
+    AllowedValues: [dev, localdev, build, staging, integration, production]
+    ConstraintDescription: must be dev, localdev, build, staging, integration or production
   CommonStackName:
     Type: String
     Default: common-cri-api
@@ -28,6 +29,9 @@ Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
   UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, ""]]
   IsDevEnvironment: !Equals [!Ref Environment, dev]
+  IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
+  IsDevLikeEnvironment:
+    !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
   IsProductionEnvironment: !Equals [!Ref Environment, production]
   IsStagingOrIntegrationEnvironment: !Or
     - !Equals [!Ref Environment, staging]
@@ -38,6 +42,7 @@ Mappings:
   MaxJwtTtl:
     Environment:
       dev: 2
+      localdev: 2
       build: 2
       staging: 6
       integration: 6
@@ -47,6 +52,7 @@ Mappings:
   JwtTtlUnit:
     Environment:
       dev: HOURS
+      localdev: HOURS
       build: HOURS
       staging: MONTHS
       integration: MONTHS
@@ -55,6 +61,7 @@ Mappings:
   Dynatrace:
     SecretArn:
       dev: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
+      localdev: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       build: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       staging: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       integration: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -194,7 +201,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs
-      RetentionInDays: 30
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
   PrivateNinoCheckApi:
     Type: AWS::Serverless::Api
@@ -236,15 +243,11 @@ Resources:
             Location: private-api.yaml
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
-        Type: !If [IsDevEnvironment, PRIVATE, PRIVATE]
+        Type: !If [IsLocalDevEnvironment, REGIONAL, PRIVATE]
       Auth:
         ResourcePolicy: !If
-          - IsDevEnvironment
-          - CustomStatements:
-              - Effect: Allow
-                Resource: execute-api:/*
-                Action: execute-api:Invoke
-                Principal: "*"
+          - IsLocalDevEnvironment
+          - !Ref AWS::NoValue
           - CustomStatements:
               - Effect: Allow
                 Resource: execute-api:/*
@@ -255,7 +258,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs
-      RetentionInDays: 30
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
   ExecuteStateMachineRole:
     Type: AWS::IAM::Role
@@ -482,7 +485,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs
-      RetentionInDays: 30
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
   NinoIssueCredentialStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -552,13 +555,13 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs
-      RetentionInDays: 30
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
   CheckSessionStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs
-      RetentionInDays: 30
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
 Outputs:
   ApiGatewayId:

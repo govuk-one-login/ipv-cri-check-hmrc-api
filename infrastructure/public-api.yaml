@@ -142,7 +142,7 @@ paths:
       security:
         - api_key:
             Fn::If:
-              - IsDevEnvironment
+              - IsLocalDevEnvironment
               - Ref: AWS::NoValue
               - []
       x-amazon-apigateway-request-validator: "Validate both"
