@@ -25,9 +25,9 @@ sam deploy --stack-name "$stack_name" \
   --capabilities CAPABILITY_IAM \
   --tags \
   cri:component=ipv-cri-check-hmrc-api \
-  cri:stack-type=dev \
+  cri:stack-type=localdev \
   cri:application=Orange \
   cri:deployment-source=manual \
   --parameter-overrides \
   ${common_stack_name:+CommonStackName=$common_stack_name} \
-  Environment=dev
+  Environment=localdev
