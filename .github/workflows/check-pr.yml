@@ -12,13 +12,15 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Run pre-commit
-        uses: govuk-one-login/github-actions/code-quality/run-pre-commit@cd7d35dde348251237efbbaee5345e95adef0321
+        uses: govuk-one-login/github-actions/code-quality/run-pre-commit@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
         with:
           all-files: true
 
   unit-tests:
     name: Run tests
     uses: ./.github/workflows/run-unit-tests.yml
+    with:
+      coverage-report: true
 
   mocked-tests:
     name: Run tests
