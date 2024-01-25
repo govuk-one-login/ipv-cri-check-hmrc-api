@@ -102,7 +102,7 @@ describe("nino-check-happy", () => {
       output.NinoCheckStateMachineArn as string,
       {
         sessionId: input.sessionId,
-        nino: "AB123003C",
+        nino: "NoCidNino",
       }
     );
 
