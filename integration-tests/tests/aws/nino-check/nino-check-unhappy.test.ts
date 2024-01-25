@@ -145,9 +145,14 @@ describe("nino-check-unhappy", () => {
   });
 
   it("should fail when user NINO does not match with HMRC DB", async () => {
+    const inputWithBadNino = {
+      sessionId: input.sessionId,
+      nino: "NoCidNino",
+    };
+
     const startExecutionResult = await executeStepFunction(
       output.NinoCheckStateMachineArn as string,
-      input
+      inputWithBadNino
     );
 
     expect(startExecutionResult.output).toBe('{"httpStatus":422}');
