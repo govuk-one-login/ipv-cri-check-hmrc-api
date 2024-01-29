@@ -25,7 +25,7 @@ jobs:
       cache-restore-keys: ${{ steps.build.outputs.cache-restore-keys }}
     steps:
       - name: Build SAM application
-        uses: govuk-one-login/github-actions/sam/build-application@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
+        uses: govuk-one-login/github-actions/sam/build-application@bau-update-codeql
         id: build
         with:
           template: infrastructure/template.yaml
@@ -48,7 +48,7 @@ jobs:
       stack-name: ${{ steps.deploy.outputs.stack-name }}
     steps:
       - name: Deploy stack
-        uses: govuk-one-login/github-actions/sam/deploy-stack@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
+        uses: govuk-one-login/github-actions/sam/deploy-stack@bau-update-codeql
         id: deploy
         with:
           sam-deployment-bucket: ${{ vars.DEPLOYMENT_ARTIFACTS_BUCKET }}

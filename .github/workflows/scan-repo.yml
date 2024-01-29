@@ -15,6 +15,16 @@ concurrency:
 permissions: {}
 
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test
+        uses: govuk-one-login/github-actions/govuk/upload-assets@bau-update-codeql
+        with:
+          pull-repository: true
+          base-path: lambdas/credential-subject
+
   coverage:
     name: Collect coverage
     if: ${{ github.event_name != 'pull_request' }}
