@@ -365,8 +365,31 @@
           }
         }
       },
-      "Next": "Response Filtering",
+      "Next": "GetParameter",
       "ResultPath": "$.saveUser"
+    },
+    "GetParameter": {
+      "Type": "Task",
+      "Next": "SQS SendMessage",
+      "Parameters": {
+        "Name": "${TxmaProducerQueueUrl}"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+      "ResultPath": "$.sqsUrl"
+    },
+    "SQS SendMessage": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sqs:sendMessage",
+      "Parameters": {
+        "MessageBody": {
+          "event_name": "suraj-test-event",
+          "user": {
+            "session_id": "suraj-test-session-id"
+          }
+        },
+        "QueueUrl.$": "$.sqsUrl.Parameter.Value"
+      },
+      "Next": "Response Filtering"
     },
     "Response Filtering": {
       "Type": "Pass",
