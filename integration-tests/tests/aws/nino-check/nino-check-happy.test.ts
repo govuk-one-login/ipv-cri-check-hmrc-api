@@ -5,6 +5,7 @@ import {
   clearAttemptsTable,
   populateTables,
 } from "../resources/dynamodb-helper";
+import { clearSQSQueue, getMessagesFromQueue } from "../resources/sqs-helper";
 
 jest.setTimeout(30_000);
 
@@ -23,6 +24,7 @@ describe("nino-check-happy", () => {
 
   let sessionTableName: string;
   let personIdentityTableName: string;
+  let sqsQueueUrl: string;
 
   let output: Partial<{
     CommonStackName: string;
@@ -31,10 +33,16 @@ describe("nino-check-happy", () => {
     NinoCheckStateMachineArn: string;
   }>;
 
+  afterAll(async () => {
+    await clearSQSQueue(sqsQueueUrl);
+  });
+
   beforeEach(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
     sessionTableName = `session-${output.CommonStackName}`;
     personIdentityTableName = `person-identity-${output.CommonStackName}`;
+    sqsQueueUrl =
+      "https://sqs.eu-west-2.amazonaws.com/562670266496/suraj-spike-sqs-AuditEventQueue-tbSC0vuCYDYB";
 
     await populateTables(
       {
@@ -93,7 +101,10 @@ describe("nino-check-happy", () => {
       output.NinoCheckStateMachineArn as string,
       input
     );
-
+    const messagesOnQueue = await getMessagesFromQueue(sqsQueueUrl);
+    const msg = JSON.parse(messagesOnQueue[0]);
+    expect(messagesOnQueue.length).toBeGreaterThan(0);
+    expect(msg.event_name).toBe("suraj-test-event");
     expect(startExecutionResult.output).toBe('{"httpStatus":200}');
   });
 
