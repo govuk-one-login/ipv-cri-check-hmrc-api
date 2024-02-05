@@ -32,10 +32,6 @@ Conditions:
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
   IsDevLikeEnvironment:
     !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
-  IsProductionEnvironment: !Equals [!Ref Environment, production]
-  IsStagingOrIntegrationEnvironment: !Or
-    - !Equals [!Ref Environment, staging]
-    - !Equals [!Ref Environment, integration]
 
 Mappings:
   # Only numeric values should be assigned here
@@ -125,22 +121,6 @@ Resources:
       Name: !Sub /${AWS::StackName}/UserAgent
       Value: govuk-one-login
       Description: User agent for HMRC requests
-
-  NinoCheckUrl:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Type: String
-      Name: !Sub /${AWS::StackName}/NinoCheckUrl
-      Description: URL for HMRC /check endpoint
-      Value: !If
-        - IsStagingOrIntegrationEnvironment
-        - "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
-        - !If
-          - IsProductionEnvironment
-          - "https://api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match"
-          - !Sub
-            - "${ImposterApiUrl}/individuals/authentication/authenticator/api/match"
-            - ImposterApiUrl: !ImportValue third-party-stubs-ImposterStubApiUrl
 
   MaxJwtTtlParameter:
     Type: AWS::SSM::Parameter
@@ -424,7 +404,6 @@ Resources:
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
         UserAttemptsTable: !Ref UserAttemptsTable
         NinoUsersTable: !Ref NinoUsersTable
-        NinoCheckUrl: !Ref NinoCheckUrl
         UserAgent: !Ref UserAgent
         BearerTokenName: !Ref BearerTokenName
         CommonStackName: !Ref CommonStackName
@@ -468,7 +447,7 @@ Resources:
               - ssm:GetParameters
               - ssm:GetParameter
             Resource:
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${NinoCheckUrl}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/NinoCheckUrl/*
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${UserAgent}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName
