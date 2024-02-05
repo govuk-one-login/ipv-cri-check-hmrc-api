@@ -8,10 +8,19 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get User Agent and API URL": "GetAPIParametersSuccess",
+          "Get URL": "GetApiUrlParameterSuccess",
+          "Get User Agent": "GetUserAgentParameterSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingDeceasedAPIFail",
           "Store Deceased Attempt": "DynamoDbQueryNoResult"
+        },
+        "UrlNotFound": {
+          "Invoke Check Session": "CheckSessionSuccess",
+          "Query User Attempts": "DynamoDbQueryNoResult",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Person Identity Table Name": "PersonIdentityTableSuccess",
+          "Query Person Identity Table": "QuerySessionSuccess",
+          "Get URL": "GetApiUrlParameterNoResult"
         },
         "HappyPathTestNoPreviousAttempt": {
           "Invoke Check Session": "CheckSessionSuccess",
@@ -19,7 +28,8 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get User Agent and API URL": "GetAPIParametersSuccess",
+          "Get URL": "GetApiUrlParameterSuccess",
+          "Get User Agent": "GetUserAgentParameterSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
@@ -34,7 +44,8 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get User Agent and API URL": "GetAPIParametersSuccess",
+          "Get URL": "GetApiUrlParameterSuccess",
+          "Get User Agent": "GetUserAgentParameterSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
@@ -63,7 +74,8 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get User Agent and API URL": "GetAPIParametersSuccess",
+          "Get URL": "GetApiUrlParameterSuccess",
+          "Get User Agent": "GetUserAgentParameterSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPIFailAuth"
         },
@@ -73,7 +85,8 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get User Agent and API URL": "GetAPIParametersSuccess",
+          "Get URL": "GetApiUrlParameterSuccess",
+          "Get User Agent": "GetUserAgentParameterSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPIInvalidURL"
         },
@@ -83,7 +96,8 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get User Agent and API URL": "GetAPIParametersSuccess",
+          "Get URL": "GetApiUrlParameterSuccess",
+          "Get User Agent": "GetUserAgentParameterSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPIFailNoRecords",
           "Store Failed Match Attempt": "DynamoDbQueryNoResult"
@@ -96,7 +110,7 @@
     "CheckSessionSuccess": {
       "0": {
         "Return": {
-          "Output": "{\"status\": \"SESSION_OK\"}"
+          "Output": "{\"status\": \"SESSION_OK\", \"clientId\": \"Test\"}"
         }
       }
     },
@@ -264,30 +278,41 @@
         }
       }
     },
-    "GetAPIParametersSuccess": {
+    "GetApiUrlParameterNoResult": {
       "0": {
         "Return": {
-          "InvalidParameters": [],
-          "Parameters": [
-            {
-              "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/pdv-matching/NinoCheckUrl",
-              "DataType": "text",
-              "LastModifiedDate": "2023-09-19T18:10:35.937Z",
-              "Name": "/pdv-matching/NinoCheckUrl",
-              "Type": "String",
-              "Value": "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match",
-              "Version": 1
-            },
-            {
-              "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/pdv-matching/UserAgent",
-              "DataType": "text",
-              "LastModifiedDate": "2023-09-19T18:10:36.048Z",
-              "Name": "/pdv-matching/UserAgent",
-              "Type": "String",
-              "Value": "govuk-one-login",
-              "Version": 1
-            }
-          ]
+          "Error": "Ssm.ParameterNotFoundException in step: Get URL.",
+          "Cause": "Service returned error code ParameterNotFound"
+        }
+      }
+    },
+    "GetApiUrlParameterSuccess": {
+      "0": {
+        "Return": {
+          "Parameter": {
+            "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/check-hmrc-cri-api/NinoCheckUrl/Test",
+            "DataType": "text",
+            "LastModifiedDate": "2023-09-19T18:10:35.937Z",
+            "Name": "/check-hmrc-cri-api/NinoCheckUrl/Test",
+            "Type": "String",
+            "Value": "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match",
+            "Version": 1
+          }
+        }
+      }
+    },
+    "GetUserAgentParameterSuccess": {
+      "0": {
+        "Return": {
+          "Parameter": {
+            "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/pdv-matching/UserAgent",
+            "DataType": "text",
+            "LastModifiedDate": "2023-09-19T18:10:36.048Z",
+            "Name": "/pdv-matching/UserAgent",
+            "Type": "String",
+            "Value": "govuk-one-login",
+            "Version": 1
+          }
         }
       }
     },
