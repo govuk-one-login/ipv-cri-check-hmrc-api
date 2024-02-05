@@ -1,4 +1,5 @@
 import {
+  DeleteParameterCommand,
   GetParameterCommand,
   PutParameterCommand,
   SSMClient,
@@ -11,6 +12,9 @@ export const getSSMParameter = (name: string) =>
   sendCommand(GetParameterCommand, { Name: name }).then(
     (result) => result.Parameter?.Value
   );
+
+export const deleteSSMParameter = (name: string) =>
+  sendCommand(DeleteParameterCommand, { Name: name });
 
 export const getSSMParameters = (...names: string[]) =>
   Promise.all(names.map((name) => getSSMParameter(name)));

@@ -42,7 +42,7 @@ describe("nino-check-happy", () => {
         items: {
           sessionId: input.sessionId,
           expiryDate: 9999999999,
-          clientId: "exampleClientId",
+          clientId: "ipv-core-stub-aws-prod",
         },
       },
       {
@@ -102,7 +102,7 @@ describe("nino-check-happy", () => {
       output.NinoCheckStateMachineArn as string,
       {
         sessionId: input.sessionId,
-        nino: "AB123003C",
+        nino: "NoCidNino",
       }
     );
 
