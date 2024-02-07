@@ -42,7 +42,7 @@ describe("nino-check-happy", () => {
         items: {
           sessionId: input.sessionId,
           expiryDate: 9999999999,
-          clientId: "exampleClientId",
+          clientId: "ipv-core-stub-aws-prod",
         },
       },
       {

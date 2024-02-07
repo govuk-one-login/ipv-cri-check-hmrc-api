@@ -133,23 +133,28 @@
               ]
             }
           ],
-          "Next": "Get User Agent and API URL"
+          "Next": "Get URL"
         }
       ],
       "Default": "Err: No user found in Person Identity"
     },
-    "Get User Agent and API URL": {
+    "Get URL": {
+      "Type": "Task",
+      "Next": "Get User Agent",
+      "Parameters": {
+        "Name.$": "States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId)"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+      "ResultPath": "$.apiURL"
+    },
+    "Get User Agent": {
       "Type": "Task",
       "Next": "Get OAuth Token",
       "Parameters": {
-        "Names": ["${UserAgent}", "${NinoCheckUrl}"]
+        "Name": "${UserAgent}"
       },
-      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameters",
-      "ResultSelector": {
-        "apiURL.$": "$.Parameters[0].Value",
-        "userAgent.$": "$.Parameters[1].Value"
-      },
-      "ResultPath": "$.apiParams"
+      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+      "ResultPath": "$.userAgent"
     },
     "Err: No user found in Person Identity": {
       "Type": "Pass",
@@ -181,8 +186,8 @@
           "lastName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
           "dob.$": "$.userDetails.Items[0].birthDates.L[0].M.value.S"
         },
-        "userAgent.$": "$.apiParams.userAgent",
-        "apiURL.$": "$.apiParams.apiURL",
+        "userAgent.$": "$.userAgent.Parameter.Value",
+        "apiURL.$": "$.apiURL.Parameter.Value",
         "oAuthToken.$": "$.oAuthToken.value"
       }
     },

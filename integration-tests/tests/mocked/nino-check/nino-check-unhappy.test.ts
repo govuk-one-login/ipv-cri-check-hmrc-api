@@ -144,4 +144,23 @@ describe("nino-check-unhappy", () => {
       '{"httpStatus":422}'
     );
   });
+
+  it("should fail when the URL parameter does not exist", async () => {
+    const input = JSON.stringify({
+      nino: "AA000003D",
+      sessionId: "12345",
+    });
+    const responseStepFunction = await sfnContainer.startStepFunctionExecution(
+      "UrlNotFound",
+      input
+    );
+
+    const results = await sfnContainer.waitFor(
+      (event: HistoryEvent) => event?.type === "ExecutionFailed",
+      responseStepFunction
+    );
+    expect(results[0].executionFailedEventDetails?.cause).toBe(
+      "Service returned error code ParameterNotFound"
+    );
+  });
 });

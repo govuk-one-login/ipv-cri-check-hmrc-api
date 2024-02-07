@@ -8,7 +8,7 @@ import {
   populateTables,
 } from "../resources/dynamodb-helper";
 import {
-  getSSMParameter,
+  deleteSSMParameter,
   updateSSMParameter,
 } from "../resources/ssm-param-helper";
 import { SecretsManager } from "@aws-sdk/client-secrets-manager";
@@ -25,18 +25,6 @@ describe("nino-check-unhappy", () => {
 
   const testUser = {
     nino: "AB123003C",
-    dob: "1948-04-23",
-    firstName: "Jim",
-    lastName: "Ferguson",
-  };
-
-  const inputDeceased = {
-    sessionId: "check-unhappy",
-    nino: "DeceasedNino",
-  };
-
-  const testDeceasedUser = {
-    nino: "DeceasedNino",
     dob: "1948-04-23",
     firstName: "Jim",
     lastName: "Ferguson",
@@ -63,7 +51,7 @@ describe("nino-check-unhappy", () => {
         items: {
           sessionId: input.sessionId,
           expiryDate: 9999999999,
-          clientId: "exampleClientId",
+          clientId: "ipv-core-stub-aws-prod",
         },
       },
       {
@@ -152,11 +140,22 @@ describe("nino-check-unhappy", () => {
     );
 
     expect(startExecutionResult.output).toBe('{"httpStatus":400}');
-
     expect(startExecutionResult.status).toBe("SUCCEEDED");
   });
 
   it("should fail when user is deceased", async () => {
+    const inputDeceased = {
+      sessionId: "check-unhappy",
+      nino: "DeceasedNino",
+    };
+
+    const testDeceasedUser = {
+      nino: "DeceasedNino",
+      dob: "1948-04-23",
+      firstName: "Jim",
+      lastName: "Ferguson",
+    };
+
     await populateTables({
       tableName: personIdentityTableName,
       items: {
@@ -203,24 +202,91 @@ describe("nino-check-unhappy", () => {
   });
 
   describe("NINO check URL is unavailable", () => {
-    const urlParameterName = `/${process.env.STACK_NAME}/NinoCheckUrl`;
-    let currentURL: string;
+    const mockNino2 = "AB123003D";
+    const mockClientId2 = `${process.env.STACK_NAME}-IntegrationTest`;
+    const mockInput2 = {
+      sessionId: "check-unhappy2",
+      nino: mockNino2,
+    };
+    const mockUser2 = {
+      nino: mockNino2,
+      dob: "1948-04-23",
+      firstName: "Tony",
+      lastName: "Jones",
+    };
+
+    const mockThirdPartyUrlSSM = `/check-hmrc-cri-api/NinoCheckUrl/${mockClientId2}`;
 
     beforeAll(async () => {
-      currentURL = (await getSSMParameter(urlParameterName)) as string;
-      await updateSSMParameter(urlParameterName, "bad-url");
+      await populateTables(
+        {
+          tableName: sessionTableName,
+          items: {
+            sessionId: mockInput2.sessionId,
+            expiryDate: 9999999999,
+            clientId: mockClientId2,
+          },
+        },
+        {
+          tableName: personIdentityTableName,
+          items: {
+            sessionId: mockInput2.sessionId,
+            nino: mockInput2.nino,
+            birthDates: [{ value: mockUser2.dob }],
+            names: [
+              {
+                nameParts: [
+                  {
+                    type: "GivenName",
+                    value: mockUser2.firstName,
+                  },
+                  {
+                    type: "FamilyName",
+                    value: mockUser2.lastName,
+                  },
+                ],
+              },
+            ],
+          },
+        }
+      );
     });
 
-    afterAll(
-      async () => await updateSSMParameter(urlParameterName, currentURL)
-    );
+    afterAll(async () => {
+      await deleteSSMParameter(mockThirdPartyUrlSSM);
+      await clearItemsFromTables(
+        {
+          tableName: sessionTableName,
+          items: { sessionId: mockInput2.sessionId },
+        },
+        {
+          tableName: personIdentityTableName,
+          items: { sessionId: mockInput2.sessionId },
+        },
+        {
+          tableName: output.NinoUsersTable as string,
+          items: { sessionId: mockInput2.sessionId },
+        }
+      );
+      await clearAttemptsTable(mockInput2.sessionId, output.UserAttemptsTable);
+    });
 
-    it("should throw an error when URL is unavailable", async () => {
+    it("should throw an error when parameter for url is missing", async () => {
       const startExecutionResult = await executeStepFunction(
         output.NinoCheckStateMachineArn as string,
-        input
+        mockInput2
       );
 
+      expect(startExecutionResult.status).toEqual("FAILED");
+    });
+
+    it("should throw an error when parameter contains an invalid url", async () => {
+      await updateSSMParameter(mockThirdPartyUrlSSM, "bad-url");
+
+      const startExecutionResult = await executeStepFunction(
+        output.NinoCheckStateMachineArn as string,
+        mockInput2
+      );
       expect(startExecutionResult.status).toEqual("FAILED");
     });
   });
