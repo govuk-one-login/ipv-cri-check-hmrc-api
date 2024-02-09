@@ -15,6 +15,7 @@ describe("check-session", () => {
   let sessionTableName: string;
 
   beforeEach(async () => {
+    //test
     output = await stackOutputs(process.env.STACK_NAME);
     sessionTableName = `session-${output.CommonStackName}`;
   });
