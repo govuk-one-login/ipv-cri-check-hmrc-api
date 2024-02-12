@@ -146,14 +146,14 @@ describe("nino-check-unhappy", () => {
   it("should fail when user is deceased", async () => {
     const inputDeceased = {
       sessionId: "check-unhappy",
-      nino: "DeceasedNino",
+      nino: "AA000003C",
     };
 
     const testDeceasedUser = {
-      nino: "DeceasedNino",
+      nino: inputDeceased.nino,
       dob: "1948-04-23",
-      firstName: "Jim",
-      lastName: "Ferguson",
+      firstName: "Error",
+      lastName: "Deceased",
     };
 
     await populateTables({
@@ -188,14 +188,44 @@ describe("nino-check-unhappy", () => {
   });
 
   it("should fail when user NINO does not match with HMRC DB", async () => {
-    const inputWithBadNino = {
-      sessionId: input.sessionId,
-      nino: "NoCidNino",
+    const inputNoCidNinoUser = {
+      sessionId: "check-unhappy",
+      nino: "AA000003C",
     };
+
+    const testNoCidNinoUser = {
+      nino: inputNoCidNinoUser.nino,
+      dob: "1948-04-23",
+      firstName: "Error",
+      lastName: "NoCidForNino",
+    };
+
+    await populateTables({
+      tableName: personIdentityTableName,
+      items: {
+        sessionId: inputNoCidNinoUser.sessionId,
+        nino: inputNoCidNinoUser.nino,
+        birthDates: [{ value: testNoCidNinoUser.dob }],
+        names: [
+          {
+            nameParts: [
+              {
+                type: "GivenName",
+                value: testNoCidNinoUser.firstName,
+              },
+              {
+                type: "FamilyName",
+                value: testNoCidNinoUser.lastName,
+              },
+            ],
+          },
+        ],
+      },
+    });
 
     const startExecutionResult = await executeStepFunction(
       output.NinoCheckStateMachineArn as string,
-      inputWithBadNino
+      inputNoCidNinoUser
     );
 
     expect(startExecutionResult.output).toBe('{"httpStatus":422}');

@@ -98,11 +98,55 @@ describe("nino-check-happy", () => {
   });
 
   it("should execute nino step function 2nd attempt", async () => {
+    const inputNoCidNinoUser = {
+      sessionId: "check-unhappy",
+      nino: "AA000003C",
+    };
+    const testNoCidNinoUser = {
+      nino: inputNoCidNinoUser.nino,
+      dob: "1948-04-23",
+      firstName: "Error",
+      lastName: "NinoDoesNotMatchCID",
+    };
+
+    await populateTables(
+      {
+        tableName: sessionTableName,
+        items: {
+          sessionId: inputNoCidNinoUser.sessionId,
+          expiryDate: 9999999999,
+          clientId: "ipv-core-stub-aws-prod",
+        },
+      },
+      {
+        tableName: personIdentityTableName,
+        items: {
+          sessionId: inputNoCidNinoUser.sessionId,
+          nino: inputNoCidNinoUser.sessionId,
+          birthDates: [{ value: testNoCidNinoUser.dob }],
+          names: [
+            {
+              nameParts: [
+                {
+                  type: "GivenName",
+                  value: testNoCidNinoUser.firstName,
+                },
+                {
+                  type: "FamilyName",
+                  value: testNoCidNinoUser.lastName,
+                },
+              ],
+            },
+          ],
+        },
+      }
+    );
+
     const firstExecutionResult = await executeStepFunction(
       output.NinoCheckStateMachineArn as string,
       {
-        sessionId: input.sessionId,
-        nino: "NoCidNino",
+        sessionId: inputNoCidNinoUser.sessionId,
+        nino: testNoCidNinoUser.nino,
       }
     );
 
