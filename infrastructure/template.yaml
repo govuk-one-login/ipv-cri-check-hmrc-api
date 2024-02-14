@@ -117,6 +117,22 @@ Resources:
         - SSMParameterReadPolicy:
             ParameterName: "*"
 
+  AuditEventFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/audit-event/src/audit-event-handler.lambdaHandler
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  CheckHmrcEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
+
   CiMappingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -413,12 +429,44 @@ Resources:
         - !Ref PermissionsBoundary
         - !Ref AWS::NoValue
 
+  CheckHmrcEventBridgeRequestSentRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Rule definition for State Machine RequestSent event
+      EventBusName: !GetAtt CheckHmrcEventBus.Name
+      State: ENABLED
+      EventPattern:
+        source:
+          - !Sub review-hc.${Environment}.account.gov.uk
+        detail-type:
+          - REQUEST_SENT
+      Targets:
+        - Id: audit-event-handler-target
+          Arn: !GetAtt AuditEventFunction.Arn
+
+  CheckHmrcEventBridgeResponseReceivedRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Rule definition for State Machine Response Received event
+      EventBusName: !GetAtt CheckHmrcEventBus.Name
+      State: ENABLED
+      EventPattern:
+        source:
+          - !Sub review-hc.${Environment}.account.gov.uk
+        detail-type:
+          - RESPONSE_RECEIVED
+      Targets:
+        - Id: audit-event-handler-target
+          Arn: !GetAtt AuditEventFunction.Arn
+
   NinoCheckStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
+        CheckHmrcEventBus: !Ref CheckHmrcEventBus
+        CheckHmrcEventBusSource: !Sub review-hc.${Environment}.account.gov.uk
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
@@ -455,6 +503,8 @@ Resources:
             TableName: !Ref NinoUsersTable
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${BearerTokenName}-??????
         - Statement:
@@ -556,6 +606,22 @@ Resources:
         - !Ref PermissionsBoundary
         - !Ref AWS::NoValue
 
+  PermissionForRequestSentEventToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AuditEventFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt CheckHmrcEventBridgeRequestSentRule.Arn
+
+  PermissionForResponseReceivedEventToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AuditEventFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt CheckHmrcEventBridgeResponseReceivedRule.Arn
+
   NinoIssueCredentialLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -572,6 +638,13 @@ Outputs:
   SsmParametersFunctionArn:
     Description: SsmParameters Lambda Function ARN
     Value: !GetAtt SsmParametersFunction.Arn
+
+  AuditEventFunctionArn:
+    Description: AuditEvent Lambda Function ARN
+    Value: !GetAtt AuditEventFunction.Arn
+  AuditEventFunctionIamRoleArn:
+    Description: Implicit IAM Role created for AuditEvent function
+    Value: !GetAtt AuditEventFunctionRole.Arn
 
   ApiGatewayId:
     Description: API GatewayID of the Nino Check HMRC CRI API

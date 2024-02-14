@@ -1,0 +1,17 @@
+{
+  "name": "audit-event",
+  "description": "",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "unit": "jest --silent",
+    "test": "npm run unit --",
+    "test:coverage": "npm run unit -- --coverage",
+    "deploy": "../../deploy.sh",
+    "compile": "tsc"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.511.0",
+    "@aws-sdk/credential-providers": "^3.511.0"
+  }
+}
