@@ -103,6 +103,20 @@ Globals:
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
 
 Resources:
+  SsmParametersFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/ssm-parameters/src/ssm-parameters-handler.lambdaHandler
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: "*"
+
   CiMappingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -113,6 +127,12 @@ Resources:
       Handler: lambdas/ci-mapping/src/ci-mapping-handler.lambdaHandler
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  CiMappingFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${CiMappingFunction}
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
   UserAgent:
     Type: AWS::SSM::Parameter
@@ -543,6 +563,10 @@ Resources:
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
 Outputs:
+  SsmParametersFunctionArn:
+    Description: SsmParameters Lambda Function ARN
+    Value: !GetAtt SsmParametersFunction.Arn
+
   ApiGatewayId:
     Description: API GatewayID of the Nino Check HMRC CRI API
     Value: !Ref PublicNinoCheckApi
