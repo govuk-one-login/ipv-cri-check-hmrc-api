@@ -3,6 +3,10 @@ Description: Digital Identity IPV CRI Pdv-Matching API
 Transform: [AWS::LanguageExtensions, AWS::Serverless-2016-10-31]
 
 Parameters:
+  AuditEventNamePrefix:
+    Description: "The audit event name prefix"
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/common-cri-parameters/AuditEventNamePrefix"
   BearerTokenName:
     Type: String
     Default: HMRCBearerToken
@@ -116,6 +120,7 @@ Resources:
       Policies:
         - SSMParameterReadPolicy:
             ParameterName: "*"
+
 
   CiMappingFunction:
     Type: AWS::Serverless::Function
@@ -617,6 +622,108 @@ Resources:
     Properties:
       Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
 
+  AuditEventShaperStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Type: EXPRESS
+      DefinitionUri: ../step-functions/audit_event_shaper.asl.json
+      DefinitionSubstitutions:
+        CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
+        CommonStackName: !Ref CommonStackName
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt AuditEventShaperStateMachineLogGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL
+      Policies:
+        # - LambdaInvokePolicy:
+        #     FunctionName: !Ref CurrentTimeFunction
+        # - DynamoDBReadPolicy:
+        #     TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - Statement:
+            Effect: Allow
+            Action: logs:*
+            Resource: "*"
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
+  AuditEventShaperStateMachineRequestSentRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !GetAtt CheckHmrcEventBus.Name
+      EventPattern:
+        source:
+          - !Sub review-hc.${Environment}.account.gov.uk
+        detail-type:
+          - REQUEST_SENT
+      Targets:
+        - Arn: !Ref AuditEventShaperStateMachine
+          Id: AuditEventShaperStateMachineRequestSentEventTarget
+          RoleArn: !GetAtt AuditEventShaperEventBridgeRequestSentRuleRole.Arn
+
+  AuditEventShaperStateMachineResponseReceivedRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !GetAtt CheckHmrcEventBus.Name
+      EventPattern:
+        source:
+          - !Sub review-hc.${Environment}.account.gov.uk
+        detail-type:
+          - RESPONSE_RECEIVED
+      State: ENABLED
+      Targets:
+        - Arn: !Ref AuditEventShaperStateMachine
+          Id: AuditEventShaperStateMachineResponseReceivedTarget
+          RoleArn: !GetAtt AuditEventShaperStateMachineResponseReceivedRuleRole.Arn
+
+  AuditEventShaperEventBridgeRequestSentRuleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+      Policies:
+        - PolicyName: AuditEventShapeRequestSentRuleRoleStartExecutionPolicy
+          PolicyDocument:
+            Statement:
+              - Action: states:StartExecution
+                Effect: Allow
+                Resource: !Ref AuditEventShaperStateMachine
+
+  AuditEventShaperStateMachineResponseReceivedRuleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+      Policies:
+        - PolicyName: AuditEventShaperResponseReceivedRuleRoleStartExecutionPolicy
+          PolicyDocument:
+            Statement:
+              - Action: states:StartExecution
+                Effect: Allow
+                Resource: !Ref AuditEventShaperStateMachine
+
+  AuditEventShaperStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEventShaper-state-machine-logs
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 Outputs:
   SsmParametersFunctionArn:
     Description: SsmParameters Lambda Function ARN
