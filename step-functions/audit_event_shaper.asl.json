@@ -1,17 +1,117 @@
 {
   "Comment": "A Hello World example demonstrating various state types of the Amazon States Language",
-  "StartAt": "Pass",
+  "StartAt": "Get Audit name components",
   "States": {
-    "Pass": {
-      "Comment": "A Pass state passes its input to its output, without performing work. Pass states are useful when constructing and debugging state machines.",
+    "Get Audit name components": {
       "Type": "Pass",
       "Parameters": {
-        "auditUserContext.$": "$$.Execution.Input.detail"
+        "prefix.$": "$$.Execution.Input.detail.auditPrefix",
+        "type.$": "$$.Execution.Input.detail-type"
       },
-      "Next": "Finish"
+      "ResultPath": "$.audit",
+      "Next": "Parallel"
     },
-    "Finish": {
+    "Parallel": {
+      "Type": "Parallel",
+      "Next": "Is Restricted Info Present?",
+      "Branches": [
+        {
+          "StartAt": "Get AuditContext Restricted Info",
+          "States": {
+            "Get AuditContext Restricted Info": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "FunctionName": "${CredentialSubjectFunctionArn}",
+                "Payload.$": "$$.Execution.Input.detail"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2
+                }
+              ],
+              "ResultSelector": {
+                "value.$": "$.Payload",
+                "containsUserInfo.$": "States.JsonToString($.Payload)"
+              },
+              "ResultPath": "$.restricted",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Time In Milliseconds",
+          "States": {
+            "Time In Milliseconds": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload": {
+                  "dateTime.$": "$$.State.EnteredTime"
+                },
+                "FunctionName": "${TimeInMillisecondsFunctionArn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2
+                }
+              ],
+              "ResultSelector": {
+                "value.$": "$.Payload"
+              },
+              "ResultPath": "$.epochMilliseconds",
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "Is Restricted Info Present?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$[0].restricted.containsUserInfo",
+          "StringEquals": "{}",
+          "Next": "Add User Context"
+        }
+      ],
+      "Default": "Audit User Context With Restricted Fields"
+    },
+    "Add User Context": {
       "Type": "Pass",
+      "Parameters": {
+        "event_name.$": "States.Format('{}_{}', $[0].audit.prefix, $[0].audit.type)",
+        "event_timestamp_ms.$": "$[1].epochMilliseconds.value",
+        "component_id.$": "$$.Execution.Input.detail.issuer",
+        "user.$": "$$.Execution.Input.detail.user"
+      },
+      "End": true
+    },
+    "Audit User Context With Restricted Fields": {
+      "Type": "Pass",
+      "Parameters": {
+        "event_name.$": "States.Format('{}_{}', $[0].audit.prefix, $[0].audit.type)",
+        "event_timestamp_ms.$": "$[1].epochMilliseconds.value",
+        "component_id.$": "$$.Execution.Input.detail.issuer",
+        "restricted.$": "$[0].restricted.value",
+        "user.$": "$$.Execution.Input.detail.user"
+      },
       "End": true
     }
   }

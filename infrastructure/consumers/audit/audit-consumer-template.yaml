@@ -1,0 +1,106 @@
+# AWSTemplateFormatVersion: '2010-09-09'
+# Transform: AWS::Serverless-2016-10-31
+
+# Description: <your stack description here>
+
+# # Available top-level fields are listed in code completion
+
+# # Add Resources Here: uncomment the following lines
+# Resources:
+#   AuditEventShaperStateMachineRequestSentRule:
+#     Type: AWS::Events::Rule
+#     Properties:
+#       EventBusName: !GetAtt CheckHmrcEventBus.Name
+#       EventPattern:
+#         source:
+#           - !Sub review-hc.${Environment}.account.gov.uk
+#         detail-type:
+#           - REQUEST_SENT
+#       Targets:
+#         - Arn: !Ref AuditEventShaperStateMachine
+#           Id: AuditEventShaperStateMachineRequestSentEventTarget
+#           RoleArn: !GetAtt AuditEventShaperEventBridgeRequestSentRuleRole.Arn
+#   AuditEventShaperStateMachineResponseReceivedRule:
+#     Type: AWS::Events::Rule
+#     Properties:
+#       EventBusName: !GetAtt CheckHmrcEventBus.Name
+#       EventPattern:
+#         source:
+#           - !Sub review-hc.${Environment}.account.gov.uk
+#         detail-type:
+#           - RESPONSE_RECEIVED
+#       State: ENABLED
+#       Targets:
+#         - Arn: !Ref AuditEventShaperStateMachine
+#           Id: AuditEventShaperStateMachineResponseReceivedTarget
+#           RoleArn: !GetAtt AuditEventShaperStateMachineResponseReceivedRuleRole.Arn
+
+#   AuditEventShaperEventBridgeRequestSentRuleRole:
+#     Type: AWS::IAM::Role
+#     Properties:
+#       AssumeRolePolicyDocument:
+#         Version: 2012-10-17
+#         Statement:
+#           - Action:
+#               - sts:AssumeRole
+#             Effect: Allow
+#             Principal:
+#               Service:
+#                 - events.amazonaws.com
+#       Policies:
+#         - PolicyName: AuditEventShapeRequestSentRuleRoleStartExecutionPolicy
+#           PolicyDocument:
+#             Statement:
+#               - Action: states:StartExecution
+#                 Effect: Allow
+#                 Resource: !Ref AuditEventShaperStateMachine
+
+#   AuditEventShaperStateMachineResponseReceivedRuleRole:
+#     Type: AWS::IAM::Role
+#     Properties:
+#       AssumeRolePolicyDocument:
+#         Version: 2012-10-17
+#         Statement:
+#           - Action:
+#               - sts:AssumeRole
+#             Effect: Allow
+#             Principal:
+#               Service:
+#                 - events.amazonaws.com
+#       Policies:
+#         - PolicyName: AuditEventShaperResponseReceivedRuleRoleStartExecutionPolicy
+#           PolicyDocument:
+#             Statement:
+#               - Action: states:StartExecution
+#                 Effect: Allow
+#                 Resource: !Ref AuditEventShaperStateMachine
+
+#   AuditEventShaperStateMachine:
+#     Type: AWS::Serverless::StateMachine
+#     Properties:
+#       Type: EXPRESS
+#       DefinitionUri: ../step-functions/audit_event_shaper.asl.json
+#       DefinitionSubstitutions:
+#         CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
+#         CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
+#         TimeInMillisecondsFunctionArn: !GetAtt TimeInMillisecondsFunction.Arn
+#         CommonStackName: !Ref CommonStackName
+#       Logging:
+#         Destinations:
+#           - CloudWatchLogsLogGroup:
+#               LogGroupArn: !GetAtt AuditEventShaperStateMachineLogGroup.Arn
+#         IncludeExecutionData: True
+#         Level: ALL
+#       Policies:
+#         - LambdaInvokePolicy:
+#             FunctionName: !Ref CredentialSubjectFunction
+#         - LambdaInvokePolicy:
+#             FunctionName: !Ref TimeInMillisecondsFunction
+#         - Statement:
+#             Effect: Allow
+#             Action: logs:*
+#             Resource: "*"
+#       PermissionsBoundary: !If
+#         - UsePermissionsBoundary
+#         - !Ref PermissionsBoundary
+#         - !Ref AWS::NoValue

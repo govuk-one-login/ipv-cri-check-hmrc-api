@@ -35,8 +35,15 @@ export class CredentialSubjectHandler implements LambdaInterface {
   private convertToCredentialSubjectNames = (
     event: UserInfoEvent
   ): Array<NamePart> => {
-    return event?.userInfoEvent?.Items[0]?.names?.L[0]?.M?.nameParts?.L?.map(
-      (part) => ({ type: part.M.type.S, value: part.M.value.S }) as NamePart
+    const nameParts =
+      event?.userInfoEvent?.Items[0]?.names?.L[0]?.M?.nameParts?.L;
+    return (
+      (nameParts?.length &&
+        nameParts.map((part) => ({
+          type: part.M.type.S,
+          value: part.M.value.S,
+        }))) ??
+      []
     );
   };
 }
