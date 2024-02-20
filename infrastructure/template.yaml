@@ -648,6 +648,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/audit_event_shaper.asl.json
       DefinitionSubstitutions:
+        CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
         CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
         CommonStackName: !Ref CommonStackName
       Logging:
@@ -657,10 +658,8 @@ Resources:
         IncludeExecutionData: True
         Level: ALL
       Policies:
-        # - LambdaInvokePolicy:
-        #     FunctionName: !Ref CurrentTimeFunction
-        # - DynamoDBReadPolicy:
-        #     TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CredentialSubjectFunction
         - Statement:
             Effect: Allow
             Action: logs:*

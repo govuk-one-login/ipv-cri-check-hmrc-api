@@ -1,16 +1,80 @@
 {
   "Comment": "A Hello World example demonstrating various state types of the Amazon States Language",
-  "StartAt": "Pass",
+  "StartAt": "Input",
   "States": {
-    "Pass": {
+    "Input": {
       "Comment": "A Pass state passes its input to its output, without performing work. Pass states are useful when constructing and debugging state machines.",
       "Type": "Pass",
       "Parameters": {
-        "auditUserContext.$": "$$.Execution.Input.detail"
+        "auditUserContext.$": "$$.Execution.Input.detail",
+        "eventType.$": "$$.Execution.Input.detail-type"
       },
-      "Next": "Finish"
+      "Next": "Is UserInfo or nino Present?"
     },
-    "Finish": {
+    "Is UserInfo or nino Present?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Or": [
+            {
+              "Variable": "$.States.JsonToString($.auditUserContext.userInfo)",
+              "IsPresent": true
+            },
+            {
+              "Variable": "$.States.JsonToString($.auditUserContext.nino)",
+              "IsPresent": true
+            }
+          ],
+          "Next": "add session context only"
+        }
+      ],
+      "Default": "Create AuditContext",
+      "OutputPath": "$"
+    },
+    "add session context only": {
+      "Type": "Pass",
+      "Parameters": {
+        "user.$": "$.auditUserContext.user",
+        "eventType.$": "$.eventType"
+      },
+      "Next": "done"
+    },
+    "Create AuditContext": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:eu-west-2:562670266496:function:olakunle-check-hmrc-api-CredentialSubjectFunction-0DL9LU0gXtZt",
+        "Payload": {
+          "userInfoEvent.$": "$.auditUserContext.userInfo",
+          "nino.$": "$.auditUserContext.nino"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "ResultPath": "$.restricted",
+      "Next": "add session context  and UserInfo to audit"
+    },
+    "add session context  and UserInfo to audit": {
+      "Type": "Pass",
+      "Parameters": {
+        "restricted.$": "$.restricted.Payload",
+        "user.$": "$.auditUserContext.user",
+        "eventType.$": "$.eventType"
+      },
+      "Next": "done"
+    },
+    "done": {
       "Type": "Pass",
       "End": true
     }
