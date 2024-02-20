@@ -124,7 +124,7 @@
         }
       },
       "Resource": "arn:aws:states:::aws-sdk:dynamodb:query",
-      "ResultPath": "$.userDetails"
+      "ResultPath": "$.userInfo"
     },
     "User Exists?": {
       "Type": "Choice",
@@ -132,21 +132,21 @@
         {
           "And": [
             {
-              "Variable": "$.userDetails.Count",
+              "Variable": "$.userInfo.Count",
               "NumericGreaterThan": 0
             },
             {
               "And": [
                 {
-                  "Variable": "$.userDetails.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
+                  "Variable": "$.userInfo.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
                   "IsPresent": true
                 },
                 {
-                  "Variable": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
+                  "Variable": "$.userInfo.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
                   "IsPresent": true
                 },
                 {
-                  "Variable": "$.userDetails.Items[0].birthDates.L[0].M.value.S",
+                  "Variable": "$.userInfo.Items[0].birthDates.L[0].M.value.S",
                   "IsPresent": true
                 }
               ]
@@ -185,14 +185,15 @@
           "sessionId.$": "$.sessionId",
           "nino.$": "$.nino",
           "userDetails": {
-            "firstName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
-            "lastName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
-            "dob.$": "$.userDetails.Items[0].birthDates.L[0].M.value.S"
+            "firstName.$": "$.userInfo.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
+            "lastName.$": "$.userInfo.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
+            "dob.$": "$.userInfo.Items[0].birthDates.L[0].M.value.S"
           },
           "userAgent.$": "$.parameters.UserAgent",
           "apiURL.$": "$.parameters.CheckUrl",
           "oAuthToken.$": "$.oAuthToken.value",
-          "user.$": "$.sessionCheck"
+          "user.$": "$.sessionCheck.userAuditInfo",
+          "userInfo.$": "$.userInfo"
         }
       },
       "Next": "Successful match?",

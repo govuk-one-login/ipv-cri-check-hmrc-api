@@ -121,7 +121,6 @@ Resources:
         - SSMParameterReadPolicy:
             ParameterName: "*"
 
-
   CiMappingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -424,6 +423,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
+        AuditEventPrefix: !Ref AuditEventNamePrefix
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
@@ -460,6 +460,8 @@ Resources:
             TableName: !Ref NinoUsersTable
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${BearerTokenName}-??????
         - Statement:
@@ -628,6 +630,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/audit_event_shaper.asl.json
       DefinitionSubstitutions:
+        CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
         CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
         CommonStackName: !Ref CommonStackName
       Logging:
@@ -637,10 +640,8 @@ Resources:
         IncludeExecutionData: True
         Level: ALL
       Policies:
-        # - LambdaInvokePolicy:
-        #     FunctionName: !Ref CurrentTimeFunction
-        # - DynamoDBReadPolicy:
-        #     TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CredentialSubjectFunction
         - Statement:
             Effect: Allow
             Action: logs:*

@@ -87,11 +87,13 @@
       "Parameters": {
         "status": "SESSION_OK",
         "clientId.$": "$.sessionQuery.items[0].clientId.S",
-        "govuk_signin_journey_id.$": "$.sessionQuery.items[0].clientSessionId.S",
-        "ip_address.$": "$.sessionQuery.items[0].clientIpAddress.S",
-        "persistent_session_id.$": "$.sessionQuery.items[0].persistentSessionId.S",
-        "session_id.$": "$.sessionQuery.items[0].sessionId.S",
-        "user_id.$": "$.sessionQuery.items[0].subject.S"
+        "userAuditInfo": {
+          "govuk_signin_journey_id.$": "$.sessionQuery.items[0].clientSessionId.S",
+          "ip_address.$": "$.sessionQuery.items[0].clientIpAddress.S",
+          "persistent_session_id.$": "$.sessionQuery.items[0].persistentSessionId.S",
+          "session_id.$": "$.sessionQuery.items[0].sessionId.S",
+          "user_id.$": "$.sessionQuery.items[0].subject.S"
+        }
       }
     },
     "Err: No sessionId provided": {
