@@ -22,7 +22,7 @@
     "@aws-lambda-powertools/tracer": "1.14.2",
     "esbuild": "0.19.5",
     "@aws-lambda-powertools/parameters": "1.17.0",
-    "@aws-sdk/client-ssm": "3.363.0"
+    "@aws-sdk/client-ssm": "3.515.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
