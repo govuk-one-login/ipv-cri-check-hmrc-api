@@ -86,6 +86,21 @@ describe("nino-check-happy", () => {
       }
     );
     await clearAttemptsTable(input.sessionId, output.UserAttemptsTable);
+    await clearItemsFromTables(
+      {
+        tableName: sessionTableName,
+        items: { sessionId: "check-unhappy" },
+      },
+      {
+        tableName: personIdentityTableName,
+        items: { sessionId: "check-unhappy" },
+      },
+      {
+        tableName: output.NinoUsersTable as string,
+        items: { sessionId: "check-unhappy" },
+      }
+    );
+    await clearAttemptsTable("check-unhappy", output.UserAttemptsTable);
   });
 
   it("should execute nino step function 1st attempt", async () => {
