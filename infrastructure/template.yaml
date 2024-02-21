@@ -427,6 +427,7 @@ Resources:
         UserAgent: !Ref UserAgent
         BearerTokenName: !Ref BearerTokenName
         CommonStackName: !Ref CommonStackName
+        SsmParametersFunction: !Ref SsmParametersFunction
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -434,6 +435,8 @@ Resources:
         IncludeExecutionData: True
         Level: ALL
       Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref SsmParametersFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref CreateAuthCodeFunction
         - LambdaInvokePolicy:
@@ -501,6 +504,7 @@ Resources:
         CommonStackName: !Ref CommonStackName
         NinoUsersTable: !Ref NinoUsersTable
         JwtSignerFunction: !GetAtt JwtSignerFunction.Arn
+        SsmParametersFunction: !Ref SsmParametersFunction
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -508,6 +512,8 @@ Resources:
         IncludeExecutionData: True
         Level: ALL
       Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref SsmParametersFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref CiMappingFunction
         - LambdaInvokePolicy:
