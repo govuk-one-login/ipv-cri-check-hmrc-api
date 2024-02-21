@@ -7,16 +7,18 @@ const CACHE_TTL_IN_SECONDS =
 
 export class SsmParametersHandler implements LambdaInterface {
   public async handler(
-    event: string[],
+    event: { parameters: string[] },
     _context: unknown
   ): Promise<Parameter[]> {
-    if (!Array.isArray(event)) {
+    if (!Array.isArray(event.parameters)) {
       throw new Error("Input must be string array");
     }
 
     const { _errors: errors, ...parameters } =
       await getParametersByName<string>(
-        Object.fromEntries(event.map((parameter) => [parameter, {}])),
+        Object.fromEntries(
+          event.parameters.map((parameter) => [parameter, {}])
+        ),
         { maxAge: CACHE_TTL_IN_SECONDS, throwOnError: false }
       );
 
@@ -26,9 +28,9 @@ export class SsmParametersHandler implements LambdaInterface {
       );
     }
 
-    return Object.entries(parameters).map(([name, value]) => ({
+    return event.parameters.map((name) => ({
       Name: name,
-      Value: value,
+      Value: parameters[name],
     }));
   }
 }
