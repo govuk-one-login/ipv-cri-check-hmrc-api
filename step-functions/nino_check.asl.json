@@ -197,9 +197,7 @@
       "Next": "Successful match?",
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Err: Matching Lambda Exception"
         }
       ],

@@ -84,33 +84,31 @@
       }
     }
   },
-
   "MockedResponses": {
     "FetchSSMParamsSuccess": {
       "0": {
         "Return": {
           "Payload": [
             {
-              "Name":"/common-cri-api/PersonIdentityTableName",
-              "Value":"person-identity-common-cri-api"
+              "Name": "/common-cri-api/PersonIdentityTableName",
+              "Value": "person-identity-common-cri-api"
             },
             {
-              "Name":"/check-hmrc-cri-api-suraj-cache/UserAgent",
-              "Value":"govuk-one-login"
+              "Name": "/check-hmrc-cri-api-suraj-cache/UserAgent",
+              "Value": "govuk-one-login"
             },
             {
-              "Name":"/common-cri-api/SessionTableName",
-              "Value":"session-common-cri-api"
+              "Name": "/common-cri-api/SessionTableName",
+              "Value": "session-common-cri-api"
             },
             {
-              "Name":"/check-hmrc-cri-api/NinoCheckUrl/ipv-core-stub-aws-prod",
-              "Value":"http://imposter-url"
+              "Name": "/check-hmrc-cri-api/NinoCheckUrl/ipv-core-stub-aws-prod",
+              "Value": "http://imposter-url"
             }
           ]
         }
       }
     },
-
     "CheckSessionSuccess": {
       "0": {
         "Return": {
