@@ -93,9 +93,7 @@ describe("ssm-parameters-handler", () => {
   it("should throw error when given good SSM parameter and a bad SSM parameter", async () => {
     jest
       .spyOn(SSMProvider.prototype, "getParametersByName")
-      .mockImplementation((_) =>
-        Promise.resolve({ _errors: ["BadParameter"] })
-      );
+      .mockImplementation(() => Promise.resolve({ _errors: ["BadParameter"] }));
 
     await expect(
       ssmParametersHandler.handler(

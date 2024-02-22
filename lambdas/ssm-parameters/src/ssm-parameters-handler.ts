@@ -2,7 +2,7 @@ import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 import { Parameter } from "@aws-sdk/client-ssm";
 
-const CACHE_TTL_IN_SECONDS =
+const cacheTtlInSecond =
   Number(process.env.POWERTOOLS_PARAMETERS_MAX_AGE) || 300;
 
 export class SsmParametersHandler implements LambdaInterface {
@@ -19,7 +19,7 @@ export class SsmParametersHandler implements LambdaInterface {
         Object.fromEntries(
           event.parameters.map((parameter) => [parameter, {}])
         ),
-        { maxAge: CACHE_TTL_IN_SECONDS, throwOnError: false }
+        { maxAge: cacheTtlInSecond, throwOnError: false }
       );
 
     if (errors?.length) {
