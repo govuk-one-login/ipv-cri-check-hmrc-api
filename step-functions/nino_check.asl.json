@@ -204,7 +204,15 @@
       "ResultSelector": {
         "payload.$": "$.Payload"
       },
-      "ResultPath": "$.hmrc_response"
+      "ResultPath": "$.hmrc_response",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "BackoffRate": 2,
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3
+        }
+      ]
     },
     "Err: Matching Lambda Exception": {
       "Type": "Fail"
