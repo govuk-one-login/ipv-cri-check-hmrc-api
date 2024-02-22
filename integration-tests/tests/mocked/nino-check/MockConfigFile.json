@@ -15,6 +15,15 @@
           "Set Auth Code for Session": "SetAuthCodeSuccess",
           "Save NINO & sessionId to nino-users table": "SaveNinoSuccess"
         },
+        "APIFailRetryFailTest": {
+          "Invoke Check Session": "CheckSessionSuccess",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
+          "Query User Attempts": "DynamoDbQueryNoResult",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Query Person Identity Table": "QuerySessionSuccess",
+          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call Matching API": "CallMatchingAPIRetryThenFail"
+        },
         "DeceasedTest": {
           "Invoke Check Session": "CheckSessionSuccess",
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
@@ -114,6 +123,22 @@
               "lastName": "Ferguson",
               "dateOfBirth": "1948-04-23",
               "nino": "AA000003D"
+            }
+          }
+        }
+      }
+    },
+    "CallMatchingAPIRetryThenFail": {
+      "0-2": {
+        "Throw": {
+          "Error": "InternalServerException",
+          "Cause": "dummy-cause"
+        },
+        "3": {
+          "Return": {
+            "Payload": {
+              "status": "dummy-status",
+              "body": "dummy-error"
             }
           }
         }

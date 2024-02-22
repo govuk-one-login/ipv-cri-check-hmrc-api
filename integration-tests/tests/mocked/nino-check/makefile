@@ -89,3 +89,10 @@ APIFailRetrySuccessTest:
 	--state-machine ${STATE_MACHINE_ARN}#APIFailRetrySuccessTest \
 	--input '{ "sessionId": "12345", "nino": "AA000003D" }' \
 	--no-cli-pager
+APIFailRetryFailTest:
+	aws stepfunctions start-execution \
+	--endpoint http://localhost:8083 \
+	--name happyPathExecution \
+	--state-machine ${STATE_MACHINE_ARN}#APIFailRetryFailTest \
+	--input '{ "sessionId": "12345", "nino": "AA000003D" }' \
+	--no-cli-pager
