@@ -20,7 +20,9 @@ describe("ssm-parameters-handler", () => {
     ssmProvider.getParametersByName.mockResolvedValueOnce(parameters);
 
     const result = await ssmParametersHandler.handler(
-      ["ssmTestName"],
+      {
+        parameters: ["ssmTestName"],
+      },
       {} as Context
     );
 
@@ -39,7 +41,10 @@ describe("ssm-parameters-handler", () => {
     };
     ssmProvider.getParametersByName.mockResolvedValueOnce(parameters);
 
-    const result = await ssmParametersHandler.handler([], {} as Context);
+    const result = await ssmParametersHandler.handler(
+      { parameters: [] },
+      {} as Context
+    );
 
     expect(ssmProvider.getParametersByName).toHaveBeenCalledTimes(1);
     expect(result).toStrictEqual([]);
@@ -53,7 +58,12 @@ describe("ssm-parameters-handler", () => {
       );
 
     await expect(
-      ssmParametersHandler.handler(["BadParameter"], {} as Context)
+      ssmParametersHandler.handler(
+        {
+          parameters: ["BadParameter"],
+        },
+        {} as Context
+      )
     ).rejects.toThrow(
       new Error("Following SSM parameters do not exist: BadParameter")
     );
@@ -69,7 +79,7 @@ describe("ssm-parameters-handler", () => {
 
     await expect(
       ssmParametersHandler.handler(
-        ["BadParameter", "SecondBadParameter"],
+        { parameters: ["BadParameter", "SecondBadParameter"] },
         {} as Context
       )
     ).rejects.toThrow(
@@ -83,13 +93,11 @@ describe("ssm-parameters-handler", () => {
   it("should throw error when given good SSM parameter and a bad SSM parameter", async () => {
     jest
       .spyOn(SSMProvider.prototype, "getParametersByName")
-      .mockImplementation((parameters) =>
-        Promise.resolve({ _errors: ["BadParameter"] })
-      );
+      .mockImplementation(() => Promise.resolve({ _errors: ["BadParameter"] }));
 
     await expect(
       ssmParametersHandler.handler(
-        ["GoodParameter", "BadParameter"],
+        { parameters: ["GoodParameter", "BadParameter"] },
         {} as Context
       )
     ).rejects.toThrow(
@@ -100,7 +108,10 @@ describe("ssm-parameters-handler", () => {
 
   it("should throw error when not given an array", async () => {
     await expect(
-      ssmParametersHandler.handler({} as string[], {} as Context)
+      ssmParametersHandler.handler(
+        { parameters: "hello" } as never,
+        {} as Context
+      )
     ).rejects.toThrow(new Error("Input must be string array"));
     expect(ssmProvider.getParametersByName).toHaveBeenCalledTimes(0);
   });

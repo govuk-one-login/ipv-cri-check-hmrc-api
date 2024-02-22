@@ -3,12 +3,7 @@
     "nino_issue_credential": {
       "TestCases": {
         "HappyPath": {
-          "Fetch Max JWT TTL": "FetchMaxJWTTTL",
-          "Fetch JWT TTL Unit": "FetchJWTTTLUnit",
-          "Fetch VC KMS Signing Key": "FetchVCKMSSigningKey",
-          "Fetch Issuer Value": "FetchIssuerValue",
-          "Fetch Person Identity Table Name": "FetchPersonIdentityTableName",
-          "Fetch Session Table Name": "FetchSessionTableName",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query Session Item": "QuerySessionItem",
           "Fetch details from person identity": "FetchDetailsFromPersonIdentity",
           "Fetch Nino": "FetchNino",
@@ -18,19 +13,13 @@
           "Sign VC claimsSet": "SignVCClaimSet"
         },
         "UnHappyPath": {
-          "Fetch Max JWT TTL": "FetchMaxJWTTTL",
-          "Fetch JWT TTL Unit": "FetchJWTTTLUnit",
-          "Fetch VC KMS Signing Key": "FetchVCKMSSigningKey",
-          "Fetch Issuer Value": "FetchIssuerValue",
-          "Fetch Person Identity Table Name": "FetchPersonIdentityTableName",
-          "Fetch Session Table Name": "FetchSessionTableName",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query Session Item": "QuerySessionItem",
           "Fetch details from person identity": "FetchDetailsFromPersonIdentity",
           "Fetch Nino": "FetchNino",
           "Create Credential Subject": "CreateCredentialSubject",
           "Fetch exp time and NBF": "FetchExpTimeAndNBF",
           "Fetch Failed Attempts": "FetchExceededFailedAttempts",
-          "Fetch Contra Indicator Mappings": "FetchContraIndicatorMappings",
           "Fetch CI": "FetchCI",
           "Sign VC claimsSet": "SignVCClaimSet"
         }
@@ -38,93 +27,39 @@
     }
   },
   "MockedResponses": {
-    "FetchMaxJWTTTL": {
+    "FetchSSMParamsSuccess": {
       "0": {
         "Return": {
-          "Parameter": {
-            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/rahul-check-hmrc/MaxJwtTtl",
-            "DataType": "text",
-            "LastModifiedDate": "2023-11-10T10:49:46.775Z",
-            "Name": "/rahul-check-hmrc/MaxJwtTtl",
-            "Type": "String",
-            "Value": "2",
-            "Version": 60
-          }
-        }
-      }
-    },
-    "FetchJWTTTLUnit": {
-      "0": {
-        "Return": {
-          "Parameter": {
-            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/rahul-check-hmrc/JwtTtlUnit",
-            "DataType": "text",
-            "LastModifiedDate": "2023-11-10T10:49:46.910Z",
-            "Name": "/rahul-check-hmrc/JwtTtlUnit",
-            "Type": "String",
-            "Value": "HOURS",
-            "Version": 61
-          }
-        }
-      }
-    },
-    "FetchVCKMSSigningKey": {
-      "0": {
-        "Return": {
-          "Parameter": {
-            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/common-cri-api/verifiableCredentialKmsSigningKeyId",
-            "DataType": "text",
-            "LastModifiedDate": "2023-09-29T14:33:14.960Z",
-            "Name": "/common-cri-api/verifiableCredentialKmsSigningKeyId",
-            "Type": "String",
-            "Value": "0976c11e-8ef3-4659-b7f2-ee0b842b85bd",
-            "Version": 1
-          }
-        }
-      }
-    },
-    "FetchIssuerValue": {
-      "0": {
-        "Return": {
-          "Parameter": {
-            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/common-cri-api/verifiableCredentialKmsSigningKeyId",
-            "DataType": "text",
-            "LastModifiedDate": "2023-09-29T14:33:14.960Z",
-            "Name": "/common-cri-api/verifiableCredentialKmsSigningKeyId",
-            "Type": "String",
-            "Value": "0976c11e-8ef3-4659-b7f2-ee0b842b85bd",
-            "Version": 1
-          }
-        }
-      }
-    },
-    "FetchPersonIdentityTableName": {
-      "0": {
-        "Return": {
-          "Parameter": {
-            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/common-cri-api/PersonIdentityTableName",
-            "DataType": "text",
-            "LastModifiedDate": "2023-09-29T14:33:14.785Z",
-            "Name": "/common-cri-api/PersonIdentityTableName",
-            "Type": "String",
-            "Value": "person-identity-common-cri-api",
-            "Version": 1
-          }
-        }
-      }
-    },
-    "FetchSessionTableName": {
-      "0": {
-        "Return": {
-          "Parameter": {
-            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/common-cri-api/SessionTableName",
-            "DataType": "text",
-            "LastModifiedDate": "2023-09-29T14:33:14.925Z",
-            "Name": "/common-cri-api/SessionTableName",
-            "Type": "String",
-            "Value": "session-common-cri-api",
-            "Version": 1
-          }
+          "Payload": [
+            {
+              "Name": "/common-cri-api/SessionTableName",
+              "Value": "dummy-value"
+            },
+            {
+              "Name": "/check-hmrc-cri-api-suraj-cache/MaxJwtTtl",
+              "Value": "dummy-value"
+            },
+            {
+              "Name": "/check-hmrc-cri-api-suraj-cache/JwtTtlUnit",
+              "Value": "dummy-value"
+            },
+            {
+              "Name": "/common-cri-api/verifiableCredentialKmsSigningKeyId",
+              "Value": "dummy-value"
+            },
+            {
+              "Name": "/common-cri-api/PersonIdentityTableName",
+              "Value": "dummy-value"
+            },
+            {
+              "Name": "/check-hmrc-cri-api/contraindicationMappings",
+              "Value": "dummy-value"
+            },
+            {
+              "Name": "/common-cri-api/verifiable-credential/issuer",
+              "Value": "dummy-value"
+            }
+          ]
         }
       }
     },
@@ -403,21 +338,6 @@
             }
           ],
           "ScannedCount": 2
-        }
-      }
-    },
-    "FetchContraIndicatorMappings": {
-      "0": {
-        "Return": {
-          "Parameter": {
-            "Arn": "arn:aws:ssm:eu-west-2:562670266496:parameter/check-hmrc-cri-api/contraindicationMappings",
-            "DataType": "text",
-            "LastModifiedDate": "2024-01-08T12:08:17.491Z",
-            "Name": "/check-hmrc-cri-api/contraindicationMappings",
-            "Type": "String",
-            "Value": "DOB does not exist in the request,First Name does not exist in the request,Last Name does not exist in the request,Nino does not exist in the request,DOB does not exist in CID,First Name does not exist in CID,Last Name does not exist in CID,Nino does not exist in CID,CID returned no record:D02||DOB does not match CID,First Name does not match CID,Last Name does not match CID,NINO does not match CID,Matching produced more than one match:N01||Request to create account for a deceased user:T03",
-            "Version": 2
-          }
         }
       }
     },

@@ -7,7 +7,7 @@ const decode = (value: string) =>
   Buffer.from(value, "base64").toString("utf-8");
 
 const expectedPayload = {
-  iss: "0976c11e-8ef3-4659-b7f2-ee0b842b85bd",
+  iss: "dummy-value",
   jti: expect.any(String),
   sub: "test",
   vc: {

@@ -27,7 +27,38 @@
           "Next": "Err: Invalid Session"
         }
       ],
-      "Default": "Query User Attempts"
+      "Default": "Fetch SSM Parameters"
+    },
+    "Fetch SSM Parameters": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${SsmParametersFunction}",
+        "Payload": {
+          "parameters.$": "States.Array('/${CommonStackName}/PersonIdentityTableName', '${UserAgent}', '/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId))"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Query User Attempts",
+      "ResultPath": "$.parameters",
+      "ResultSelector": {
+        "PersonIdentityTableName.$": "$.Payload[0].Value",
+        "UserAgent.$": "$.Payload[1].Value",
+        "SessionTableName.$": "$.Payload[2].Value",
+        "CheckUrl.$": "$.Payload[3].Value"
+      }
     },
     "Err: Invalid Session": {
       "Type": "Pass",
@@ -60,7 +91,7 @@
           "Next": "User has more than 2 attempts?"
         }
       ],
-      "Default": "Person Identity Table Name"
+      "Default": "Query Person Identity Table"
     },
     "User has more than 2 attempts?": {
       "Type": "Choice",
@@ -71,7 +102,7 @@
           "Next": "Err: Attempts exceeded"
         }
       ],
-      "Default": "Person Identity Table Name"
+      "Default": "Query Person Identity Table"
     },
     "Err: Attempts exceeded": {
       "Type": "Pass",
@@ -80,23 +111,11 @@
         "httpStatus": 200
       }
     },
-    "Person Identity Table Name": {
-      "Type": "Task",
-      "Next": "Query Person Identity Table",
-      "Parameters": {
-        "Name": "/${CommonStackName}/PersonIdentityTableName"
-      },
-      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
-      "ResultSelector": {
-        "value.$": "$.Parameter.Value"
-      },
-      "ResultPath": "$.personIdentityTableName"
-    },
     "Query Person Identity Table": {
       "Type": "Task",
       "Next": "User Exists?",
       "Parameters": {
-        "TableName.$": "$.personIdentityTableName.value",
+        "TableName.$": "$.parameters.PersonIdentityTableName",
         "KeyConditionExpression": "sessionId = :value",
         "ExpressionAttributeValues": {
           ":value": {
@@ -133,28 +152,10 @@
               ]
             }
           ],
-          "Next": "Get URL"
+          "Next": "Get OAuth Token"
         }
       ],
       "Default": "Err: No user found in Person Identity"
-    },
-    "Get URL": {
-      "Type": "Task",
-      "Next": "Get User Agent",
-      "Parameters": {
-        "Name.$": "States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId)"
-      },
-      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
-      "ResultPath": "$.apiURL"
-    },
-    "Get User Agent": {
-      "Type": "Task",
-      "Next": "Get OAuth Token",
-      "Parameters": {
-        "Name": "${UserAgent}"
-      },
-      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
-      "ResultPath": "$.userAgent"
     },
     "Err: No user found in Person Identity": {
       "Type": "Pass",
@@ -165,9 +166,9 @@
     },
     "Get OAuth Token": {
       "Type": "Task",
-      "Next": "Filter out jargon",
+      "Next": "Call Matching API",
       "Parameters": {
-        "SecretId": "${BearerTokenName}"
+        "SecretId": "HMRCBearerToken"
       },
       "Resource": "arn:aws:states:::aws-sdk:secretsmanager:getSecretValue",
       "ResultPath": "$.oAuthToken",
@@ -175,28 +176,23 @@
         "value.$": "$.SecretString"
       }
     },
-    "Filter out jargon": {
-      "Type": "Pass",
-      "Next": "Call Matching API",
-      "Parameters": {
-        "sessionId.$": "$.sessionId",
-        "nino.$": "$.nino",
-        "userDetails": {
-          "firstName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
-          "lastName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
-          "dob.$": "$.userDetails.Items[0].birthDates.L[0].M.value.S"
-        },
-        "userAgent.$": "$.userAgent.Parameter.Value",
-        "apiURL.$": "$.apiURL.Parameter.Value",
-        "oAuthToken.$": "$.oAuthToken.value"
-      }
-    },
     "Call Matching API": {
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
-        "Payload.$": "$",
-        "FunctionName": "${MatchingFunctionArn}"
+        "FunctionName": "${MatchingFunctionArn}",
+        "Payload": {
+          "sessionId.$": "$.sessionId",
+          "nino.$": "$.nino",
+          "userDetails": {
+            "firstName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
+            "lastName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
+            "dob.$": "$.userDetails.Items[0].birthDates.L[0].M.value.S"
+          },
+          "userAgent.$": "$.parameters.UserAgent",
+          "apiURL.$": "$.parameters.CheckUrl",
+          "oAuthToken.$": "$.oAuthToken.value"
+        }
       },
       "Next": "Successful match?",
       "Catch": [
@@ -315,29 +311,17 @@
         "Payload.$": "$",
         "FunctionName": "${CreateAuthCodeFunctionArn}"
       },
-      "Next": "Fetch Session Table Name",
+      "Next": "Set Auth Code for Session",
       "ResultSelector": {
         "payload.$": "$.Payload"
       },
       "ResultPath": "$.expiry"
     },
-    "Fetch Session Table Name": {
-      "Type": "Task",
-      "Next": "Set Auth Code for Session",
-      "Parameters": {
-        "Name": "/${CommonStackName}/SessionTableName"
-      },
-      "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
-      "ResultSelector": {
-        "value.$": "$.Parameter.Value"
-      },
-      "ResultPath": "$.sessionTable"
-    },
     "Set Auth Code for Session": {
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:updateItem",
       "Parameters": {
-        "TableName.$": "$.sessionTable.value",
+        "TableName.$": "$.parameters.SessionTableName",
         "Key": {
           "sessionId": {
             "S.$": "$$.Execution.Input.sessionId"

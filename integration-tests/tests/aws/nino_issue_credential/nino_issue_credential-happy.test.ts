@@ -8,11 +8,7 @@ import {
   populateTables,
 } from "../resources/dynamodb-helper";
 
-import {
-  getSSMParameter,
-  getSSMParameters,
-  updateSSMParameters,
-} from "../resources/ssm-param-helper";
+import { getSSMParameter } from "../resources/ssm-param-helper";
 import { getPublicKey } from "../resources/kms-helper";
 
 jest.setTimeout(30_000);
@@ -176,31 +172,11 @@ describe("nino-issue-credential-happy", () => {
   });
 
   it("should create the valid expiry date", async () => {
-    const maxJwtTtl = `/${process.env.STACK_NAME}/MaxJwtTtl`;
-    const jwtTtlUnit = `/${process.env.STACK_NAME}/JwtTtlUnit`;
-
-    const [currentMaxJwtTtl, currentJwtTtlUnit] = await getSSMParameters(
-      maxJwtTtl,
-      jwtTtlUnit
-    );
-
-    await updateSSMParameters(
-      { name: maxJwtTtl, value: "5" },
-      { name: jwtTtlUnit, value: "MINUTES" }
-    );
-
     const startExecutionResult = await getExecutionResult("Bearer happy");
-
-    await updateSSMParameters(
-      { name: maxJwtTtl, value: currentMaxJwtTtl as string },
-      { name: jwtTtlUnit, value: currentJwtTtlUnit as string }
-    );
-
     const token = JSON.parse(startExecutionResult.output as string);
     const payloadEncoded = token.jwt.split(".")[1];
     const payload = JSON.parse(base64decode(payloadEncoded));
-
-    expect(payload.exp).toBe(payload.nbf + 5 * 60);
+    expect(payload.exp).toBe(payload.nbf + 120 * 60);
   });
 
   it("should have valid signature", async () => {

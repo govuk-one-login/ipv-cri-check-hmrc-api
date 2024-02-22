@@ -4,53 +4,37 @@
       "TestCases": {
         "DeceasedTest": {
           "Invoke Check Session": "CheckSessionSuccess",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
-          "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get URL": "GetApiUrlParameterSuccess",
-          "Get User Agent": "GetUserAgentParameterSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingDeceasedAPIFail",
           "Store Deceased Attempt": "DynamoDbQueryNoResult"
         },
-        "UrlNotFound": {
-          "Invoke Check Session": "CheckSessionSuccess",
-          "Query User Attempts": "DynamoDbQueryNoResult",
-          "Create new user attempt": "DynamoDbQueryNoResult",
-          "Person Identity Table Name": "PersonIdentityTableSuccess",
-          "Query Person Identity Table": "QuerySessionSuccess",
-          "Get URL": "GetApiUrlParameterNoResult"
-        },
         "HappyPathTestNoPreviousAttempt": {
           "Invoke Check Session": "CheckSessionSuccess",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
-          "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get URL": "GetApiUrlParameterSuccess",
-          "Get User Agent": "GetUserAgentParameterSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
-          "Fetch Session Table Name": "FetchSessionTableNameSuccess",
           "Set Auth Code for Session": "SetAuthCodeSuccess",
           "Save NINO & sessionId to nino-users table": "SaveNinoSuccess"
         },
         "HappyPathTestOn2ndAttempt": {
           "Invoke Check Session": "CheckSessionSuccess",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
           "Create new user attempt": "DynamoDbQueryNoResult",
-          "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get URL": "GetApiUrlParameterSuccess",
-          "Get User Agent": "GetUserAgentParameterSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
-          "Fetch Session Table Name": "FetchSessionTableNameSuccess",
           "Set Auth Code for Session": "SetAuthCodeSuccess",
           "Save NINO & sessionId to nino-users table": "SaveNinoSuccess"
         },
@@ -59,45 +43,40 @@
         },
         "MaximumNumberOfAttemptsExceeded": {
           "Invoke Check Session": "CheckSessionSuccess",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query User Attempts": "QueryUserAttemptFailureAfterMoreThanTwoAttempts"
         },
         "UserNotFoundForGivenNino": {
           "Invoke Check Session": "CheckSessionSuccess",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
-          "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "DynamoDbQueryNoResult"
         },
         "HMRCAuthError": {
           "Invoke Check Session": "CheckSessionSuccess",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
-          "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get URL": "GetApiUrlParameterSuccess",
-          "Get User Agent": "GetUserAgentParameterSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPIFailAuth"
         },
         "MatchingLambdaException": {
           "Invoke Check Session": "CheckSessionSuccess",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
           "Create new user attempt": "DynamoDbQueryNoResult",
-          "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get URL": "GetApiUrlParameterSuccess",
-          "Get User Agent": "GetUserAgentParameterSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPIInvalidURL"
         },
         "HMRCError": {
           "Invoke Check Session": "CheckSessionSuccess",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
           "Create new user attempt": "DynamoDbQueryNoResult",
-          "Person Identity Table Name": "PersonIdentityTableSuccess",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get URL": "GetApiUrlParameterSuccess",
-          "Get User Agent": "GetUserAgentParameterSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPIFailNoRecords",
           "Store Failed Match Attempt": "DynamoDbQueryNoResult"
@@ -105,8 +84,31 @@
       }
     }
   },
-
   "MockedResponses": {
+    "FetchSSMParamsSuccess": {
+      "0": {
+        "Return": {
+          "Payload": [
+            {
+              "Name": "/common-cri-api/PersonIdentityTableName",
+              "Value": "person-identity-common-cri-api"
+            },
+            {
+              "Name": "/check-hmrc-cri-api-suraj-cache/UserAgent",
+              "Value": "govuk-one-login"
+            },
+            {
+              "Name": "/common-cri-api/SessionTableName",
+              "Value": "session-common-cri-api"
+            },
+            {
+              "Name": "/check-hmrc-cri-api/NinoCheckUrl/ipv-core-stub-aws-prod",
+              "Value": "http://imposter-url"
+            }
+          ]
+        }
+      }
+    },
     "CheckSessionSuccess": {
       "0": {
         "Return": {
@@ -263,59 +265,6 @@
         }
       }
     },
-    "PersonIdentityTableSuccess": {
-      "0": {
-        "Return": {
-          "Parameter": {
-            "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/common-cri-api/PersonIdentityTableName",
-            "DataType": "text",
-            "LastModifiedDate": "2023-08-29T14:13:17.310Z",
-            "Name": "/common-cri-api/PersonIdentityTableName",
-            "Type": "String",
-            "Value": "person-identity-common-cri-api",
-            "Version": 1
-          }
-        }
-      }
-    },
-    "GetApiUrlParameterNoResult": {
-      "0": {
-        "Return": {
-          "Error": "Ssm.ParameterNotFoundException in step: Get URL.",
-          "Cause": "Service returned error code ParameterNotFound"
-        }
-      }
-    },
-    "GetApiUrlParameterSuccess": {
-      "0": {
-        "Return": {
-          "Parameter": {
-            "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/check-hmrc-cri-api/NinoCheckUrl/Test",
-            "DataType": "text",
-            "LastModifiedDate": "2023-09-19T18:10:35.937Z",
-            "Name": "/check-hmrc-cri-api/NinoCheckUrl/Test",
-            "Type": "String",
-            "Value": "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/api/match",
-            "Version": 1
-          }
-        }
-      }
-    },
-    "GetUserAgentParameterSuccess": {
-      "0": {
-        "Return": {
-          "Parameter": {
-            "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/pdv-matching/UserAgent",
-            "DataType": "text",
-            "LastModifiedDate": "2023-09-19T18:10:36.048Z",
-            "Name": "/pdv-matching/UserAgent",
-            "Type": "String",
-            "Value": "govuk-one-login",
-            "Version": 1
-          }
-        }
-      }
-    },
     "SaveNinoSuccess": {
       "0": {
         "Return": {}
@@ -364,21 +313,6 @@
         "Return": {
           "Payload": {
             "authCodeExpiry": 1695042038
-          }
-        }
-      }
-    },
-    "FetchSessionTableNameSuccess": {
-      "0": {
-        "Return": {
-          "Parameter": {
-            "Arn": "arn:aws:ssm:eu-west-2:404250751813:parameter/common-cri-api/SessionTableName",
-            "DataType": "text",
-            "LastModifiedDate": "2023-08-29T14:13:17.134Z",
-            "Name": "/common-cri-api/SessionTableName",
-            "Type": "String",
-            "Value": "session-common-cri-api",
-            "Version": 1
           }
         }
       }

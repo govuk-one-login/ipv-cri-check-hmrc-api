@@ -2,22 +2,24 @@ import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 import { Parameter } from "@aws-sdk/client-ssm";
 
-const CACHE_TTL_IN_SECONDS =
+const cacheTtlInSecond =
   Number(process.env.POWERTOOLS_PARAMETERS_MAX_AGE) || 300;
 
 export class SsmParametersHandler implements LambdaInterface {
   public async handler(
-    event: string[],
+    event: { parameters: string[] },
     _context: unknown
   ): Promise<Parameter[]> {
-    if (!Array.isArray(event)) {
+    if (!Array.isArray(event.parameters)) {
       throw new Error("Input must be string array");
     }
 
     const { _errors: errors, ...parameters } =
       await getParametersByName<string>(
-        Object.fromEntries(event.map((parameter) => [parameter, {}])),
-        { maxAge: CACHE_TTL_IN_SECONDS, throwOnError: false }
+        Object.fromEntries(
+          event.parameters.map((parameter) => [parameter, {}])
+        ),
+        { maxAge: cacheTtlInSecond, throwOnError: false }
       );
 
     if (errors?.length) {
@@ -26,9 +28,9 @@ export class SsmParametersHandler implements LambdaInterface {
       );
     }
 
-    return Object.entries(parameters).map(([name, value]) => ({
+    return event.parameters.map((name) => ({
       Name: name,
-      Value: value,
+      Value: parameters[name],
     }));
   }
 }
