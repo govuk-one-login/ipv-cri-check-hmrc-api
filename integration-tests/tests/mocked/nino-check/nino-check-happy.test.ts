@@ -16,6 +16,25 @@ describe("nino-check-happy", () => {
     expect(sfnContainer.getContainer()).toBeDefined();
   });
 
+  it("should pass after the hmrc api fails on 2 attempts but succeeds on the third retry", async () => {
+    const input = JSON.stringify({
+      nino: "AA000003D",
+      sessionId: "12345",
+    });
+    const responseStepFunction = await sfnContainer.startStepFunctionExecution(
+      "APIFailRetrySuccessTest",
+      input
+    );
+    const results = await sfnContainer.waitFor(
+      (event: HistoryEvent) =>
+        event?.stateExitedEventDetails?.name === "Nino check successful",
+      responseStepFunction
+    );
+    expect(results[0].stateExitedEventDetails?.output).toEqual(
+      '{"httpStatus":200}'
+    );
+  });
+
   it.each([
     ["with no previous attempt", "HappyPathTestNoPreviousAttempt"],
     ["after 1 failed previous attempt", "HappyPathTestOn2ndAttempt"],

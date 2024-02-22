@@ -2,6 +2,19 @@
   "StateMachines": {
     "nino_check": {
       "TestCases": {
+        "APIFailRetrySuccessTest": {
+          "Invoke Check Session": "CheckSessionSuccess",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
+          "Query User Attempts": "DynamoDbQueryNoResult",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Query Person Identity Table": "QuerySessionSuccess",
+          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call Matching API": "CallMatchingAPIRetryThenSuccess",
+          "Store Successful Attempt": "UpdateStatusToPassSuccess",
+          "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
+          "Set Auth Code for Session": "SetAuthCodeSuccess",
+          "Save NINO & sessionId to nino-users table": "SaveNinoSuccess"
+        },
         "DeceasedTest": {
           "Invoke Check Session": "CheckSessionSuccess",
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
@@ -85,6 +98,27 @@
     }
   },
   "MockedResponses": {
+    "CallMatchingAPIRetryThenSuccess": {
+      "0-1": {
+        "Throw": {
+          "Error": "InternalServerException",
+          "Cause": "dummy-cause"
+        }
+      },
+      "2": {
+        "Return": {
+          "Payload": {
+            "status": "200",
+            "body": {
+              "firstName": "Jim",
+              "lastName": "Ferguson",
+              "dateOfBirth": "1948-04-23",
+              "nino": "AA000003D"
+            }
+          }
+        }
+      }
+    },
     "FetchSSMParamsSuccess": {
       "0": {
         "Return": {
