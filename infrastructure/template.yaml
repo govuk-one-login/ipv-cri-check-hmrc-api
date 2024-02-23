@@ -107,6 +107,17 @@ Globals:
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
 
 Resources:
+  TimeInMillisecondsFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/time-in-milliseconds/src/time-in-milliseconds-handler.lambdaHandler
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
   SsmParametersFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -424,6 +435,8 @@ Resources:
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
         AuditEventPrefix: !Ref AuditEventNamePrefix
+        CheckHmrcEventBus: !Ref CheckHmrcEventBus
+        CheckHmrcEventBusSource: !Sub review-hc.${Environment}.account.gov.uk
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
