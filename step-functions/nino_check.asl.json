@@ -51,7 +51,7 @@
           "BackoffRate": 2
         }
       ],
-      "Next": "Query User Attempts",
+      "Next": "Publish Audit Event Start",
       "ResultPath": "$.parameters",
       "ResultSelector": {
         "PersonIdentityTableName.$": "$.Payload[0].Value",
@@ -66,6 +66,24 @@
       "Parameters": {
         "httpStatus": 400
       }
+    },
+    "Publish Audit Event Start": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "message": "Successful CRI Start"
+            },
+            "DetailType": "${AuditEventStart}",
+            "EventBusName": "${CheckHmrcEventBus}",
+            "Source": "${CheckHmrcEventBusSource}"
+          }
+        ]
+      },
+      "Next": "Query User Attempts",
+      "ResultPath": null
     },
     "Query User Attempts": {
       "Type": "Task",

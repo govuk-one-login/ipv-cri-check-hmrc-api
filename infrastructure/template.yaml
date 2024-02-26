@@ -63,6 +63,10 @@ Mappings:
       integration: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       production: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
 
+  Audit:
+    Event:
+      start: IPV_CHECK_HMRC_CRI_START
+
 Globals:
   Function:
     Timeout: 30
@@ -428,6 +432,9 @@ Resources:
         BearerTokenName: !Ref BearerTokenName
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction
+        CheckHmrcEventBus: !Ref CheckHmrcEventBus
+        CheckHmrcEventBusSource: !Sub review-hc.${Environment}.account.gov.uk
+        AuditEventStart: !FindInMap [MaxJwtTtl, Environment, !Ref Environment]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -457,6 +464,8 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${BearerTokenName}-??????
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
         - Statement:
             Effect: Allow
             Action:
@@ -573,17 +582,17 @@ Resources:
     Properties:
       Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
 
-  TxmaStartEventRule:
+  AuditEventStartRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
-      Description: Capture START event
-      State: ENABLED
+      Description: Capture the audit event START
+      State: DISABLED
       EventPattern:
         source:
           - !Sub review-hc.${Environment}.account.gov.uk
         detail-type:
-          - START
+          - !FindInMap [Audit, Event, start]
 
 Outputs:
   SsmParametersFunctionArn:
