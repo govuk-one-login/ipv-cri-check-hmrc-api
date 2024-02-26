@@ -568,6 +568,11 @@ Resources:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
+  CheckHmrcEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
+
 Outputs:
   SsmParametersFunctionArn:
     Description: SsmParameters Lambda Function ARN
