@@ -573,6 +573,18 @@ Resources:
     Properties:
       Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
 
+  TxmaStartEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref CheckHmrcEventBus
+      Description: Capture START event
+      State: ENABLED
+      EventPattern:
+        source:
+          - !Sub review-hc.${Environment}.account.gov.uk
+        detail-type:
+          - START
+
 Outputs:
   SsmParametersFunctionArn:
     Description: SsmParameters Lambda Function ARN
