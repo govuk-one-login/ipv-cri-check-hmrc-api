@@ -635,7 +635,9 @@ Resources:
       State: DISABLED
       EventPattern:
         source:
-          - !Sub review-hc.${Environment}.account.gov.uk
+          - !Sub
+            - review-hc.${Env}.account.gov.uk
+            - Env: !Ref Environment
         detail-type:
           - !FindInMap [Audit, EventName, ResponseReceived]
 
