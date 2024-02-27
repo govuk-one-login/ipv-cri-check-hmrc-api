@@ -634,7 +634,7 @@ Resources:
       Description: Capture the audit event RESPONSE_RECEIVED
       State: DISABLED
       EventPattern:
-        source: 
+        source:
           - !Sub review-hc.${Environment}.account.gov.uk
         detail-type:
           - !FindInMap [Audit, EventName, ResponseReceived]
