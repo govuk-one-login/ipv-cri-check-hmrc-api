@@ -35,7 +35,7 @@
       "Parameters": {
         "FunctionName": "${SsmParametersFunction}",
         "Payload": {
-          "parameters.$": "States.Array('/${CommonStackName}/PersonIdentityTableName', '${UserAgent}', '/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId))"
+          "parameters.$": "States.Array('/${CommonStackName}/PersonIdentityTableName', '${UserAgent}','/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId),'/${CommonStackName}/verifiable-credential/issuer')"
         }
       },
       "Retry": [
@@ -57,7 +57,8 @@
         "PersonIdentityTableName.$": "$.Payload[0].Value",
         "UserAgent.$": "$.Payload[1].Value",
         "SessionTableName.$": "$.Payload[2].Value",
-        "CheckUrl.$": "$.Payload[3].Value"
+        "CheckUrl.$": "$.Payload[3].Value",
+        "issuer.$": "$.Payload[4].Value"
       }
     },
     "Err: Invalid Session": {
@@ -166,7 +167,7 @@
     },
     "Get OAuth Token": {
       "Type": "Task",
-      "Next": "Call Matching API",
+      "Next": "Request Sent",
       "Parameters": {
         "SecretId": "HMRCBearerToken"
       },
@@ -175,6 +176,28 @@
       "ResultSelector": {
         "value.$": "$.SecretString"
       }
+    },
+    "Request Sent": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "auditPrefix": "${AuditEventPrefix}",
+              "user.$": "$.sessionCheck.userAuditInfo",
+              "nino.$": "$.nino",
+              "userInfoEvent.$": "$.userInfo",
+              "issuer.$": "$.parameters.issuer"
+            },
+            "DetailType": "REQUEST_SENT",
+            "EventBusName": "${CheckHmrcEventBus}",
+            "Source": "${CheckHmrcEventBusSource}"
+          }
+        ]
+      },
+      "Next": "Call Matching API",
+      "ResultPath": null
     },
     "Call Matching API": {
       "Type": "Task",
@@ -193,10 +216,10 @@
           "apiURL.$": "$.parameters.CheckUrl",
           "oAuthToken.$": "$.oAuthToken.value",
           "user.$": "$.sessionCheck.userAuditInfo",
-          "userInfo.$": "$.userInfo"
+          "userInfoEvent.$": "$.userInfo"
         }
       },
-      "Next": "Successful match?",
+      "Next": "Response Received",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -215,6 +238,28 @@
           "MaxAttempts": 3
         }
       ]
+    },
+    "Response Received": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "auditPrefix": "${AuditEventPrefix}",
+              "user.$": "$.sessionCheck.userAuditInfo",
+              "nino.$": "$.nino",
+              "userInfoEvent.$": "$.userInfo",
+              "issuer.$": "$.parameters.issuer"
+            },
+            "DetailType": "RESPONSE_RECEIVED",
+            "EventBusName": "${CheckHmrcEventBus}",
+            "Source": "${CheckHmrcEventBusSource}"
+          }
+        ]
+      },
+      "Next": "Successful match?",
+      "ResultPath": null
     },
     "Err: Matching Lambda Exception": {
       "Type": "Fail"

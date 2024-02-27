@@ -645,6 +645,7 @@ Resources:
       DefinitionSubstitutions:
         CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
         CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
+        TimeInMillisecondsFunctionArn: !GetAtt TimeInMillisecondsFunction.Arn
         CommonStackName: !Ref CommonStackName
       Logging:
         Destinations:
@@ -655,6 +656,8 @@ Resources:
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref CredentialSubjectFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref TimeInMillisecondsFunction
         - Statement:
             Effect: Allow
             Action: logs:*
