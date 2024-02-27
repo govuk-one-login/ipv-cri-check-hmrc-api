@@ -1,0 +1,49 @@
+{
+  "StateMachines": {
+    "abandon": {
+      "TestCases": {
+        "Happy": {
+          "Invoke Check Session": "SessionFound",
+          "Fetch SSM Parameters": "FetchSSMParameters",
+          "Clear Auth Code": "ClearAuthCode"
+        },
+        "NoSessionFound": {
+          "Invoke Check Session": "NoSessionFound"
+        }
+      }
+    }
+  },
+  "MockedResponses": {
+    "SessionFound": {
+      "0": {
+        "Return": {
+          "Output": "{\"status\": \"SESSION_OK\", \"clientId\": \"dummy-client-id\"}"
+        }
+      }
+    },
+    "NoSessionFound": {
+      "0": {
+        "Return": {
+          "Output": "{\"status\": \"SESSION_NOT_FOUND\"}"
+        }
+      }
+    },
+    "FetchSSMParameters": {
+      "0": {
+        "Return": {
+          "Payload": [
+            {
+              "Name": "/common-cri-api/SessionTableName",
+              "Value": "session-common-cri-api"
+            }
+          ]
+        }
+      }
+    },
+    "ClearAuthCode": {
+      "0": {
+        "Return": {}
+      }
+    }
+  }
+}
