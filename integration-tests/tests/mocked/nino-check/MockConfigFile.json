@@ -2,6 +2,28 @@
   "StateMachines": {
     "nino_check": {
       "TestCases": {
+        "APIFailRetrySuccessTest": {
+          "Invoke Check Session": "CheckSessionSuccess",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
+          "Query User Attempts": "DynamoDbQueryNoResult",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Query Person Identity Table": "QuerySessionSuccess",
+          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call Matching API": "CallMatchingAPIRetryThenSuccess",
+          "Store Successful Attempt": "UpdateStatusToPassSuccess",
+          "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
+          "Set Auth Code for Session": "SetAuthCodeSuccess",
+          "Save NINO & sessionId to nino-users table": "SaveNinoSuccess"
+        },
+        "APIFailRetryFailTest": {
+          "Invoke Check Session": "CheckSessionSuccess",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
+          "Query User Attempts": "DynamoDbQueryNoResult",
+          "Create new user attempt": "DynamoDbQueryNoResult",
+          "Query Person Identity Table": "QuerySessionSuccess",
+          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call Matching API": "CallMatchingAPIRetryThenFail"
+        },
         "DeceasedTest": {
           "Invoke Check Session": "CheckSessionSuccess",
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
@@ -85,6 +107,35 @@
     }
   },
   "MockedResponses": {
+    "CallMatchingAPIRetryThenSuccess": {
+      "0-1": {
+        "Throw": {
+          "Error": "InternalServerException",
+          "Cause": "dummy-cause"
+        }
+      },
+      "2": {
+        "Return": {
+          "Payload": {
+            "status": "200",
+            "body": {
+              "firstName": "Jim",
+              "lastName": "Ferguson",
+              "dateOfBirth": "1948-04-23",
+              "nino": "AA000003D"
+            }
+          }
+        }
+      }
+    },
+    "CallMatchingAPIRetryThenFail": {
+      "0-3": {
+        "Throw": {
+          "Error": "InternalServerException",
+          "Cause": "dummy-cause"
+        }
+      }
+    },
     "FetchSSMParamsSuccess": {
       "0": {
         "Return": {
@@ -414,7 +465,7 @@
       }
     },
     "CallMatchingAPIInvalidURL": {
-      "0": {
+      "0-3": {
         "Return": {
           "Error": "TypeError",
           "Cause": "{\"errorType\":\"TypeError\",\"errorMessage\":\"Failed to parse URL from bad-url\",\"trace\":[\"TypeError: Failed to parse URL from bad-url\",\"    at Object.fetch (node:internal/deps/undici/undici:11576:11)\",\"    at le.handler (/private/var/folders/kr/xcxbzv7d5nbfvrzcsdwf81j00000gp/T/tmpaetgolsq/src/matching-handler.ts:10:24)\"]}"

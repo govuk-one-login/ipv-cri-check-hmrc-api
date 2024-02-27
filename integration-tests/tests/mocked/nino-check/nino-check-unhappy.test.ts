@@ -144,4 +144,36 @@ describe("nino-check-unhappy", () => {
       '{"httpStatus":422}'
     );
   });
+
+  it("should fail when the call matching api lambda fails after exponential retries", async () => {
+    const input = JSON.stringify({
+      nino: "AA000003D",
+      sessionId: "12345",
+    });
+    const responseStepFunction = await sfnContainer.startStepFunctionExecution(
+      "APIFailRetryFailTest",
+      input
+    );
+
+    const results = await sfnContainer.waitFor(
+      (_) => true,
+      responseStepFunction
+    );
+
+    const retry1 = results[results.length - 4];
+    const retry2 = results[results.length - 3];
+    const retry3 = results[results.length - 2];
+
+    expect(retry1.taskFailedEventDetails?.error).toBe(
+      "InternalServerException"
+    );
+    expect(retry2.stateExitedEventDetails?.output).toBe(
+      '{"Error":"InternalServerException","Cause":"dummy-cause"}'
+    );
+    expect(retry3.stateEnteredEventDetails?.name).toBe(
+      "Err: Matching Lambda Exception"
+    );
+
+    expect(results[results.length - 1].type).toBe("ExecutionFailed");
+  });
 });
