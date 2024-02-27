@@ -2,6 +2,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DeleteCommand,
   DynamoDBDocumentClient,
+  GetCommand,
   PutCommand,
   QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
@@ -15,6 +16,9 @@ const sendCommand = createSendCommand(() =>
     new DynamoDBClient({ region: process.env.AWS_REGION })
   )
 );
+
+export const getItemByKey = (tableName: string, key: Keys) =>
+  sendCommand(GetCommand, { TableName: tableName, Key: key });
 
 export const populateTable = (tableName: string, items: Keys) =>
   sendCommand(PutCommand, { TableName: tableName, Item: items });
