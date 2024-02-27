@@ -118,6 +118,12 @@ Resources:
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
 
+  TimeInMillisecondsFunctionGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${TimeInMillisecondsFunction}
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
   SsmParametersFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -645,6 +651,7 @@ Resources:
       DefinitionSubstitutions:
         CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
         CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
+        TimeInMillisecondsFunctionArn: !GetAtt TimeInMillisecondsFunction.Arn
         CommonStackName: !Ref CommonStackName
       Logging:
         Destinations:
@@ -655,6 +662,8 @@ Resources:
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref CredentialSubjectFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref TimeInMillisecondsFunction
         - Statement:
             Effect: Allow
             Action: logs:*
