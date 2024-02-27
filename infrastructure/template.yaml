@@ -489,6 +489,50 @@ Resources:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
+  AbandonStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Type: EXPRESS
+      DefinitionUri: ../step-functions/abandon.asl.json
+      DefinitionSubstitutions:
+        CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
+        CommonStackName: !Ref CommonStackName
+        SsmParametersFunction: !Ref SsmParametersFunction
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt AbandonStateMachineLogGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref SsmParametersFunction
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBWritePolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - Statement:
+            Effect: Allow
+            Action:
+              - states:StartSyncExecution
+              - states:StartExecution
+            Resource:
+              - !Ref CheckSessionStateMachine
+        - Statement:
+            Effect: Allow
+            Action: logs:*
+            Resource: "*"
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
+  AbandonStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
   NinoIssueCredentialStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -577,7 +621,6 @@ Outputs:
   SsmParametersFunctionArn:
     Description: SsmParameters Lambda Function ARN
     Value: !GetAtt SsmParametersFunction.Arn
-
   ApiGatewayId:
     Description: API GatewayID of the Nino Check HMRC CRI API
     Value: !Ref PublicNinoCheckApi
@@ -611,3 +654,6 @@ Outputs:
   NinoUsersTable:
     Description: NinoUsersTable table name
     Value: !Ref NinoUsersTable
+  AbandonStateMachineArn:
+    Description: Abandon state machine ARN
+    Value: !Ref AbandonStateMachine

@@ -151,6 +151,48 @@ paths:
                 #else
                 #set($context.responseOverride.status = 200)
                 #end
+  /abandon:
+    post:
+      summary: "IP address of the client."
+      parameters:
+        - $ref: "#/components/parameters/SessionHeader"
+      x-amazon-apigateway-request-validator: "Validate both"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        passthroughBehavior: "when_no_templates"
+        type: "aws"
+        credentials:
+          Fn::Sub: ${ExecuteStateMachineRole.Arn}
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:states:action/StartSyncExecution
+        requestTemplates:
+          application/json:
+            Fn::Sub: |-
+              {
+                "input": "{\"sessionId\": \"$input.params('session-id').trim()\"}",
+                "stateMachineArn": "${AbandonStateMachine.Arn}"
+              }
+        responses:
+          default:
+            statusCode: 200
+            responseTemplates:
+              application/json: |
+                #set($response = $util.parseJson($input.body))
+                #set($output = $util.parseJson($response.output))
+                #if($response.status == "FAILED")
+                #set($context.responseOverride.status = 500)
+                #elseif($output.httpStatus)
+                #set($context.responseOverride.status = $output.httpStatus)
+                #else
+                #set($context.responseOverride.status = 200)
+                #end
 
 components:
   parameters:

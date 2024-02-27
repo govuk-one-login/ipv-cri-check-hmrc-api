@@ -1,0 +1,90 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Invoke Check Session",
+  "States": {
+    "Invoke Check Session": {
+      "Type": "Task",
+      "Next": "Is Session Valid?",
+      "Parameters": {
+        "StateMachineArn": "${CheckSessionStateMachineArn}",
+        "Input.$": "States.JsonToString($)"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:sfn:startSyncExecution",
+      "ResultSelector": {
+        "sessionId.$": "$$.Execution.Input.sessionId",
+        "sessionCheck.$": "States.StringToJson($.Output)"
+      }
+    },
+    "Is Session Valid?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Not": {
+            "Variable": "$.sessionCheck.status",
+            "StringMatches": "SESSION_OK"
+          },
+          "Next": "Err: Invalid Session"
+        }
+      ],
+      "Default": "Fetch SSM Parameters"
+    },
+    "Fetch SSM Parameters": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${SsmParametersFunction}",
+        "Payload": {
+          "parameters": ["/${CommonStackName}/SessionTableName"]
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Clear Auth Code",
+      "ResultPath": "$.parameters",
+      "ResultSelector": {
+        "SessionTableName.$": "$.Payload[0].Value"
+      }
+    },
+    "Clear Auth Code": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName.$": "$.parameters.SessionTableName",
+        "Key": {
+          "sessionId": {
+            "S.$": "$$.Execution.Input.sessionId"
+          }
+        },
+        "UpdateExpression": "SET authorizationCodeExpiryDate = :expiry REMOVE authorizationCode",
+        "ExpressionAttributeValues": {
+          ":expiry": {
+            "N": "0"
+          }
+        }
+      },
+      "Next": "Success",
+      "ResultSelector": {}
+    },
+    "Success": {
+      "Type": "Succeed"
+    },
+    "Err: Invalid Session": {
+      "Type": "Pass",
+      "End": true,
+      "Parameters": {
+        "httpStatus": 400
+      }
+    }
+  }
+}
