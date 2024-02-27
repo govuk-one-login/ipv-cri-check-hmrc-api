@@ -17,7 +17,7 @@ describe("abandon", () => {
   });
 
   describe("happy path tests", () => {
-    it("it should pass when session exists", async () => {
+    it("should pass when session exists", async () => {
       const input = JSON.stringify({
         sessionId: "12345",
       });
@@ -32,7 +32,7 @@ describe("abandon", () => {
   });
 
   describe("unhappy path tests", () => {
-    it("it should fail when session does not exist", async () => {
+    it("should fail when session does not exist", async () => {
       const input = JSON.stringify({
         sessionId: "12345",
       });

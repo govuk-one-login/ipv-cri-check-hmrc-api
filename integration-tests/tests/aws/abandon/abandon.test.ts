@@ -29,7 +29,7 @@ describe("abandon", () => {
     });
   });
 
-  it("it should remove the authorizationCode when session exists", async () => {
+  it("should remove the authorizationCode when session exists", async () => {
     await populateTable(sessionTableName, {
       sessionId: input.sessionId,
       expiryDate: 9999999999,
