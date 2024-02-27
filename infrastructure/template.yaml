@@ -64,10 +64,8 @@ Mappings:
       production: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
 
   Audit:
-    Event:
-      Source: !Sub review-hc.${Environment}.account.gov.uk
-      Name:
-        ResponseReceived: IPV_CHECK_HMRC_CRI_RESPONSE_RECEIVED
+    EventName:
+      ResponseReceived: IPV_CHECK_HMRC_CRI_RESPONSE_RECEIVED
 
 Globals:
   Function:
@@ -435,8 +433,9 @@ Resources:
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [Audit, Event, Source]
-        AuditEventResponseReceived: !FindInMap [Audit, Event, Name, ResponseReceived]
+        CheckHmrcEventBusSource: !Sub review-hc.${Environment}.account.gov.uk
+        AuditEventResponseReceived:
+          !FindInMap [Audit, EventName, ResponseReceived]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -635,10 +634,9 @@ Resources:
       Description: Capture the audit event RESPONSE_RECEIVED
       State: DISABLED
       EventPattern:
-        source:
-          - !FindInMap [Audit, Event, Source]
+        source: !Sub review-hc.${Environment}.account.gov.uk
         detail-type:
-          - !FindInMap [Audit, Event, Name, ResponseReceived]
+          - !FindInMap [Audit, EventName, ResponseReceived]
 
 Outputs:
   SsmParametersFunctionArn:
