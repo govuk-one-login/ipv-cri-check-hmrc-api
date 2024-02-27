@@ -129,18 +129,10 @@
       }
     },
     "CallMatchingAPIRetryThenFail": {
-      "0-2": {
+      "0-3": {
         "Throw": {
           "Error": "InternalServerException",
           "Cause": "dummy-cause"
-        },
-        "3": {
-          "Return": {
-            "Payload": {
-              "status": "dummy-status",
-              "body": "dummy-error"
-            }
-          }
         }
       }
     },
