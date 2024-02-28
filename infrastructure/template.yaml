@@ -3,6 +3,10 @@ Description: Digital Identity IPV CRI Pdv-Matching API
 Transform: [AWS::LanguageExtensions, AWS::Serverless-2016-10-31]
 
 Parameters:
+  AuditEventNamePrefix:
+    Description: "The audit event name prefix"
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/common-cri-parameters/AuditEventNamePrefix"
   BearerTokenName:
     Type: String
     Default: HMRCBearerToken
@@ -65,7 +69,7 @@ Mappings:
 
   Audit:
     EventName:
-      ResponseReceived: IPV_CHECK_HMRC_CRI_RESPONSE_RECEIVED
+      ResponseReceived: RESPONSE_RECEIVED
 
 Globals:
   Function:
@@ -434,8 +438,10 @@ Resources:
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !Sub review-hc.${Environment}.account.gov.uk
-        AuditEventResponseReceived:
-          !FindInMap [Audit, EventName, ResponseReceived]
+        AuditEventNameResponseReceived: !Sub
+          - ${EventPrefix}_{Event}
+          - EventPrefix: !Ref AuditEventNamePrefix
+            Event: !FindInMap [Audit, EventName, ResponseReceived]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
