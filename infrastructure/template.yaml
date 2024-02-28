@@ -578,6 +578,10 @@ Resources:
         NinoUsersTable: !Ref NinoUsersTable
         JwtSignerFunction: !GetAtt JwtSignerFunction.Arn
         SsmParametersFunction: !Ref SsmParametersFunction
+        CheckHmrcEventBus: !Ref CheckHmrcEventBus
+        CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
+        AuditEventResponseReceived:
+          !FindInMap [Audit, EventName, VcIssued]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -603,6 +607,8 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
         - Statement:
             Effect: Allow
             Action:
