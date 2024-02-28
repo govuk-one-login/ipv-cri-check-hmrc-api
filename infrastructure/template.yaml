@@ -71,6 +71,7 @@ Mappings:
     EventName:
       ResponseReceived: RESPONSE_RECEIVED
       RequestSent: REQUEST_SENT
+      VcIssued: VC_ISSUED
     Source:
       dev: review-hc.dev.account.gov.uk
       localdev: review-hc.localdev.account.gov.uk
@@ -668,6 +669,18 @@ Resources:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, RequestSent]
+
+  AuditEventVcIssuedRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref CheckHmrcEventBus
+      Description: Capture the audit event VC_ISSUED
+      State: DISABLED
+      EventPattern:
+        source:
+          - !FindInMap [Audit, Source, !Ref Environment]
+        detail-type:
+          - !FindInMap [Audit, EventName, VcIssued]
 
 Outputs:
   SsmParametersFunctionArn:
