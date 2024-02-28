@@ -10,6 +10,7 @@
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPIRetryThenSuccess",
+          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
           "Set Auth Code for Session": "SetAuthCodeSuccess",
