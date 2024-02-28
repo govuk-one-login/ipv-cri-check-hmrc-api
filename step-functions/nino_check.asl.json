@@ -185,7 +185,7 @@
             "Detail": {
               "message": "Request Sent to 3rd party"
             },
-            "DetailType": "${AuditEventRequestSent}",
+            "DetailType": "${AuditEventNameRequestSent}",
             "EventBusName": "${CheckHmrcEventBus}",
             "Source": "${CheckHmrcEventBusSource}"
           }
