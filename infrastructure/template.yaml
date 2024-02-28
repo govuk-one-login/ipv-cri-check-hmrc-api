@@ -439,7 +439,7 @@ Resources:
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !Sub review-hc.${Environment}.account.gov.uk
         AuditEventNameResponseReceived: !Sub
-          - ${EventPrefix}_{Event}
+          - ${EventPrefix}_${Event}
           - EventPrefix: !Ref AuditEventNamePrefix
             Event: !FindInMap [Audit, EventName, ResponseReceived]
       Logging:
