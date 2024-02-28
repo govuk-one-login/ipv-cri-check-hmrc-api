@@ -226,7 +226,7 @@
             "Detail": {
               "message": "Response Received from 3rd party"
             },
-            "DetailType": "${AuditEventResponseReceived}",
+            "DetailType": "${AuditEventNameResponseReceived}",
             "EventBusName": "${CheckHmrcEventBus}",
             "Source": "${CheckHmrcEventBusSource}"
           }
