@@ -580,8 +580,10 @@ Resources:
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
-        AuditEventResponseReceived:
-          !FindInMap [Audit, EventName, VcIssued]
+        AuditEventNameVcIssued: !Sub
+          - ${EventPrefix}_${Event}
+          - EventPrefix: !Ref AuditEventNamePrefix
+            Event: !FindInMap [Audit, EventName, VcIssued]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
