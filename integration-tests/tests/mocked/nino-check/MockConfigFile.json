@@ -10,6 +10,7 @@
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPIRetryThenSuccess",
+          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
           "Set Auth Code for Session": "SetAuthCodeSuccess",
@@ -32,6 +33,7 @@
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingDeceasedAPIFail",
+          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Deceased Attempt": "DynamoDbQueryNoResult"
         },
         "HappyPathTestNoPreviousAttempt": {
@@ -42,6 +44,7 @@
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
+          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
           "Set Auth Code for Session": "SetAuthCodeSuccess",
@@ -55,6 +58,7 @@
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPISuccess",
+          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
           "Set Auth Code for Session": "SetAuthCodeSuccess",
@@ -82,7 +86,8 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
-          "Call Matching API": "CallMatchingAPIFailAuth"
+          "Call Matching API": "CallMatchingAPIFailAuth",
+          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived"
         },
         "MatchingLambdaException": {
           "Invoke Check Session": "CheckSessionSuccess",
@@ -91,7 +96,8 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
-          "Call Matching API": "CallMatchingAPIInvalidURL"
+          "Call Matching API": "CallMatchingAPIInvalidURL",
+          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived"
         },
         "HMRCError": {
           "Invoke Check Session": "CheckSessionSuccess",
@@ -101,6 +107,7 @@
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
           "Call Matching API": "CallMatchingAPIFailNoRecords",
+          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Failed Match Attempt": "DynamoDbQueryNoResult"
         }
       }
@@ -405,6 +412,11 @@
           "Items": [],
           "ScannedCount": 0
         }
+      }
+    },
+    "PublishAuditEventResponseReceived": {
+      "0": {
+        "Return": null
       }
     },
     "QueryUserAttemptSuccessOn2ndTry": {

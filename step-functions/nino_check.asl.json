@@ -194,7 +194,7 @@
           "oAuthToken.$": "$.oAuthToken.value"
         }
       },
-      "Next": "Successful match?",
+      "Next": "Publish Audit Event Response Received",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -216,6 +216,24 @@
     },
     "Err: Matching Lambda Exception": {
       "Type": "Fail"
+    },
+    "Publish Audit Event Response Received": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "message": "Response Received from 3rd party"
+            },
+            "DetailType": "${AuditEventNameResponseReceived}",
+            "EventBusName": "${CheckHmrcEventBus}",
+            "Source": "${CheckHmrcEventBusSource}"
+          }
+        ]
+      },
+      "Next": "Successful match?",
+      "ResultPath": null
     },
     "Successful match?": {
       "Type": "Choice",

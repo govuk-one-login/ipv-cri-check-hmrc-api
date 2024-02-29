@@ -3,6 +3,10 @@ Description: Digital Identity IPV CRI Pdv-Matching API
 Transform: [AWS::LanguageExtensions, AWS::Serverless-2016-10-31]
 
 Parameters:
+  AuditEventNamePrefix:
+    Description: "The audit event name prefix"
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/common-cri-parameters/AuditEventNamePrefix"
   BearerTokenName:
     Type: String
     Default: HMRCBearerToken
@@ -62,6 +66,10 @@ Mappings:
       staging: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       integration: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       production: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
+
+  Audit:
+    EventName:
+      ResponseReceived: RESPONSE_RECEIVED
 
 Globals:
   Function:
@@ -428,6 +436,12 @@ Resources:
         BearerTokenName: !Ref BearerTokenName
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction
+        CheckHmrcEventBus: !Ref CheckHmrcEventBus
+        CheckHmrcEventBusSource: !Sub review-hc.${Environment}.account.gov.uk
+        AuditEventNameResponseReceived: !Sub
+          - ${EventPrefix}_${Event}
+          - EventPrefix: !Ref AuditEventNamePrefix
+            Event: !FindInMap [Audit, EventName, ResponseReceived]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -457,6 +471,8 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${BearerTokenName}-??????
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
         - Statement:
             Effect: Allow
             Action:
@@ -616,6 +632,20 @@ Resources:
     Type: AWS::Events::EventBus
     Properties:
       Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
+
+  AuditEventResponseReceivedRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref CheckHmrcEventBus
+      Description: Capture the audit event RESPONSE_RECEIVED
+      State: DISABLED
+      EventPattern:
+        source:
+          - !Sub
+            - review-hc.${Env}.account.gov.uk
+            - Env: !Ref Environment
+        detail-type:
+          - !FindInMap [Audit, EventName, ResponseReceived]
 
 Outputs:
   SsmParametersFunctionArn:
