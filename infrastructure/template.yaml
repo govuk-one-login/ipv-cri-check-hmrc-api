@@ -73,6 +73,7 @@ Mappings:
       RequestSent: REQUEST_SENT
       VcIssued: VC_ISSUED
       End: END
+      Abandoned: ABANDONED
     Source:
       dev: review-hc.dev.account.gov.uk
       localdev: review-hc.localdev.account.gov.uk
@@ -528,6 +529,12 @@ Resources:
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction
+        CheckHmrcEventBus: !Ref CheckHmrcEventBus
+        CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
+        AuditEventNameAbandoned: !Sub
+          - ${EventPrefix}_${Event}
+          - EventPrefix: !Ref AuditEventNamePrefix
+            Event: !FindInMap [Audit, EventName, Abandoned]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -541,6 +548,8 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBWritePolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
         - Statement:
             Effect: Allow
             Action:
@@ -706,6 +715,18 @@ Resources:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, End]
+
+  AuditEventAbandonedRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref CheckHmrcEventBus
+      Description: Capture the ABANDONED event
+      State: DISABLED
+      EventPattern:
+        source:
+          - !FindInMap [Audit, Source, !Ref Environment]
+        detail-type:
+          - !FindInMap [Audit, EventName, Abandoned]
 
 Outputs:
   SsmParametersFunctionArn:
