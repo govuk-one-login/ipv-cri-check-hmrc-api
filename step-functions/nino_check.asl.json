@@ -166,7 +166,7 @@
     },
     "Get OAuth Token": {
       "Type": "Task",
-      "Next": "Call Matching API",
+      "Next": "Publish Audit Event Request Sent",
       "Parameters": {
         "SecretId": "HMRCBearerToken"
       },
@@ -175,6 +175,24 @@
       "ResultSelector": {
         "value.$": "$.SecretString"
       }
+    },
+    "Publish Audit Event Request Sent": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "message": "Request Sent to 3rd party"
+            },
+            "DetailType": "${AuditEventNameRequestSent}",
+            "EventBusName": "${CheckHmrcEventBus}",
+            "Source": "${CheckHmrcEventBusSource}"
+          }
+        ]
+      },
+      "Next": "Call Matching API",
+      "ResultPath": null
     },
     "Call Matching API": {
       "Type": "Task",

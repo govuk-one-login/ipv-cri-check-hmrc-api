@@ -9,6 +9,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIRetryThenSuccess",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
@@ -23,6 +24,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIRetryThenFail"
         },
         "DeceasedTest": {
@@ -32,6 +34,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingDeceasedAPIFail",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Deceased Attempt": "DynamoDbQueryNoResult"
@@ -43,6 +46,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPISuccess",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
@@ -57,6 +61,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPISuccess",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
@@ -86,6 +91,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIFailAuth",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived"
         },
@@ -96,6 +102,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIInvalidURL",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived"
         },
@@ -106,6 +113,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIFailNoRecords",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Failed Match Attempt": "DynamoDbQueryNoResult"
@@ -415,6 +423,11 @@
       }
     },
     "PublishAuditEventResponseReceived": {
+      "0": {
+        "Return": null
+      }
+    },
+    "PublishAuditEventRequestSent": {
       "0": {
         "Return": null
       }

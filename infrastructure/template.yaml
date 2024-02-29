@@ -70,6 +70,14 @@ Mappings:
   Audit:
     EventName:
       ResponseReceived: RESPONSE_RECEIVED
+      RequestSent: REQUEST_SENT
+    Source:
+      dev: review-hc.dev.account.gov.uk
+      localdev: review-hc.localdev.account.gov.uk
+      build: review-hc.build.account.gov.uk
+      staging: review-hc.staging.account.gov.uk
+      integration: review-hc.integration.account.gov.uk
+      production: review-hc.production.account.gov.uk
 
 Globals:
   Function:
@@ -437,11 +445,15 @@ Resources:
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !Sub review-hc.${Environment}.account.gov.uk
+        CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
         AuditEventNameResponseReceived: !Sub
           - ${EventPrefix}_${Event}
           - EventPrefix: !Ref AuditEventNamePrefix
             Event: !FindInMap [Audit, EventName, ResponseReceived]
+        AuditEventNameRequestSent: !Sub
+          - ${EventPrefix}_${Event}
+          - EventPrefix: !Ref AuditEventNamePrefix
+            Event: !FindInMap [Audit, EventName, RequestSent]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -641,11 +653,21 @@ Resources:
       State: DISABLED
       EventPattern:
         source:
-          - !Sub
-            - review-hc.${Env}.account.gov.uk
-            - Env: !Ref Environment
+          - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, ResponseReceived]
+
+  AuditEventRequestSentRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref CheckHmrcEventBus
+      Description: Capture the audit event REQUEST_SENT
+      State: DISABLED
+      EventPattern:
+        source:
+          - !FindInMap [Audit, Source, !Ref Environment]
+        detail-type:
+          - !FindInMap [Audit, EventName, RequestSent]
 
 Outputs:
   SsmParametersFunctionArn:
