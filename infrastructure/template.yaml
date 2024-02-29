@@ -72,6 +72,7 @@ Mappings:
       ResponseReceived: RESPONSE_RECEIVED
       RequestSent: REQUEST_SENT
       VcIssued: VC_ISSUED
+      End: END
     Source:
       dev: review-hc.dev.account.gov.uk
       localdev: review-hc.localdev.account.gov.uk
@@ -584,6 +585,10 @@ Resources:
           - ${EventPrefix}_${Event}
           - EventPrefix: !Ref AuditEventNamePrefix
             Event: !FindInMap [Audit, EventName, VcIssued]
+        AuditEventNameEnd: !Sub
+          - ${EventPrefix}_${Event}
+          - EventPrefix: !Ref AuditEventNamePrefix
+            Event: !FindInMap [Audit, EventName, End]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -689,6 +694,18 @@ Resources:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, VcIssued]
+
+  AuditEventEndRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref CheckHmrcEventBus
+      Description: Capture the END event
+      State: DISABLED
+      EventPattern:
+        source:
+          - !FindInMap [Audit, Source, !Ref Environment]
+        detail-type:
+          - !FindInMap [Audit, EventName, End]
 
 Outputs:
   SsmParametersFunctionArn:
