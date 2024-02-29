@@ -71,6 +71,7 @@ Mappings:
     EventName:
       ResponseReceived: RESPONSE_RECEIVED
       RequestSent: REQUEST_SENT
+      VcIssued: VC_ISSUED
     Source:
       dev: review-hc.dev.account.gov.uk
       localdev: review-hc.localdev.account.gov.uk
@@ -577,6 +578,12 @@ Resources:
         NinoUsersTable: !Ref NinoUsersTable
         JwtSignerFunction: !GetAtt JwtSignerFunction.Arn
         SsmParametersFunction: !Ref SsmParametersFunction
+        CheckHmrcEventBus: !Ref CheckHmrcEventBus
+        CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
+        AuditEventNameVcIssued: !Sub
+          - ${EventPrefix}_${Event}
+          - EventPrefix: !Ref AuditEventNamePrefix
+            Event: !FindInMap [Audit, EventName, VcIssued]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -602,6 +609,8 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
         - Statement:
             Effect: Allow
             Action:
@@ -668,6 +677,18 @@ Resources:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, RequestSent]
+
+  AuditEventVcIssuedRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref CheckHmrcEventBus
+      Description: Capture the audit event VC_ISSUED
+      State: DISABLED
+      EventPattern:
+        source:
+          - !FindInMap [Audit, Source, !Ref Environment]
+        detail-type:
+          - !FindInMap [Audit, EventName, VcIssued]
 
 Outputs:
   SsmParametersFunctionArn:
