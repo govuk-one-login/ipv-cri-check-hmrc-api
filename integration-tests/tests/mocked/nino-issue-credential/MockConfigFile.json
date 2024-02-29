@@ -10,7 +10,8 @@
           "Create Credential Subject": "CreateCredentialSubject",
           "Fetch exp time and NBF": "FetchExpTimeAndNBF",
           "Fetch Failed Attempts": "FetchFailedAttempts",
-          "Sign VC claimsSet": "SignVCClaimSet"
+          "Sign VC claimsSet": "SignVCClaimSet",
+          "Publish Audit Event VC Issued": "PublishAuditEventVcIssued"
         },
         "UnHappyPath": {
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
@@ -21,12 +22,18 @@
           "Fetch exp time and NBF": "FetchExpTimeAndNBF",
           "Fetch Failed Attempts": "FetchExceededFailedAttempts",
           "Fetch CI": "FetchCI",
-          "Sign VC claimsSet": "SignVCClaimSet"
+          "Sign VC claimsSet": "SignVCClaimSet",
+          "Publish Audit Event VC Issued": "PublishAuditEventVcIssued"
         }
       }
     }
   },
   "MockedResponses": {
+    "PublishAuditEventVcIssued": {
+      "0": {
+        "Return": null
+      }
+    },
     "FetchSSMParamsSuccess": {
       "0": {
         "Return": {
