@@ -83,7 +83,7 @@
         "Entries": [
           {
             "Detail": {
-              "message": "VC Successfully Issued"
+              "message": "Journey Abandoned"
             },
             "DetailType": "${AuditEventNameAbandoned}",
             "EventBusName": "${CheckHmrcEventBus}",
