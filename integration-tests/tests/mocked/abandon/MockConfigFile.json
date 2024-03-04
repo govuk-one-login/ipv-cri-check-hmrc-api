@@ -5,7 +5,8 @@
         "Happy": {
           "Invoke Check Session": "SessionFound",
           "Fetch SSM Parameters": "FetchSSMParameters",
-          "Clear Auth Code": "ClearAuthCode"
+          "Clear Auth Code": "ClearAuthCode",
+          "Publish Audit Event Abandoned": "PublishAuditEventAbandoned"
         },
         "NoSessionFound": {
           "Invoke Check Session": "NoSessionFound"
@@ -38,6 +39,11 @@
             }
           ]
         }
+      }
+    },
+    "PublishAuditEventAbandoned": {
+      "0": {
+        "Return": null
       }
     },
     "ClearAuthCode": {

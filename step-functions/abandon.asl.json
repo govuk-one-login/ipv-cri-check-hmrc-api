@@ -73,8 +73,26 @@
           }
         }
       },
-      "Next": "Success",
+      "Next": "Publish Audit Event Abandoned",
       "ResultSelector": {}
+    },
+    "Publish Audit Event Abandoned": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "message": "Journey Abandoned"
+            },
+            "DetailType": "${AuditEventNameAbandoned}",
+            "EventBusName": "${CheckHmrcEventBus}",
+            "Source": "${CheckHmrcEventBusSource}"
+          }
+        ]
+      },
+      "Next": "Success",
+      "ResultPath": null
     },
     "Success": {
       "Type": "Succeed"
