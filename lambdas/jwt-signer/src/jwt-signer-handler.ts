@@ -4,6 +4,7 @@ import sigFormatter from "ecdsa-sig-formatter";
 import { fromEnv } from "@aws-sdk/credential-providers";
 import { SignerPayLoad } from "./signer-payload";
 import { SignageType } from "./signage-type";
+import { base64url } from "jose";
 import {
   KMSClient,
   MessageType,
@@ -23,10 +24,15 @@ export class JwtSignerHandler implements LambdaInterface {
       event.claimsSet,
       event.kid as string
     );
-    return sigFormatter.derToJose(
+    const signature = sigFormatter.derToJose(
       Buffer.from(response).toString("base64"),
       "ES256"
     );
+
+    const header = base64url.encode(event.header);
+    const payload = base64url.encode(event.claimsSet);
+
+    return `${header}.${payload}.${base64url.encode(signature)}`;
   }
 
   private async signWithKms(
