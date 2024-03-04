@@ -19,27 +19,30 @@ const jwtSignerHandler = new JwtSignerHandler(kmsClient);
 jest.spyOn(kmsClient, "send");
 
 describe("Successfully signs a JWT", () => {
+  const event: SignerPayLoad = {
+    kid,
+    header: JSON.stringify(header),
+    claimsSet: JSON.stringify(claimsSet),
+  };
   describe("With RAW signing mode", () => {
     it("Should verify a signed JWT message smaller than 4096", async () => {
-      const event: SignerPayLoad = { kid, header, claimsSet };
-
       kmsClient.send.mockImplementationOnce(() =>
         Promise.resolve({
           Signature: sigFormatter.joseToDer(joseSignature, "ES256"),
         })
       );
 
-      const signature = await jwtSignerHandler.handler(event, {});
+      const signedJwt = await jwtSignerHandler.handler(event, {});
 
       const { payload } = await jwtVerify(
-        `${header}.${claimsSet}.${signature}`,
+        signedJwt,
         await importJWK(publicVerifyingJwk, "ES256"),
         {
           algorithms: ["ES256"],
         }
       );
 
-      expect(signature).toBeDefined();
+      expect(signedJwt).toBeDefined();
 
       expect(kmsClient.send).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -49,16 +52,17 @@ describe("Successfully signs a JWT", () => {
         })
       );
 
-      expect(payload).toStrictEqual(
-        JSON.parse(Buffer.from(event.claimsSet, "base64").toString())
-      );
+      expect(payload).toStrictEqual(JSON.parse(event.claimsSet));
     });
   });
 
   describe("Using DIGEST signing mode", () => {
     it("Should verify a large signed JWT with claimset greater than 4096", async () => {
-      const event: SignerPayLoad = { kid, header, claimsSet: largeClaimsSet };
-
+      const event: SignerPayLoad = {
+        kid,
+        header: JSON.stringify(header),
+        claimsSet: JSON.stringify(largeClaimsSet),
+      };
       kmsClient.send.mockImplementationOnce(() =>
         Promise.resolve({
           Signature: sigFormatter.joseToDer(
@@ -68,17 +72,17 @@ describe("Successfully signs a JWT", () => {
         })
       );
 
-      const signature = await jwtSignerHandler.handler(event, {});
+      const signedJwt = await jwtSignerHandler.handler(event, {});
 
       const { payload } = await jwtVerify(
-        `${header}.${event.claimsSet}.${signature}`,
+        signedJwt,
         await importJWK(publicVerifyingJwk, "ES256"),
         {
           algorithms: ["ES256"],
         }
       );
 
-      expect(signature).toBeDefined();
+      expect(signedJwt).toBeDefined();
 
       expect(kmsClient.send).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -88,16 +92,18 @@ describe("Successfully signs a JWT", () => {
         })
       );
 
-      expect(payload).toStrictEqual(
-        JSON.parse(Buffer.from(event.claimsSet, "base64").toString())
-      );
+      expect(payload).toStrictEqual(JSON.parse(event.claimsSet));
     });
   });
 });
 
 describe("Fails to sign a JWT", () => {
   it("Should error when signature is undefined", async () => {
-    const event: SignerPayLoad = { kid, header, claimsSet };
+    const event: SignerPayLoad = {
+      kid,
+      header: JSON.stringify(header),
+      claimsSet: JSON.stringify(claimsSet),
+    };
 
     kmsClient.send.mockImplementationOnce(() =>
       Promise.resolve({
@@ -111,7 +117,10 @@ describe("Fails to sign a JWT", () => {
   });
 
   it("Should fail when key ID is missing", async () => {
-    const event: Partial<SignerPayLoad> = { header, claimsSet };
+    const event: Partial<SignerPayLoad> = {
+      header: JSON.stringify(header),
+      claimsSet: JSON.stringify(claimsSet),
+    };
 
     kmsClient.send.mockImplementationOnce(() =>
       Promise.reject(
@@ -129,7 +138,10 @@ describe("Fails to sign a JWT", () => {
   });
 
   it("Should throw an error if KMS response is not in JSON format", async () => {
-    const event: Partial<SignerPayLoad> = { header, claimsSet };
+    const event: Partial<SignerPayLoad> = {
+      header: JSON.stringify(header),
+      claimsSet: JSON.stringify(claimsSet),
+    };
 
     kmsClient.send.mockImplementationOnce(() =>
       Promise.reject(new SyntaxError("Unknown error"))
@@ -143,7 +155,10 @@ describe("Fails to sign a JWT", () => {
   });
 
   it("Should throw an error for an unknown error during signing with KMS", async () => {
-    const event: Partial<SignerPayLoad> = { header, claimsSet };
+    const event: Partial<SignerPayLoad> = {
+      header: JSON.stringify(header),
+      claimsSet: JSON.stringify(claimsSet),
+    };
 
     kmsClient.send.mockImplementationOnce(() =>
       Promise.reject({ Signature: "invalid-response" })
