@@ -132,9 +132,9 @@ describe("nino-issue-credential-unhappy", () => {
     const [headerEncoded, payloadEncoded, signatureEncoded] =
       token.jwt.split(".");
 
-    const header = JSON.parse(atob(headerEncoded));
-    const payload = JSON.parse(atob(payloadEncoded));
-    const signature = atob(signatureEncoded);
+    const header = JSON.parse(base64decode(headerEncoded));
+    const payload = JSON.parse(base64decode(payloadEncoded));
+    const signature = base64decode(signatureEncoded);
 
     expect(header.typ).toBe("JWT");
     expect(header.alg).toBe("ES256");
@@ -180,7 +180,9 @@ describe("nino-issue-credential-unhappy", () => {
     expect(signature).not.toBeNull;
   });
 
-  function isValidTimestamp(timestamp: number): boolean {
-    return !isNaN(new Date(timestamp).getTime());
-  }
+  const isValidTimestamp = (timestamp: number) =>
+    !isNaN(new Date(timestamp).getTime());
+
+  const base64decode = (value: string) =>
+    Buffer.from(value, "base64").toString("utf-8");
 });
