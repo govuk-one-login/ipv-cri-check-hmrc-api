@@ -189,7 +189,6 @@ describe("nino-issue-credential-happy", () => {
 
     const startExecutionResult = await getExecutionResult("Bearer happy");
     const token = JSON.parse(startExecutionResult.output as string);
-    const [header, jwtPayload, signature] = token.jwt.split(".");
 
     const signingPublicJwk = await createSigningPublicJWK(kid, alg);
     const publicVerifyingJwk = await importJWK(
@@ -197,11 +196,9 @@ describe("nino-issue-credential-happy", () => {
       signingPublicJwk?.alg || alg
     );
 
-    const { payload } = await jwtVerify(
-      `${header}.${jwtPayload}.${base64decode(signature)}`,
-      publicVerifyingJwk,
-      { algorithms: [alg] }
-    );
+    const { payload } = await jwtVerify(token.jwt, publicVerifyingJwk, {
+      algorithms: [alg],
+    });
 
     expect(isValidTimestamp(payload.exp || 0)).toBe(true);
     expect(isValidTimestamp(payload.nbf || 0)).toBe(true);
