@@ -129,6 +129,8 @@ Resources:
       BuildProperties:
         Sourcemap: true
     Properties:
+      LoggingConfig:
+        LogGroup: '/aws/lambda/${SsmParametersFunction}2'
       Handler: lambdas/ssm-parameters/src/ssm-parameters-handler.lambdaHandler
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
@@ -173,8 +175,6 @@ Resources:
           MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
           MetricName: SsmParametersFunction-Error
 
-
-
   CiMappingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -182,6 +182,8 @@ Resources:
       BuildProperties:
         Sourcemap: true
     Properties:
+      LoggingConfig:
+        LogGroup: '/aws/lambda/${CiMappingFunction}2'
       Handler: lambdas/ci-mapping/src/ci-mapping-handler.lambdaHandler
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
@@ -411,6 +413,8 @@ Resources:
       BuildProperties:
         Sourcemap: true
     Properties:
+      LoggingConfig:
+        LogGroup: '/aws/lambda/${JwtSignerFunction}2'
       Handler: lambdas/jwt-signer/src/jwt-signer-handler.lambdaHandler
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
@@ -458,7 +462,6 @@ Resources:
           MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
           MetricName: JwtSignerFunction-Error
 
-
   MatchingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -466,6 +469,8 @@ Resources:
       BuildProperties:
         Sourcemap: true
     Properties:
+      LoggingConfig:
+        LogGroup: '/aws/lambda/${MatchingFunction}2'
       Handler: lambdas/matching/src/matching-handler.lambdaHandler
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
@@ -508,8 +513,6 @@ Resources:
           MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
           MetricName: MatchingFunction-Error
 
-
-
   TimeFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -517,6 +520,8 @@ Resources:
       BuildProperties:
         Sourcemap: true
     Properties:
+      LoggingConfig:
+        LogGroup: '/aws/lambda/${TimeFunction}2'
       Handler: lambdas/issue-credential/src/time-handler.lambdaHandler
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
@@ -559,8 +564,6 @@ Resources:
           MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
           MetricName: TimeFunction-Error
 
-
-
   CreateAuthCodeFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -568,6 +571,8 @@ Resources:
       BuildProperties:
         Sourcemap: true
     Properties:
+      LoggingConfig:
+        LogGroup: '/aws/lambda/${CreateAuthCodeFunction}2'
       Handler: lambdas/matching/src/create-auth-code-handler.lambdaHandler
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
@@ -611,8 +616,6 @@ Resources:
           MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
           MetricName: CreateAuthCodeFunction-Error
 
-
-
   CurrentTimeFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -620,6 +623,8 @@ Resources:
       BuildProperties:
         Sourcemap: true
     Properties:
+      LoggingConfig:
+        LogGroup: '/aws/lambda/${CurrentTimeFunction}2'
       Handler: lambdas/matching/src/current-time-handler.lambdaHandler
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
@@ -671,6 +676,8 @@ Resources:
       BuildProperties:
         Sourcemap: true
     Properties:
+      LoggingConfig:
+        LogGroup: '/aws/lambda/${CredentialSubjectFunction}2'
       Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
