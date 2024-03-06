@@ -5,6 +5,7 @@ import {
   clearItemsFromTables,
   populateTables,
 } from "../resources/dynamodb-helper";
+import { getSSMParameter } from "../resources/ssm-param-helper";
 
 jest.setTimeout(30_000);
 
@@ -100,7 +101,46 @@ describe("nino-issue-credential-unhappy", () => {
       }
     );
   });
-
+  const getExpectedPayload = async () => {
+    const issuer = await getSSMParameter(
+      `/${output.CommonStackName}/verifiable-credential/issuer`
+    );
+    return {
+      iss: `${issuer}`,
+      jti: expect.any(String),
+      sub: "test",
+      vc: {
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld",
+        ],
+        credentialSubject: {
+          name: [
+            {
+              nameParts: [
+                { type: "GivenName", value: "Jim" },
+                { type: "FamilyName", value: "Ferguson" },
+              ],
+            },
+          ],
+          socialSecurityRecord: [{ personalNumber: "AA000003D" }],
+        },
+        evidence: [
+          {
+            failedCheckDetails: [
+              { checkMethod: "data", identityCheckPolicy: "published" },
+            ],
+            strengthScore: 2,
+            txn: expect.any(String),
+            type: "IdentityCheck",
+            validityScore: 0,
+          },
+        ],
+        ci: [expect.any(String)],
+        type: ["VerifiableCredential", "IdentityCheckCredential"],
+      },
+    };
+  };
   afterEach(async () => {
     await clearItemsFromTables(
       {
@@ -119,12 +159,11 @@ describe("nino-issue-credential-unhappy", () => {
     await clearAttemptsTable(input.sessionId, output.UserAttemptsTable);
   });
 
-  it("should fail when nino check is unsuccessful", async () => {
-    const startExecutionResult = await executeStepFunction(
-      output.NinoIssueCredentialStateMachineArn as string,
-      {
-        bearerToken: "Bearer unhappy",
-      }
+  it("should create VC when nino check is unsuccessful", async () => {
+    const startExecutionResult = await getExecutionResult("Bearer unhappy");
+
+    const currentCredentialKmsSigningKeyId = await getSSMParameter(
+      `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
     );
 
     const token = JSON.parse(startExecutionResult.output as string);
@@ -136,49 +175,22 @@ describe("nino-issue-credential-unhappy", () => {
     const payload = JSON.parse(base64decode(payloadEncoded));
     const signature = base64decode(signatureEncoded);
 
-    expect(header.typ).toBe("JWT");
-    expect(header.alg).toBe("ES256");
-    expect(header.kid).not.toBeNull;
-
-    const evidence = payload.vc.evidence[0];
-    expect(evidence.type).toBe("IdentityCheck");
-    expect(evidence.strengthScore).toBe(2);
-    expect(evidence.validityScore).toBe(0);
-    expect(evidence.failedCheckDetails[0].checkMethod).toBe("data");
-    expect(evidence.ci[0]).not.toBeNull;
-    expect(evidence.txn).not.toBeNull;
-
-    const credentialSubject = payload.vc.credentialSubject;
-    expect(credentialSubject.socialSecurityRecord[0].personalNumber).toBe(
-      testUser.nino
-    );
-    expect(credentialSubject.name[0].nameParts[0].type).toBe("GivenName");
-    expect(credentialSubject.name[0].nameParts[0].value).toBe(
-      testUser.firstName
-    );
-    expect(credentialSubject.name[0].nameParts[1].type).toBe("FamilyName");
-    expect(credentialSubject.name[0].nameParts[1].value).toBe(
-      testUser.lastName
-    );
-
-    expect(payload.vc.type[0]).toBe("VerifiableCredential");
-    expect(payload.vc.type[1]).toBe("IdentityCheckCredential");
-
-    expect(payload.vc["@context"][0]).toBe(
-      "https://www.w3.org/2018/credentials/v1"
-    );
-    expect(payload.vc["@context"][1]).toBe(
-      "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld"
-    );
-
-    expect(payload.sub).not.toBeNull;
-    expect(isValidTimestamp(payload.nbf)).toBe(true);
-    expect(payload.iss).not.toBeNull;
-    expect(isValidTimestamp(payload.exp)).toBe(true);
-    expect(payload.jti).not.toBeNull;
+    expect(header).toEqual({
+      typ: "JWT",
+      alg: "ES256",
+      kid: currentCredentialKmsSigningKeyId,
+    });
 
     expect(signature).not.toBeNull;
+    expect(isValidTimestamp(payload.exp)).toBe(true);
+    expect(isValidTimestamp(payload.nbf)).toBe(true);
+    expect(payload).toEqual(expect.objectContaining(getExpectedPayload()));
   });
+
+  const getExecutionResult = async (token: string) =>
+    executeStepFunction(output.NinoIssueCredentialStateMachineArn as string, {
+      bearerToken: token,
+    });
 
   const isValidTimestamp = (timestamp: number) =>
     !isNaN(new Date(timestamp).getTime());

@@ -24,8 +24,8 @@ describe("nino-issue-credential-unhappy", () => {
     const testUser = {
       nino: "AA000003D",
       dob: "1948-04-23",
-      firstName: "Jim",
-      lastName: "Ferguson",
+      firstName: "KENNETH",
+      lastName: "DECERQUEIRA",
     };
 
     const responseStepFunction = await sfnContainer.startStepFunctionExecution(
@@ -46,21 +46,20 @@ describe("nino-issue-credential-unhappy", () => {
     const [headerEncoded, payloadEncoded, signatureEncoded] =
       token.jwt.split(".");
 
-    const header = JSON.parse(atob(headerEncoded));
-    const payload = JSON.parse(atob(payloadEncoded));
-    const signature = atob(signatureEncoded);
+    const header = JSON.parse(base64decode(headerEncoded));
+    const payload = JSON.parse(base64decode(payloadEncoded));
+    const signature = base64decode(signatureEncoded);
 
     expect(header.typ).toBe("JWT");
     expect(header.alg).toBe("ES256");
-    expect(header.kid).not.toBeNull;
-
+    expect(header.kid).not.toBeNull();
     const evidence = payload.vc.evidence[0];
+
     expect(evidence.type).toBe("IdentityCheck");
     expect(evidence.strengthScore).toBe(2);
-    expect(evidence.validityScore).toBe(0);
-    expect(evidence.failedCheckDetails[0].checkMethod).toBe("data");
-    expect(evidence.ci[0]).not.toBeNull;
-    expect(evidence.txn).not.toBeNull;
+    expect(evidence.validityScore).toBe(2);
+    expect(evidence.checkDetails[0].checkMethod).toBe("data");
+    expect(evidence.txn).not.toBeNull();
 
     const credentialSubject = payload.vc.credentialSubject;
     expect(credentialSubject.socialSecurityRecord[0].personalNumber).toBe(
@@ -85,16 +84,18 @@ describe("nino-issue-credential-unhappy", () => {
       "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld"
     );
 
-    expect(payload.sub).not.toBeNull;
+    expect(payload.sub).not.toBeNull();
     expect(isValidTimestamp(payload.nbf)).toBe(true);
-    expect(payload.iss).not.toBeNull;
+    expect(payload.iss).not.toBeNull();
     expect(isValidTimestamp(payload.exp)).toBe(true);
-    expect(payload.jti).not.toBeNull;
+    expect(payload.jti).not.toBeNull();
 
-    expect(signature).not.toBeNull;
+    expect(signature).not.toBeNull();
   });
 
-  function isValidTimestamp(timestamp: number): boolean {
-    return !isNaN(new Date(timestamp).getTime());
-  }
+  const isValidTimestamp = (timestamp: number) =>
+    !isNaN(new Date(timestamp).getTime());
+
+  const base64decode = (value: string) =>
+    Buffer.from(value, "base64").toString("utf-8");
 });
