@@ -721,7 +721,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/check_session.asl.json
       DefinitionSubstitutions:
-#        CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
+        CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
         CommonStackName: !Ref CommonStackName
       Logging:
         Destinations:
@@ -730,8 +730,8 @@ Resources:
         IncludeExecutionData: True
         Level: ALL
       Policies:
-#        - LambdaInvokePolicy:
-#            FunctionName: !Ref CurrentTimeFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CurrentTimeFunction
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - Statement:
