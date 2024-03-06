@@ -35,7 +35,7 @@
       "Parameters": {
         "FunctionName": "${SsmParametersFunction}",
         "Payload": {
-          "parameters.$": "States.Array('/${CommonStackName}/PersonIdentityTableName', '${UserAgent}', '/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId))"
+          "parameters.$": "States.Array('/${CommonStackName}/PersonIdentityTableName', '${UserAgent}', '/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId),'/${CommonStackName}/verifiable-credential/issuer')"
         }
       },
       "Retry": [
@@ -57,7 +57,8 @@
         "PersonIdentityTableName.$": "$.Payload[0].Value",
         "UserAgent.$": "$.Payload[1].Value",
         "SessionTableName.$": "$.Payload[2].Value",
-        "CheckUrl.$": "$.Payload[3].Value"
+        "CheckUrl.$": "$.Payload[3].Value",
+        "issuer.$": "$.Payload[4].Value"
       }
     },
     "Err: Invalid Session": {
@@ -183,7 +184,11 @@
         "Entries": [
           {
             "Detail": {
-              "message": "Request Sent to 3rd party"
+              "isoTimestamp.$": "$$.State.EnteredTime",
+              "issuer.$": "$.parameters.issuer",
+              "nino.$": "$.nino",
+              "session.$": "$.sessionCheck.userAuditInfo",
+              "user.$": "$.userDetails"
             },
             "DetailType": "${AuditEventNameRequestSent}",
             "EventBusName": "${CheckHmrcEventBus}",
@@ -242,7 +247,11 @@
         "Entries": [
           {
             "Detail": {
-              "message": "Response Received from 3rd party"
+              "isoTimestamp.$": "$$.State.EnteredTime",
+              "session.$": "$.sessionCheck.userAuditInfo",
+              "nino.$": "$.nino",
+              "user.$": "$.userDetails",
+              "issuer.$": "$.parameters.issuer"
             },
             "DetailType": "${AuditEventNameResponseReceived}",
             "EventBusName": "${CheckHmrcEventBus}",
