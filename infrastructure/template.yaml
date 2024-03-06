@@ -1056,7 +1056,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event RESPONSE_RECEIVED
-      State: DISABLED
+      State: !If [IsDevLikeEnvironment, ENABLED, DISABLED]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1068,7 +1068,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event REQUEST_SENT
-      State: DISABLED
+      State: !If [IsDevLikeEnvironment, ENABLED, DISABLED]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1080,7 +1080,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event VC_ISSUED
-      State: DISABLED
+      State: !If [IsDevLikeEnvironment, ENABLED, DISABLED]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1092,7 +1092,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the END event
-      State: DISABLED
+      State: !If [IsDevLikeEnvironment, ENABLED, DISABLED]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1104,7 +1104,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the ABANDONED event
-      State: DISABLED
+      State: !If [IsDevLikeEnvironment, ENABLED, DISABLED]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
