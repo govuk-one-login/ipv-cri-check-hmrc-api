@@ -22,7 +22,7 @@
       },
       "Next": "Fetch Session",
       "ResultSelector": {
-        "value.$": "$.Payload"
+        "seconds.$": "$.Payload.seconds"
       },
       "ResultPath": "$.currentTime"
     },
@@ -60,7 +60,7 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.currentTime.value",
+          "Variable": "$.currentTime.seconds",
           "StringGreaterThanPath": "$.sessionQuery.items[0].expiryDate.N",
           "Next": "Err: Session Expired"
         }
