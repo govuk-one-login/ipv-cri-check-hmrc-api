@@ -28,14 +28,31 @@ Parameters:
   PermissionsBoundary:
     Type: String
     Default: ""
+  DeployAlarmsInDevEnvironment:
+    Description: "Set to the string value `true` to deploy alarms in a DEV environment"
+    Type: String
+    Default: true
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
   UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, ""]]
-  IsDevEnvironment: !Equals [!Ref Environment, dev]
+
+  IsProdEnvironment: !Equals
+    - !Ref Environment
+    - production
+
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
-  IsDevLikeEnvironment:
-    !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
+
+  IsDevEnvironment: !Or
+    - !Equals [!Ref Environment, localdev]
+    - !Equals [!Ref Environment, dev]
+
+  IsNotDevEnvironment: !Not
+    - !Condition IsDevEnvironment
+
+  DeployAlarms: !Or
+    - !Condition IsNotDevEnvironment
+    - !Equals [!Ref DeployAlarmsInDevEnvironment, "true" ]
 
 Mappings:
   # Only numeric values should be assigned here
@@ -122,6 +139,7 @@ Globals:
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
 
 Resources:
+
   SsmParametersFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -277,8 +295,44 @@ Resources:
   PublicNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs2'
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      LogGroupName: !Sub '/aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs'
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PublicNinoCheckApiFatalErorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref PublicNinoCheckApiAccessLogGroup
+      FilterPattern: '{ $.level = "FATAL" || $.message = "Unhandled Exception:*" }'
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
+          MetricName: "PublicNinoCheckApi-Fatalerror"
+
+  PublicNinoCheckApiFatalErrorAlarm:
+    DependsOn:
+      - "PublicNinoCheckApiFatalErorMetricFilter"
+    Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-PublicNinoCheckApi-FatalErrorAlarm"
+      AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs."
+      ActionsEnabled: true
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      InsufficientDataActions: [ ]
+      MetricName: PublicNinoCheckApi-Fatalerror
+      Namespace: !Sub "${AWS::StackName}/LogMessages"
+      Statistic: Sum
+      Dimensions: [ ]
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
 
   PrivateNinoCheckApi:
     Type: AWS::Serverless::Api
@@ -334,8 +388,44 @@ Resources:
   PrivateNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs2'
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      LogGroupName: !Sub '/aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs'
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PrivateNinoCheckApiFatalErorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref PrivateNinoCheckApiAccessLogGroup
+      FilterPattern: '{ $.level = "FATAL" || $.message = "Unhandled Exception:*" }'
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
+          MetricName: "PrivateNinoCheckApi-Fatalerror"
+
+  PrivateNinoCheckApiFatalErrorAlarm:
+    DependsOn:
+      - "PrivateNinoCheckApiFatalErorMetricFilter"
+    Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-PrivateNinoCheckApi-FatalErrorAlarm"
+      AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs."
+      ActionsEnabled: true
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      InsufficientDataActions: [ ]
+      MetricName: PrivateNinoCheckApi-Fatalerror
+      Namespace: !Sub "${AWS::StackName}/LogMessages"
+      Statistic: Sum
+      Dimensions: [ ]
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
 
   ExecuteStateMachineRole:
     Type: AWS::IAM::Role
@@ -773,7 +863,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs2'
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   AbandonStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -825,7 +915,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs2'
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   NinoIssueCredentialStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -910,13 +1000,13 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs2'
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   CheckSessionStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs2'
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   CheckHmrcEventBus:
     Type: AWS::Events::EventBus
