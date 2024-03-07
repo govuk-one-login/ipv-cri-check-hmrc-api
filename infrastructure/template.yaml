@@ -821,6 +821,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
+        CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
@@ -847,6 +848,8 @@ Resources:
         IncludeExecutionData: True
         Level: ALL
       Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CurrentTimeFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref SsmParametersFunction
         - LambdaInvokePolicy:
