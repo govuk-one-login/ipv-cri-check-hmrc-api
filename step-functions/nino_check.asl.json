@@ -167,7 +167,7 @@
     },
     "Get OAuth Token": {
       "Type": "Task",
-      "Next": "Publish Audit Event Request Sent",
+      "Next": "Fetch Current Time For Request Sent",
       "Parameters": {
         "SecretId": "HMRCBearerToken"
       },
@@ -177,6 +177,20 @@
         "value.$": "$.SecretString"
       }
     },
+    "Fetch Current Time For Request Sent": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${CurrentTimeFunctionArn}"
+      },
+      "Next": "Publish Audit Event Request Sent",
+      "ResultSelector": {
+        "milliseconds.$": "$.Payload.milliseconds",
+        "seconds.$": "$.Payload.seconds"
+      },
+      "ResultPath": "$.currentTime"
+    },
     "Publish Audit Event Request Sent": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
@@ -184,7 +198,8 @@
         "Entries": [
           {
             "Detail": {
-              "isoTimestamp.$": "$$.State.EnteredTime",
+              "msTimestamp.$": "$.currentTime.milliseconds",
+              "sTimestamp": "$.currentTime.seconds",
               "issuer.$": "$.parameters.issuer",
               "nino.$": "$.nino",
               "session.$": "$.sessionCheck.userAuditInfo",
@@ -217,7 +232,7 @@
           "oAuthToken.$": "$.oAuthToken.value"
         }
       },
-      "Next": "Publish Audit Event Response Received",
+      "Next": "Fetch Current Time For Response Received",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -240,6 +255,20 @@
     "Err: Matching Lambda Exception": {
       "Type": "Fail"
     },
+    "Fetch Current Time For Response Received": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${CurrentTimeFunctionArn}"
+      },
+      "Next": "Publish Audit Event Response Received",
+      "ResultSelector": {
+        "milliseconds.$": "$.Payload.milliseconds",
+        "seconds.$": "$.Payload.seconds"
+      },
+      "ResultPath": "$.currentTime"
+    },
     "Publish Audit Event Response Received": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
@@ -247,7 +276,8 @@
         "Entries": [
           {
             "Detail": {
-              "isoTimestamp.$": "$$.State.EnteredTime",
+              "msTimestamp.$": "$.currentTime.milliseconds",
+              "sTimestamp": "$.currentTime.seconds",
               "session.$": "$.sessionCheck.userAuditInfo",
               "nino.$": "$.nino",
               "user.$": "$.userDetails",
