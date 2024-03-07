@@ -12,14 +12,14 @@ const expectedPayload = {
       {
         type: "IdentityCheck",
         strengthScore: 2,
-        validityScore: 0,
-        failedCheckDetails: [
+        validityScore: 2,
+        checkDetails: [
           {
             checkMethod: "data",
+            identityCheckPolicy: "published",
           },
         ],
-        ci: ["N01"],
-        txn: "d3bae729-127e-4a1a-be5b-0dcec68f9dc9",
+        txn: "3f1d3bb5-c688-4b45-a383-25e676274dfa",
       },
     ],
     credentialSubject: {
@@ -33,11 +33,11 @@ const expectedPayload = {
           nameParts: [
             {
               type: "GivenName",
-              value: "Jim",
+              value: "KENNETH",
             },
             {
               type: "FamilyName",
-              value: "Ferguson",
+              value: "DECERQUEIRA",
             },
           ],
         },
@@ -49,11 +49,11 @@ const expectedPayload = {
       "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld",
     ],
   },
-  sub: "test",
-  nbf: 1709560618,
-  iss: "0976c11e-8ef3-4659-b7f2-ee0b842b85bd",
-  exp: 1709567818,
-  jti: "urn:uuid:27dd61c4-b91e-4cb8-9c14-65e22d164b1e",
+  sub: "urn:fdc:gov.uk:2022:dbfac0ed-3e0a-4009-a480-cc4c21f92758",
+  nbf: 1709734310,
+  iss: "https://review-hc.dev.account.gov.uk",
+  exp: 1709741510,
+  jti: "urn:uuid:3fbbd30a-412e-42e8-b2e4-29695f8746b3",
 };
 
 describe("nino-issue-credential-happy", () => {
