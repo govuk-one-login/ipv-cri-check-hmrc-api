@@ -139,7 +139,7 @@ paths:
               }
         responses:
           default:
-            statusCode: 200
+            statusCode: 500
             responseTemplates:
               application/json: |
                 #set($response = $util.parseJson($input.body))
@@ -181,7 +181,7 @@ paths:
               }
         responses:
           default:
-            statusCode: 200
+            statusCode: 500
             responseTemplates:
               application/json: |
                 #set($response = $util.parseJson($input.body))

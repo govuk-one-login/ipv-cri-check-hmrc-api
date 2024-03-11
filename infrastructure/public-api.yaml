@@ -160,7 +160,7 @@ paths:
               }
         responses:
           default:
-            statusCode: 200
+            statusCode: 500
             responseTemplates:
               application/jwt: |
                 #set($resp = $util.parseJson($input.body))
