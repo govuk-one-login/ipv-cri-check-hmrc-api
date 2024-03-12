@@ -2,6 +2,7 @@ import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { UserInfoEvent } from "./user-info-event";
 import {
+  BirthDate,
   CredentialSubject,
   CredentialSubjectBuilder,
   NamePart,
@@ -16,8 +17,13 @@ export class CredentialSubjectHandler implements LambdaInterface {
   ): Promise<CredentialSubject> {
     try {
       return credentialSubjectBuilder
-        .setPersonalNumber(event.nino)
+        .setPersonalNumber(event?.nino)
         .addNames(this.convertToCredentialSubjectNames(event))
+        .setBirthDate(
+          event?.userInfoEvent?.Items[0]?.birthDates?.L?.map(
+            (birthDate) => ({ value: birthDate.M.value.S }) as BirthDate
+          )
+        )
         .build();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -29,7 +35,7 @@ export class CredentialSubjectHandler implements LambdaInterface {
   private convertToCredentialSubjectNames = (
     event: UserInfoEvent
   ): Array<NamePart> => {
-    return event.userInfoEvent.Items[0].names.L[0].M.nameParts.L.map(
+    return event?.userInfoEvent?.Items[0]?.names?.L[0]?.M?.nameParts?.L?.map(
       (part) => ({ type: part.M.type.S, value: part.M.value.S }) as NamePart
     );
   };
