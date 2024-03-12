@@ -91,7 +91,26 @@
           "Next": "User has more than 2 attempts?"
         }
       ],
-      "Default": "Query Person Identity Table"
+      "Default": "users initial attempt"
+    },
+    "users initial attempt": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "Message": "User initial nino check attempt",
+              "Attempt": "1st-attempt"
+            },
+            "DetailType": "1-attempt",
+            "EventBusName": "${CheckHmrcEventBus}",
+            "Source": "${CheckHmrcEventBusSource}"
+          }
+        ]
+      },
+      "ResultPath": null,
+      "Next": "Query Person Identity Table"
     },
     "User has more than 2 attempts?": {
       "Type": "Choice",
@@ -99,10 +118,48 @@
         {
           "Variable": "$.check-attempts-exist.Count",
           "NumericGreaterThanEquals": 2,
-          "Next": "Err: Attempts exceeded"
+          "Next": "failed attempt"
         }
       ],
-      "Default": "Query Person Identity Table"
+      "Default": "user final attempt"
+    },
+    "failed attempt": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "Message": "User nino check attempt exceed",
+              "Attempt": "3rd-attempt"
+            },
+            "DetailType": "3-attempt",
+            "EventBusName": "${CheckHmrcEventBus}",
+            "Source": "${CheckHmrcEventBusSource}"
+          }
+        ]
+      },
+      "Next": "Err: Attempts exceeded",
+      "ResultPath": null
+    },
+    "user final attempt": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "Message": "User second nino check attempt",
+              "Attempt": "2nd-attempt"
+            },
+            "DetailType": "2-attempt",
+            "EventBusName": "${CheckHmrcEventBus}",
+            "Source": "${CheckHmrcEventBusSource}"
+          }
+        ]
+      },
+      "Next": "Query Person Identity Table",
+      "ResultPath": null
     },
     "Err: Attempts exceeded": {
       "Type": "Pass",

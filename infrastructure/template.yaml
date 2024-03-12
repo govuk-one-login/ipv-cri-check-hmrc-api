@@ -1067,66 +1067,110 @@ Resources:
     Properties:
       Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
 
-  AuditEventResponseReceivedRule:
+  AuditConsumer:
+    Type: AWS::Serverless::Application
+    Properties:
+      Type: EXPRESS
+      DefinitionUri: ../step-functions/audit_event_shaper.asl.json
+      DefinitionSubstitutions:
+        CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
+        CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
+        TimeInMillisecondsFunctionArn: !GetAtt TimeInMillisecondsFunction.Arn
+        CommonStackName: !Ref CommonStackName
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt AuditEventShaperStateMachineLogGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CredentialSubjectFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref TimeInMillisecondsFunction
+        - Statement:
+            Effect: Allow
+            Action: logs:*
+            Resource: "*"
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
+  AuditEventShaperStateMachineRequestSentRule:
     Type: AWS::Events::Rule
     Properties:
-      EventBusName: !Ref CheckHmrcEventBus
-      Description: Capture the audit event RESPONSE_RECEIVED
-      State: DISABLED
+      EventBusName: !GetAtt CheckHmrcEventBus.Name
       EventPattern:
         source:
-          - !FindInMap [Audit, Source, !Ref Environment]
+          - !Sub review-hc.${Environment}.account.gov.uk
         detail-type:
-          - !FindInMap [Audit, EventName, ResponseReceived]
+          - REQUEST_SENT
+      Targets:
+        - Arn: !Ref AuditEventShaperStateMachine
+          Id: AuditEventShaperStateMachineRequestSentEventTarget
+          RoleArn: !GetAtt AuditEventShaperEventBridgeRequestSentRuleRole.Arn
 
-  AuditEventRequestSentRule:
+  AuditEventShaperStateMachineResponseReceivedRule:
     Type: AWS::Events::Rule
     Properties:
-      EventBusName: !Ref CheckHmrcEventBus
-      Description: Capture the audit event REQUEST_SENT
-      State: DISABLED
+      EventBusName: !GetAtt CheckHmrcEventBus.Name
       EventPattern:
         source:
-          - !FindInMap [Audit, Source, !Ref Environment]
+          - !Sub review-hc.${Environment}.account.gov.uk
         detail-type:
-          - !FindInMap [Audit, EventName, RequestSent]
+          - RESPONSE_RECEIVED
+      State: ENABLED
+      Targets:
+        - Arn: !Ref AuditEventShaperStateMachine
+          Id: AuditEventShaperStateMachineResponseReceivedTarget
+          RoleArn: !GetAtt AuditEventShaperStateMachineResponseReceivedRuleRole.Arn
 
-  AuditEventVcIssuedRule:
-    Type: AWS::Events::Rule
+  AuditEventShaperEventBridgeRequestSentRuleRole:
+    Type: AWS::IAM::Role
     Properties:
-      EventBusName: !Ref CheckHmrcEventBus
-      Description: Capture the audit event VC_ISSUED
-      State: DISABLED
-      EventPattern:
-        source:
-          - !FindInMap [Audit, Source, !Ref Environment]
-        detail-type:
-          - !FindInMap [Audit, EventName, VcIssued]
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+      Policies:
+        - PolicyName: AuditEventShapeRequestSentRuleRoleStartExecutionPolicy
+          PolicyDocument:
+            Statement:
+              - Action: states:StartExecution
+                Effect: Allow
+                Resource: !Ref AuditEventShaperStateMachine
 
-  AuditEventEndRule:
-    Type: AWS::Events::Rule
+  AuditEventShaperStateMachineResponseReceivedRuleRole:
+    Type: AWS::IAM::Role
     Properties:
-      EventBusName: !Ref CheckHmrcEventBus
-      Description: Capture the END event
-      State: DISABLED
-      EventPattern:
-        source:
-          - !FindInMap [Audit, Source, !Ref Environment]
-        detail-type:
-          - !FindInMap [Audit, EventName, End]
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+      Policies:
+        - PolicyName: AuditEventShaperResponseReceivedRuleRoleStartExecutionPolicy
+          PolicyDocument:
+            Statement:
+              - Action: states:StartExecution
+                Effect: Allow
+                Resource: !Ref AuditEventShaperStateMachine
 
-  AuditEventAbandonedRule:
-    Type: AWS::Events::Rule
+  AuditEventShaperStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
     Properties:
-      EventBusName: !Ref CheckHmrcEventBus
-      Description: Capture the ABANDONED event
-      State: DISABLED
-      EventPattern:
-        source:
-          - !FindInMap [Audit, Source, !Ref Environment]
-        detail-type:
-          - !FindInMap [Audit, EventName, Abandoned]
-
+      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEventShaper-state-machine-logs
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 Outputs:
   SsmParametersFunctionArn:
     Description: SsmParameters Lambda Function ARN

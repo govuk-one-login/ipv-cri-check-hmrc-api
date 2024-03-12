@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Description: <your stack description here>
+
+# Available top-level fields are listed in code completion
+Parameters:
+  EventBusName:
+    Type: String
+    Description: The EventBus Name
+  EventSource:
+    Type: String
+    Description: The Event bus source
+  OwnerPrefix:
+    Type: String
+    Default: Metric-logger
+    Description: Prefix to be used in names of the things created by this stack.
+# Add Resources Here: uncomment the following lines
+Resources:
+  UserFirstAttemptsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Rule to process User Attempt.
+      EventBusName: !Ref EventBusName
+      EventPattern:
+        source:
+          - !Ref EventSource
+        detail-type:
+          - 1-attempt
+      RoleArn: !GetAtt WriteToCloudWatchRole.Arn
+      Targets:
+        - Id: SendToCustomStepFunctionsLogGroup
+          Arn: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${CustomStateMachineLogGroup}
+  User2ndAttemptsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Rule to process User Attempt.
+      EventBusName: !Ref EventBusName
+      EventPattern:
+        source:
+          - !Ref EventSource
+        detail-type:
+          - 2-attempt
+      RoleArn: !GetAtt WriteToCloudWatchRole.Arn
+      Targets:
+        - Id: SendToCustomStepFunctionsLogGroup
+          Arn: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${CustomStateMachineLogGroup}
+  UserAttemptsExceededRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Rule to process User Attempt.
+      EventBusName: !Ref EventBusName
+      EventPattern:
+        source:
+          - !Ref EventSource
+        detail-type:
+          - 3-attempt
+      RoleArn: !GetAtt WriteToCloudWatchRole.Arn
+      Targets:
+        - Id: SendToCustomStepFunctionsLogGroup
+          Arn: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${CustomStateMachineLogGroup}
+  CustomStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 3
+      LogGroupName: !Join
+        - ""
+        - - /aws/events/
+          - !Ref OwnerPrefix
+          - "-"
+          - stepfunction-custom-logs
+
+  WriteToCloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: WriteToAccountsLogGroup
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStreams
+                  - logs:PutLogEvents
+                Resource:
+                  - !GetAtt CustomStateMachineLogGroup.Arn
