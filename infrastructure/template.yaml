@@ -412,6 +412,16 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
+  CredentialSubjectFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CredentialSubjectFunctionLogGroup
+      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${CredentialSubjectFunction}-Error
+          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+
   CheckSessionStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
