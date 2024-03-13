@@ -422,6 +422,26 @@ Resources:
           MetricName: !Sub ${CredentialSubjectFunction}-Error
           MetricNamespace: !Sub ${AWS::StackName}/LogMessages
 
+  CredentialSubjectFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-${CredentialSubjectFunction}-Errors
+      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CredentialSubjectFunction} errors
+      ActionsEnabled: true
+      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      InsufficientDataActions: [ ]
+      MetricName: !Sub ${CredentialSubjectFunction}-Error
+      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Statistic: Sum
+      Dimensions: [ ]
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
   CheckSessionStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
