@@ -293,8 +293,8 @@ describe("nino-issue-credential-happy", () => {
     return {
       iss: `${issuer}`,
       jti: expect.any(String),
-      nbf: expect.any(String),
-      exp: expect.any(String),
+      nbf: expect.any(Number),
+      exp: expect.any(Number),
       sub: "test",
       vc: {
         "@context": [
@@ -308,6 +308,11 @@ describe("nino-issue-credential-happy", () => {
                 { type: "GivenName", value: "Jim" },
                 { type: "FamilyName", value: "Ferguson" },
               ],
+            },
+          ],
+          birthDate: [
+            {
+              value: "1948-04-23",
             },
           ],
           socialSecurityRecord: [{ personalNumber: "AA000003D" }],
