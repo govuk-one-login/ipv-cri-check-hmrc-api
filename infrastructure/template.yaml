@@ -401,8 +401,16 @@ Resources:
         Sourcemap: true
     Properties:
       Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  CredentialSubjectFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
   CheckSessionStateMachine:
     Type: AWS::Serverless::StateMachine
