@@ -1,0 +1,175 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Description: <your stack description here>
+
+Parameters:
+  Environment:
+    Type: String
+  CodeSigningConfigArn:
+    Type: String
+    Default: ""
+  PermissionsBoundary:
+    Type: String
+    Default: ""
+  SecretArn:
+    Type: String
+    Default: ""
+  ParentStack:
+    Type: String
+    Description: Parent stack.
+# Available top-level fields are listed in code completion
+Conditions:
+  EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
+  UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, ""]]
+  IsDevEnvironment: !Equals [!Ref Environment, dev]
+  IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
+  IsDevLikeEnvironment:
+    !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
+
+Globals:
+  Function:
+    Timeout: 30
+    CodeUri: ..
+    Runtime: nodejs18.x
+    Architectures: [arm64]
+    PermissionsBoundary:
+      !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
+    VpcConfig:
+      SecurityGroupIds:
+        - !ImportValue cri-vpc-AWSServicesEndpointSecurityGroupId
+      SubnetIds:
+        - !ImportValue cri-vpc-ProtectedSubnetIdA
+        - !ImportValue cri-vpc-ProtectedSubnetIdB
+    Layers:
+      - !Sub
+        - "{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}"
+        - SecretArn: !Ref SecretArn
+    Environment:
+      Variables:
+        NODE_OPTIONS: --enable-source-maps
+        AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
+        DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: true
+        DT_CONNECTION_AUTH_TOKEN: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
+          - SecretArn: !Ref SecretArn
+        DT_CONNECTION_BASE_URL: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}"
+          - SecretArn: !Ref SecretArn
+        DT_CLUSTER_ID: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
+          - SecretArn: !Ref SecretArn
+        DT_LOG_COLLECTION_AUTH_TOKEN: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}"
+          - SecretArn: !Ref SecretArn
+        DT_TENANT: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
+          - SecretArn: !Ref SecretArn
+# Add Resources Here: uncomment the following lines
+Resources:
+  CredentialSubjectFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${ParentStack}/CredentialSubjectFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  CredentialSubjectFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ParentStack}/CredentialSubjectFunction
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  CredentialSubjectFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CredentialSubjectFunctionLogGroup
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${CredentialSubjectFunction}-Error
+          MetricNamespace: !Sub ${ParentStack}/LogMessages
+
+  CredentialSubjectFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${ParentStack}-${CredentialSubjectFunction}-Errors
+      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CredentialSubjectFunction} errors
+      ActionsEnabled: true
+      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      InsufficientDataActions: []
+      MetricName: !Sub ${CredentialSubjectFunction}-Error
+      Namespace: !Sub ${ParentStack}/LogMessages
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  EpochTimeFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/epoch-time/src/get-epoch-time-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${ParentStack}/EpochTimeFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  EpochTimeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ParentStack}/EpochTimeFunction
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  EpochTimeFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref EpochTimeFunctionLogGroup
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${EpochTimeFunction}-Error
+          MetricNamespace: !Sub ${ParentStack}/LogMessages
+
+  EpochTimeFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${ParentStack}-${EpochTimeFunction}-Errors
+      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${EpochTimeFunction} errors
+      ActionsEnabled: true
+      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      InsufficientDataActions: []
+      MetricName: !Sub ${EpochTimeFunction}-Error
+      Namespace: !Sub ${ParentStack}/LogMessages
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+Outputs:
+  EpochTimeArn:
+    Value: !GetAtt EpochTimeFunction.Arn
+  EpochTimeName:
+    Value: !Ref EpochTimeFunction
+  CredentialSubjectFunctionArn:
+    Value: !GetAtt CredentialSubjectFunction.Arn
+  CredentialSubjectFunctionName:
+    Value: !Ref CredentialSubjectFunction

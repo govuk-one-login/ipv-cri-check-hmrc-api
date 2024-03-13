@@ -137,6 +137,41 @@ Globals:
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
 
 Resources:
+  # We could do this for all our functions
+  Functions:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: functions.template.yaml
+      Parameters:
+        ParentStack: !Ref AWS::StackName
+        Environment: !Ref Environment
+        CodeSigningConfigArn: !Ref CodeSigningConfigArn
+        PermissionsBoundary: !Ref PermissionsBoundary
+        SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
+
+  AuditBuilderConsumer:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: audit-consumer-template.yaml
+      Parameters:
+        CredentialSubjectFunctionName: !GetAtt Functions.Outputs.CredentialSubjectFunctionName
+        CredentialSubjectFunctionArn: !GetAtt Functions.Outputs.CredentialSubjectFunctionArn
+        EpochTimeName: !GetAtt Functions.Outputs.EpochTimeName
+        EpochTimeArn: !GetAtt Functions.Outputs.EpochTimeArn
+        EventBusName: !GetAtt CheckHmrcEventBus.Name
+        EventBusState: !If [IsDevLikeEnvironment, ENABLED, DISABLED]
+        EventSource: !FindInMap [Audit, Source, !Ref Environment]
+        PermissionsBoundary: !Ref PermissionsBoundary
+
+  NonCodeLogMetricConsumer:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: metric-logger-consumer-template.yaml
+      Parameters:
+        EventBusName: !GetAtt CheckHmrcEventBus.Name
+        EventSource: !FindInMap [Audit, Source, !Ref Environment]
+        OwnerPrefix: !Ref AuditEventNamePrefix
+
   CiMappingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -225,55 +260,6 @@ Resources:
       AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
       InsufficientDataActions: []
       MetricName: !Sub ${CreateAuthCodeFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  CredentialSubjectFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-
-  CredentialSubjectFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
-
-  CredentialSubjectFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref CredentialSubjectFunctionLogGroup
-      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${CredentialSubjectFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  CredentialSubjectFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub ${AWS::StackName}-${CredentialSubjectFunction}-Errors
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CredentialSubjectFunction} errors
-      ActionsEnabled: true
-      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
-      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
-      InsufficientDataActions: []
-      MetricName: !Sub ${CredentialSubjectFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
       Statistic: Sum
       Dimensions: []
@@ -435,17 +421,6 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
-
-  TimeInMillisecondsFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/time-in-milliseconds/src/time-in-milliseconds-handler.lambdaHandler
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
 
   SsmParametersFunction:
     Type: AWS::Serverless::Function
@@ -833,8 +808,6 @@ Resources:
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
         AuditEventPrefix: !Ref AuditEventNamePrefix
-        CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !Sub review-hc.${Environment}.account.gov.uk
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
@@ -846,14 +819,9 @@ Resources:
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
-        AuditEventNameResponseReceived: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, ResponseReceived]
-        AuditEventNameRequestSent: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, RequestSent]
+        AuditEventNameResponseReceived:
+          !FindInMap [Audit, EventName, ResponseReceived]
+        AuditEventNameRequestSent: !FindInMap [Audit, EventName, RequestSent]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -881,8 +849,6 @@ Resources:
             TableName: !Ref NinoUsersTable
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref CheckHmrcEventBus
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${BearerTokenName}-??????
         - EventBridgePutEventsPolicy:
@@ -979,7 +945,7 @@ Resources:
       DefinitionSubstitutions:
         CiMappingFunctionArn: !GetAtt CiMappingFunction.Arn
         TimeFunctionArn: !GetAtt TimeFunction.Arn
-        CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
+        CredentialSubjectFunctionArn: !GetAtt Functions.Outputs.CredentialSubjectFunctionArn
         UserAttemptsTable: !Ref UserAttemptsTable
         MaxJwtTtlParameter: !Ref MaxJwtTtlParameter
         JwtTtlUnitParameter: !Ref JwtTtlUnitParameter
@@ -989,14 +955,6 @@ Resources:
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
-        AuditEventNameVcIssued: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, VcIssued]
-        AuditEventNameEnd: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, End]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -1011,7 +969,7 @@ Resources:
         - LambdaInvokePolicy:
             FunctionName: !Ref TimeFunction
         - LambdaInvokePolicy:
-            FunctionName: !Ref CredentialSubjectFunction
+            FunctionName: !GetAtt Functions.Outputs.CredentialSubjectFunctionName
         - LambdaInvokePolicy:
             FunctionName: !Ref JwtSignerFunction
         - DynamoDBReadPolicy:
@@ -1022,6 +980,8 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref CheckHmrcEventBus
         - Statement:
@@ -1067,110 +1027,6 @@ Resources:
     Properties:
       Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
 
-  AuditConsumer:
-    Type: AWS::Serverless::Application
-    Properties:
-      Type: EXPRESS
-      DefinitionUri: ../step-functions/audit_event_shaper.asl.json
-      DefinitionSubstitutions:
-        CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
-        CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
-        TimeInMillisecondsFunctionArn: !GetAtt TimeInMillisecondsFunction.Arn
-        CommonStackName: !Ref CommonStackName
-      Logging:
-        Destinations:
-          - CloudWatchLogsLogGroup:
-              LogGroupArn: !GetAtt AuditEventShaperStateMachineLogGroup.Arn
-        IncludeExecutionData: True
-        Level: ALL
-      Policies:
-        - LambdaInvokePolicy:
-            FunctionName: !Ref CredentialSubjectFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref TimeInMillisecondsFunction
-        - Statement:
-            Effect: Allow
-            Action: logs:*
-            Resource: "*"
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-
-  AuditEventShaperStateMachineRequestSentRule:
-    Type: AWS::Events::Rule
-    Properties:
-      EventBusName: !GetAtt CheckHmrcEventBus.Name
-      EventPattern:
-        source:
-          - !Sub review-hc.${Environment}.account.gov.uk
-        detail-type:
-          - REQUEST_SENT
-      Targets:
-        - Arn: !Ref AuditEventShaperStateMachine
-          Id: AuditEventShaperStateMachineRequestSentEventTarget
-          RoleArn: !GetAtt AuditEventShaperEventBridgeRequestSentRuleRole.Arn
-
-  AuditEventShaperStateMachineResponseReceivedRule:
-    Type: AWS::Events::Rule
-    Properties:
-      EventBusName: !GetAtt CheckHmrcEventBus.Name
-      EventPattern:
-        source:
-          - !Sub review-hc.${Environment}.account.gov.uk
-        detail-type:
-          - RESPONSE_RECEIVED
-      State: ENABLED
-      Targets:
-        - Arn: !Ref AuditEventShaperStateMachine
-          Id: AuditEventShaperStateMachineResponseReceivedTarget
-          RoleArn: !GetAtt AuditEventShaperStateMachineResponseReceivedRuleRole.Arn
-
-  AuditEventShaperEventBridgeRequestSentRuleRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Action:
-              - sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service:
-                - events.amazonaws.com
-      Policies:
-        - PolicyName: AuditEventShapeRequestSentRuleRoleStartExecutionPolicy
-          PolicyDocument:
-            Statement:
-              - Action: states:StartExecution
-                Effect: Allow
-                Resource: !Ref AuditEventShaperStateMachine
-
-  AuditEventShaperStateMachineResponseReceivedRuleRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Action:
-              - sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service:
-                - events.amazonaws.com
-      Policies:
-        - PolicyName: AuditEventShaperResponseReceivedRuleRoleStartExecutionPolicy
-          PolicyDocument:
-            Statement:
-              - Action: states:StartExecution
-                Effect: Allow
-                Resource: !Ref AuditEventShaperStateMachine
-
-  AuditEventShaperStateMachineLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEventShaper-state-machine-logs
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 Outputs:
   SsmParametersFunctionArn:
     Description: SsmParameters Lambda Function ARN

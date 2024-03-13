@@ -35,7 +35,7 @@
       "Parameters": {
         "FunctionName": "${SsmParametersFunction}",
         "Payload": {
-          "parameters.$": "States.Array('/${CommonStackName}/PersonIdentityTableName', '${UserAgent}', '/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId))"
+          "parameters.$": "States.Array('/${CommonStackName}/PersonIdentityTableName', '${UserAgent}', '/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId), '/${CommonStackName}/verifiable-credential/issuer')"
         }
       },
       "Retry": [
@@ -57,7 +57,8 @@
         "PersonIdentityTableName.$": "$.Payload[0].Value",
         "UserAgent.$": "$.Payload[1].Value",
         "SessionTableName.$": "$.Payload[2].Value",
-        "CheckUrl.$": "$.Payload[3].Value"
+        "CheckUrl.$": "$.Payload[3].Value",
+        "Issuer.$": "$.Payload[4].Value"
       }
     },
     "Err: Invalid Session": {
@@ -91,19 +92,21 @@
           "Next": "User has more than 2 attempts?"
         }
       ],
-      "Default": "users initial attempt"
+      "Default": "First Nino Check Attempt"
     },
-    "users initial attempt": {
+    "First Nino Check Attempt": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
       "Parameters": {
         "Entries": [
           {
             "Detail": {
-              "Message": "User initial nino check attempt",
-              "Attempt": "1st-attempt"
+              "Message": "HMRC Check",
+              "Attempt": "Initial nino check attempt",
+              "govukid.$": "$.sessionCheck.userAuditInfo.govuk_signin_journey_id",
+              "executionId.$": "$$.Execution.Id"
             },
-            "DetailType": "1-attempt",
+            "DetailType": "first_check_attempt",
             "EventBusName": "${CheckHmrcEventBus}",
             "Source": "${CheckHmrcEventBusSource}"
           }
@@ -118,22 +121,24 @@
         {
           "Variable": "$.check-attempts-exist.Count",
           "NumericGreaterThanEquals": 2,
-          "Next": "failed attempt"
+          "Next": "Nino Check Attempt Exceeded"
         }
       ],
-      "Default": "user final attempt"
+      "Default": "Second Nino Check Attempt"
     },
-    "failed attempt": {
+    "Nino Check Attempt Exceeded": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
       "Parameters": {
         "Entries": [
           {
             "Detail": {
-              "Message": "User nino check attempt exceed",
-              "Attempt": "3rd-attempt"
+              "Message": "HMRC Check",
+              "Attempt": "Nino Check allowed attempts exceeded",
+              "govukid.$": "$.sessionCheck.userAuditInfo.govuk_signin_journey_id",
+              "executionId.$": "$$.Execution.Id"
             },
-            "DetailType": "3-attempt",
+            "DetailType": "third_check_attempt",
             "EventBusName": "${CheckHmrcEventBus}",
             "Source": "${CheckHmrcEventBusSource}"
           }
@@ -142,17 +147,19 @@
       "Next": "Err: Attempts exceeded",
       "ResultPath": null
     },
-    "user final attempt": {
+    "Second Nino Check Attempt": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
       "Parameters": {
         "Entries": [
           {
             "Detail": {
-              "Message": "User second nino check attempt",
-              "Attempt": "2nd-attempt"
+              "Message": "HMRC Check",
+              "Attempt": "Second nino check attempt",
+              "govukid.$": "$.sessionCheck.userAuditInfo.govuk_signin_journey_id",
+              "executionId.$": "$$.Execution.Id"
             },
-            "DetailType": "2-attempt",
+            "DetailType": "second_check_attempt",
             "EventBusName": "${CheckHmrcEventBus}",
             "Source": "${CheckHmrcEventBusSource}"
           }
@@ -223,7 +230,7 @@
     },
     "Get OAuth Token": {
       "Type": "Task",
-      "Next": "Publish Audit Event Request Sent",
+      "Next": "Audit Event Request Sent",
       "Parameters": {
         "SecretId": "HMRCBearerToken"
       },
@@ -233,14 +240,18 @@
         "value.$": "$.SecretString"
       }
     },
-    "Publish Audit Event Request Sent": {
+    "Audit Event Request Sent": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
       "Parameters": {
         "Entries": [
           {
             "Detail": {
-              "message": "Request Sent to 3rd party"
+              "auditPrefix": "${AuditEventPrefix}",
+              "user.$": "$.sessionCheck.userAuditInfo",
+              "nino.$": "$.nino",
+              "userInfoEvent.$": "$.userInfo",
+              "issuer.$": "$.parameters.Issuer"
             },
             "DetailType": "${AuditEventNameRequestSent}",
             "EventBusName": "${CheckHmrcEventBus}",
@@ -271,7 +282,7 @@
           "userInfo.$": "$.userInfo"
         }
       },
-      "Next": "Publish Audit Event Response Received",
+      "Next": "Audit Event Response Received",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -294,14 +305,16 @@
     "Err: Matching Lambda Exception": {
       "Type": "Fail"
     },
-    "Publish Audit Event Response Received": {
+    "Audit Event Response Received": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
       "Parameters": {
         "Entries": [
           {
             "Detail": {
-              "message": "Response Received from 3rd party"
+              "auditPrefix": "${AuditEventPrefix}",
+              "user.$": "$.sessionCheck.userAuditInfo",
+              "issuer.$": "$.parameters.Issuer"
             },
             "DetailType": "${AuditEventNameResponseReceived}",
             "EventBusName": "${CheckHmrcEventBus}",

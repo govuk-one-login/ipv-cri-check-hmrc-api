@@ -1,113 +1,112 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
-Description: <your stack description here>
+Description: The AuditEvent builder stack
 
 # Add Resources Here: uncomment the following lines
 Parameters:
+  CredentialSubjectFunctionName:
+    Type: String
+    Description: Name of Credential Subject function
+  EpochTimeName:
+    Type: String
+    Description: Name of Epoch time function
+  CredentialSubjectFunctionArn:
+    Type: String
+    Description: Arn of Credential Subject function
+  EpochTimeArn:
+    Type: String
+    Description: Arn of Epoch time function
   EventBusName:
     Type: String
     Description: The EventBus Name
+  EventBusState:
+    Type: String
+    Description: The state of rule i.e Enabled or Disabled
+    Default: DISABLED
   EventSource:
     Type: String
     Description: The Event bus source
-  CodeSigningConfigArn:
-    Type: String
-    Default: ""
   PermissionsBoundary:
     Type: String
     Default: ""
-  SecretArn:
-    Type: String
-    Default: ""
-Globals:
-  Function:
-    Timeout: 30
-    CodeUri: ..
-    Runtime: nodejs18.x
-    Architectures: [arm64]
-    PermissionsBoundary:
-      !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
-    VpcConfig:
-      SecurityGroupIds:
-        - !ImportValue cri-vpc-AWSServicesEndpointSecurityGroupId
-      SubnetIds:
-        - !ImportValue cri-vpc-ProtectedSubnetIdA
-        - !ImportValue cri-vpc-ProtectedSubnetIdB
-    Layers:
-      - !Sub
-        - "{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}"
-        - SecretArn: !Ref SecretArn
-    Environment:
-      Variables:
-        NODE_OPTIONS: --enable-source-maps
-        AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
-        DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: true
-        DT_CONNECTION_AUTH_TOKEN: !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
-          - SecretArn: !Ref SecretArn
-        DT_CONNECTION_BASE_URL: !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}"
-          - SecretArn: !Ref SecretArn
-        DT_CLUSTER_ID: !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
-          - SecretArn: !Ref SecretArn
-        DT_LOG_COLLECTION_AUTH_TOKEN: !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}"
-          - SecretArn: !Ref SecretArn
-        DT_TENANT: !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
-          - SecretArn: !Ref SecretArn
 Conditions:
-  EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
   UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, ""]]
 Resources:
-  TimeInMillisecondsFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/time-in-milliseconds/src/time-in-milliseconds-handler.lambdaHandler
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-  CredentialSubjectFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-  AuditRequestSentRule:
+  AuditEventResponseReceivedRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref EventBusName
+      Description: Capture the audit event RESPONSE_RECEIVED
+      State: !Ref EventBusState
+      EventPattern:
+        source:
+          - !Ref EventSource
+        detail-type:
+          - RESPONSE_RECEIVED
+      Targets:
+        - Arn: !Ref AuditEventBuilderStateMachine
+          Id: AuditEventBuilderStateMachineResponseReceivedEventTarget
+          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
+  AuditEventRequestSentRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EventBusName
+      Description: Capture the audit event REQUEST_SENT
+      State: !Ref EventBusState
       EventPattern:
         source:
           - !Ref EventSource
         detail-type:
           - REQUEST_SENT
       Targets:
-        - Arn: !Ref AuditEventShaperStateMachine
-          Id: AuditEventShaperStateMachineRequestSentEventTarget
+        - Arn: !Ref AuditEventBuilderStateMachine
+          Id: AuditEventBuilderStateMachineRequestSentEventTarget
           RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
-  AuditResponseReceivedRule:
+  AuditEventVcIssuedRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref EventBusName
+      Description: Capture the audit event VC_ISSUED
+      State: !Ref EventBusState
       EventPattern:
         source:
           - !Ref EventSource
         detail-type:
-          - RESPONSE_RECEIVED
-      State: ENABLED
+          - VC_ISSUED
       Targets:
-        - Arn: !Ref AuditEventShaperStateMachine
-          Id: AuditEventShaperStateMachineResponseReceivedTarget
+        - Arn: !Ref AuditEventBuilderStateMachine
+          Id: AuditEventBuilderStateMachineVcIssuedTarget
+          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
+  AuditEventEndRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EventBusName
+      Description: Capture the END event
+      State: !Ref EventBusState
+      EventPattern:
+        source:
+          - !Ref EventSource
+        detail-type:
+          - END
+      Targets:
+        - Arn: !Ref AuditEventBuilderStateMachine
+          Id: AuditEventBuilderStateMachineEndTarget
+          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
+  AuditEventAbandonedRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EventBusName
+      Description: Capture the ABANDONED event
+      State: !Ref EventBusState
+      EventPattern:
+        source:
+          - !Ref EventSource
+        detail-type:
+          - ABANDONED
+      Targets:
+        - Arn: !Ref AuditEventBuilderStateMachine
+          Id: AuditEventBuilderStateMachineAbandonedEventTarget
           RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
 
   EventBridgeStateMachineExecutionRole:
@@ -128,27 +127,27 @@ Resources:
             Statement:
               - Action: states:StartExecution
                 Effect: Allow
-                Resource: !Ref AuditEventShaperStateMachine
+                Resource: !Ref AuditEventBuilderStateMachine
 
-  AuditEventShaperStateMachine:
+  AuditEventBuilderStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
       Type: EXPRESS
-      DefinitionUri: ../step-functions/audit_event_shaper.asl.json
+      DefinitionUri: ../step-functions/audit_event_builder.asl.json
       DefinitionSubstitutions:
-        CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
-        TimeInMillisecondsFunctionArn: !GetAtt TimeInMillisecondsFunction.Arn
+        CredentialSubjectFunctionArn: !Ref CredentialSubjectFunctionArn
+        EpochTimeArn: !Ref EpochTimeArn
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
-              LogGroupArn: !GetAtt AuditEventShaperStateMachineLogGroup.Arn
+              LogGroupArn: !GetAtt AuditEventBuilderStateMachineLogGroup.Arn
         IncludeExecutionData: True
         Level: ALL
       Policies:
         - LambdaInvokePolicy:
-            FunctionName: !Ref CredentialSubjectFunction
+            FunctionName: !Ref CredentialSubjectFunctionName
         - LambdaInvokePolicy:
-            FunctionName: !Ref TimeInMillisecondsFunction
+            FunctionName: !Ref EpochTimeName
         - Statement:
             Effect: Allow
             Action: logs:*
@@ -158,8 +157,8 @@ Resources:
         - !Ref PermissionsBoundary
         - !Ref AWS::NoValue
 
-  AuditEventShaperStateMachineLogGroup:
+  AuditEventBuilderStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEventShaper-state-machine-logs
+      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-audit_event_builder-state-machine-logs
       RetentionInDays: 7

@@ -1,4 +1,4 @@
-import { lambdaHandler } from "../src/time-in-milliseconds-handler";
+import { lambdaHandler } from "../src/get-epoch-time-handler";
 
 describe("lambdaHandler", () => {
   it("returns the milliseconds representation of the provided date", async () => {

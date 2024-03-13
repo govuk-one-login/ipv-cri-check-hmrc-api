@@ -17,7 +17,34 @@ Parameters:
     Description: Prefix to be used in names of the things created by this stack.
 # Add Resources Here: uncomment the following lines
 Resources:
-  UserFirstAttemptsRule:
+  LogMessageRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Rule to Log current activity.
+      EventBusName: !Ref EventBusName
+      EventPattern:
+        source:
+          - !Ref EventSource
+        detail-type:
+          - first_check_attempt
+          - second_check_attempt
+      RoleArn: !GetAtt WriteToCloudWatchRole.Arn
+      Targets:
+        - Id: SendCurrentActivityToLogGroup
+          Arn: !GetAtt CustomStateMachineLogGroup.Arn
+          InputTransformer:
+            InputPathsMap:
+              message: "$.detail.Message"
+              Id: "$.detail.executionId"
+              govukid: "$.detail.govukid"
+              attempt: "$.detail.Attempt"
+              timestamp: "$.time"
+            InputTemplate: |
+              {
+               "timestamp":<timestamp>,
+               "message": "Execution Id: <Id> <message> with govuk_signin_journey_id: <govukid> is at <attempt>"
+              }
+  UserAttemptsRule:
     Type: AWS::Events::Rule
     Properties:
       Description: Rule to process User Attempt.
@@ -26,25 +53,26 @@ Resources:
         source:
           - !Ref EventSource
         detail-type:
-          - 1-attempt
+          - first_check_attempt
+          - second_check_attempt
       RoleArn: !GetAtt WriteToCloudWatchRole.Arn
       Targets:
         - Id: SendToCustomStepFunctionsLogGroup
-          Arn: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${CustomStateMachineLogGroup}
-  User2ndAttemptsRule:
-    Type: AWS::Events::Rule
-    Properties:
-      Description: Rule to process User Attempt.
-      EventBusName: !Ref EventBusName
-      EventPattern:
-        source:
-          - !Ref EventSource
-        detail-type:
-          - 2-attempt
-      RoleArn: !GetAtt WriteToCloudWatchRole.Arn
-      Targets:
-        - Id: SendToCustomStepFunctionsLogGroup
-          Arn: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${CustomStateMachineLogGroup}
+          Arn: !GetAtt CustomStateMachineLogGroup.Arn
+          InputTransformer:
+            InputPathsMap:
+              value: "$.detail.Message"
+              name: "$.detail.Attempt"
+              metric: "$.detail-type"
+              timestamp: "$.time"
+            InputTemplate: !Sub
+              - |
+                {
+                  "timestamp": <timestamp>,
+                  "message": "{\"_aws\":{\"Timestamp\":1574109732004,\"CloudWatchMetrics\":[{\"Namespace\":\"${namespace}\",\"Dimensions\":[{\"Name\":<name>,\"Value\":<value>}],\"Metrics\":[{\"Name\":<metric>,\"Unit\":\"Count\",\"Value\":\"1.0\"}]}],\"functionVersion\":\"$LATEST\"}}"
+                }
+              - namespace: !Ref OwnerPrefix
+
   UserAttemptsExceededRule:
     Type: AWS::Events::Rule
     Properties:
@@ -54,11 +82,11 @@ Resources:
         source:
           - !Ref EventSource
         detail-type:
-          - 3-attempt
+          - third_check_attempt
       RoleArn: !GetAtt WriteToCloudWatchRole.Arn
       Targets:
         - Id: SendToCustomStepFunctionsLogGroup
-          Arn: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${CustomStateMachineLogGroup}
+          Arn: !GetAtt CustomStateMachineLogGroup.Arn
   CustomStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
