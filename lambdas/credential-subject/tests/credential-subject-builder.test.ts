@@ -39,4 +39,28 @@ describe("CredentialSubjectBuilder", () => {
     expect(credentialSubject.name).toHaveLength(1);
     expect(credentialSubject.name[0].nameParts).toEqual(nameParts);
   });
+
+  it("should create a CredentialSubject with name, birthDate", () => {
+    const nameParts = [
+      { type: "GivenName", value: "John" },
+      { type: "FamilyName", value: "Doe" },
+    ];
+
+    const birthDates = [{ value: "15-01-1990" }, { value: "20-05-2000" }];
+
+    const credentialSubject = new CredentialSubjectBuilder()
+      .addNames(nameParts)
+      .setBirthDate(birthDates)
+      .build();
+
+    expect(credentialSubject.name).toHaveLength(1);
+    expect(credentialSubject.name[0].nameParts).toEqual(nameParts);
+
+    expect(credentialSubject.birthDate).toHaveLength(2);
+    expect(credentialSubject.birthDate).toEqual(birthDates);
+  });
+
+  it("should return empty object", () => {
+    expect(new CredentialSubjectBuilder().build()).toEqual({});
+  });
 });
