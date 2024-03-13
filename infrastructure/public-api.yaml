@@ -163,21 +163,16 @@ paths:
             statusCode: 500
             responseTemplates:
               application/jwt: |
-                #set($resp = $util.parseJson($input.body))
-                #set($params = $util.parseJson($resp.output))
-                #foreach($paramName in $params.keySet())
-                #if($paramName == 'error')
-                #set($err = true)
-                #end
-                #end
-                #if($err == true)
-                #set($context.responseOverride.status = 400)
-                $resp.output
-                #elseif($resp.status == "FAILED")
+                #set($response = $util.parseJson($input.body))
+                #set($output = $util.parseJson($response.output))
+                #if($response.status == "FAILED")
                 #set($context.responseOverride.status = 500)
-                $resp.cause
+                #elseif($output.httpStatus)
+                #set($context.responseOverride.status = $output.httpStatus)
+                #else
+                #set($context.responseOverride.status = 200)
                 #end
-                $params.jwt
+                $output.jwt
 
 components:
   schemas:
