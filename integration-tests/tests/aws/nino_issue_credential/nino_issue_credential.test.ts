@@ -330,9 +330,7 @@ describe("nino-issue-credential-happy", () => {
         ...customClaims,
         evidence: [
           {
-            checkDetails: [
-              { checkMethod: "data", identityCheckPolicy: "published" },
-            ],
+            checkDetails: [{ checkMethod: "data" }],
             strengthScore: 2,
             txn: expect.any(String),
             type: "IdentityCheck",
@@ -351,16 +349,14 @@ describe("nino-issue-credential-happy", () => {
         ...customClaims,
         evidence: [
           {
-            failedCheckDetails: [
-              { checkMethod: "data", identityCheckPolicy: "published" },
-            ],
+            failedCheckDetails: [{ checkMethod: "data" }],
+            ci: [expect.any(String)],
             strengthScore: 2,
             txn: expect.any(String),
             type: "IdentityCheck",
             validityScore: 0,
           },
         ],
-        ci: [expect.any(String)],
       },
     };
   };
