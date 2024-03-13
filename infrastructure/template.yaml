@@ -136,23 +136,6 @@ Resources:
         - SSMParameterReadPolicy:
             ParameterName: "*"
 
-  CiMappingFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/ci-mapping/src/ci-mapping-handler.lambdaHandler
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-
-  CiMappingFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${CiMappingFunction}
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
-
   UserAgent:
     Type: AWS::SSM::Parameter
     Properties:
@@ -332,6 +315,23 @@ Resources:
       KeySchema:
         - AttributeName: sessionId
           KeyType: HASH
+
+  CiMappingFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/ci-mapping/src/ci-mapping-handler.lambdaHandler
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  CiMappingFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${CiMappingFunction}
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
   JwtSignerFunction:
     Type: AWS::Serverless::Function
