@@ -26,3 +26,10 @@ unhappy:
 	--state-machine ${STATE_MACHINE_ARN}#UnHappyPath \
 	--input '{ "bearerToken": "Bearer test" }' \
 	--no-cli-pager
+unhappyinvalidtoken:
+	aws stepfunctions start-execution \
+	--endpoint http://localhost:8084 \
+	--name happyPathExecution \
+	--state-machine ${STATE_MACHINE_ARN}#UnHappyPathBearerTokenInvalid \
+	--input '{ "bearerToken": "bearer" }' \
+	--no-cli-pager
