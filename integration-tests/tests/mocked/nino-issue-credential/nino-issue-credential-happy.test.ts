@@ -16,10 +16,9 @@ const expectedPayload = {
         checkDetails: [
           {
             checkMethod: "data",
-            identityCheckPolicy: "published",
           },
         ],
-        txn: "3f1d3bb5-c688-4b45-a383-25e676274dfa",
+        txn: "65ae19f5-8b4f-46d5-88cd-517adca2f1c0",
       },
     ],
     credentialSubject: {
@@ -42,6 +41,11 @@ const expectedPayload = {
           ],
         },
       ],
+      birthDate: [
+        {
+          value: "1965-07-08",
+        },
+      ],
     },
     type: ["VerifiableCredential", "IdentityCheckCredential"],
     "@context": [
@@ -49,11 +53,11 @@ const expectedPayload = {
       "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld",
     ],
   },
-  sub: "urn:fdc:gov.uk:2022:dbfac0ed-3e0a-4009-a480-cc4c21f92758",
-  nbf: 1709734310,
+  sub: "urn:fdc:gov.uk:2022:05705016-4494-4794-8d7d-7a1e2516af56",
+  nbf: 1710396563,
   iss: "https://review-hc.dev.account.gov.uk",
-  exp: 1709741510,
-  jti: "urn:uuid:3fbbd30a-412e-42e8-b2e4-29695f8746b3",
+  exp: 1710403763,
+  jti: "urn:uuid:f540b78c-9e52-4a0f-b033-c78e7ab327ea",
 };
 
 describe("nino-issue-credential-happy", () => {
@@ -71,7 +75,7 @@ describe("nino-issue-credential-happy", () => {
 
   it("should create signed JWT when nino check is successful", async () => {
     const input = JSON.stringify({
-      bearerToken: "Bearer test",
+      bearerToken: "Bearer happy",
     });
     const responseStepFunction = await sfnContainer.startStepFunctionExecution(
       "HappyPath",

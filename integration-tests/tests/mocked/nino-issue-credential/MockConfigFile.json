@@ -164,26 +164,6 @@
             }
           },
           "SdkHttpMetadata": {
-            "AllHttpHeaders": {
-              "Server": ["Server"],
-              "Connection": ["keep-alive"],
-              "x-amzn-RequestId": [
-                "UBN5LMPIPOSG6VVSNBII02TEJFVV4KQNSO5AEMVJF66Q9ASUAAJG"
-              ],
-              "x-amz-crc32": ["3691538148"],
-              "Content-Length": ["65"],
-              "Date": ["Tue, 14 Nov 2023 12:29:15 GMT"],
-              "Content-Type": ["application/x-amz-json-1.0"]
-            },
-            "HttpHeaders": {
-              "Connection": "keep-alive",
-              "Content-Length": "65",
-              "Content-Type": "application/x-amz-json-1.0",
-              "Date": "Tue, 14 Nov 2023 12:29:15 GMT",
-              "Server": "Server",
-              "x-amz-crc32": "3691538148",
-              "x-amzn-RequestId": "UBN5LMPIPOSG6VVSNBII02TEJFVV4KQNSO5AEMVJF66Q9ASUAAJG"
-            },
             "HttpStatusCode": 200
           },
           "SdkResponseMetadata": {
@@ -195,7 +175,6 @@
     "CreateCredentialSubject": {
       "0": {
         "Return": {
-          "ExecutedVersion": "$LATEST",
           "Payload": {
             "socialSecurityRecord": [
               {
@@ -215,35 +194,15 @@
                   }
                 ]
               }
+            ],
+            "birthDate": [
+              {
+                "value": "1965-07-08"
+              }
             ]
           },
           "SdkHttpMetadata": {
-            "AllHttpHeaders": {
-              "X-Amz-Executed-Version": ["$LATEST"],
-              "x-amzn-Remapped-Content-Length": ["0"],
-              "Connection": ["keep-alive"],
-              "x-amzn-RequestId": ["1ea2ffe5-3bf3-4907-88ea-8d2aeb974ed9"],
-              "Content-Length": ["158"],
-              "Date": ["Tue, 14 Nov 2023 12:29:16 GMT"],
-              "X-Amzn-Trace-Id": [
-                "root=1-6553681b-2b7cbbce403466dc6c23dc13;sampled=0;lineage=acbd3b6c:0"
-              ],
-              "Content-Type": ["application/json"]
-            },
-            "HttpHeaders": {
-              "Connection": "keep-alive",
-              "Content-Length": "158",
-              "Content-Type": "application/json",
-              "Date": "Tue, 14 Nov 2023 12:29:16 GMT",
-              "X-Amz-Executed-Version": "$LATEST",
-              "x-amzn-Remapped-Content-Length": "0",
-              "x-amzn-RequestId": "1ea2ffe5-3bf3-4907-88ea-8d2aeb974ed9",
-              "X-Amzn-Trace-Id": "root=1-6553681b-2b7cbbce403466dc6c23dc13;sampled=0;lineage=acbd3b6c:0"
-            },
             "HttpStatusCode": 200
-          },
-          "SdkResponseMetadata": {
-            "RequestId": "1ea2ffe5-3bf3-4907-88ea-8d2aeb974ed9"
           },
           "StatusCode": 200
         }
@@ -252,38 +211,12 @@
     "FetchExpTimeAndNBF": {
       "0": {
         "Return": {
-          "ExecutedVersion": "$LATEST",
           "Payload": {
             "nbf": 1699964956131,
             "expiry": 1699972156131
           },
           "SdkHttpMetadata": {
-            "AllHttpHeaders": {
-              "X-Amz-Executed-Version": ["$LATEST"],
-              "x-amzn-Remapped-Content-Length": ["0"],
-              "Connection": ["keep-alive"],
-              "x-amzn-RequestId": ["9c68a67e-6091-48a7-ac92-53af1da8677b"],
-              "Content-Length": ["44"],
-              "Date": ["Tue, 14 Nov 2023 12:29:16 GMT"],
-              "X-Amzn-Trace-Id": [
-                "root=1-6553681b-1f7e69db5b5a8ccd6c13a903;sampled=0;lineage=9be44ed0:0"
-              ],
-              "Content-Type": ["application/json"]
-            },
-            "HttpHeaders": {
-              "Connection": "keep-alive",
-              "Content-Length": "44",
-              "Content-Type": "application/json",
-              "Date": "Tue, 14 Nov 2023 12:29:16 GMT",
-              "X-Amz-Executed-Version": "$LATEST",
-              "x-amzn-Remapped-Content-Length": "0",
-              "x-amzn-RequestId": "9c68a67e-6091-48a7-ac92-53af1da8677b",
-              "X-Amzn-Trace-Id": "root=1-6553681b-1f7e69db5b5a8ccd6c13a903;sampled=0;lineage=9be44ed0:0"
-            },
             "HttpStatusCode": 200
-          },
-          "SdkResponseMetadata": {
-            "RequestId": "9c68a67e-6091-48a7-ac92-53af1da8677b"
           },
           "StatusCode": 200
         }
@@ -351,35 +284,9 @@
     "FetchCI": {
       "0": {
         "Return": {
-          "ExecutedVersion": "$LATEST",
           "Payload": ["AAA"],
           "SdkHttpMetadata": {
-            "AllHttpHeaders": {
-              "X-Amz-Executed-Version": ["$LATEST"],
-              "x-amzn-Remapped-Content-Length": ["0"],
-              "Connection": ["keep-alive"],
-              "x-amzn-RequestId": ["8d137f0e-31be-4d30-a09e-85da3197dbb9"],
-              "Content-Length": ["7"],
-              "Date": ["Mon, 08 Jan 2024 14:20:19 GMT"],
-              "X-Amzn-Trace-Id": [
-                "root=1-659c04a2-6e34b4cf4e19d19b75684a75;sampled=0;lineage=499fa3f8:0"
-              ],
-              "Content-Type": ["application/json"]
-            },
-            "HttpHeaders": {
-              "Connection": "keep-alive",
-              "Content-Length": "7",
-              "Content-Type": "application/json",
-              "Date": "Mon, 08 Jan 2024 14:20:19 GMT",
-              "X-Amz-Executed-Version": "$LATEST",
-              "x-amzn-Remapped-Content-Length": "0",
-              "x-amzn-RequestId": "8d137f0e-31be-4d30-a09e-85da3197dbb9",
-              "X-Amzn-Trace-Id": "root=1-659c04a2-6e34b4cf4e19d19b75684a75;sampled=0;lineage=499fa3f8:0"
-            },
             "HttpStatusCode": 200
-          },
-          "SdkResponseMetadata": {
-            "RequestId": "8d137f0e-31be-4d30-a09e-85da3197dbb9"
           },
           "StatusCode": 200
         }
@@ -388,31 +295,8 @@
     "SignVCClaimSet": {
       "0": {
         "Return": {
-          "ExecutedVersion": "$LATEST",
-          "Payload": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6IjA5NzZjMTFlLThlZjMtNDY1OS1iN2YyLWVlMGI4NDJiODViZCJ9.eyJ2YyI6eyJldmlkZW5jZSI6W3sidHlwZSI6IklkZW50aXR5Q2hlY2siLCJzdHJlbmd0aFNjb3JlIjoyLCJ2YWxpZGl0eVNjb3JlIjoyLCJjaGVja0RldGFpbHMiOlt7ImNoZWNrTWV0aG9kIjoiZGF0YSIsImlkZW50aXR5Q2hlY2tQb2xpY3kiOiJwdWJsaXNoZWQifV0sInR4biI6IjNmMWQzYmI1LWM2ODgtNGI0NS1hMzgzLTI1ZTY3NjI3NGRmYSJ9XSwiY3JlZGVudGlhbFN1YmplY3QiOnsic29jaWFsU2VjdXJpdHlSZWNvcmQiOlt7InBlcnNvbmFsTnVtYmVyIjoiQUEwMDAwMDNEIn1dLCJuYW1lIjpbeyJuYW1lUGFydHMiOlt7InR5cGUiOiJHaXZlbk5hbWUiLCJ2YWx1ZSI6IktFTk5FVEgifSx7InR5cGUiOiJGYW1pbHlOYW1lIiwidmFsdWUiOiJERUNFUlFVRUlSQSJ9XX1dfSwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIklkZW50aXR5Q2hlY2tDcmVkZW50aWFsIl0sIkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIiwiaHR0cHM6Ly92b2NhYi5sb25kb24uY2xvdWRhcHBzLmRpZ2l0YWwvY29udGV4dHMvaWRlbnRpdHktdjEuanNvbmxkIl19LCJzdWIiOiJ1cm46ZmRjOmdvdi51azoyMDIyOmRiZmFjMGVkLTNlMGEtNDAwOS1hNDgwLWNjNGMyMWY5Mjc1OCIsIm5iZiI6MTcwOTczNDMxMCwiaXNzIjoiaHR0cHM6Ly9yZXZpZXctaGMuZGV2LmFjY291bnQuZ292LnVrIiwiZXhwIjoxNzA5NzQxNTEwLCJqdGkiOiJ1cm46dXVpZDozZmJiZDMwYS00MTJlLTQyZTgtYjJlNC0yOTY5NWY4NzQ2YjMifQ.715JtWTkjEehjLHCfVLWYertqeCpgM5AASlSHgW3YjAKB0AMHHekWGfJWqAnNKFYetD_mKK4zPOdwMfUd8nWJg",
+          "Payload": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6IjA5NzZjMTFlLThlZjMtNDY1OS1iN2YyLWVlMGI4NDJiODViZCJ9.eyJ2YyI6eyJldmlkZW5jZSI6W3sidHlwZSI6IklkZW50aXR5Q2hlY2siLCJzdHJlbmd0aFNjb3JlIjoyLCJ2YWxpZGl0eVNjb3JlIjoyLCJjaGVja0RldGFpbHMiOlt7ImNoZWNrTWV0aG9kIjoiZGF0YSJ9XSwidHhuIjoiNjVhZTE5ZjUtOGI0Zi00NmQ1LTg4Y2QtNTE3YWRjYTJmMWMwIn1dLCJjcmVkZW50aWFsU3ViamVjdCI6eyJzb2NpYWxTZWN1cml0eVJlY29yZCI6W3sicGVyc29uYWxOdW1iZXIiOiJBQTAwMDAwM0QifV0sImJpcnRoRGF0ZSI6W3sidmFsdWUiOiIxOTY1LTA3LTA4In1dLCJuYW1lIjpbeyJuYW1lUGFydHMiOlt7InR5cGUiOiJHaXZlbk5hbWUiLCJ2YWx1ZSI6IktFTk5FVEgifSx7InR5cGUiOiJGYW1pbHlOYW1lIiwidmFsdWUiOiJERUNFUlFVRUlSQSJ9XX1dfSwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIklkZW50aXR5Q2hlY2tDcmVkZW50aWFsIl0sIkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIiwiaHR0cHM6Ly92b2NhYi5sb25kb24uY2xvdWRhcHBzLmRpZ2l0YWwvY29udGV4dHMvaWRlbnRpdHktdjEuanNvbmxkIl19LCJzdWIiOiJ1cm46ZmRjOmdvdi51azoyMDIyOjA1NzA1MDE2LTQ0OTQtNDc5NC04ZDdkLTdhMWUyNTE2YWY1NiIsIm5iZiI6MTcxMDM5NjU2MywiaXNzIjoiaHR0cHM6Ly9yZXZpZXctaGMuZGV2LmFjY291bnQuZ292LnVrIiwiZXhwIjoxNzEwNDAzNzYzLCJqdGkiOiJ1cm46dXVpZDpmNTQwYjc4Yy05ZTUyLTRhMGYtYjAzMy1jNzhlN2FiMzI3ZWEifQ.BNBgan12MNxiDTm_yDtwr67Q5dbKYyGUOh5WeDHfJqG9GJVdIgCQyMc_pqWsXY6s74T0DEkLhXxD8kr4ZBWFAA",
           "SdkHttpMetadata": {
-            "AllHttpHeaders": {
-              "X-Amz-Executed-Version": ["$LATEST"],
-              "x-amzn-Remapped-Content-Length": ["0"],
-              "Connection": ["keep-alive"],
-              "x-amzn-RequestId": ["20229acd-1926-4994-be1f-752b8767e4bb"],
-              "Content-Length": ["88"],
-              "Date": ["Thu, 23 Nov 2023 15:55:38 GMT"],
-              "X-Amzn-Trace-Id": [
-                "root=1-655f75f9-27f6647873d4d7973877b13e;sampled=0;lineage=43496acb:0"
-              ],
-              "Content-Type": ["application/json"]
-            },
-            "HttpHeaders": {
-              "Connection": "keep-alive",
-              "Content-Length": "88",
-              "Content-Type": "application/json",
-              "Date": "Thu, 23 Nov 2023 15:55:38 GMT",
-              "X-Amz-Executed-Version": "$LATEST",
-              "x-amzn-Remapped-Content-Length": "0",
-              "x-amzn-RequestId": "20229acd-1926-4994-be1f-752b8767e4bb",
-              "X-Amzn-Trace-Id": "root=1-655f75f9-27f6647873d4d7973877b13e;sampled=0;lineage=43496acb:0"
-            },
             "HttpStatusCode": 200
           },
           "SdkResponseMetadata": {

@@ -142,11 +142,10 @@ describe("nino-issue-credential-happy", () => {
         algorithms: [alg],
       });
 
+      const result = await aVcWithCheckDetailsAndNoCi();
       expect(isValidTimestamp(payload.exp || 0)).toBe(true);
       expect(isValidTimestamp(payload.nbf || 0)).toBe(true);
-      expect(payload).toEqual(
-        expect.objectContaining(aVcWithCheckDetailsAndNoCi())
-      );
+      expect(payload).toEqual(result);
     });
     it("should create a VC with a checkDetail, Validity Score of 2 and no Ci", async () => {
       const startExecutionResult = await getExecutionResult("Bearer happy");
@@ -166,11 +165,11 @@ describe("nino-issue-credential-happy", () => {
         alg: "ES256",
         kid: currentCredentialKmsSigningKeyId,
       });
+
+      const result = await aVcWithCheckDetailsAndNoCi();
       expect(isValidTimestamp(payload.exp)).toBe(true);
       expect(isValidTimestamp(payload.nbf)).toBe(true);
-      expect(payload).toEqual(
-        expect.objectContaining(aVcWithCheckDetailsAndNoCi())
-      );
+      expect(payload).toEqual(result);
     });
   });
   describe("Nino check is unsuccessful", () => {
@@ -224,11 +223,10 @@ describe("nino-issue-credential-happy", () => {
         algorithms: [alg],
       });
 
+      const result = await aVcWithFailedCheckDetailsAndCi();
       expect(isValidTimestamp(payload.exp || 0)).toBe(true);
       expect(isValidTimestamp(payload.nbf || 0)).toBe(true);
-      expect(payload).toEqual(
-        expect.objectContaining(aVcWithFailedCheckDetailAndCi())
-      );
+      expect(payload).toEqual(result);
     });
 
     it("should create a VC with a failedCheckDetail, validity score of 0 and Ci", async () => {
@@ -249,11 +247,11 @@ describe("nino-issue-credential-happy", () => {
         alg: "ES256",
         kid: currentCredentialKmsSigningKeyId,
       });
+
+      const result = await aVcWithFailedCheckDetailsAndCi();
       expect(isValidTimestamp(payload.exp)).toBe(true);
       expect(isValidTimestamp(payload.nbf)).toBe(true);
-      expect(payload).toEqual(
-        expect.objectContaining(aVcWithFailedCheckDetailAndCi())
-      );
+      expect(payload).toEqual(result);
     });
   });
   const getExecutionResult = async (token: string) =>
@@ -295,6 +293,8 @@ describe("nino-issue-credential-happy", () => {
     return {
       iss: `${issuer}`,
       jti: expect.any(String),
+      nbf: expect.any(Number),
+      exp: expect.any(Number),
       sub: "test",
       vc: {
         "@context": [
@@ -308,6 +308,11 @@ describe("nino-issue-credential-happy", () => {
                 { type: "GivenName", value: "Jim" },
                 { type: "FamilyName", value: "Ferguson" },
               ],
+            },
+          ],
+          birthDate: [
+            {
+              value: "1948-04-23",
             },
           ],
           socialSecurityRecord: [{ personalNumber: "AA000003D" }],
@@ -325,9 +330,7 @@ describe("nino-issue-credential-happy", () => {
         ...customClaims,
         evidence: [
           {
-            checkDetails: [
-              { checkMethod: "data", identityCheckPolicy: "published" },
-            ],
+            checkDetails: [{ checkMethod: "data" }],
             strengthScore: 2,
             txn: expect.any(String),
             type: "IdentityCheck",
@@ -338,7 +341,7 @@ describe("nino-issue-credential-happy", () => {
     };
   };
 
-  const aVcWithFailedCheckDetailAndCi = async () => {
+  const aVcWithFailedCheckDetailsAndCi = async () => {
     const { vc: customClaims, ...standardClaims } = await getBaseVcCredential();
     return {
       ...standardClaims,
@@ -346,16 +349,14 @@ describe("nino-issue-credential-happy", () => {
         ...customClaims,
         evidence: [
           {
-            failedCheckDetails: [
-              { checkMethod: "data", identityCheckPolicy: "published" },
-            ],
+            failedCheckDetails: [{ checkMethod: "data" }],
+            ci: [expect.any(String)],
             strengthScore: 2,
             txn: expect.any(String),
             type: "IdentityCheck",
             validityScore: 0,
           },
         ],
-        ci: [expect.any(String)],
       },
     };
   };
