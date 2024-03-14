@@ -172,6 +172,7 @@ paths:
                 #else
                 #set($context.responseOverride.status = 200)
                 #end
+                #set($context.responseOverride.header.Content-Type = "application/jwt")
                 $output.jwt
 
 components:
