@@ -209,7 +209,8 @@
           },
           "userAgent.$": "$.parameters.UserAgent",
           "apiURL.$": "$.parameters.CheckUrl",
-          "oAuthToken.$": "$.oAuthToken.value"
+          "oAuthToken.$": "$.oAuthToken.value",
+          "user.$": "$.sessionCheck"
         }
       },
       "Next": "Publish Audit Event Response Received",

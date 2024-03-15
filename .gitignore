@@ -135,3 +135,5 @@ integration-tests/build
 build
 dotenv
 coverage
+
+.idea/
