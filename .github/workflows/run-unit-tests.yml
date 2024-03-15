@@ -20,6 +20,17 @@ jobs:
     name: Unit
     runs-on: ubuntu-latest
     steps:
+      - name: Pull repository
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run tests
         uses: govuk-one-login/github-actions/node/run-script@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
         with:

@@ -28,6 +28,10 @@ Parameters:
   PermissionsBoundary:
     Type: String
     Default: ""
+  DeployAlarmsInDevEnvironment:
+    Description: "Set to the string value `true` to deploy alarms in a DEV environment"
+    Type: String
+    Default: true
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
@@ -36,6 +40,17 @@ Conditions:
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
   IsDevLikeEnvironment:
     !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
+
+  IsProdEnvironment: !Equals
+    - !Ref Environment
+    - production
+
+  IsNotDevEnvironment: !Not
+    - !Condition IsDevEnvironment
+
+  DeployAlarms: !Or
+    - !Condition IsNotDevEnvironment
+    - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
 
 Mappings:
   # Only numeric values should be assigned here
@@ -122,20 +137,6 @@ Globals:
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
 
 Resources:
-  SsmParametersFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/ssm-parameters/src/ssm-parameters-handler.lambdaHandler
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-      Policies:
-        - SSMParameterReadPolicy:
-            ParameterName: "*"
-
   CiMappingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -144,14 +145,397 @@ Resources:
         Sourcemap: true
     Properties:
       Handler: lambdas/ci-mapping/src/ci-mapping-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
 
   CiMappingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/lambda/${CiMappingFunction}
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  CiMappingFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CiMappingFunctionLogGroup
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${CiMappingFunction}-Error
+          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+
+  CiMappingFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-${CiMappingFunction}-Errors
+      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CiMappingFunction} errors
+      ActionsEnabled: true
+      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      InsufficientDataActions: []
+      MetricName: !Sub ${CiMappingFunction}-Error
+      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  CreateAuthCodeFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/matching/src/create-auth-code-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  CreateAuthCodeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  CreateAuthCodeFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CreateAuthCodeFunctionLogGroup
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${CreateAuthCodeFunction}-Error
+          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+
+  CreateAuthCodeFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-${CreateAuthCodeFunction}-Errors
+      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CreateAuthCodeFunction} errors
+      ActionsEnabled: true
+      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      InsufficientDataActions: []
+      MetricName: !Sub ${CreateAuthCodeFunction}-Error
+      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  CredentialSubjectFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  CredentialSubjectFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  CredentialSubjectFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CredentialSubjectFunctionLogGroup
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${CredentialSubjectFunction}-Error
+          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+
+  CredentialSubjectFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-${CredentialSubjectFunction}-Errors
+      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CredentialSubjectFunction} errors
+      ActionsEnabled: true
+      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      InsufficientDataActions: []
+      MetricName: !Sub ${CredentialSubjectFunction}-Error
+      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  CurrentTimeFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/matching/src/current-time-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  CurrentTimeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  CurrentTimeFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CurrentTimeFunctionLogGroup
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${CurrentTimeFunction}-Error
+          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+
+  CurrentTimeFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-${CurrentTimeFunction}-Errors
+      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CurrentTimeFunction} errors
+      ActionsEnabled: true
+      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      InsufficientDataActions: []
+      MetricName: !Sub ${CurrentTimeFunction}-Error
+      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  JwtSignerFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/jwt-signer/src/jwt-signer-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action: kms:Sign
+            Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
+
+  JwtSignerFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  JwtSignerFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref JwtSignerFunctionLogGroup
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${JwtSignerFunction}-Error
+          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+
+  JwtSignerFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-${JwtSignerFunction}-Errors
+      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${JwtSignerFunction} errors
+      ActionsEnabled: true
+      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      InsufficientDataActions: []
+      MetricName: !Sub ${JwtSignerFunction}-Error
+      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  MatchingFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/matching/src/matching-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  MatchingFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  MatchingFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref MatchingFunctionLogGroup
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${MatchingFunction}-Error
+          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+
+  MatchingFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-${MatchingFunction}-Errors
+      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${MatchingFunction} errors
+      ActionsEnabled: true
+      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      InsufficientDataActions: []
+      MetricName: !Sub ${MatchingFunction}-Error
+      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  SsmParametersFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/ssm-parameters/src/ssm-parameters-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: "*"
+
+  SsmParametersFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  SsmParametersFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref SsmParametersFunctionLogGroup
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${SsmParametersFunction}-Error
+          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+
+  SsmParametersFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-${SsmParametersFunction}-Errors
+      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${SsmParametersFunction} errors
+      ActionsEnabled: true
+      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      InsufficientDataActions: []
+      MetricName: !Sub ${SsmParametersFunction}-Error
+      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  TimeFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/issue-credential/src/time-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  TimeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  TimeFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref TimeFunctionLogGroup
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${TimeFunction}-Error
+          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+
+  TimeFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-${TimeFunction}-Errors
+      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${TimeFunction} errors
+      ActionsEnabled: true
+      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      InsufficientDataActions: []
+      MetricName: !Sub ${TimeFunction}-Error
+      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
 
   UserAgent:
     Type: AWS::SSM::Parameter
@@ -219,8 +603,43 @@ Resources:
   PublicNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs"
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PublicNinoCheckApiFatalErorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref PublicNinoCheckApiAccessLogGroup
+      FilterPattern: '{ $.level = "FATAL" || $.message = "Unhandled Exception:*" }'
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
+          MetricName: "PublicNinoCheckApi-Fatalerror"
+
+  PublicNinoCheckApiFatalErrorAlarm:
+    DependsOn:
+      - "PublicNinoCheckApiFatalErorMetricFilter"
+    Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-PublicNinoCheckApi-FatalErrorAlarm"
+      AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs."
+      ActionsEnabled: true
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      InsufficientDataActions: []
+      MetricName: PublicNinoCheckApi-Fatalerror
+      Namespace: !Sub "${AWS::StackName}/LogMessages"
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
 
   PrivateNinoCheckApi:
     Type: AWS::Serverless::Api
@@ -276,8 +695,43 @@ Resources:
   PrivateNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs"
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PrivateNinoCheckApiFatalErorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref PrivateNinoCheckApiAccessLogGroup
+      FilterPattern: '{ $.level = "FATAL" || $.message = "Unhandled Exception:*" }'
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
+          MetricName: "PrivateNinoCheckApi-Fatalerror"
+
+  PrivateNinoCheckApiFatalErrorAlarm:
+    DependsOn:
+      - "PrivateNinoCheckApiFatalErorMetricFilter"
+    Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-PrivateNinoCheckApi-FatalErrorAlarm"
+      AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs."
+      ActionsEnabled: true
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      InsufficientDataActions: []
+      MetricName: PrivateNinoCheckApi-Fatalerror
+      Namespace: !Sub "${AWS::StackName}/LogMessages"
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
 
   ExecuteStateMachineRole:
     Type: AWS::IAM::Role
@@ -332,77 +786,6 @@ Resources:
       KeySchema:
         - AttributeName: sessionId
           KeyType: HASH
-
-  JwtSignerFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/jwt-signer/src/jwt-signer-handler.lambdaHandler
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-      Policies:
-        - Statement:
-            Effect: Allow
-            Action: kms:Sign
-            Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
-
-  MatchingFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/matching/src/matching-handler.lambdaHandler
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-
-  TimeFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/issue-credential/src/time-handler.lambdaHandler
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-
-  CreateAuthCodeFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/matching/src/create-auth-code-handler.lambdaHandler
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-
-  CurrentTimeFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/matching/src/current-time-handler.lambdaHandler
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-
-  CredentialSubjectFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
 
   CheckSessionStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -517,8 +900,8 @@ Resources:
   NinoCheckStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs"
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   AbandonStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -569,8 +952,8 @@ Resources:
   AbandonStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs"
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   NinoIssueCredentialStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -654,14 +1037,14 @@ Resources:
   NinoIssueCredentialLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs"
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   CheckSessionStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs"
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   CheckHmrcEventBus:
     Type: AWS::Events::EventBus
