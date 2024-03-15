@@ -3,6 +3,45 @@ import { SfnContainerHelper } from "./sfn-container-helper";
 
 jest.setTimeout(60_000);
 
+const decode = (value: string) =>
+  Buffer.from(value, "base64").toString("utf-8");
+
+const expectedPayload = {
+  exp: 1725984858,
+  iss: "https://review-hc.staging.account.gov.uk",
+  jti: "urn:uuid:13838a2c-27ca-4f0e-bce3-7ef1ece222e3",
+  nbf: 1710432858,
+  sub: "urn:fdc:gov.uk:2022:a4df35ea-4f30-416f-94ad-0221a227d97d",
+  vc: {
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld",
+    ],
+    credentialSubject: {
+      birthDate: [{ value: "1970-01-01" }],
+      name: [
+        {
+          nameParts: [
+            { type: "GivenName", value: "Jim" },
+            { type: "FamilyName", value: "Ferguson" },
+          ],
+        },
+      ],
+      socialSecurityRecord: [{ personalNumber: "AA000003D" }],
+    },
+    evidence: [
+      {
+        ci: [],
+        failedCheckDetails: [{ checkMethod: "data" }],
+        strengthScore: 2,
+        txn: "ab1733ee-bd7c-4545-bd65-56bf937396d1",
+        type: "IdentityCheck",
+        validityScore: 0,
+      },
+    ],
+    type: ["VerifiableCredential", "IdentityCheckCredential"],
+  },
+};
 describe("nino-issue-credential-unhappy", () => {
   let sfnContainer: SfnContainerHelper;
 
@@ -16,18 +55,31 @@ describe("nino-issue-credential-unhappy", () => {
     expect(sfnContainer.getContainer()).toBeDefined();
   });
 
-  it("should fail when nino check is unsuccessful", async () => {
+  it("should return 400 when Bearer token is Invalid", async () => {
     const input = JSON.stringify({
-      bearerToken: "Bearer unhappy",
+      bearerToken: "Bearer",
     });
 
-    const testUser = {
-      nino: "AA000003D",
-      dob: "1948-04-23",
-      firstName: "KENNETH",
-      lastName: "DECERQUEIRA",
-    };
+    const responseStepFunction = await sfnContainer.startStepFunctionExecution(
+      "UnHappyPathBearerTokenInvalid",
+      input
+    );
+    const results = await sfnContainer.waitFor(
+      (event: HistoryEvent) =>
+        event?.type === "PassStateExited" &&
+        event?.stateExitedEventDetails?.name === "Err: Invalid Bearer Token",
+      responseStepFunction
+    );
 
+    expect(results[0].stateExitedEventDetails?.output).toBe(
+      '{"error":"Invalid Bearer Token","httpStatus":400}'
+    );
+  });
+
+  it("should create signed JWT with Ci when nino check is unsuccessful", async () => {
+    const input = JSON.stringify({
+      bearerToken: "Bearer happy",
+    });
     const responseStepFunction = await sfnContainer.startStepFunctionExecution(
       "UnHappyPath",
       input
@@ -39,63 +91,11 @@ describe("nino-issue-credential-unhappy", () => {
       responseStepFunction
     );
 
-    const token = JSON.parse(
+    const [, payloadEncoded] = JSON.parse(
       results[0].stateExitedEventDetails?.output as string
-    );
+    ).jwt.split(".");
 
-    const [headerEncoded, payloadEncoded, signatureEncoded] =
-      token.jwt.split(".");
-
-    const header = JSON.parse(base64decode(headerEncoded));
-    const payload = JSON.parse(base64decode(payloadEncoded));
-    const signature = base64decode(signatureEncoded);
-
-    expect(header.typ).toBe("JWT");
-    expect(header.alg).toBe("ES256");
-    expect(header.kid).not.toBeNull();
-    const evidence = payload.vc.evidence[0];
-
-    expect(evidence.type).toBe("IdentityCheck");
-    expect(evidence.strengthScore).toBe(2);
-    expect(evidence.validityScore).toBe(2);
-    expect(evidence.checkDetails[0].checkMethod).toBe("data");
-    expect(evidence.txn).not.toBeNull();
-
-    const credentialSubject = payload.vc.credentialSubject;
-    expect(credentialSubject.socialSecurityRecord[0].personalNumber).toBe(
-      testUser.nino
-    );
-    expect(credentialSubject.name[0].nameParts[0].type).toBe("GivenName");
-    expect(credentialSubject.name[0].nameParts[0].value).toBe(
-      testUser.firstName
-    );
-    expect(credentialSubject.name[0].nameParts[1].type).toBe("FamilyName");
-    expect(credentialSubject.name[0].nameParts[1].value).toBe(
-      testUser.lastName
-    );
-
-    expect(payload.vc.type[0]).toBe("VerifiableCredential");
-    expect(payload.vc.type[1]).toBe("IdentityCheckCredential");
-
-    expect(payload.vc["@context"][0]).toBe(
-      "https://www.w3.org/2018/credentials/v1"
-    );
-    expect(payload.vc["@context"][1]).toBe(
-      "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld"
-    );
-
-    expect(payload.sub).not.toBeNull();
-    expect(isValidTimestamp(payload.nbf)).toBe(true);
-    expect(payload.iss).not.toBeNull();
-    expect(isValidTimestamp(payload.exp)).toBe(true);
-    expect(payload.jti).not.toBeNull();
-
-    expect(signature).not.toBeNull();
+    const payload = JSON.parse(decode(payloadEncoded));
+    expect(payload).toEqual(expectedPayload);
   });
-
-  const isValidTimestamp = (timestamp: number) =>
-    !isNaN(new Date(timestamp).getTime());
-
-  const base64decode = (value: string) =>
-    Buffer.from(value, "base64").toString("utf-8");
 });

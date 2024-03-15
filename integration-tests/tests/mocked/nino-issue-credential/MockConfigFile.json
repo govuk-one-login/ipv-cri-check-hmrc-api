@@ -22,8 +22,13 @@
           "Fetch exp time and NBF": "FetchExpTimeAndNBF",
           "Fetch Failed Attempts": "FetchExceededFailedAttempts",
           "Fetch CI": "FetchCI",
-          "Sign VC claimsSet": "SignVCClaimSet",
+          "Sign VC claimsSet": "SignVCClaimSetWithCi",
           "Publish Audit Event VC Issued": "PublishAuditEventVcIssued"
+        },
+        "UnHappyPathBearerTokenInvalid": {
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
+          "Query Session Item": "QuerySessionItemHasNoItem",
+          "Err: Invalid Bearer Token": "InvalidBearerToken"
         }
       }
     }
@@ -88,6 +93,15 @@
             }
           ],
           "ScannedCount": 1
+        }
+      }
+    },
+    "QuerySessionItemHasNoItem": {
+      "0": {
+        "Return": {
+          "Count": 0,
+          "Items": [],
+          "ScannedCount": 0
         }
       }
     },
@@ -303,6 +317,28 @@
             "RequestId": "20229acd-1926-4994-be1f-752b8767e4bb"
           },
           "StatusCode": 200
+        }
+      }
+    },
+    "SignVCClaimSetWithCi": {
+      "0": {
+        "Return": {
+          "Payload": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6IjA3YzZiNzkzLWIyOTktNGZhNy1hMGJmLTQ2ZTgwYjkwMDNmNyJ9.eyJ2YyI6eyJldmlkZW5jZSI6W3sidHlwZSI6IklkZW50aXR5Q2hlY2siLCJzdHJlbmd0aFNjb3JlIjoyLCJ2YWxpZGl0eVNjb3JlIjowLCJmYWlsZWRDaGVja0RldGFpbHMiOlt7ImNoZWNrTWV0aG9kIjoiZGF0YSJ9XSwiY2kiOltdLCJ0eG4iOiJhYjE3MzNlZS1iZDdjLTQ1NDUtYmQ2NS01NmJmOTM3Mzk2ZDEifV0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7InNvY2lhbFNlY3VyaXR5UmVjb3JkIjpbeyJwZXJzb25hbE51bWJlciI6IkFBMDAwMDAzRCJ9XSwiYmlydGhEYXRlIjpbeyJ2YWx1ZSI6IjE5NzAtMDEtMDEifV0sIm5hbWUiOlt7Im5hbWVQYXJ0cyI6W3sidHlwZSI6IkdpdmVuTmFtZSIsInZhbHVlIjoiSmltIn0seyJ0eXBlIjoiRmFtaWx5TmFtZSIsInZhbHVlIjoiRmVyZ3Vzb24ifV19XX0sInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiLCJJZGVudGl0eUNoZWNrQ3JlZGVudGlhbCJdLCJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vdm9jYWIubG9uZG9uLmNsb3VkYXBwcy5kaWdpdGFsL2NvbnRleHRzL2lkZW50aXR5LXYxLmpzb25sZCJdfSwic3ViIjoidXJuOmZkYzpnb3YudWs6MjAyMjphNGRmMzVlYS00ZjMwLTQxNmYtOTRhZC0wMjIxYTIyN2Q5N2QiLCJuYmYiOjE3MTA0MzI4NTgsImlzcyI6Imh0dHBzOi8vcmV2aWV3LWhjLnN0YWdpbmcuYWNjb3VudC5nb3YudWsiLCJleHAiOjE3MjU5ODQ4NTgsImp0aSI6InVybjp1dWlkOjEzODM4YTJjLTI3Y2EtNGYwZS1iY2UzLTdlZjFlY2UyMjJlMyJ9.yKkEoVen5RbWQJnvf2EoulaS3G6gtx-NQ0JUgv-iy5o1qlOwcsZ5vGj2F24yJltMXb14191ZyOzjANYI_BGgag",
+          "SdkHttpMetadata": {
+            "HttpStatusCode": 200
+          },
+          "SdkResponseMetadata": {
+            "RequestId": "20229acd-1926-4994-be1f-752b8767e4bb"
+          },
+          "StatusCode": 200
+        }
+      }
+    },
+    "InvalidBearerToken": {
+      "0": {
+        "Return": {
+          "error": "Invalid Bearer Token",
+          "httpStatus": 400
         }
       }
     }
