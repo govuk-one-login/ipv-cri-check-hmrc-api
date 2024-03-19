@@ -23,6 +23,10 @@ paths:
                 $ref: "#/components/schemas/Error"
         "403":
           description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "500":
           description: "500 response"
           content:
