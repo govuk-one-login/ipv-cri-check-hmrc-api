@@ -1,0 +1,575 @@
+{
+  "StartAt": "SpotParallel",
+  "States": {
+    "Fail": {
+      "Comment": "Execution failed",
+      "Type": "Fail"
+    },
+    "NinoCheckExceptionHandler": {
+      "Branches": [
+        {
+          "StartAt": "NinoCheckOutputQueue",
+          "States": {
+            "NinoCheckOutputQueue": {
+              "Catch": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "Next": "NinoCheckOutputQueueFail",
+                  "ResultPath": "$.queue_error"
+                }
+              ],
+              "Comment": "Write the Request to the dead letter queue",
+              "End": true,
+              "Parameters": {
+                "MessageBody": {
+                  "log_ids": "sessionCheck",
+                  "reason": "INTERNAL_ERROR",
+                  "status": "REJECTED"
+                },
+                "QueueUrl": "${NinoCheckOutputQueue}"
+              },
+              "Resource": "arn:aws:states:::sqs:sendMessage",
+              "Type": "Task"
+            },
+            "NinoCheckOutputQueueFail": {
+              "Type": "Fail"
+            }
+          }
+        },
+        {
+          "StartAt": "Get Timestamp",
+          "States": {
+            "Get Timestamp": {
+              "Next": "NinoCheckAuditQueue",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${CurrentTimeFunctionArn}"
+              },
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "ResultPath": "$.timestamp",
+              "ResultSelector": {
+                "time.$": "$.Payload",
+                "time_formatted.$": "$$.State.EnteredTime"
+              },
+              "Retry": [
+                {
+                  "BackoffRate": 2,
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6
+                }
+              ],
+              "Type": "Task"
+            },
+            "NinoCheckAuditQueue": {
+              "Catch": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "Next": "NinoCheckAuditQueueFail",
+                  "ResultPath": "$.queue_error"
+                }
+              ],
+              "Comment": "Writes the exception to the audit queue",
+              "End": true,
+              "Parameters": {
+                "MessageBody": {
+                  "client_id.$": "$.sessionCheck.client_id",
+                  "component_id": "Nino Check",
+                  "event_name": "IPV_CHECK_HMRC_RESPONSE_REJECTED",
+                  "extensions": {
+                    "reason": "INTERNAL_ERROR"
+                  },
+                  "restricted.$": "$",
+                  "timestamp.$": "$.timestamp.time",
+                  "timestamp_formatted.$": "$.timestamp.time_formatted",
+                  "user": {
+                    "govuk_signin_journey_id.$": "$.sessionCheck.client_session_id",
+                    "persistent_session_id.$": "$.sessionCheck.persistent_session_id",
+                    "session_id.$": "$.sessionCheck.session_id"
+                  }
+                },
+                "QueueUrl": "${NinoCheckAuditQueue}"
+              },
+              "Resource": "arn:aws:states:::sqs:sendMessage",
+              "Type": "Task"
+            },
+            "NinoCheckAuditQueueFail": {
+              "Type": "Fail"
+            }
+          }
+        }
+      ],
+      "Next": "Fail",
+      "Type": "Parallel"
+    },
+    "SpotParallel": {
+      "Branches": [
+        {
+          "StartAt": "Invoke Check Session",
+          "States": {
+            "Invoke Check Session": {
+              "Type": "Task",
+              "Next": "Is Session Valid?",
+              "Parameters": {
+                "StateMachineArn": "${CheckSessionStateMachineArn}",
+                "Input.$": "States.JsonToString($)"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:sfn:startSyncExecution",
+              "ResultSelector": {
+                "sessionId.$": "$$.Execution.Input.sessionId",
+                "nino.$": "$$.Execution.Input.nino",
+                "sessionCheck.$": "States.StringToJson($.Output)"
+              }
+            },
+            "Is Session Valid?": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Not": {
+                    "Variable": "$.sessionCheck.status",
+                    "StringMatches": "SESSION_OK"
+                  },
+                  "Next": "Err: Invalid Session"
+                }
+              ],
+              "Default": "Fetch SSM Parameters"
+            },
+            "Fetch SSM Parameters": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "FunctionName": "${SsmParametersFunction}",
+                "Payload": {
+                  "parameters.$": "States.Array('/${CommonStackName}/PersonIdentityTableName', '${UserAgent}', '/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId),'/${CommonStackName}/verifiable-credential/issuer')"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "Query User Attempts",
+              "ResultPath": "$.parameters",
+              "ResultSelector": {
+                "PersonIdentityTableName.$": "$.Payload[0].Value",
+                "UserAgent.$": "$.Payload[1].Value",
+                "SessionTableName.$": "$.Payload[2].Value",
+                "CheckUrl.$": "$.Payload[3].Value",
+                "issuer.$": "$.Payload[4].Value"
+              }
+            },
+            "Err: Invalid Session": {
+              "Type": "Pass",
+              "End": true,
+              "Parameters": {
+                "httpStatus": 400
+              }
+            },
+            "Query User Attempts": {
+              "Type": "Task",
+              "Next": "User has attempts?",
+              "Parameters": {
+                "TableName": "${UserAttemptsTable}",
+                "KeyConditionExpression": "sessionId = :value",
+                "ExpressionAttributeValues": {
+                  ":value": {
+                    "S.$": "$.sessionId"
+                  }
+                }
+              },
+              "Resource": "arn:aws:states:::aws-sdk:dynamodb:query",
+              "ResultPath": "$.check-attempts-exist"
+            },
+            "User has attempts?": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.check-attempts-exist.Count",
+                  "NumericGreaterThan": 0,
+                  "Next": "User has more than 2 attempts?"
+                }
+              ],
+              "Default": "Query Person Identity Table"
+            },
+            "User has more than 2 attempts?": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.check-attempts-exist.Count",
+                  "NumericGreaterThanEquals": 2,
+                  "Next": "Err: Attempts exceeded"
+                }
+              ],
+              "Default": "Query Person Identity Table"
+            },
+            "Err: Attempts exceeded": {
+              "Type": "Pass",
+              "End": true,
+              "Parameters": {
+                "httpStatus": 200
+              }
+            },
+            "Query Person Identity Table": {
+              "Type": "Task",
+              "Next": "User Exists?",
+              "Parameters": {
+                "TableName.$": "$.parameters.PersonIdentityTableName",
+                "KeyConditionExpression": "sessionId = :value",
+                "ExpressionAttributeValues": {
+                  ":value": {
+                    "S.$": "$.sessionId"
+                  }
+                }
+              },
+              "Resource": "arn:aws:states:::aws-sdk:dynamodb:query",
+              "ResultPath": "$.userDetails"
+            },
+            "User Exists?": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "And": [
+                    {
+                      "Variable": "$.userDetails.Count",
+                      "NumericGreaterThan": 0
+                    },
+                    {
+                      "And": [
+                        {
+                          "Variable": "$.userDetails.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
+                          "IsPresent": true
+                        },
+                        {
+                          "Variable": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
+                          "IsPresent": true
+                        },
+                        {
+                          "Variable": "$.userDetails.Items[0].birthDates.L[0].M.value.S",
+                          "IsPresent": true
+                        }
+                      ]
+                    }
+                  ],
+                  "Next": "Get OAuth Token"
+                }
+              ],
+              "Default": "Err: No user found in Person Identity"
+            },
+            "Err: No user found in Person Identity": {
+              "Type": "Pass",
+              "End": true,
+              "Parameters": {
+                "httpStatus": 500
+              }
+            },
+            "Get OAuth Token": {
+              "Type": "Task",
+              "Next": "Publish Audit Event Request Sent",
+              "Parameters": {
+                "SecretId": "HMRCBearerToken"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:secretsmanager:getSecretValue",
+              "ResultPath": "$.oAuthToken",
+              "ResultSelector": {
+                "value.$": "$.SecretString"
+              }
+            },
+            "Publish Audit Event Request Sent": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::events:putEvents",
+              "Parameters": {
+                "Entries": [
+                  {
+                    "Detail": {
+                      "message": "Request Sent to 3rd party"
+                    },
+                    "DetailType": "${AuditEventNameRequestSent}",
+                    "EventBusName": "${CheckHmrcEventBus}",
+                    "Source": "${CheckHmrcEventBusSource}"
+                  }
+                ]
+              },
+              "Next": "Call Matching API",
+              "ResultPath": null
+            },
+            "Call Matching API": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "FunctionName": "${MatchingFunctionArn}",
+                "Payload": {
+                  "sessionId.$": "$.sessionId",
+                  "nino.$": "$.nino",
+                  "userDetails": {
+                    "firstName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
+                    "lastName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
+                    "dob.$": "$.userDetails.Items[0].birthDates.L[0].M.value.S"
+                  },
+                  "userAgent.$": "$.parameters.UserAgent",
+                  "apiURL.$": "$.parameters.CheckUrl",
+                  "oAuthToken.$": "$.oAuthToken.value"
+                }
+              },
+              "Next": "Publish Audit Event Response Received",
+              "Catch": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "Next": "Err: Matching Lambda Exception"
+                }
+              ],
+              "ResultSelector": {
+                "payload.$": "$.Payload"
+              },
+              "ResultPath": "$.hmrc_response",
+              "Retry": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "BackoffRate": 2,
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3
+                }
+              ]
+            },
+            "Err: Matching Lambda Exception": {
+              "Type": "Fail"
+            },
+            "Publish Audit Event Response Received": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::events:putEvents",
+              "Parameters": {
+                "Entries": [
+                  {
+                    "Detail": {
+                      "message": "Response Received from 3rd party"
+                    },
+                    "DetailType": "${AuditEventNameResponseReceived}",
+                    "EventBusName": "${CheckHmrcEventBus}",
+                    "Source": "${CheckHmrcEventBusSource}"
+                  }
+                ]
+              },
+              "Next": "nino check completed match?",
+              "ResultPath": null
+            },
+            "nino check completed match?": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.hmrc_response.payload.status",
+                  "StringEquals": "200",
+                  "Next": "Store nino check completedful Attempt"
+                }
+              ],
+              "Default": "Contains Error?"
+            },
+            "Store nino check completedful Attempt": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::dynamodb:putItem",
+              "Parameters": {
+                "TableName": "${UserAttemptsTable}",
+                "Item": {
+                  "sessionId": {
+                    "S.$": "$$.Execution.Input.sessionId"
+                  },
+                  "timestamp": {
+                    "S.$": "$$.State.EnteredTime"
+                  },
+                  "status": {
+                    "N.$": "$.hmrc_response.payload.status"
+                  },
+                  "attempt": {
+                    "S": "PASS"
+                  }
+                }
+              },
+              "Next": "Fetch Auth Code Expiry",
+              "ResultPath": null
+            },
+            "Contains Error?": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "And": [
+                    {
+                      "Variable": "$.hmrc_response.payload.status",
+                      "StringEquals": "401"
+                    },
+                    {
+                      "Variable": "$.hmrc_response.payload.body.errors",
+                      "IsPresent": true
+                    }
+                  ],
+                  "Next": "Store Failed Match Attempt"
+                },
+                {
+                  "Variable": "$.hmrc_response.payload.status",
+                  "StringEquals": "424",
+                  "Next": "Store Deceased Attempt"
+                },
+                {
+                  "Variable": "$.hmrc_response.payload.body.code",
+                  "StringEquals": "INVALID_CREDENTIALS",
+                  "Next": "Err: Failed Auth"
+                }
+              ],
+              "Default": "Err: API Error"
+            },
+            "Store Failed Match Attempt": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::dynamodb:putItem",
+              "Parameters": {
+                "TableName": "${UserAttemptsTable}",
+                "Item": {
+                  "sessionId": {
+                    "S.$": "$$.Execution.Input.sessionId"
+                  },
+                  "timestamp": {
+                    "S.$": "$$.State.EnteredTime"
+                  },
+                  "status": {
+                    "N.$": "$.hmrc_response.payload.status"
+                  },
+                  "text": {
+                    "S.$": "$.hmrc_response.payload.body.errors"
+                  },
+                  "attempt": {
+                    "S": "FAIL"
+                  }
+                }
+              },
+              "Next": "Send Retry"
+            },
+            "Send Retry": {
+              "Type": "Pass",
+              "End": true,
+              "Parameters": {
+                "httpStatus": 422
+              }
+            },
+            "Fetch Auth Code Expiry": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${CreateAuthCodeFunctionArn}"
+              },
+              "Next": "Set Auth Code for Session",
+              "ResultSelector": {
+                "payload.$": "$.Payload"
+              },
+              "ResultPath": "$.expiry"
+            },
+            "Set Auth Code for Session": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::dynamodb:updateItem",
+              "Parameters": {
+                "TableName.$": "$.parameters.SessionTableName",
+                "Key": {
+                  "sessionId": {
+                    "S.$": "$$.Execution.Input.sessionId"
+                  }
+                },
+                "UpdateExpression": "SET authorizationCode = :authCode, authorizationCodeExpiryDate = :expiry",
+                "ExpressionAttributeValues": {
+                  ":authCode": {
+                    "S.$": "States.UUID()"
+                  },
+                  ":expiry": {
+                    "N.$": "States.Format('{}',$.expiry.payload.authCodeExpiry)"
+                  }
+                }
+              },
+              "Next": "Save NINO & sessionId to nino-users table",
+              "ResultPath": "$.setAuthCode"
+            },
+            "Save NINO & sessionId to nino-users table": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::dynamodb:putItem",
+              "Parameters": {
+                "TableName": "${NinoUsersTable}",
+                "Item": {
+                  "sessionId": {
+                    "S.$": "$$.Execution.Input.sessionId"
+                  },
+                  "nino": {
+                    "S.$": "$.hmrc_response.payload.body.nino"
+                  }
+                }
+              },
+              "Next": "Response Filtering",
+              "ResultPath": "$.saveUser"
+            },
+            "Response Filtering": {
+              "Type": "Pass",
+              "Next": "Nino check nino check completedful",
+              "Parameters": {
+                "httpStatus": 200
+              }
+            },
+            "Nino check nino check completedful": {
+              "Type": "Succeed"
+            },
+            "Err: API Error": {
+              "Type": "Fail"
+            },
+            "Err: Failed Auth": {
+              "Type": "Fail"
+            },
+            "Store Deceased Attempt": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::dynamodb:putItem",
+              "Parameters": {
+                "TableName": "${UserAttemptsTable}",
+                "Item": {
+                  "sessionId": {
+                    "S.$": "$$.Execution.Input.sessionId"
+                  },
+                  "timestamp": {
+                    "S.$": "$$.State.EnteredTime"
+                  },
+                  "status": {
+                    "N.$": "$.hmrc_response.payload.status"
+                  },
+                  "text": {
+                    "S.$": "$.hmrc_response.payload.body"
+                  },
+                  "attempt": {
+                    "S": "FAIL"
+                  }
+                }
+              },
+              "Next": "Send Retry"
+            }
+          }
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "NinoCheckExceptionHandler",
+          "ResultPath": "$.error"
+        }
+      ],
+      "Next": "nino check completed",
+      "Type": "Parallel"
+    },
+    "nino check completed": {
+      "Comment": "Nino check completed",
+      "Type": "Succeed",
+      "OutputPath": "$.[0]"
+    }
+  }
+}
