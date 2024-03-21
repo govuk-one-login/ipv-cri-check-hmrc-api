@@ -339,7 +339,19 @@
           }
         }
       },
-      "Next": "Send Retry"
+      "Next": "Was this the users last attempt?",
+      "ResultPath": "$.saveFailedAttempt"
+    },
+    "Was this the users last attempt?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.check-attempts-exist.Count",
+          "NumericGreaterThanEquals": 1,
+          "Next": "Fetch Auth Code Expiry"
+        }
+      ],
+      "Default": "Send Retry"
     },
     "Send Retry": {
       "Type": "Pass",
@@ -394,7 +406,7 @@
             "S.$": "$$.Execution.Input.sessionId"
           },
           "nino": {
-            "S.$": "$.hmrc_response.payload.body.nino"
+            "S.$": "$$.Execution.Input.nino"
           }
         }
       },
@@ -403,12 +415,12 @@
     },
     "Response Filtering": {
       "Type": "Pass",
-      "Next": "Nino check successful",
+      "Next": "Nino check completed",
       "Parameters": {
         "httpStatus": 200
       }
     },
-    "Nino check successful": {
+    "Nino check completed": {
       "Type": "Succeed"
     },
     "Err: API Error": {
@@ -440,7 +452,8 @@
           }
         }
       },
-      "Next": "Send Retry"
+      "Next": "Was this the users last attempt?",
+      "ResultPath": "$.saveFailedAttempt"
     }
   }
 }
