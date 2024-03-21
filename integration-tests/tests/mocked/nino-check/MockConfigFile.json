@@ -109,7 +109,7 @@
         "HMRCError": {
           "Invoke Check Session": "CheckSessionSuccess",
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
-          "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
+          "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
