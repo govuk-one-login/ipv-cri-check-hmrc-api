@@ -27,7 +27,7 @@ describe("nino-check-happy", () => {
     );
     const results = await sfnContainer.waitFor(
       (event: HistoryEvent) =>
-        event?.stateExitedEventDetails?.name === "Nino check successful",
+        event?.stateExitedEventDetails?.name === "Nino check completed",
       responseStepFunction
     );
     expect(results[0].stateExitedEventDetails?.output).toEqual(
@@ -49,7 +49,7 @@ describe("nino-check-happy", () => {
     );
     const results = await sfnContainer.waitFor(
       (event: HistoryEvent) =>
-        event?.stateExitedEventDetails?.name === "Nino check successful",
+        event?.stateExitedEventDetails?.name === "Nino check completed",
       responseStepFunction
     );
     expect(results[0].stateExitedEventDetails?.output).toEqual(
