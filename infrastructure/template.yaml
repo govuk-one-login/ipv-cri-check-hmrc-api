@@ -1076,8 +1076,8 @@ Resources:
               Event: !FindInMap [Audit, EventName, ResponseReceived]
       Targets:
         - Arn: !Sub
-                - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
-                - auditEventQueueName: !ImportValue "AuditEventQueueName"
+            - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
+            - auditEventQueueName: !ImportValue "AuditEventQueueName"
           Id: AuditEventQueue
           InputTransformer:
             InputPathsMap:
@@ -1121,8 +1121,8 @@ Resources:
               Event: !FindInMap [Audit, EventName, RequestSent]
       Targets:
         - Arn: !Sub
-                - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
-                - auditEventQueueName: !ImportValue "AuditEventQueueName"
+            - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
+            - auditEventQueueName: !ImportValue "AuditEventQueueName"
           Id: AuditEventQueue
           InputTransformer:
             InputPathsMap:
@@ -1166,8 +1166,8 @@ Resources:
               Event: !FindInMap [Audit, EventName, VcIssued]
       Targets:
         - Arn: !Sub
-                - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
-                - auditEventQueueName: !ImportValue "AuditEventQueueName"
+            - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
+            - auditEventQueueName: !ImportValue "AuditEventQueueName"
           Id: AuditEventQueue
           InputTransformer:
             InputPathsMap:
@@ -1211,8 +1211,8 @@ Resources:
               Event: !FindInMap [Audit, EventName, End]
       Targets:
         - Arn: !Sub
-                - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
-                - auditEventQueueName: !ImportValue "AuditEventQueueName"
+            - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
+            - auditEventQueueName: !ImportValue "AuditEventQueueName"
           Id: AuditEventQueue
           InputTransformer:
             InputPathsMap:
@@ -1256,8 +1256,8 @@ Resources:
               Event: !FindInMap [Audit, EventName, Abandoned]
       Targets:
         - Arn: !Sub
-                - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
-                - auditEventQueueName: !ImportValue "AuditEventQueueName"
+            - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
+            - auditEventQueueName: !ImportValue "AuditEventQueueName"
           Id: AuditEventQueue
           InputTransformer:
             InputPathsMap:

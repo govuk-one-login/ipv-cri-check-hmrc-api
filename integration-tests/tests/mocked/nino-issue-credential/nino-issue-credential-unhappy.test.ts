@@ -58,7 +58,7 @@ const expectedPayload = {
   iss: "https://review-hc.dev.account.gov.uk",
   exp: 1710403763,
   jti: "urn:uuid:f540b78c-9e52-4a0f-b033-c78e7ab327ea",
-}
+};
 
 describe("nino-issue-credential-unhappy", () => {
   let sfnContainer: SfnContainerHelper;

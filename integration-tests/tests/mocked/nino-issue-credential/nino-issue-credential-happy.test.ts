@@ -94,6 +94,5 @@ describe("nino-issue-credential-happy", () => {
 
     const payload = JSON.parse(decode(payloadEncoded));
     expect(payload).toEqual(expectedPayload);
-
   });
 });
