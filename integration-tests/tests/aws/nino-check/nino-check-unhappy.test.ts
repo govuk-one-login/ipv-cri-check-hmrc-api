@@ -52,6 +52,10 @@ describe("nino-check-unhappy", () => {
           sessionId: input.sessionId,
           expiryDate: 9999999999,
           clientId: "ipv-core-stub-aws-prod",
+          persistentSessionId: "mock-persistent-session-id",
+          clientSessionId: "mock-client-seesion-id",
+          subject: "mock-subject",
+          clientIpAddress: "0.0.0.0",
         },
       },
       {
@@ -255,6 +259,10 @@ describe("nino-check-unhappy", () => {
             sessionId: mockInput2.sessionId,
             expiryDate: 9999999999,
             clientId: mockClientId2,
+            persistentSessionId: "mock-persistent-session-id",
+            clientSessionId: "mock-client-seesion-id",
+            subject: "mock-subject",
+            clientIpAddress: "0.0.0.0",
           },
         },
         {

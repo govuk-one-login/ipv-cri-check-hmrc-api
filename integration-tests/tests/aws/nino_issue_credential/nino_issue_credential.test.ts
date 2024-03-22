@@ -377,5 +377,8 @@ describe("nino-issue-credential-happy", () => {
     expiryDate: "9999999999",
     subject: "test",
     clientId: "exampleClientId",
+    persistentSessionId: "mock-persistent-session-id",
+    clientSessionId: "mock-client-seesion-id",
+    clientIpAddress: "0.0.0.0",
   });
 });

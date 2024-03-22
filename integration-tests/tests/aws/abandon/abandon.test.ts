@@ -36,6 +36,10 @@ describe("abandon", () => {
       clientId: "exampleClientId",
       authorizationCode: "9999999999",
       authorizationCodeExpiryDate: "9999999999",
+      persistentSessionId: "mock-persistent-session-id",
+      clientSessionId: "mock-client-seesion-id",
+      subject: "mock-subject",
+      clientIpAddress: "0.0.0.0",
     });
 
     const startExecutionResult = await executeStepFunction(

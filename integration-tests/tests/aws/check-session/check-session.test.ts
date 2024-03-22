@@ -30,6 +30,10 @@ describe("check-session", () => {
       sessionId: input.sessionId,
       expiryDate: 9999999999,
       clientId: "exampleClientId",
+      persistentSessionId: "mock-persistent-session-id",
+      clientSessionId: "mock-client-seesion-id",
+      subject: "mock-subject",
+      clientIpAddress: "0.0.0.0",
     });
 
     const startExecutionResult = await executeStepFunction(
