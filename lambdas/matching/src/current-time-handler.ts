@@ -6,7 +6,7 @@ export class CurrentTimeHandler implements LambdaInterface {
 
     return {
       milliseconds: currentTime,
-      seconds: Math.floor(currentTime / 1000).toString()
+      seconds: Math.floor(currentTime / 1000)
     }
   }
 }
