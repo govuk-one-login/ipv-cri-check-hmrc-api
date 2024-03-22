@@ -912,6 +912,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/abandon.asl.json
       DefinitionSubstitutions:
+        CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction
@@ -928,6 +929,8 @@ Resources:
         IncludeExecutionData: True
         Level: ALL
       Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CurrentTimeFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref SsmParametersFunction
         - DynamoDBReadPolicy:
@@ -964,6 +967,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_issue_credential.asl.json
       DefinitionSubstitutions:
+        CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
         CiMappingFunctionArn: !GetAtt CiMappingFunction.Arn
         TimeFunctionArn: !GetAtt TimeFunction.Arn
         CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
@@ -991,6 +995,8 @@ Resources:
         IncludeExecutionData: True
         Level: ALL
       Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CurrentTimeFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref SsmParametersFunction
         - LambdaInvokePolicy:
@@ -1064,7 +1070,40 @@ Resources:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
-          - !FindInMap [Audit, EventName, ResponseReceived]
+          - !Sub
+            - ${EventPrefix}_${Event}
+            - EventPrefix: !Ref AuditEventNamePrefix
+              Event: !FindInMap [Audit, EventName, ResponseReceived]
+      Targets:
+        - Arn: !Sub
+                - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
+                - auditEventQueueName: !ImportValue "AuditEventQueueName"
+          Id: AuditEventQueue
+          InputTransformer:
+            InputPathsMap:
+              "eventName": "$.detail-type"
+              "componentId": "$.detail.issuer"
+              "msTimestamp": "$.detail.msTimestamp"
+              "sTimestamp": "$.detail.sTimestamp"
+              "govJourneyId": "$.detail.session.journeyId"
+              "ipAddress": "$.detail.session.ipAddress"
+              "persistentSessionId": "$.detail.session.persistentId"
+              "sessionId": "$.detail.session.id"
+              "userId": "$.detail.session.subject"
+            InputTemplate: |
+              {
+                "event_name": <eventName>,
+                "component_id": <componentId>,
+                "timestamp": <sTimestamp>,
+                "event_timestamp_ms": <msTimestamp>,
+                "user": {
+                  "govuk_signin_journey_id": <govJourneyId>,
+                  "ip_address": <ipAddress>,
+                  "persistent_session_id": <persistentSessionId>,
+                  "session_id": <sessionId>,
+                  "user_id": <userId>
+                }
+              }
 
   AuditEventRequestSentRule:
     Type: AWS::Events::Rule
@@ -1076,7 +1115,40 @@ Resources:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
-          - !FindInMap [Audit, EventName, RequestSent]
+          - !Sub
+            - ${EventPrefix}_${Event}
+            - EventPrefix: !Ref AuditEventNamePrefix
+              Event: !FindInMap [Audit, EventName, RequestSent]
+      Targets:
+        - Arn: !Sub
+                - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
+                - auditEventQueueName: !ImportValue "AuditEventQueueName"
+          Id: AuditEventQueue
+          InputTransformer:
+            InputPathsMap:
+              "eventName": "$.detail-type"
+              "componentId": "$.detail.issuer"
+              "msTimestamp": "$.detail.msTimestamp"
+              "sTimestamp": "$.detail.sTimestamp"
+              "govJourneyId": "$.detail.session.journeyId"
+              "ipAddress": "$.detail.session.ipAddress"
+              "persistentSessionId": "$.detail.session.persistentId"
+              "sessionId": "$.detail.session.id"
+              "userId": "$.detail.session.subject"
+            InputTemplate: |
+              {
+                "event_name": <eventName>,
+                "component_id": <componentId>,
+                "timestamp": <sTimestamp>,
+                "event_timestamp_ms": <msTimestamp>,
+                "user": {
+                  "govuk_signin_journey_id": <govJourneyId>,
+                  "ip_address": <ipAddress>,
+                  "persistent_session_id": <persistentSessionId>,
+                  "session_id": <sessionId>,
+                  "user_id": <userId>
+                }
+              }
 
   AuditEventVcIssuedRule:
     Type: AWS::Events::Rule
@@ -1088,7 +1160,40 @@ Resources:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
-          - !FindInMap [Audit, EventName, VcIssued]
+          - !Sub
+            - ${EventPrefix}_${Event}
+            - EventPrefix: !Ref AuditEventNamePrefix
+              Event: !FindInMap [Audit, EventName, VcIssued]
+      Targets:
+        - Arn: !Sub
+                - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
+                - auditEventQueueName: !ImportValue "AuditEventQueueName"
+          Id: AuditEventQueue
+          InputTransformer:
+            InputPathsMap:
+              "eventName": "$.detail-type"
+              "componentId": "$.detail.issuer"
+              "msTimestamp": "$.detail.msTimestamp"
+              "sTimestamp": "$.detail.sTimestamp"
+              "govJourneyId": "$.detail.session.journeyId"
+              "ipAddress": "$.detail.session.ipAddress"
+              "persistentSessionId": "$.detail.session.persistentId"
+              "sessionId": "$.detail.session.id"
+              "userId": "$.detail.session.subject"
+            InputTemplate: |
+              {
+                "event_name": <eventName>,
+                "component_id": <componentId>,
+                "timestamp": <sTimestamp>,
+                "event_timestamp_ms": <msTimestamp>,
+                "user": {
+                  "govuk_signin_journey_id": <govJourneyId>,
+                  "ip_address": <ipAddress>,
+                  "persistent_session_id": <persistentSessionId>,
+                  "session_id": <sessionId>,
+                  "user_id": <userId>
+                }
+              }
 
   AuditEventEndRule:
     Type: AWS::Events::Rule
@@ -1100,7 +1205,40 @@ Resources:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
-          - !FindInMap [Audit, EventName, End]
+          - !Sub
+            - ${EventPrefix}_${Event}
+            - EventPrefix: !Ref AuditEventNamePrefix
+              Event: !FindInMap [Audit, EventName, End]
+      Targets:
+        - Arn: !Sub
+                - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
+                - auditEventQueueName: !ImportValue "AuditEventQueueName"
+          Id: AuditEventQueue
+          InputTransformer:
+            InputPathsMap:
+              "eventName": "$.detail-type"
+              "componentId": "$.detail.issuer"
+              "msTimestamp": "$.detail.msTimestamp"
+              "sTimestamp": "$.detail.sTimestamp"
+              "govJourneyId": "$.detail.session.journeyId"
+              "ipAddress": "$.detail.session.ipAddress"
+              "persistentSessionId": "$.detail.session.persistentId"
+              "sessionId": "$.detail.session.id"
+              "userId": "$.detail.session.subject"
+            InputTemplate: |
+              {
+                "event_name": <eventName>,
+                "component_id": <componentId>,
+                "timestamp": <sTimestamp>,
+                "event_timestamp_ms": <msTimestamp>,
+                "user": {
+                  "govuk_signin_journey_id": <govJourneyId>,
+                  "ip_address": <ipAddress>,
+                  "persistent_session_id": <persistentSessionId>,
+                  "session_id": <sessionId>,
+                  "user_id": <userId>
+                }
+              }
 
   AuditEventAbandonedRule:
     Type: AWS::Events::Rule
@@ -1112,7 +1250,40 @@ Resources:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
-          - !FindInMap [Audit, EventName, Abandoned]
+          - !Sub
+            - ${EventPrefix}_${Event}
+            - EventPrefix: !Ref AuditEventNamePrefix
+              Event: !FindInMap [Audit, EventName, Abandoned]
+      Targets:
+        - Arn: !Sub
+                - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
+                - auditEventQueueName: !ImportValue "AuditEventQueueName"
+          Id: AuditEventQueue
+          InputTransformer:
+            InputPathsMap:
+              "eventName": "$.detail-type"
+              "componentId": "$.detail.issuer"
+              "msTimestamp": "$.detail.msTimestamp"
+              "sTimestamp": "$.detail.sTimestamp"
+              "govJourneyId": "$.detail.session.journeyId"
+              "ipAddress": "$.detail.session.ipAddress"
+              "persistentSessionId": "$.detail.session.persistentId"
+              "sessionId": "$.detail.session.id"
+              "userId": "$.detail.session.subject"
+            InputTemplate: |
+              {
+                "event_name": <eventName>,
+                "component_id": <componentId>,
+                "timestamp": <sTimestamp>,
+                "event_timestamp_ms": <msTimestamp>,
+                "user": {
+                  "govuk_signin_journey_id": <govJourneyId>,
+                  "ip_address": <ipAddress>,
+                  "persistent_session_id": <persistentSessionId>,
+                  "session_id": <sessionId>,
+                  "user_id": <userId>
+                }
+              }
 
 Outputs:
   SsmParametersFunctionArn:
