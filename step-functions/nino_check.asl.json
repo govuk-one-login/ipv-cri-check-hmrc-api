@@ -13,7 +13,7 @@
       "ResultSelector": {
         "sessionId.$": "$$.Execution.Input.sessionId",
         "nino.$": "$$.Execution.Input.nino",
-        "sessionCheck.$": "States.StringToJson($.Output)"
+        "session.$": "States.StringToJson($.Output)"
       }
     },
     "Is Session Valid?": {
@@ -21,7 +21,7 @@
       "Choices": [
         {
           "Not": {
-            "Variable": "$.sessionCheck.status",
+            "Variable": "$.session.status",
             "StringMatches": "SESSION_OK"
           },
           "Next": "Err: Invalid Session"
@@ -35,7 +35,7 @@
       "Parameters": {
         "FunctionName": "${SsmParametersFunction}",
         "Payload": {
-          "parameters.$": "States.Array('/${CommonStackName}/PersonIdentityTableName', '${UserAgent}', '/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId),'/${CommonStackName}/verifiable-credential/issuer')"
+          "parameters.$": "States.Array('/${CommonStackName}/PersonIdentityTableName', '${UserAgent}', '/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.session.clientId),'/${CommonStackName}/verifiable-credential/issuer')"
         }
       },
       "Retry": [
@@ -58,7 +58,7 @@
         "UserAgent.$": "$.Payload[1].Value",
         "SessionTableName.$": "$.Payload[2].Value",
         "CheckUrl.$": "$.Payload[3].Value",
-        "issuer.$": "$.Payload[4].Value"
+        "Issuer.$": "$.Payload[4].Value"
       }
     },
     "Err: Invalid Session": {
@@ -181,7 +181,6 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
-        "Payload.$": "$",
         "FunctionName": "${CurrentTimeFunctionArn}"
       },
       "Next": "Publish Audit Event Request Sent",
@@ -199,11 +198,9 @@
           {
             "Detail": {
               "msTimestamp.$": "$.currentTime.milliseconds",
-              "sTimestamp": "$.currentTime.seconds",
-              "issuer.$": "$.parameters.issuer",
-              "nino.$": "$.nino",
-              "session.$": "$.sessionCheck.userAuditInfo",
-              "user.$": "$.userDetails"
+              "sTimestamp.$": "$.currentTime.seconds",
+              "issuer.$": "$.parameters.Issuer",
+              "session.$": "$.session"
             },
             "DetailType": "${AuditEventNameRequestSent}",
             "EventBusName": "${CheckHmrcEventBus}",
@@ -259,7 +256,6 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
-        "Payload.$": "$",
         "FunctionName": "${CurrentTimeFunctionArn}"
       },
       "Next": "Publish Audit Event Response Received",
@@ -277,11 +273,9 @@
           {
             "Detail": {
               "msTimestamp.$": "$.currentTime.milliseconds",
-              "sTimestamp": "$.currentTime.seconds",
-              "session.$": "$.sessionCheck.userAuditInfo",
-              "nino.$": "$.nino",
-              "user.$": "$.userDetails",
-              "issuer.$": "$.parameters.issuer"
+              "sTimestamp.$": "$.currentTime.seconds",
+              "session.$": "$.session",
+              "issuer.$": "$.parameters.Issuer"
             },
             "DetailType": "${AuditEventNameResponseReceived}",
             "EventBusName": "${CheckHmrcEventBus}",
