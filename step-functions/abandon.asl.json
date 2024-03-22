@@ -12,7 +12,7 @@
       "Resource": "arn:aws:states:::aws-sdk:sfn:startSyncExecution",
       "ResultSelector": {
         "sessionId.$": "$$.Execution.Input.sessionId",
-        "sessionCheck.$": "States.StringToJson($.Output)"
+        "session.$": "States.StringToJson($.Output)"
       }
     },
     "Is Session Valid?": {
@@ -20,7 +20,7 @@
       "Choices": [
         {
           "Not": {
-            "Variable": "$.sessionCheck.status",
+            "Variable": "$.session.status",
             "StringMatches": "SESSION_OK"
           },
           "Next": "Err: Invalid Session"
@@ -34,7 +34,7 @@
       "Parameters": {
         "FunctionName": "${SsmParametersFunction}",
         "Payload": {
-          "parameters": ["/${CommonStackName}/SessionTableName"]
+          "parameters.$": "States.Array('/${CommonStackName}/SessionTableName', '/${CommonStackName}/verifiable-credential/issuer')"
         }
       },
       "Retry": [
@@ -53,7 +53,8 @@
       "Next": "Clear Auth Code",
       "ResultPath": "$.parameters",
       "ResultSelector": {
-        "SessionTableName.$": "$.Payload[0].Value"
+        "SessionTableName.$": "$.Payload[0].Value",
+        "Issuer": "$.Payload[1].Value"
       }
     },
     "Clear Auth Code": {
@@ -73,8 +74,22 @@
           }
         }
       },
+      "Next": "Fetch Current Time For Abandoned Event",
+      "ResultPath": null
+    },
+    "Fetch Current Time For Abandoned Event": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${CurrentTimeFunctionArn}"
+      },
       "Next": "Publish Audit Event Abandoned",
-      "ResultSelector": {}
+      "ResultSelector": {
+        "milliseconds.$": "$.Payload.milliseconds",
+        "seconds.$": "$.Payload.seconds"
+      },
+      "ResultPath": "$.currentTime"
     },
     "Publish Audit Event Abandoned": {
       "Type": "Task",
@@ -83,7 +98,10 @@
         "Entries": [
           {
             "Detail": {
-              "message": "Journey Abandoned"
+              "msTimestamp.$": "$.currentTime.milliseconds",
+              "sTimestamp.$": "$.currentTime.seconds",
+              "session.$": "$.session",
+              "issuer.$": "$.parameters.Issuer"
             },
             "DetailType": "${AuditEventNameAbandoned}",
             "EventBusName": "${CheckHmrcEventBus}",
@@ -92,7 +110,7 @@
         ]
       },
       "Next": "Success",
-      "ResultPath": null
+      "ResultSelector": {}
     },
     "Success": {
       "Type": "Succeed"
