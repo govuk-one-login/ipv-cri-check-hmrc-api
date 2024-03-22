@@ -7,41 +7,59 @@ const decode = (value: string) =>
   Buffer.from(value, "base64").toString("utf-8");
 
 const expectedPayload = {
-  exp: 1725984858,
-  iss: "https://review-hc.staging.account.gov.uk",
-  jti: "urn:uuid:13838a2c-27ca-4f0e-bce3-7ef1ece222e3",
-  nbf: 1710432858,
-  sub: "urn:fdc:gov.uk:2022:a4df35ea-4f30-416f-94ad-0221a227d97d",
   vc: {
+    evidence: [
+      {
+        type: "IdentityCheck",
+        strengthScore: 2,
+        validityScore: 2,
+        checkDetails: [
+          {
+            checkMethod: "data",
+          },
+        ],
+        txn: "65ae19f5-8b4f-46d5-88cd-517adca2f1c0",
+      },
+    ],
+    credentialSubject: {
+      socialSecurityRecord: [
+        {
+          personalNumber: "AA000003D",
+        },
+      ],
+      name: [
+        {
+          nameParts: [
+            {
+              type: "GivenName",
+              value: "KENNETH",
+            },
+            {
+              type: "FamilyName",
+              value: "DECERQUEIRA",
+            },
+          ],
+        },
+      ],
+      birthDate: [
+        {
+          value: "1965-07-08",
+        },
+      ],
+    },
+    type: ["VerifiableCredential", "IdentityCheckCredential"],
     "@context": [
       "https://www.w3.org/2018/credentials/v1",
       "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld",
     ],
-    credentialSubject: {
-      birthDate: [{ value: "1970-01-01" }],
-      name: [
-        {
-          nameParts: [
-            { type: "GivenName", value: "Jim" },
-            { type: "FamilyName", value: "Ferguson" },
-          ],
-        },
-      ],
-      socialSecurityRecord: [{ personalNumber: "AA000003D" }],
-    },
-    evidence: [
-      {
-        ci: [],
-        failedCheckDetails: [{ checkMethod: "data" }],
-        strengthScore: 2,
-        txn: "ab1733ee-bd7c-4545-bd65-56bf937396d1",
-        type: "IdentityCheck",
-        validityScore: 0,
-      },
-    ],
-    type: ["VerifiableCredential", "IdentityCheckCredential"],
   },
-};
+  sub: "urn:fdc:gov.uk:2022:05705016-4494-4794-8d7d-7a1e2516af56",
+  nbf: 1710396563,
+  iss: "https://review-hc.dev.account.gov.uk",
+  exp: 1710403763,
+  jti: "urn:uuid:f540b78c-9e52-4a0f-b033-c78e7ab327ea",
+}
+
 describe("nino-issue-credential-unhappy", () => {
   let sfnContainer: SfnContainerHelper;
 
@@ -93,7 +111,7 @@ describe("nino-issue-credential-unhappy", () => {
 
     const [, payloadEncoded] = JSON.parse(
       results[0].stateExitedEventDetails?.output as string
-    ).jwt.split(".");
+    ).output.jwt.split(".");
 
     const payload = JSON.parse(decode(payloadEncoded));
     expect(payload).toEqual(expectedPayload);

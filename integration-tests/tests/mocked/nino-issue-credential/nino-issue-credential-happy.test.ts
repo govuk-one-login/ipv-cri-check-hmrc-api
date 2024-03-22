@@ -87,15 +87,13 @@ describe("nino-issue-credential-happy", () => {
         event?.stateExitedEventDetails?.name === "Create Signed JWT",
       responseStepFunction
     );
-  
-    const stateMachineOutput = JSON.parse(
+
+    const [, payloadEncoded] = JSON.parse(
       results[0].stateExitedEventDetails?.output as string
-    );
+    ).output.jwt.split(".");
 
-    const jwt = stateMachineOutput["jwt"]["jwt"];
+    const payload = JSON.parse(decode(payloadEncoded));
+    expect(payload).toEqual(expectedPayload);
 
-    const jwtPayload = JSON.parse(decode(jwt.split(".")[1]));
-
-    expect(jwtPayload).toEqual(expect.objectContaining(expectedPayload));
   });
 });
