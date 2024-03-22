@@ -22,7 +22,7 @@
       },
       "Next": "Fetch Session",
       "ResultSelector": {
-        "seconds.$": "$.Payload.seconds"
+        "seconds.$": "States.Format('{}', $.Payload.seconds)"
       },
       "ResultPath": "$.currentTime"
     },
@@ -85,15 +85,13 @@
       "Type": "Pass",
       "End": true,
       "Parameters": {
+        "id.$": "$.sessionQuery.items[0].sessionId.S",
+        "persistentId.$": "$.sessionQuery.items[0].persistentSessionId.S",
+        "journeyId.$": "$.sessionQuery.items[0].clientSessionId.S",
+        "subject.$": "$.sessionQuery.items[0].subject.S",
+        "ipAddress.$": "$.sessionQuery.items[0].clientIpAddress.S",
         "status": "SESSION_OK",
-        "clientId.$": "$.sessionQuery.items[0].clientId.S",
-        "userAuditInfo": {
-          "govuk_signin_journey_id.$": "$.sessionQuery.items[0].clientSessionId.S",
-          "ip_address.$": "$.sessionQuery.items[0].clientIpAddress.S",
-          "persistent_session_id.$": "$.sessionQuery.items[0].persistentSessionId.S",
-          "session_id.$": "$.sessionQuery.items[0].sessionId.S",
-          "user_id.$": "$.sessionQuery.items[0].subject.S"
-        }
+        "clientId.$": "$.sessionQuery.items[0].clientId.S"
       }
     },
     "Err: No sessionId provided": {
