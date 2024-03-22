@@ -9,8 +9,10 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Fetch Current Time For Request Sent": "GetCurrentTime",
           "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIRetryThenSuccess",
+          "Fetch Current Time For Response Received": "GetCurrentTime",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
@@ -24,6 +26,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Fetch Current Time For Request Sent": "GetCurrentTime",
           "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIRetryThenFail"
         },
@@ -34,8 +37,10 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Fetch Current Time For Request Sent": "GetCurrentTime",
           "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingDeceasedAPIFail",
+          "Fetch Current Time For Response Received": "GetCurrentTime",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Deceased Attempt": "DynamoDbQueryNoResult"
         },
@@ -46,8 +51,10 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Fetch Current Time For Request Sent": "GetCurrentTime",
           "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPISuccess",
+          "Fetch Current Time For Response Received": "GetCurrentTime",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
@@ -61,8 +68,10 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Fetch Current Time For Request Sent": "GetCurrentTime",
           "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPISuccess",
+          "Fetch Current Time For Response Received": "GetCurrentTime",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
@@ -91,8 +100,10 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Fetch Current Time For Request Sent": "GetCurrentTime",
           "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIFailAuth",
+          "Fetch Current Time For Response Received": "GetCurrentTime",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived"
         },
         "MatchingLambdaException": {
@@ -102,8 +113,10 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Fetch Current Time For Request Sent": "GetCurrentTime",
           "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIInvalidURL",
+          "Fetch Current Time For Response Received": "GetCurrentTime",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived"
         },
         "HMRCError": {
@@ -113,8 +126,10 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Fetch Current Time For Request Sent": "GetCurrentTime",
           "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIFailNoRecords",
+          "Fetch Current Time For Response Received": "GetCurrentTime",
           "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Failed Match Attempt": "DynamoDbQueryNoResult"
         }
@@ -122,6 +137,16 @@
     }
   },
   "MockedResponses": {
+    "GetCurrentTime": {
+      "0": {
+        "Return": {
+          "Payload": {
+            "milliseconds": 1710839605543,
+            "seconds": 1710839605
+          }
+        }
+      }
+    },
     "CallMatchingAPIRetryThenSuccess": {
       "0-1": {
         "Throw": {
@@ -170,6 +195,10 @@
             {
               "Name": "/check-hmrc-cri-api/NinoCheckUrl/ipv-core-stub-aws-prod",
               "Value": "http://imposter-url"
+            },
+            {
+              "Name": "/common-cri-api/verifiable-credential/issuer",
+              "Value": "https://review-hc.test.account.gov.uk"
             }
           ]
         }
@@ -178,7 +207,7 @@
     "CheckSessionSuccess": {
       "0": {
         "Return": {
-          "Output": "{\"status\": \"SESSION_OK\", \"clientId\": \"Test\"}"
+          "Output": "{\"status\": \"SESSION_OK\", \"clientId\": \"ipv-core-stub-aws-prod\"}"
         }
       }
     },

@@ -3,25 +3,28 @@
     "check_session": {
       "TestCases": {
         "HappyPath": {
-          "Fetch Current Time": "FetchCurrentTimeHappy",
+          "Fetch Current Time": "GetCurrentTime",
           "Fetch Session": "FetchSessionHappy"
         },
         "NoSessionFound": {
-          "Fetch Current Time": "FetchCurrentTimeHappy",
+          "Fetch Current Time": "GetCurrentTime",
           "Fetch Session": "NoResults"
         },
         "SessionExpired": {
-          "Fetch Current Time": "FetchCurrentTimeHappy",
+          "Fetch Current Time": "GetCurrentTime",
           "Fetch Session": "FetchSessionExpired"
         }
       }
     }
   },
   "MockedResponses": {
-    "FetchCurrentTimeHappy": {
+    "GetCurrentTime": {
       "0": {
         "Return": {
-          "Payload": "1695828259"
+          "Payload": {
+            "milliseconds": 1695828259000,
+            "seconds": 1695828259
+          }
         }
       }
     },
@@ -36,6 +39,21 @@
               },
               "clientId": {
                 "S": "exampleClientId"
+              },
+              "sessionId": {
+                "S": "mockSessionId"
+              },
+              "persistentSessionId": {
+                "S": "mockPersistentSessionId"
+              },
+              "clientSessionId": {
+                "S": "mockClientSessionId"
+              },
+              "subject": {
+                "S": "mockSubject"
+              },
+              "clientIpAddress": {
+                "S": "mockClientIpAddress"
               }
             }
           ]
@@ -50,6 +68,24 @@
             {
               "expiryDate": {
                 "N": "0"
+              },
+              "clientId": {
+                "S": "exampleClientId"
+              },
+              "sessionId": {
+                "S": "mockSessionId"
+              },
+              "persistentSessionId": {
+                "S": "mockPersistentSessionId"
+              },
+              "clientSessionId": {
+                "S": "mockClientSessionId"
+              },
+              "subject": {
+                "S": "mockSubject"
+              },
+              "clientIpAddress": {
+                "S": "mockClientIpAddress"
               }
             }
           ]

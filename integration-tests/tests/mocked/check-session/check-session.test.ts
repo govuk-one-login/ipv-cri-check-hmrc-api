@@ -30,7 +30,7 @@ describe("check-session", () => {
         responseStepFunction
       );
       expect(results[0].stateExitedEventDetails?.output).toEqual(
-        '{"status":"SESSION_OK","clientId":"exampleClientId"}'
+        '{\"status\":\"SESSION_OK\",\"persistentId\":\"mockPersistentSessionId\",\"clientId\":\"exampleClientId\",\"subject\":\"mockSubject\",\"ipAddress\":\"mockClientIpAddress\",\"id\":\"mockSessionId\",\"journeyId\":\"mockClientSessionId\"}'
       );
     });
   });

@@ -6,6 +6,7 @@
           "Invoke Check Session": "SessionFound",
           "Fetch SSM Parameters": "FetchSSMParameters",
           "Clear Auth Code": "ClearAuthCode",
+          "Fetch Current Time For Abandoned Event": "GetCurrentTime",
           "Publish Audit Event Abandoned": "PublishAuditEventAbandoned"
         },
         "NoSessionFound": {
@@ -15,10 +16,20 @@
     }
   },
   "MockedResponses": {
+    "GetCurrentTime": {
+      "0": {
+        "Return": {
+          "Payload": {
+            "milliseconds": 1710839605543,
+            "seconds": 1710839605
+          }
+        }
+      }
+    },
     "SessionFound": {
       "0": {
         "Return": {
-          "Output": "{\"status\": \"SESSION_OK\", \"clientId\": \"dummy-client-id\"}"
+          "Output": "{\"status\":\"SESSION_OK\",\"persistentId\":\"mockPersistentSessionId\",\"clientId\":\"exampleClientId\",\"subject\":\"mockSubject\",\"ipAddress\":\"mockClientIpAddress\",\"id\":\"mockSessionId\",\"journeyId\":\"mockClientSessionId\"}"
         }
       }
     },
@@ -36,6 +47,10 @@
             {
               "Name": "/common-cri-api/SessionTableName",
               "Value": "session-common-cri-api"
+            },
+            {
+              "Name": "/common-cri-api/verifiable-credential/issuer",
+              "Value": "https://review-hc.test.account.gov.uk"
             }
           ]
         }

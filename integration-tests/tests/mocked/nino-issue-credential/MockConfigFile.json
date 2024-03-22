@@ -11,7 +11,10 @@
           "Fetch exp time and NBF": "FetchExpTimeAndNBF",
           "Fetch Failed Attempts": "FetchFailedAttempts",
           "Sign VC claimsSet": "SignVCClaimSet",
-          "Publish Audit Event VC Issued": "PublishAuditEventVcIssued"
+          "Fetch Current Time For VC Issued Event": "GetCurrentTime",
+          "Publish Audit Event VC Issued": "PublishAuditEventVcIssued",
+          "Fetch Current Time For End Event": "GetCurrentTime",
+          "Publish Audit Event End": "PublishAuditEventEnd"
         },
         "UnHappyPath": {
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
@@ -22,8 +25,11 @@
           "Fetch exp time and NBF": "FetchExpTimeAndNBF",
           "Fetch Failed Attempts": "FetchExceededFailedAttempts",
           "Fetch CI": "FetchCI",
-          "Sign VC claimsSet": "SignVCClaimSetWithCi",
-          "Publish Audit Event VC Issued": "PublishAuditEventVcIssued"
+          "Sign VC claimsSet": "SignVCClaimSet",
+          "Fetch Current Time For VC Issued Event": "GetCurrentTime",
+          "Publish Audit Event VC Issued": "PublishAuditEventVcIssued",
+          "Fetch Current Time For End Event": "GetCurrentTime",
+          "Publish Audit Event End": "PublishAuditEventEnd"
         },
         "UnHappyPathBearerTokenInvalid": {
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
@@ -34,7 +40,22 @@
     }
   },
   "MockedResponses": {
+    "GetCurrentTime": {
+      "0": {
+        "Return": {
+          "Payload": {
+            "milliseconds": 1710839605543,
+            "seconds": 1710839605
+          }
+        }
+      }
+    },
     "PublishAuditEventVcIssued": {
+      "0": {
+        "Return": null
+      }
+    },
+    "PublishAuditEventEnd": {
       "0": {
         "Return": null
       }
@@ -65,7 +86,7 @@
             },
             {
               "Name": "/check-hmrc-cri-api/contraindicationMappings",
-              "Value": "dummy-value"
+              "Value": "dummy-value||test"
             },
             {
               "Name": "/common-cri-api/verifiable-credential/issuer",
@@ -87,8 +108,17 @@
               "sessionId": {
                 "S": "123456789"
               },
+              "persistentSessionId": {
+                "S": "mockPersistentSessionId"
+              },
+              "clientSessionId": {
+                "S": "mockClientSessionId"
+              },
+              "clientIpAddress": {
+                "S": "mockClientIpAddress"
+              },
               "accessToken": {
-                "S": "Bearer test"
+                "S": "mockAccessToken"
               }
             }
           ],
