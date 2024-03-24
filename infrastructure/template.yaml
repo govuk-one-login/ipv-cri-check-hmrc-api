@@ -137,6 +137,55 @@ Globals:
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
 
 Resources:
+  EpochTimeFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/epoch-time/src/get-epoch-time-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  EpochTimeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  EpochTimeFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref EpochTimeFunctionLogGroup
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${EpochTimeFunction}-Error
+          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+
+  EpochTimeFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-${EpochTimeFunction}-Errors
+      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${EpochTimeFunction} errors
+      ActionsEnabled: true
+      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      InsufficientDataActions: []
+      MetricName: !Sub ${EpochTimeFunction}-Error
+      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
   CiMappingFunction:
     Type: AWS::Serverless::Function
     Metadata:
