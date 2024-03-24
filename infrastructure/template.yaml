@@ -870,6 +870,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
+        AuditEventPrefix: !Ref AuditEventNamePrefix
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
@@ -881,14 +882,9 @@ Resources:
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
-        AuditEventNameResponseReceived: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, ResponseReceived]
-        AuditEventNameRequestSent: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, RequestSent]
+        AuditEventNameResponseReceived:
+          !FindInMap [Audit, EventName, ResponseReceived]
+        AuditEventNameRequestSent: !FindInMap [Audit, EventName, RequestSent]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -963,10 +959,7 @@ Resources:
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
-        AuditEventNameAbandoned: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, Abandoned]
+        AuditEventNameAbandoned: !FindInMap [Audit, EventName, Abandoned]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -1022,14 +1015,8 @@ Resources:
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
-        AuditEventNameVcIssued: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, VcIssued]
-        AuditEventNameEnd: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, End]
+        AuditEventNameVcIssued: !FindInMap [Audit, EventName, VcIssued]
+        AuditEventNameEnd: !FindInMap [Audit, EventName, End]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
