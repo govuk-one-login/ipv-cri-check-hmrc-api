@@ -14,10 +14,9 @@ describe("current-time-handler", () => {
     const handler = new CurrentTimeHandler();
     const result = await handler.handler({} as unknown, {} as Context);
 
-
     expect(result).toEqual({
       milliseconds: mockTimestamp,
-      seconds: Math.floor(mockTimestamp/1000)
+      seconds: Math.floor(mockTimestamp / 1000),
     });
   });
 });
