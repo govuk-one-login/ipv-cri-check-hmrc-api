@@ -2,6 +2,20 @@
   "StateMachines": {
     "nino_check": {
       "TestCases": {
+        "ShouldSuccessOnLastAttempt": {
+          "Invoke Check Session": "CheckSessionSuccess",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
+          "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
+          "Query Person Identity Table": "QuerySessionSuccess",
+          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
+          "Call Matching API": "CallMatchingDeceasedAPIFail",
+          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
+          "Store Deceased Attempt": "DynamoDbQueryNoResult",
+          "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
+          "Set Auth Code for Session": "SetAuthCodeSuccess",
+          "Save NINO & sessionId to nino-users table": "SaveNinoSuccess"
+        },
         "APIFailRetrySuccessTest": {
           "Invoke Check Session": "CheckSessionSuccess",
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",

@@ -12,6 +12,13 @@ create:
 	--name ${STATE_MACHINE_NAME} \
 	--role-arn "arn:aws:iam::123456789012:role/DummyRole" \
 	--no-cli-pager
+ShouldSuccessOnLastAttempt:
+	aws stepfunctions start-execution \
+	--endpoint http://localhost:8083 \
+	--name happyPathExecution \
+	--state-machine ${STATE_MACHINE_ARN}#ShouldSuccessOnLastAttempt \
+	--input '{ "sessionId": "12345", "nino": "AA000003D" }' \
+	--no-cli-pager
 happy1stTry:
 	aws stepfunctions start-execution \
 	--endpoint http://localhost:8083 \
