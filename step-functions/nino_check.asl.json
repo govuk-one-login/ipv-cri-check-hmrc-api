@@ -20,14 +20,12 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Not": {
-            "Variable": "$.sessionCheck.status",
-            "StringMatches": "SESSION_OK"
-          },
-          "Next": "Err: Invalid Session"
+          "Variable": "$.sessionCheck.status",
+          "StringMatches": "SESSION_OK",
+          "Next": "Fetch SSM Parameters"
         }
       ],
-      "Default": "Fetch SSM Parameters"
+      "Default": "Err: Invalid Session"
     },
     "Fetch SSM Parameters": {
       "Type": "Task",
@@ -35,7 +33,7 @@
       "Parameters": {
         "FunctionName": "${SsmParametersFunction}",
         "Payload": {
-          "parameters.$": "States.Array('/${CommonStackName}/PersonIdentityTableName', '${UserAgent}', '/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId))"
+          "parameters.$": "States.Array('/${CommonStackName}/PersonIdentityTableName', '${UserAgent}', '/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId), '/${CommonStackName}/verifiable-credential/issuer')"
         }
       },
       "Retry": [
@@ -57,7 +55,8 @@
         "PersonIdentityTableName.$": "$.Payload[0].Value",
         "UserAgent.$": "$.Payload[1].Value",
         "SessionTableName.$": "$.Payload[2].Value",
-        "CheckUrl.$": "$.Payload[3].Value"
+        "CheckUrl.$": "$.Payload[3].Value",
+        "Issuer.$": "$.Payload[4].Value"
       }
     },
     "Err: Invalid Session": {
@@ -124,7 +123,7 @@
         }
       },
       "Resource": "arn:aws:states:::aws-sdk:dynamodb:query",
-      "ResultPath": "$.userDetails"
+      "ResultPath": "$.userInfo"
     },
     "User Exists?": {
       "Type": "Choice",
@@ -132,21 +131,21 @@
         {
           "And": [
             {
-              "Variable": "$.userDetails.Count",
+              "Variable": "$.userInfo.Count",
               "NumericGreaterThan": 0
             },
             {
               "And": [
                 {
-                  "Variable": "$.userDetails.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
+                  "Variable": "$.userInfo.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
                   "IsPresent": true
                 },
                 {
-                  "Variable": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
+                  "Variable": "$.userInfo.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
                   "IsPresent": true
                 },
                 {
-                  "Variable": "$.userDetails.Items[0].birthDates.L[0].M.value.S",
+                  "Variable": "$.userInfo.Items[0].birthDates.L[0].M.value.S",
                   "IsPresent": true
                 }
               ]
@@ -166,7 +165,7 @@
     },
     "Get OAuth Token": {
       "Type": "Task",
-      "Next": "Publish Audit Event Request Sent",
+      "Next": "Audit Event Request Sent",
       "Parameters": {
         "SecretId": "HMRCBearerToken"
       },
@@ -176,14 +175,18 @@
         "value.$": "$.SecretString"
       }
     },
-    "Publish Audit Event Request Sent": {
+    "Audit Event Request Sent": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
       "Parameters": {
         "Entries": [
           {
             "Detail": {
-              "message": "Request Sent to 3rd party"
+              "auditPrefix": "${AuditEventPrefix}",
+              "user.$": "$.sessionCheck.userAuditInfo",
+              "nino.$": "$.nino",
+              "userInfoEvent.$": "$.userInfo",
+              "issuer.$": "$.parameters.Issuer"
             },
             "DetailType": "${AuditEventNameRequestSent}",
             "EventBusName": "${CheckHmrcEventBus}",
@@ -203,16 +206,18 @@
           "sessionId.$": "$.sessionId",
           "nino.$": "$.nino",
           "userDetails": {
-            "firstName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
-            "lastName.$": "$.userDetails.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
-            "dob.$": "$.userDetails.Items[0].birthDates.L[0].M.value.S"
+            "firstName.$": "$.userInfo.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
+            "lastName.$": "$.userInfo.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
+            "dob.$": "$.userInfo.Items[0].birthDates.L[0].M.value.S"
           },
           "userAgent.$": "$.parameters.UserAgent",
           "apiURL.$": "$.parameters.CheckUrl",
-          "oAuthToken.$": "$.oAuthToken.value"
+          "oAuthToken.$": "$.oAuthToken.value",
+          "user.$": "$.sessionCheck.userAuditInfo",
+          "userInfo.$": "$.userInfo"
         }
       },
-      "Next": "Publish Audit Event Response Received",
+      "Next": "Audit Event Response Received",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -235,14 +240,16 @@
     "Err: Matching Lambda Exception": {
       "Type": "Fail"
     },
-    "Publish Audit Event Response Received": {
+    "Audit Event Response Received": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
       "Parameters": {
         "Entries": [
           {
             "Detail": {
-              "message": "Response Received from 3rd party"
+              "auditPrefix": "${AuditEventPrefix}",
+              "user.$": "$.sessionCheck.userAuditInfo",
+              "issuer.$": "$.parameters.Issuer"
             },
             "DetailType": "${AuditEventNameResponseReceived}",
             "EventBusName": "${CheckHmrcEventBus}",

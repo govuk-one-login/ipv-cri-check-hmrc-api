@@ -32,6 +32,10 @@ Parameters:
     Description: "Set to the string value `true` to deploy alarms in a DEV environment"
     Type: String
     Default: true
+  EventBusState:
+    Type: String
+    Description: The state of rule i.e Enabled or !Ref EventBusState
+    Default: ENABLED
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
@@ -1092,61 +1096,128 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event RESPONSE_RECEIVED
-      State: DISABLED
+      State: !Ref EventBusState
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, ResponseReceived]
-
+      Targets:
+        - Arn: !Ref AuditEventStateMachine
+          Id: AuditEventStateMachineResponseReceivedTarget
+          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventRequestSentRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event REQUEST_SENT
-      State: DISABLED
+      State: !Ref EventBusState
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, RequestSent]
-
+      Targets:
+        - Arn: !Ref AuditEventStateMachine
+          Id: AuditEventStateMachineRequestSentTarget
+          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventVcIssuedRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event VC_ISSUED
-      State: DISABLED
+      State: !Ref EventBusState
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, VcIssued]
-
+      Targets:
+        - Arn: !Ref AuditEventStateMachine
+          Id: AuditEventStateMachineVcIssuedTarget
+          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventEndRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the END event
-      State: DISABLED
+      State: !Ref EventBusState
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, End]
-
+      Targets:
+        - Arn: !Ref AuditEventStateMachine
+          Id: AuditEventStateMachineEndTarget
+          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventAbandonedRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the ABANDONED event
-      State: DISABLED
+      State: !Ref EventBusState
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, Abandoned]
+      Targets:
+        - Arn: !Ref AuditEventStateMachine
+          Id: AuditEventStateMachineAbandonedTarget
+          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
+  EventBridgeStateMachineExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+      Policies:
+        - PolicyName: EventBridgeStateMachineExecutionStartExecutionPolicy
+          PolicyDocument:
+            Statement:
+              - Action: states:StartExecution
+                Effect: Allow
+                Resource: !Ref AuditEventStateMachine
+  AuditEventStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Type: EXPRESS
+      DefinitionUri: ../step-functions/audit_event.asl.json
+      DefinitionSubstitutions:
+        CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
+        EpochTimeArn: !GetAtt EpochTimeFunction.Arn
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt AuditEventStateMachineLogGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CredentialSubjectFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref EpochTimeFunction
+        - Statement:
+            Effect: Allow
+            Action: logs:*
+            Resource: "*"
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
 
+  AuditEventStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 Outputs:
   SsmParametersFunctionArn:
     Description: SsmParameters Lambda Function ARN

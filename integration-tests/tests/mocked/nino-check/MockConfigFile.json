@@ -9,9 +9,9 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
-          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
+          "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIRetryThenSuccess",
-          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
+          "Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
           "Set Auth Code for Session": "SetAuthCodeSuccess",
@@ -24,7 +24,7 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
-          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
+          "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIRetryThenFail"
         },
         "DeceasedTest": {
@@ -34,9 +34,9 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
-          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
+          "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingDeceasedAPIFail",
-          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
+          "Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Deceased Attempt": "DynamoDbQueryNoResult"
         },
         "HappyPathTestNoPreviousAttempt": {
@@ -46,9 +46,9 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
-          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
+          "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPISuccess",
-          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
+          "Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
           "Set Auth Code for Session": "SetAuthCodeSuccess",
@@ -61,9 +61,9 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
-          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
+          "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPISuccess",
-          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
+          "Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
           "Set Auth Code for Session": "SetAuthCodeSuccess",
@@ -91,9 +91,9 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
-          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
+          "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIFailAuth",
-          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived"
+          "Audit Event Response Received": "PublishAuditEventResponseReceived"
         },
         "MatchingLambdaException": {
           "Invoke Check Session": "CheckSessionSuccess",
@@ -102,9 +102,9 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
-          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
+          "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIInvalidURL",
-          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived"
+          "Audit Event Response Received": "PublishAuditEventResponseReceived"
         },
         "HMRCError": {
           "Invoke Check Session": "CheckSessionSuccess",
@@ -113,9 +113,9 @@
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
           "Get OAuth Token": "GetOAuthAccessTokenSuccess",
-          "Publish Audit Event Request Sent": "PublishAuditEventRequestSent",
+          "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIFailNoRecords",
-          "Publish Audit Event Response Received": "PublishAuditEventResponseReceived",
+          "Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Failed Match Attempt": "DynamoDbQueryNoResult"
         }
       }
@@ -170,6 +170,14 @@
             {
               "Name": "/check-hmrc-cri-api/NinoCheckUrl/ipv-core-stub-aws-prod",
               "Value": "http://imposter-url"
+            },
+            {
+              "Name": "/common-cri-api/SessionTableName",
+              "Value": "session-common-cri-api"
+            },
+            {
+              "Name": "/common-cri-api/verifiable-credential/issuer",
+              "Value": "https://some.issuer"
             }
           ]
         }
@@ -178,7 +186,7 @@
     "CheckSessionSuccess": {
       "0": {
         "Return": {
-          "Output": "{\"status\": \"SESSION_OK\", \"clientId\": \"Test\"}"
+          "Output": "{\"status\":\"SESSION_OK\",\"userAuditInfo\":{\"govuk_signin_journey_id\":\"252561a2-c6ef-47e7-87ab-93891a2a6a41\",\"user_id\":\"urn:fdc:gov.uk:2022:da580c9d-cdf9-4961-afde-233249db04d2\",\"persistent_session_id\":\"156714ef-f9df-48c2-ada8-540e7bce44f7\",\"session_id\":\"12345\",\"ip_address\":\"51.149.8.29\"},\"clientId\":\"exampleClientId\"}"
         }
       }
     },
