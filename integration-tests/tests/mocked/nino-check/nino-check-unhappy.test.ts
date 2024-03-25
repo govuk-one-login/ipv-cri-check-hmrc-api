@@ -29,7 +29,7 @@ describe("nino-check-unhappy", () => {
       (event: HistoryEvent) => event?.type === "ExecutionSucceeded",
       responseStepFunction
     );
-    expect(results[0].executionSucceededEventDetails?.output).toEqual(
+    expect(results[0].executionSucceededEventDetails?.output).toBe(
       '{"httpStatus":200}'
     );
   });

@@ -1007,6 +1007,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_issue_credential.asl.json
       DefinitionSubstitutions:
+        AuditEventPrefix: !Ref AuditEventNamePrefix
         CiMappingFunctionArn: !GetAtt CiMappingFunction.Arn
         TimeFunctionArn: !GetAtt TimeFunction.Arn
         CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn

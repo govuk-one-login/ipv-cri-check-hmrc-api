@@ -89,6 +89,24 @@
               },
               "accessToken": {
                 "S": "Bearer test"
+              },
+              "expiryDate": {
+                "N": "2695828259"
+              },
+              "clientId": {
+                "S": "exampleClientId"
+              },
+              "clientIpAddress": {
+                "S": "51.149.8.29"
+              },
+              "redirectUri": {
+                "S": "http://localhost:8085/callback"
+              },
+              "clientSessionId": {
+                "S": "252561a2-c6ef-47e7-87ab-93891a2a6a41"
+              },
+              "persistentSessionId": {
+                "S": "156714ef-f9df-48c2-ada8-540e7bce44f7"
               }
             }
           ],

@@ -87,7 +87,6 @@ describe("nino-issue-credential-happy", () => {
         event?.stateExitedEventDetails?.name === "Create Signed JWT",
       responseStepFunction
     );
-
     const [, payloadEncoded] = JSON.parse(
       results[0].stateExitedEventDetails?.output as string
     ).jwt.split(".");
