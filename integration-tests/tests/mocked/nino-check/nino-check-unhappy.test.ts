@@ -16,6 +16,24 @@ describe("nino-check-unhappy", () => {
     expect(sfnContainer.getContainer()).toBeDefined();
   });
 
+  it("should succeed on the users last attempt", async () => {
+    const input = JSON.stringify({
+      nino: "AA000003D",
+      sessionId: "12345",
+    });
+    const responseStepFunction = await sfnContainer.startStepFunctionExecution(
+      "ShouldSuccessOnLastAttempt",
+      input
+    );
+    const results = await sfnContainer.waitFor(
+      (event: HistoryEvent) => event?.type === "ExecutionSucceeded",
+      responseStepFunction
+    );
+    expect(results[0].executionSucceededEventDetails?.output).toEqual(
+      '{"httpStatus":200}'
+    );
+  });
+
   it("should fail when session id is invalid", async () => {
     const input = JSON.stringify({
       nino: "AA000003D",
