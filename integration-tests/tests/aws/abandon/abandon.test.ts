@@ -36,6 +36,10 @@ describe("abandon", () => {
       clientId: "exampleClientId",
       authorizationCode: "9999999999",
       authorizationCodeExpiryDate: "9999999999",
+      clientSessionId: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+      persistentSessionId: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+      clientIpAddress: "00.100.8.20",
+      subject: "test",
     });
 
     const startExecutionResult = await executeStepFunction(
@@ -47,7 +51,7 @@ describe("abandon", () => {
       sessionId: input.sessionId,
     });
 
-    expect(startExecutionResult.output).toBe("{}");
+    expect(startExecutionResult.output).toBe('{"httpStatus":200}');
     expect(sessionRecord.Item?.authorizationCode).toBeUndefined();
     expect(sessionRecord.Item?.authorizationCodeExpiryDate).toBe(0);
   });
