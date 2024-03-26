@@ -1191,6 +1191,11 @@ Resources:
               - Action: states:StartExecution
                 Effect: Allow
                 Resource: !Ref AuditEventStateMachine
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
   AuditEventStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
