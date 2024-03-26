@@ -35,7 +35,7 @@ Parameters:
   EventBusState:
     Type: String
     Description: The state of rule i.e Enabled or !Ref EventBusState
-    Default: ENABLED
+    Default: DISABLED
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
@@ -958,6 +958,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/abandon.asl.json
       DefinitionSubstitutions:
+        AuditEventPrefix: !Ref AuditEventNamePrefix
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction
@@ -1091,13 +1092,17 @@ Resources:
     Type: AWS::Events::EventBus
     Properties:
       Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
-
+  ##################################################################
+  #                                                                  #
+  # Audit Event Consumer                                             #
+  #                                                                  #
+  ####################################################################
   AuditEventResponseReceivedRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event RESPONSE_RECEIVED
-      State: !Ref EventBusState
+      State: !If [IsDevLikeEnvironment, ENABLED, !Ref EventBusState]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1112,7 +1117,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event REQUEST_SENT
-      State: !Ref EventBusState
+      State: !If [IsDevLikeEnvironment, ENABLED, !Ref EventBusState]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1127,7 +1132,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event VC_ISSUED
-      State: !Ref EventBusState
+      State: !If [IsDevLikeEnvironment, ENABLED, !Ref EventBusState]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1142,7 +1147,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the END event
-      State: !Ref EventBusState
+      State: !If [IsDevLikeEnvironment, ENABLED, !Ref EventBusState]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1157,7 +1162,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the ABANDONED event
-      State: !Ref EventBusState
+      State: !If [IsDevLikeEnvironment, ENABLED, !Ref EventBusState]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1194,6 +1199,7 @@ Resources:
       DefinitionSubstitutions:
         CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
         EpochTimeArn: !GetAtt EpochTimeFunction.Arn
+        SqsAuditEventQueueUrl: !ImportValue AuditEventQueueUrl
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -1205,6 +1211,16 @@ Resources:
             FunctionName: !Ref CredentialSubjectFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref EpochTimeFunction
+        - SQSSendMessagePolicy:
+            QueueName: !ImportValue AuditEventQueueName
+        - Statement:
+            - Sid: auditEventQueueKmsEncryptionKeyPermission
+              Effect: Allow
+              Action:
+                - "kms:Decrypt"
+                - "kms:GenerateDataKey"
+              Resource:
+                - !ImportValue AuditEventQueueEncryptionKeyArn
         - Statement:
             Effect: Allow
             Action: logs:*
@@ -1219,6 +1235,11 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+##################################################################
+#                                                                  #
+#  Stack Outputs                                                   #
+#                                                                  #
+####################################################################
 Outputs:
   SsmParametersFunctionArn:
     Description: SsmParameters Lambda Function ARN

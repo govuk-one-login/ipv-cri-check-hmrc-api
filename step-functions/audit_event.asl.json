@@ -137,7 +137,7 @@
         "component_id.$": "$$.Execution.Input.detail.issuer",
         "user.$": "$$.Execution.Input.detail.user"
       },
-      "End": true
+      "Next": "publish event to TxMa Queue"
     },
     "Audit User Context With Restricted Fields": {
       "Type": "Pass",
@@ -148,6 +148,15 @@
         "component_id.$": "$$.Execution.Input.detail.issuer",
         "restricted.$": "$[0].restricted.value",
         "user.$": "$$.Execution.Input.detail.user"
+      },
+      "Next": "publish event to TxMa Queue"
+    },
+    "publish event to TxMa Queue": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sqs:sendMessage",
+      "Parameters": {
+        "QueueUrl": "${SqsAuditEventQueueUrl}",
+        "MessageBody.$": "$"
       },
       "End": true
     }
