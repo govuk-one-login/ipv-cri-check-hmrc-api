@@ -52,6 +52,10 @@ describe("nino-check-unhappy", () => {
           sessionId: input.sessionId,
           expiryDate: 9999999999,
           clientId: "ipv-core-stub-aws-prod",
+          clientSessionId: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+          persistentSessionId: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+          subject: "test",
+          clientIpAddress: "00.100.8.20",
         },
       },
       {

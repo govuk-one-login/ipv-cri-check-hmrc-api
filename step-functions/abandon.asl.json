@@ -19,14 +19,12 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Not": {
-            "Variable": "$.sessionCheck.status",
-            "StringMatches": "SESSION_OK"
-          },
-          "Next": "Err: Invalid Session"
+          "Variable": "$.sessionCheck.status",
+          "StringMatches": "SESSION_OK",
+          "Next": "Fetch SSM Parameters"
         }
       ],
-      "Default": "Fetch SSM Parameters"
+      "Default": "Err: Invalid Session"
     },
     "Fetch SSM Parameters": {
       "Type": "Task",
@@ -34,7 +32,7 @@
       "Parameters": {
         "FunctionName": "${SsmParametersFunction}",
         "Payload": {
-          "parameters": ["/${CommonStackName}/SessionTableName"]
+          "parameters.$": "States.Array('/${CommonStackName}/SessionTableName', '/${CommonStackName}/verifiable-credential/issuer')"
         }
       },
       "Retry": [
@@ -53,7 +51,8 @@
       "Next": "Clear Auth Code",
       "ResultPath": "$.parameters",
       "ResultSelector": {
-        "SessionTableName.$": "$.Payload[0].Value"
+        "SessionTableName.$": "$.Payload[0].Value",
+        "Issuer.$": "$.Payload[1].Value"
       }
     },
     "Clear Auth Code": {
@@ -74,7 +73,7 @@
         }
       },
       "Next": "Publish Audit Event Abandoned",
-      "ResultSelector": {}
+      "ResultPath": null
     },
     "Publish Audit Event Abandoned": {
       "Type": "Task",
@@ -83,7 +82,9 @@
         "Entries": [
           {
             "Detail": {
-              "message": "Journey Abandoned"
+              "auditPrefix": "${AuditEventPrefix}",
+              "user.$": "$.sessionCheck.userAuditInfo",
+              "issuer.$": "$.parameters.Issuer"
             },
             "DetailType": "${AuditEventNameAbandoned}",
             "EventBusName": "${CheckHmrcEventBus}",
@@ -91,11 +92,16 @@
           }
         ]
       },
+      "ResultSelector": {},
       "Next": "Success",
       "ResultPath": null
     },
     "Success": {
-      "Type": "Succeed"
+      "Type": "Pass",
+      "Parameters": {
+        "httpStatus": 200
+      },
+      "End": true
     },
     "Err: Invalid Session": {
       "Type": "Pass",

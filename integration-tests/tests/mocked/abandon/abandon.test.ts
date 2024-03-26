@@ -27,7 +27,9 @@ describe("abandon", () => {
         (event: HistoryEvent) => event?.type == "ExecutionSucceeded",
         responseStepFunction
       );
-      expect(results[0].executionSucceededEventDetails?.output).toBe("{}");
+      expect(results[0].executionSucceededEventDetails?.output).toBe(
+        '{"httpStatus":200}'
+      );
     });
   });
 

@@ -1,0 +1,164 @@
+{
+  "Comment": "The Audit Event State Machine, responsible for generating the overall event structure",
+  "StartAt": "Get Audit name components",
+  "States": {
+    "Get Audit name components": {
+      "Type": "Pass",
+      "Parameters": {
+        "prefix.$": "$$.Execution.Input.detail.auditPrefix",
+        "type.$": "$$.Execution.Input.detail-type"
+      },
+      "ResultPath": "$.audit",
+      "Next": "Parallel"
+    },
+    "Parallel": {
+      "Type": "Parallel",
+      "Next": "Is Restricted Info Present?",
+      "Branches": [
+        {
+          "StartAt": "Get AuditContext Restricted Info",
+          "States": {
+            "Get AuditContext Restricted Info": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "FunctionName": "${CredentialSubjectFunctionArn}",
+                "Payload.$": "$$.Execution.Input.detail"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2
+                }
+              ],
+              "ResultSelector": {
+                "value.$": "$.Payload",
+                "containsUserInfo.$": "States.JsonToString($.Payload)"
+              },
+              "ResultPath": "$.restricted",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "EpochTime in Seconds",
+          "States": {
+            "EpochTime in Seconds": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload": {
+                  "dateTime.$": "$$.State.EnteredTime",
+                  "unit": "seconds"
+                },
+                "FunctionName": "${EpochTimeArn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2
+                }
+              ],
+              "ResultSelector": {
+                "value.$": "$.Payload"
+              },
+              "ResultPath": "$.epochSeconds",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "EpochTime In Milliseconds",
+          "States": {
+            "EpochTime In Milliseconds": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload": {
+                  "dateTime.$": "$$.State.EnteredTime",
+                  "unit": "milliseconds"
+                },
+                "FunctionName": "${EpochTimeArn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2
+                }
+              ],
+              "ResultSelector": {
+                "value.$": "$.Payload"
+              },
+              "ResultPath": "$.epochMilliseconds",
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "Is Restricted Info Present?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$[0].restricted.containsUserInfo",
+          "StringEquals": "{}",
+          "Next": "Add User Context"
+        }
+      ],
+      "Default": "Audit User Context With Restricted Fields"
+    },
+    "Add User Context": {
+      "Type": "Pass",
+      "Parameters": {
+        "event_name.$": "States.Format('{}_{}', $[0].audit.prefix, $[0].audit.type)",
+        "timestamp.$": "$[1].epochSeconds.value",
+        "event_timestamp_ms.$": "$[2].epochMilliseconds.value",
+        "component_id.$": "$$.Execution.Input.detail.issuer",
+        "user.$": "$$.Execution.Input.detail.user"
+      },
+      "Next": "publish event to TxMa Queue"
+    },
+    "Audit User Context With Restricted Fields": {
+      "Type": "Pass",
+      "Parameters": {
+        "event_name.$": "States.Format('{}_{}', $[0].audit.prefix, $[0].audit.type)",
+        "timestamp.$": "$[1].epochSeconds.value",
+        "event_timestamp_ms.$": "$[2].epochMilliseconds.value",
+        "component_id.$": "$$.Execution.Input.detail.issuer",
+        "restricted.$": "$[0].restricted.value",
+        "user.$": "$$.Execution.Input.detail.user"
+      },
+      "Next": "publish event to TxMa Queue"
+    },
+    "publish event to TxMa Queue": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sqs:sendMessage",
+      "Parameters": {
+        "QueueUrl": "${SqsAuditEventQueueUrl}",
+        "MessageBody.$": "$"
+      },
+      "End": true
+    }
+  }
+}

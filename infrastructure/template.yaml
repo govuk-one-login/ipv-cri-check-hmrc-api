@@ -32,6 +32,10 @@ Parameters:
     Description: "Set to the string value `true` to deploy alarms in a DEV environment"
     Type: String
     Default: true
+  EventBusState:
+    Type: String
+    Description: The state of rule i.e Enabled or !Ref EventBusState
+    Default: DISABLED
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
@@ -137,6 +141,55 @@ Globals:
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
 
 Resources:
+  EpochTimeFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/epoch-time/src/get-epoch-time-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  EpochTimeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  EpochTimeFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref EpochTimeFunctionLogGroup
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${EpochTimeFunction}-Error
+          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+
+  EpochTimeFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-${EpochTimeFunction}-Errors
+      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${EpochTimeFunction} errors
+      ActionsEnabled: true
+      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      InsufficientDataActions: []
+      MetricName: !Sub ${EpochTimeFunction}-Error
+      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
   CiMappingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -821,6 +874,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
+        AuditEventPrefix: !Ref AuditEventNamePrefix
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
@@ -832,14 +886,9 @@ Resources:
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
-        AuditEventNameResponseReceived: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, ResponseReceived]
-        AuditEventNameRequestSent: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, RequestSent]
+        AuditEventNameResponseReceived:
+          !FindInMap [Audit, EventName, ResponseReceived]
+        AuditEventNameRequestSent: !FindInMap [Audit, EventName, RequestSent]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -909,15 +958,13 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/abandon.asl.json
       DefinitionSubstitutions:
+        AuditEventPrefix: !Ref AuditEventNamePrefix
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
-        AuditEventNameAbandoned: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, Abandoned]
+        AuditEventNameAbandoned: !FindInMap [Audit, EventName, Abandoned]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -961,6 +1008,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_issue_credential.asl.json
       DefinitionSubstitutions:
+        AuditEventPrefix: !Ref AuditEventNamePrefix
         CiMappingFunctionArn: !GetAtt CiMappingFunction.Arn
         TimeFunctionArn: !GetAtt TimeFunction.Arn
         CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
@@ -973,14 +1021,8 @@ Resources:
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
-        AuditEventNameVcIssued: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, VcIssued]
-        AuditEventNameEnd: !Sub
-          - ${EventPrefix}_${Event}
-          - EventPrefix: !Ref AuditEventNamePrefix
-            Event: !FindInMap [Audit, EventName, End]
+        AuditEventNameVcIssued: !FindInMap [Audit, EventName, VcIssued]
+        AuditEventNameEnd: !FindInMap [Audit, EventName, End]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -1050,67 +1092,154 @@ Resources:
     Type: AWS::Events::EventBus
     Properties:
       Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
-
+  ##################################################################
+  #                                                                  #
+  # Audit Event Consumer                                             #
+  #                                                                  #
+  ####################################################################
   AuditEventResponseReceivedRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event RESPONSE_RECEIVED
-      State: DISABLED
+      State: !If [IsDevLikeEnvironment, ENABLED, !Ref EventBusState]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, ResponseReceived]
-
+      Targets:
+        - Arn: !Ref AuditEventStateMachine
+          Id: AuditEventStateMachineResponseReceivedTarget
+          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventRequestSentRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event REQUEST_SENT
-      State: DISABLED
+      State: !If [IsDevLikeEnvironment, ENABLED, !Ref EventBusState]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, RequestSent]
-
+      Targets:
+        - Arn: !Ref AuditEventStateMachine
+          Id: AuditEventStateMachineRequestSentTarget
+          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventVcIssuedRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event VC_ISSUED
-      State: DISABLED
+      State: !If [IsDevLikeEnvironment, ENABLED, !Ref EventBusState]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, VcIssued]
-
+      Targets:
+        - Arn: !Ref AuditEventStateMachine
+          Id: AuditEventStateMachineVcIssuedTarget
+          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventEndRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the END event
-      State: DISABLED
+      State: !If [IsDevLikeEnvironment, ENABLED, !Ref EventBusState]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, End]
-
+      Targets:
+        - Arn: !Ref AuditEventStateMachine
+          Id: AuditEventStateMachineEndTarget
+          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventAbandonedRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the ABANDONED event
-      State: DISABLED
+      State: !If [IsDevLikeEnvironment, ENABLED, !Ref EventBusState]
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
         detail-type:
           - !FindInMap [Audit, EventName, Abandoned]
+      Targets:
+        - Arn: !Ref AuditEventStateMachine
+          Id: AuditEventStateMachineAbandonedTarget
+          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
+  EventBridgeStateMachineExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+      Policies:
+        - PolicyName: EventBridgeStateMachineExecutionStartExecutionPolicy
+          PolicyDocument:
+            Statement:
+              - Action: states:StartExecution
+                Effect: Allow
+                Resource: !Ref AuditEventStateMachine
+  AuditEventStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Type: EXPRESS
+      DefinitionUri: ../step-functions/audit_event.asl.json
+      DefinitionSubstitutions:
+        CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
+        EpochTimeArn: !GetAtt EpochTimeFunction.Arn
+        SqsAuditEventQueueUrl: !ImportValue AuditEventQueueUrl
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt AuditEventStateMachineLogGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CredentialSubjectFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref EpochTimeFunction
+        - SQSSendMessagePolicy:
+            QueueName: !ImportValue AuditEventQueueName
+        - Statement:
+            - Sid: auditEventQueueKmsEncryptionKeyPermission
+              Effect: Allow
+              Action:
+                - "kms:Decrypt"
+                - "kms:GenerateDataKey"
+              Resource:
+                - !ImportValue AuditEventQueueEncryptionKeyArn
+        - Statement:
+            Effect: Allow
+            Action: logs:*
+            Resource: "*"
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
 
+  AuditEventStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+##################################################################
+#                                                                  #
+#  Stack Outputs                                                   #
+#                                                                  #
+####################################################################
 Outputs:
   SsmParametersFunctionArn:
     Description: SsmParameters Lambda Function ARN
