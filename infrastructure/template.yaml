@@ -1235,6 +1235,110 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+  ####################################################################
+  #                                                                  #
+  #  Metrics                                                         #
+  #                                                                  #
+  ####################################################################
+  SuccessfulNinoCheckMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NinoCheckStateMachineLogGroup
+      FilterPattern: '{($.details.name = "Store Successful Attempt")}'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: SuccessfulFirstAttemptMetric
+          MetricNamespace: !Sub ${AWS::StackName}/SuccessfulFirstAttemptMetric
+
+  RetryAttemptsSentMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NinoCheckStateMachineLogGroup
+      FilterPattern: '{($.details.name = "Send Retry")}'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: RetryAttemptsSentMetric
+          MetricNamespace: !Sub ${AWS::StackName}/RetryAttemptsSentMetric
+
+  FailedHMRCAuthMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NinoCheckStateMachineLogGroup
+      FilterPattern: '{($.details.name = "Err: Failed Auth")}'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: FailedHMRCAuthMetric
+          MetricNamespace: !Sub ${AWS::StackName}/FailedHMRCAuthMetric
+
+  HMRCAPIErrorMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NinoCheckStateMachineLogGroup
+      FilterPattern: '{($.details.name = "Err: API Error")}'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: HMRCAPIErrorMetric
+          MetricNamespace: !Sub ${AWS::StackName}/HMRCAPIErrorMetric
+
+  MatchingLambdaErrorMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NinoCheckStateMachineLogGroup
+      FilterPattern: '{($.details.name = "Err: Matching Lambda Exception")}'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: MatchingLambdaErrorMetric
+          MetricNamespace: !Sub ${AWS::StackName}/MatchingLambdaErrorMetric
+
+  DeceasedUserMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NinoCheckStateMachineLogGroup
+      FilterPattern: '{($.details.name = "Store Deceased Attempt")}'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: DeceasedUserMetric
+          MetricNamespace: !Sub ${AWS::StackName}/DeceasedUserMetric
+
+  AttemptsExceededMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NinoCheckStateMachineLogGroup
+      FilterPattern: '{($.details.name = "Err: Attempts exceeded")}'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: AttemptsExceededMetric
+          MetricNamespace: !Sub ${AWS::StackName}/AttemptsExceededMetric
+
+  InvalidSessionErrorMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NinoCheckStateMachineLogGroup
+      FilterPattern: '{($.details.name = "Err: Invalid Session")}'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: InvalidSessionErrorMetric
+          MetricNamespace: !Sub ${AWS::StackName}/InvalidSessionErrorMetric
+
+  CIRaisedMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NinoIssueCredentialLogGroup
+      FilterPattern: '{($.details.name = "Fetch CI")}'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: CIRaisedMetric
+          MetricNamespace: !Sub ${AWS::StackName}/CIRaisedMetric
+
+  VCIssuedMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NinoIssueCredentialLogGroup
+      FilterPattern: '{($.details.name = "Create Signed JWT")}'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: VCIssuedMetric
+          MetricNamespace: !Sub ${AWS::StackName}/VCIssuedMetric
 ##################################################################
 #                                                                  #
 #  Stack Outputs                                                   #
