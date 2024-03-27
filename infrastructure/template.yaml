@@ -1339,6 +1339,16 @@ Resources:
         - MetricValue: 1
           MetricName: VCIssuedMetric
           MetricNamespace: !Sub ${AWS::StackName}/VCIssuedMetric
+
+  AbandonedJourneyMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref AbandonStateMachineLogGroup
+      FilterPattern: '{($.details.name = "Clear Auth Code")}'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: AbandonedAuthMetric
+          MetricNamespace: !Sub ${AWS::StackName}/AbandonedJourneyMetric
 ##################################################################
 #                                                                  #
 #  Stack Outputs                                                   #
