@@ -36,6 +36,10 @@ Parameters:
     Type: String
     Description: The state of rule i.e Enabled or !Ref EventBusState
     Default: DISABLED
+  CriIdentifier:
+    Description: "The unique credential issuer identifier"
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/common-cri-parameters/CriIdentifier"
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
@@ -1253,7 +1257,7 @@ Resources:
       MetricTransformations:
         - MetricValue: 1
           MetricName: SuccessfulFirstAttemptMetric
-          MetricNamespace: !Sub ${AWS::StackName}/SuccessfulFirstAttemptMetric
+          MetricNamespace: !Ref CriIdentifier
 
   RetryAttemptsSentMetric:
     Type: AWS::Logs::MetricFilter
@@ -1263,7 +1267,7 @@ Resources:
       MetricTransformations:
         - MetricValue: 1
           MetricName: RetryAttemptsSentMetric
-          MetricNamespace: !Sub ${AWS::StackName}/RetryAttemptsSentMetric
+          MetricNamespace: !Ref CriIdentifier
 
   FailedHMRCAuthMetric:
     Type: AWS::Logs::MetricFilter
@@ -1273,7 +1277,7 @@ Resources:
       MetricTransformations:
         - MetricValue: 1
           MetricName: FailedHMRCAuthMetric
-          MetricNamespace: !Sub ${AWS::StackName}/FailedHMRCAuthMetric
+          MetricNamespace: !Ref CriIdentifier
 
   HMRCAPIErrorMetric:
     Type: AWS::Logs::MetricFilter
@@ -1283,7 +1287,7 @@ Resources:
       MetricTransformations:
         - MetricValue: 1
           MetricName: HMRCAPIErrorMetric
-          MetricNamespace: !Sub ${AWS::StackName}/HMRCAPIErrorMetric
+          MetricNamespace: !Ref CriIdentifier
 
   MatchingLambdaErrorMetric:
     Type: AWS::Logs::MetricFilter
@@ -1293,7 +1297,7 @@ Resources:
       MetricTransformations:
         - MetricValue: 1
           MetricName: MatchingLambdaErrorMetric
-          MetricNamespace: !Sub ${AWS::StackName}/MatchingLambdaErrorMetric
+          MetricNamespace: !Ref CriIdentifier
 
   DeceasedUserMetric:
     Type: AWS::Logs::MetricFilter
@@ -1303,7 +1307,7 @@ Resources:
       MetricTransformations:
         - MetricValue: 1
           MetricName: DeceasedUserMetric
-          MetricNamespace: !Sub ${AWS::StackName}/DeceasedUserMetric
+          MetricNamespace: !Ref CriIdentifier
 
   AttemptsExceededMetric:
     Type: AWS::Logs::MetricFilter
@@ -1313,7 +1317,7 @@ Resources:
       MetricTransformations:
         - MetricValue: 1
           MetricName: AttemptsExceededMetric
-          MetricNamespace: !Sub ${AWS::StackName}/AttemptsExceededMetric
+          MetricNamespace: !Ref CriIdentifier
 
   InvalidSessionErrorMetric:
     Type: AWS::Logs::MetricFilter
@@ -1323,7 +1327,7 @@ Resources:
       MetricTransformations:
         - MetricValue: 1
           MetricName: InvalidSessionErrorMetric
-          MetricNamespace: !Sub ${AWS::StackName}/InvalidSessionErrorMetric
+          MetricNamespace: !Ref CriIdentifier
 
   CIRaisedMetric:
     Type: AWS::Logs::MetricFilter
@@ -1333,7 +1337,7 @@ Resources:
       MetricTransformations:
         - MetricValue: 1
           MetricName: CIRaisedMetric
-          MetricNamespace: !Sub ${AWS::StackName}/CIRaisedMetric
+          MetricNamespace: !Ref CriIdentifier
 
   VCIssuedMetric:
     Type: AWS::Logs::MetricFilter
@@ -1343,7 +1347,7 @@ Resources:
       MetricTransformations:
         - MetricValue: 1
           MetricName: VCIssuedMetric
-          MetricNamespace: !Sub ${AWS::StackName}/VCIssuedMetric
+          MetricNamespace: !Ref CriIdentifier
 
   AbandonedJourneyMetric:
     Type: AWS::Logs::MetricFilter
@@ -1353,7 +1357,8 @@ Resources:
       MetricTransformations:
         - MetricValue: 1
           MetricName: AbandonedAuthMetric
-          MetricNamespace: !Sub ${AWS::StackName}/AbandonedJourneyMetric
+          MetricNamespace: !Ref CriIdentifier
+
 ##################################################################
 #                                                                  #
 #  Stack Outputs                                                   #
