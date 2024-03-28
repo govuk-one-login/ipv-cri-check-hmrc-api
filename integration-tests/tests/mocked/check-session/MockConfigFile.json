@@ -6,6 +6,10 @@
           "Fetch Current Time": "FetchCurrentTimeHappy",
           "Fetch Session": "FetchSessionHappy"
         },
+        "HappyPathWithOptionalPersistentSessionId": {
+          "Fetch Current Time": "FetchCurrentTimeHappy",
+          "Fetch Session": "FetchSessionHappyWithoutPersistentSessionId"
+        },
         "NoSessionFound": {
           "Fetch Current Time": "FetchCurrentTimeHappy",
           "Fetch Session": "NoResults"
@@ -48,6 +52,38 @@
               },
               "persistentSessionId": {
                 "S": "156714ef-f9df-48c2-ada8-540e7bce44f7"
+              },
+              "sessionId": {
+                "S": "12345"
+              },
+              "subject": {
+                "S": "urn:fdc:gov.uk:2022:da580c9d-cdf9-4961-afde-233249db04d2"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "FetchSessionHappyWithoutPersistentSessionId": {
+      "0": {
+        "Return": {
+          "Count": 1,
+          "Items": [
+            {
+              "expiryDate": {
+                "N": "2695828259"
+              },
+              "clientId": {
+                "S": "exampleClientId"
+              },
+              "clientIpAddress": {
+                "S": "51.149.8.29"
+              },
+              "redirectUri": {
+                "S": "http://localhost:8085/callback"
+              },
+              "clientSessionId": {
+                "S": "252561a2-c6ef-47e7-87ab-93891a2a6a41"
               },
               "sessionId": {
                 "S": "12345"

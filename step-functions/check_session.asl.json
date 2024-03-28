@@ -65,7 +65,41 @@
           "Next": "Err: Session Expired"
         }
       ],
-      "Default": "Session OK"
+      "Default": "Is Persistent SessionId Present?"
+    },
+    "Is Persistent SessionId Present?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.sessionQuery.items[0].persistentSessionId",
+          "IsPresent": false,
+          "Next": "Get User Info Without Persistent Session Id"
+        }
+      ],
+      "Default": "Get User Session Info"
+    },
+    "Get User Info Without Persistent Session Id": {
+      "Type": "Pass",
+      "Parameters": {
+        "govuk_signin_journey_id.$": "$.sessionQuery.items[0].clientSessionId.S",
+        "ip_address.$": "$.sessionQuery.items[0].clientIpAddress.S",
+        "session_id.$": "$.sessionQuery.items[0].sessionId.S",
+        "user_id.$": "$.sessionQuery.items[0].subject.S"
+      },
+      "ResultPath": "$.UserSessionInfo",
+      "Next": "Session OK"
+    },
+    "Get User Session Info": {
+      "Type": "Pass",
+      "Parameters": {
+        "govuk_signin_journey_id.$": "$.sessionQuery.items[0].clientSessionId.S",
+        "ip_address.$": "$.sessionQuery.items[0].clientIpAddress.S",
+        "persistent_session_id.$": "$.sessionQuery.items[0].persistentSessionId.S",
+        "session_id.$": "$.sessionQuery.items[0].sessionId.S",
+        "user_id.$": "$.sessionQuery.items[0].subject.S"
+      },
+      "ResultPath": "$.UserSessionInfo",
+      "Next": "Session OK"
     },
     "Err: Session Expired": {
       "Type": "Pass",
@@ -87,13 +121,7 @@
       "Parameters": {
         "status": "SESSION_OK",
         "clientId.$": "$.sessionQuery.items[0].clientId.S",
-        "userAuditInfo": {
-          "govuk_signin_journey_id.$": "$.sessionQuery.items[0].clientSessionId.S",
-          "ip_address.$": "$.sessionQuery.items[0].clientIpAddress.S",
-          "persistent_session_id.$": "$.sessionQuery.items[0].persistentSessionId.S",
-          "session_id.$": "$.sessionQuery.items[0].sessionId.S",
-          "user_id.$": "$.sessionQuery.items[0].subject.S"
-        }
+        "userAuditInfo.$": "$.UserSessionInfo"
       }
     },
     "Err: No sessionId provided": {
