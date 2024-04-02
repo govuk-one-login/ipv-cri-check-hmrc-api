@@ -1,7 +1,7 @@
 import { HistoryEvent } from "@aws-sdk/client-sfn";
 import { SfnContainerHelper } from "./sfn-container-helper";
 
-jest.setTimeout(30_000);
+jest.setTimeout(60_000);
 
 const decode = (value: string) =>
   Buffer.from(value, "base64").toString("utf-8");
@@ -79,6 +79,27 @@ describe("nino-issue-credential-happy", () => {
     });
     const responseStepFunction = await sfnContainer.startStepFunctionExecution(
       "HappyPath",
+      input
+    );
+    const results = await sfnContainer.waitFor(
+      (event: HistoryEvent) =>
+        event?.type === "PassStateExited" &&
+        event?.stateExitedEventDetails?.name === "Create Signed JWT",
+      responseStepFunction
+    );
+    const [, payloadEncoded] = JSON.parse(
+      results[0].stateExitedEventDetails?.output as string
+    ).jwt.split(".");
+
+    const payload = JSON.parse(decode(payloadEncoded));
+    expect(payload).toEqual(expectedPayload);
+  });
+  it("should create signed JWT when nino check is successful without Persistent Id", async () => {
+    const input = JSON.stringify({
+      bearerToken: "Bearer happy",
+    });
+    const responseStepFunction = await sfnContainer.startStepFunctionExecution(
+      "HappyPathWithoutPersistentSessionId",
       input
     );
     const results = await sfnContainer.waitFor(

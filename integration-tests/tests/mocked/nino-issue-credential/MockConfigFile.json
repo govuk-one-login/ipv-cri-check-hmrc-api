@@ -11,7 +11,18 @@
           "Fetch exp time and NBF": "FetchExpTimeAndNBF",
           "Fetch Failed Attempts": "FetchFailedAttempts",
           "Sign VC claimsSet": "SignVCClaimSet",
-          "Publish Audit Event VC Issued": "PublishAuditEventVcIssued"
+          "Audit Event VC Issued Sent": "PublishAuditEventVcIssued"
+        },
+        "HappyPathWithoutPersistentSessionId": {
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
+          "Query Session Item": "QuerySessionItemWithoutPersistentSessionId",
+          "Fetch details from person identity": "FetchDetailsFromPersonIdentity",
+          "Fetch Nino": "FetchNino",
+          "Create Credential Subject": "CreateCredentialSubject",
+          "Fetch exp time and NBF": "FetchExpTimeAndNBF",
+          "Fetch Failed Attempts": "FetchFailedAttempts",
+          "Sign VC claimsSet": "SignVCClaimSet",
+          "Audit Event VC Issued Sent": "PublishAuditEventVcIssued"
         },
         "UnHappyPath": {
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
@@ -23,7 +34,7 @@
           "Fetch Failed Attempts": "FetchExceededFailedAttempts",
           "Fetch CI": "FetchCI",
           "Sign VC claimsSet": "SignVCClaimSetWithCi",
-          "Publish Audit Event VC Issued": "PublishAuditEventVcIssued"
+          "Audit Event VC Issued Sent": "PublishAuditEventVcIssued"
         },
         "UnHappyPathBearerTokenInvalid": {
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
@@ -107,6 +118,42 @@
               },
               "persistentSessionId": {
                 "S": "156714ef-f9df-48c2-ada8-540e7bce44f7"
+              }
+            }
+          ],
+          "ScannedCount": 1
+        }
+      }
+    },
+    "QuerySessionItemWithoutPersistentSessionId": {
+      "0": {
+        "Return": {
+          "Count": 1,
+          "Items": [
+            {
+              "subject": {
+                "S": "test"
+              },
+              "sessionId": {
+                "S": "123456789"
+              },
+              "accessToken": {
+                "S": "Bearer test"
+              },
+              "expiryDate": {
+                "N": "2695828259"
+              },
+              "clientId": {
+                "S": "exampleClientId"
+              },
+              "clientIpAddress": {
+                "S": "51.149.8.29"
+              },
+              "redirectUri": {
+                "S": "http://localhost:8085/callback"
+              },
+              "clientSessionId": {
+                "S": "252561a2-c6ef-47e7-87ab-93891a2a6a41"
               }
             }
           ],
