@@ -229,8 +229,10 @@ Resources:
       AlarmName: !Sub ${AWS::StackName}-${CiMappingFunction}-Errors
       AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CiMappingFunction} errors
       ActionsEnabled: true
-      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
-      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
       InsufficientDataActions: []
       MetricName: !Sub ${CiMappingFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -278,8 +280,10 @@ Resources:
       AlarmName: !Sub ${AWS::StackName}-${CreateAuthCodeFunction}-Errors
       AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CreateAuthCodeFunction} errors
       ActionsEnabled: true
-      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
-      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
       InsufficientDataActions: []
       MetricName: !Sub ${CreateAuthCodeFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -327,8 +331,10 @@ Resources:
       AlarmName: !Sub ${AWS::StackName}-${CredentialSubjectFunction}-Errors
       AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CredentialSubjectFunction} errors
       ActionsEnabled: true
-      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
-      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
       InsufficientDataActions: []
       MetricName: !Sub ${CredentialSubjectFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -376,8 +382,10 @@ Resources:
       AlarmName: !Sub ${AWS::StackName}-${CurrentTimeFunction}-Errors
       AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CurrentTimeFunction} errors
       ActionsEnabled: true
-      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
-      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
       InsufficientDataActions: []
       MetricName: !Sub ${CurrentTimeFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -430,8 +438,10 @@ Resources:
       AlarmName: !Sub ${AWS::StackName}-${JwtSignerFunction}-Errors
       AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${JwtSignerFunction} errors
       ActionsEnabled: true
-      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
-      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
       InsufficientDataActions: []
       MetricName: !Sub ${JwtSignerFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -479,8 +489,10 @@ Resources:
       AlarmName: !Sub ${AWS::StackName}-${MatchingFunction}-Errors
       AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${MatchingFunction} errors
       ActionsEnabled: true
-      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
-      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
       InsufficientDataActions: []
       MetricName: !Sub ${MatchingFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -531,8 +543,10 @@ Resources:
       AlarmName: !Sub ${AWS::StackName}-${SsmParametersFunction}-Errors
       AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${SsmParametersFunction} errors
       ActionsEnabled: true
-      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
-      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
       InsufficientDataActions: []
       MetricName: !Sub ${SsmParametersFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -580,8 +594,10 @@ Resources:
       AlarmName: !Sub ${AWS::StackName}-${TimeFunction}-Errors
       AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${TimeFunction} errors
       ActionsEnabled: true
-      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
-      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
       InsufficientDataActions: []
       MetricName: !Sub ${TimeFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -872,6 +888,39 @@ Resources:
         - !Ref PermissionsBoundary
         - !Ref AWS::NoValue
 
+  CheckSessionStateMachineFailedMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CheckSessionStateMachineLogGroup
+      FilterPattern: '{($.type = "ExecutionFailed")}'
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricName: "CheckSessionStateMachine-Error"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
+
+  CheckSessionStateMachineAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Condition:
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmDescription: "Check Session failed 4 or more requests in the last hour"
+      AlarmName: !Sub "${AWS::StackName}-CheckSessionStateMachineAlarm"
+      ComparisonOperator: GreaterThanThreshold
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      MetricName: "ExecutionsFailed"
+      Namespace: AWS/States
+      Period: 300
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: missing
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref CheckSessionStateMachine
+
   NinoCheckStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -937,10 +986,10 @@ Resources:
               - ssm:GetParameters
               - ssm:GetParameter
             Resource:
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/NinoCheckUrl/*
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${UserAgent}
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/NinoCheckUrl/*"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${UserAgent}"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName"
         - Statement:
             Effect: Allow
             Action: logs:*
@@ -955,6 +1004,39 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  NinoCheckStateMachineFailedMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NinoCheckStateMachineLogGroup
+      FilterPattern: "{$.type = \"ExecutionFailed\"}"
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricName: "NinoCheckStateMachine}-Error"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
+
+  NinoCheckStateMachineAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Condition:
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmDescription: "NINO Check failed 4 or more requests in the last hour"
+      AlarmName: !Sub "${AWS::StackName}-NinoCheckStateMachineAlarm"
+      ComparisonOperator: GreaterThanThreshold
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      MetricName: "ExecutionsFailed"
+      Namespace: AWS/States
+      Period: 300
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: missing
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref NinoCheckStateMachine
 
   AbandonStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -1005,6 +1087,39 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  AbandonStateMachineFailedMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref AbandonStateMachineLogGroup
+      FilterPattern: "{$.type = \"ExecutionFailed\"}"
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricName: "AbandonStateMachine}-Error"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
+
+  AbandonStateMachineAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Condition:
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmDescription: "Abandon failed 4 or more requests in the last hour"
+      AlarmName: !Sub "${AWS::StackName}-AbandonStateMachineAlarm"
+      ComparisonOperator: GreaterThanThreshold
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      MetricName: "ExecutionsFailed"
+      Namespace: AWS/States
+      Period: 300
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: missing
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref AbandonStateMachine
 
   NinoIssueCredentialStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -1060,13 +1175,13 @@ Resources:
               - ssm:GetParameters
               - ssm:GetParameter
             Resource:
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${MaxJwtTtlParameter}
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${JwtTtlUnitParameter}
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/contraindicationMappings
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${MaxJwtTtlParameter}"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${JwtTtlUnitParameter}"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/contraindicationMappings"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
         - Statement:
             Effect: Allow
             Action: logs:*
@@ -1085,6 +1200,39 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  NinoIssueCredentialStateMachineFailedMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NinoIssueCredentialLogGroup
+      FilterPattern: "{$.type = \"ExecutionFailed\"}"
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricName: "NinoIssueCredentialStateMachine}-Error"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
+
+  NinoIssueCredentialStateMachineAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Condition:
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmActions:
+        - !ImportValue platform-alarm-topic-slack-warning-alert
+      AlarmDescription: "NINO Issue Credential failed 4 or more requests in the last hour"
+      AlarmName: !Sub "${AWS::StackName}-NinoIssueCredentialStateMachineAlarm"
+      ComparisonOperator: GreaterThanThreshold
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      MetricName: "ExecutionsFailed"
+      Namespace: AWS/States
+      Period: 300
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: missing
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref NinoIssueCredentialStateMachine
 
   CheckSessionStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
