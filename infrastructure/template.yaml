@@ -178,6 +178,7 @@ Resources:
 
   EpochTimeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -235,6 +236,7 @@ Resources:
 
   CiMappingFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -294,6 +296,7 @@ Resources:
 
   CreateAuthCodeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -353,6 +356,7 @@ Resources:
 
   CredentialSubjectFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -412,6 +416,7 @@ Resources:
 
   CurrentTimeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -476,6 +481,7 @@ Resources:
 
   JwtSignerFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -535,6 +541,7 @@ Resources:
 
   MatchingFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -597,6 +604,7 @@ Resources:
 
   SsmParametersFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -656,6 +664,7 @@ Resources:
 
   TimeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -765,6 +774,7 @@ Resources:
 
   PublicNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -865,6 +875,7 @@ Resources:
 
   PrivateNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -1107,6 +1118,7 @@ Resources:
 
   NinoCheckStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -1198,6 +1210,7 @@ Resources:
 
   AbandonStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -1319,6 +1332,7 @@ Resources:
 
   NinoIssueCredentialLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -1366,6 +1380,7 @@ Resources:
 
   CheckSessionStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
@@ -1527,6 +1542,7 @@ Resources:
 
   AuditEventStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
     Properties:
       DestinationArn:
         !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
