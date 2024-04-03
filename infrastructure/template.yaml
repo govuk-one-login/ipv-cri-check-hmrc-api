@@ -105,6 +105,18 @@ Mappings:
       integration: review-hc.integration.account.gov.uk
       production: review-hc.production.account.gov.uk
 
+  PlatformConfiguration:
+    dev:
+      CSLSEGRESS: arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython-2
+    build:
+      CSLSEGRESS: arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython-2
+    staging:
+      CSLSEGRESS: arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython-2
+    integration:
+      CSLSEGRESS: arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython-2
+    production:
+      CSLSEGRESS: arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython-2
+
 Globals:
   Function:
     Timeout: 30
@@ -164,6 +176,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
+  EpochTimeFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref EpochTimeFunctionLogGroup
+
   EpochTimeFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
@@ -212,6 +232,14 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  CiMappingFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref CiMappingFunctionLogGroup
 
   CiMappingFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -264,6 +292,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
+  CreateAuthCodeFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref CreateAuthCodeFunctionLogGroup
+
   CreateAuthCodeFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
@@ -315,6 +351,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
+  CredentialSubjectFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref CredentialSubjectFunctionLogGroup
+
   CredentialSubjectFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
@@ -365,6 +409,14 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  CurrentTimeFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref CurrentTimeFunctionLogGroup
 
   CurrentTimeFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -422,6 +474,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
+  JwtSignerFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref JwtSignerFunctionLogGroup
+
   JwtSignerFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
@@ -472,6 +532,14 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  MatchingFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref MatchingFunctionLogGroup
 
   MatchingFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -527,6 +595,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
+  SsmParametersFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref SsmParametersFunctionLogGroup
+
   SsmParametersFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
@@ -577,6 +653,14 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
+  TimeFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref TimeFunctionLogGroup
 
   TimeFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -679,6 +763,14 @@ Resources:
       LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
+  PublicNinoCheckApiLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref PublicNinoCheckApiAccessLogGroup
+
   PublicNinoCheckApiFatalErorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
@@ -770,6 +862,14 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PrivateNinoCheckApiLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref PrivateNinoCheckApiAccessLogGroup
 
   PrivateNinoCheckApiFatalErorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -1005,6 +1105,14 @@ Resources:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
+  NinoCheckStateMachineLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref NinoCheckStateMachineLogGroup
+
   NinoCheckStateMachineFailedMetric:
     Type: AWS::Logs::MetricFilter
     Properties:
@@ -1087,6 +1195,14 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  AbandonStateMachineLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref AbandonStateMachineLogGroup
 
   AbandonStateMachineFailedMetric:
     Type: AWS::Logs::MetricFilter
@@ -1201,6 +1317,14 @@ Resources:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
+  NinoIssueCredentialLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref NinoIssueCredentialLogGroup
+
   NinoIssueCredentialStateMachineFailedMetric:
     Type: AWS::Logs::MetricFilter
     Properties:
@@ -1239,6 +1363,14 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  CheckSessionStateMachineLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref CheckSessionStateMachineLogGroup
 
   CheckHmrcEventBus:
     Type: AWS::Events::EventBus
@@ -1392,6 +1524,15 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  AuditEventStateMachineLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref AuditEventStateMachineLogGroup
+
   ####################################################################
   #                                                                  #
   #  Metrics                                                         #
