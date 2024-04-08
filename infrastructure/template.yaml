@@ -804,7 +804,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-{Environment}-PublicNinoCheckApi-FatalErrorAlarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-PublicNinoCheckApi-FatalErrorAlarm"
       AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -905,7 +905,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-{Environment}-PrivateNinoCheckApi-FatalErrorAlarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-PrivateNinoCheckApi-FatalErrorAlarm"
       AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -1025,7 +1025,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Check Session failed 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-{Environment}-CheckSessionStateMachineAlarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckSessionStateMachineAlarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1151,7 +1151,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "NINO Check failed 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-{Environment}-NinoCheckStateMachineAlarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachineAlarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1243,7 +1243,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Abandon failed 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-{Environment}-AbandonStateMachineAlarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AbandonStateMachineAlarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1365,7 +1365,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "NINO Issue Credential failed 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-{Environment}-NinoIssueCredentialStateMachineAlarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachineAlarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
