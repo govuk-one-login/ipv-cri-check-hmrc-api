@@ -40,6 +40,10 @@ Parameters:
     Description: "The unique credential issuer identifier"
     Type: AWS::SSM::Parameter::Value<String>
     Default: "/common-cri-parameters/CriIdentifier"
+  SupportManualURL:
+    Type: String
+    Default: "https://govukverify.atlassian.net/wiki/spaces/OJ/pages/4090790413/NINO+Check+Credential+Issuer+support+runbook"
+    Description: The support manual URL to be provided in alarm messages.
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
@@ -201,11 +205,11 @@ Resources:
   EpochTimeFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${EpochTimeFunction}-Errors
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${EpochTimeFunction} errors
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-${EpochTimeFunction}-Errors"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${EpochTimeFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
-      OKActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
-      AlarmActions: [!ImportValue platform-alarm-topic-slack-warning-alert]
+      OKActions: [!ImportValue platform-alarm-warning-alert-topic]
+      AlarmActions: [!ImportValue platform-alarm-warning-alert-topic]
       InsufficientDataActions: []
       MetricName: !Sub ${EpochTimeFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -259,13 +263,13 @@ Resources:
   CiMappingFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${CiMappingFunction}-Errors
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CiMappingFunction} errors
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-${CiMappingFunction}-Errors"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CiMappingFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${CiMappingFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -319,13 +323,13 @@ Resources:
   CreateAuthCodeFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${CreateAuthCodeFunction}-Errors
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CreateAuthCodeFunction} errors
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-${CreateAuthCodeFunction}-Errors"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CreateAuthCodeFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${CreateAuthCodeFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -379,13 +383,13 @@ Resources:
   CredentialSubjectFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${CredentialSubjectFunction}-Errors
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CredentialSubjectFunction} errors
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-${CredentialSubjectFunction}-Errors"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CredentialSubjectFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${CredentialSubjectFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -439,13 +443,13 @@ Resources:
   CurrentTimeFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${CurrentTimeFunction}-Errors
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CurrentTimeFunction} errors
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-${CurrentTimeFunction}-Errors"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CurrentTimeFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${CurrentTimeFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -504,13 +508,13 @@ Resources:
   JwtSignerFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${JwtSignerFunction}-Errors
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${JwtSignerFunction} errors
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-${JwtSignerFunction}-Errors"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${JwtSignerFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${JwtSignerFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -564,13 +568,13 @@ Resources:
   MatchingFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${MatchingFunction}-Errors
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${MatchingFunction} errors
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-${MatchingFunction}-Errors"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${MatchingFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${MatchingFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -627,13 +631,13 @@ Resources:
   SsmParametersFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${SsmParametersFunction}-Errors
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${SsmParametersFunction} errors
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-${SsmParametersFunction}-Errors"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${SsmParametersFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${SsmParametersFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -687,13 +691,13 @@ Resources:
   TimeFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${TimeFunction}-Errors
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${TimeFunction} errors
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-${TimeFunction}-Errors"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${TimeFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${TimeFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -800,13 +804,13 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-PublicNinoCheckApi-FatalErrorAlarm"
-      AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs."
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-PublicNinoCheckApi-FatalErrorAlarm"
+      AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PublicNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
@@ -901,13 +905,13 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-PrivateNinoCheckApi-FatalErrorAlarm"
-      AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs."
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-PrivateNinoCheckApi-FatalErrorAlarm"
+      AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PrivateNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
@@ -1017,11 +1021,11 @@ Resources:
     Condition:
     Properties:
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
-      AlarmDescription: "Check Session failed 4 or more requests in the last hour"
-      AlarmName: !Sub "${AWS::StackName}-CheckSessionStateMachineAlarm"
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Check Session failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckSessionStateMachineAlarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1143,11 +1147,11 @@ Resources:
     Condition:
     Properties:
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
-      AlarmDescription: "NINO Check failed 4 or more requests in the last hour"
-      AlarmName: !Sub "${AWS::StackName}-NinoCheckStateMachineAlarm"
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "NINO Check failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachineAlarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1235,11 +1239,11 @@ Resources:
     Condition:
     Properties:
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
-      AlarmDescription: "Abandon failed 4 or more requests in the last hour"
-      AlarmName: !Sub "${AWS::StackName}-AbandonStateMachineAlarm"
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Abandon failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AbandonStateMachineAlarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1357,11 +1361,11 @@ Resources:
     Condition:
     Properties:
       OKActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-topic-slack-warning-alert
-      AlarmDescription: "NINO Issue Credential failed 4 or more requests in the last hour"
-      AlarmName: !Sub "${AWS::StackName}-NinoIssueCredentialStateMachineAlarm"
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "NINO Issue Credential failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachineAlarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
