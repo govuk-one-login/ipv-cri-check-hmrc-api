@@ -546,6 +546,25 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
 
+  OTGFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/otg-api/src/otg-api-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  OTGFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
+      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+
   MatchingFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
@@ -1055,6 +1074,7 @@ Resources:
         BearerTokenName: !Ref BearerTokenName
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction
+        OTGFunction: !Ref OTGFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
         AuditEventNameResponseReceived:
@@ -1067,6 +1087,8 @@ Resources:
         IncludeExecutionData: True
         Level: ALL
       Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref OTGFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref SsmParametersFunction
         - LambdaInvokePolicy:
