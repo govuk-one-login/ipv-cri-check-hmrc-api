@@ -7,7 +7,7 @@
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingDeceasedAPIFail",
           "Audit Event Response Received": "PublishAuditEventResponseReceived",
@@ -22,7 +22,7 @@
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIRetryThenSuccess",
           "Audit Event Response Received": "PublishAuditEventResponseReceived",
@@ -37,7 +37,7 @@
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIRetryThenFail"
         },
@@ -47,7 +47,7 @@
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingDeceasedAPIFail",
           "Audit Event Response Received": "PublishAuditEventResponseReceived",
@@ -59,7 +59,7 @@
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPISuccess",
           "Audit Event Response Received": "PublishAuditEventResponseReceived",
@@ -74,7 +74,7 @@
           "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPISuccess",
           "Audit Event Response Received": "PublishAuditEventResponseReceived",
@@ -104,7 +104,7 @@
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIFailAuth",
           "Audit Event Response Received": "PublishAuditEventResponseReceived"
@@ -115,7 +115,7 @@
           "Query User Attempts": "QueryUserAttemptSuccessOn2ndTry",
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIInvalidURL",
           "Audit Event Response Received": "PublishAuditEventResponseReceived"
@@ -126,7 +126,7 @@
           "Query User Attempts": "DynamoDbQueryNoResult",
           "Create new user attempt": "DynamoDbQueryNoResult",
           "Query Person Identity Table": "QuerySessionSuccess",
-          "Get OAuth Token": "GetOAuthAccessTokenSuccess",
+          "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIFailNoRecords",
           "Audit Event Response Received": "PublishAuditEventResponseReceived",
@@ -479,10 +479,13 @@
         }
       }
     },
-    "GetOAuthAccessTokenSuccess": {
+    "OTGFunctionSuccess": {
       "0": {
         "Return": {
-          "SecretString": "abc"
+          "Payload": {
+            "token": "goodToken",
+            "expiry": "123456789"
+          }
         }
       }
     },
