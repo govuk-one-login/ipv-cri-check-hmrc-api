@@ -363,7 +363,7 @@
     "FetchCI": {
       "0": {
         "Return": {
-          "Payload": ["AAA"],
+          "Payload": [{ "ci": "AAA", "reason": "reason for ci"} ],
           "SdkHttpMetadata": {
             "HttpStatusCode": 200
           },
