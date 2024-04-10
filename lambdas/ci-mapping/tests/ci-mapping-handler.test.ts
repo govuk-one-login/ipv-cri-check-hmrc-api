@@ -1,11 +1,47 @@
 import { CiMappingHandler } from "../src/ci-mapping-handler";
 import { Context } from "aws-lambda";
 import { CiMappingEvent } from "../src/ci-mapping-event-validator";
+import { ContraIndicator } from "../src/utils/ci-mapping-util";
+type TestCase = {
+  inputHmrcErrors: string[];
+  expectedCIs: ContraIndicator[];
+};
 
 const testCiMapping = [
   "aaaa:ci_1",
   "bbbb,cccc,dddd:ci_2",
   "eeee,ffff,gggg:ci_3",
+];
+
+const testCases = [
+  [
+    {
+      inputHmrcErrors: ["eeee", "ffff"],
+      expectedCIs: [
+        { ci: "ci_3", reason: "eeee" },
+        { ci: "ci_3", reason: "ffff" },
+      ],
+    },
+  ],
+  [
+    {
+      inputHmrcErrors: ["eeee", "ffff", "gggg"],
+      expectedCIs: [
+        { ci: "ci_3", reason: "eeee" },
+        { ci: "ci_3", reason: "ffff" },
+        { ci: "ci_3", reason: "gggg" },
+      ],
+    },
+  ],
+  [
+    {
+      inputHmrcErrors: ["eeee", "gggg"],
+      expectedCIs: [
+        { ci: "ci_3", reason: "eeee" },
+        { ci: "ci_3", reason: "gggg" },
+      ],
+    },
+  ],
 ];
 
 describe("ci-mapping-handler", () => {
@@ -18,11 +54,11 @@ describe("ci-mapping-handler", () => {
 
     const result = await ciMappingHandler.handler(event, {} as Context);
 
-    expect(result).toEqual(["ci_1"]);
+    expect(result).toEqual([{ ci: "ci_1", reason: "aaaa" }]);
   });
 
   it.each([[["bbbb"], [["cccc"]]]])(
-    "should return ci_2 for input '%s'",
+    "should return contraIndicator code ci_2 and reason 'bbbb' for input '%s'",
     async (input) => {
       const event = {
         ci_mapping: testCiMapping,
@@ -32,26 +68,25 @@ describe("ci-mapping-handler", () => {
 
       const result = await ciMappingHandler.handler(event, {} as Context);
 
-      expect(result).toEqual(["ci_2"]);
+      expect(result).toEqual([{ ci: "ci_2", reason: "bbbb" }]);
     }
   );
-
-  it.each([[["eeee", "ffff"]], [["eeee", "ffff", "gggg"]], [["eeee", "gggg"]]])(
-    "should not return duplicate CIs for input [%s]",
-    async (input) => {
+  it.each(testCases)(
+    "should return unique ContraIndicator code and reason pairs for hmrc errors input [%j]",
+    async (testCase: TestCase) => {
       const event = {
         ci_mapping: testCiMapping,
-        hmrc_errors: input,
+        hmrc_errors: testCase.inputHmrcErrors,
       } as CiMappingEvent;
       const ciMappingHandler = new CiMappingHandler();
 
       const result = await ciMappingHandler.handler(event, {} as Context);
 
-      expect(result).toEqual(["ci_3"]);
+      expect(result).toEqual(testCase.expectedCIs);
     }
   );
 
-  it("should return multiple CIs when input contains different groups", async () => {
+  it("returns multiple unique ContraIndicator code and reasons when input contains different groups", async () => {
     const event = {
       ci_mapping: testCiMapping,
       hmrc_errors: ["gggg,aaaa,gggg"],
@@ -60,10 +95,13 @@ describe("ci-mapping-handler", () => {
 
     const result = await ciMappingHandler.handler(event, {} as Context);
 
-    expect(result).toEqual(["ci_1", "ci_3"]);
+    expect(result).toEqual([
+      { ci: "ci_1", reason: "aaaa" },
+      { ci: "ci_3", reason: "gggg" },
+    ]);
   });
 
-  it("should return multiple CIs when input contains different groups with spaces around hmrc errors", async () => {
+  it("returns unique ContraIndicator code and reasons when input contains different groups with spaces around hmrc errors", async () => {
     const event = {
       ci_mapping: testCiMapping,
       hmrc_errors: [" aaaa , gggg "],
@@ -72,10 +110,13 @@ describe("ci-mapping-handler", () => {
 
     const result = await ciMappingHandler.handler(event, {} as Context);
 
-    expect(result).toEqual(["ci_1", "ci_3"]);
+    expect(result).toEqual([
+      { ci: "ci_1", reason: "aaaa" },
+      { ci: "ci_3", reason: "gggg" },
+    ]);
   });
 
-  it("should return multiple CIs when input contains different groups with spaces CI mapping components", async () => {
+  it("returns unique ContraIndicator code and reasons when input contains different groups with spaces CI mapping components", async () => {
     const event = {
       ci_mapping: [
         " aaaa:ci_1",
@@ -88,7 +129,10 @@ describe("ci-mapping-handler", () => {
 
     const result = await ciMappingHandler.handler(event, {} as Context);
 
-    expect(result).toEqual(["ci_1", "ci_3"]);
+    expect(result).toEqual([
+      { ci: "ci_1", reason: "aaaa" },
+      { ci: "ci_3", reason: "gggg" },
+    ]);
   });
   it("should not produce a CI if there are no hmrc_errors", async () => {
     const event = {
