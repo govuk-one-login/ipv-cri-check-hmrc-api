@@ -7,7 +7,8 @@ import {
 import { Logger } from "@aws-lambda-powertools/logger";
 import {
   getHmrcErrsCiRecord,
-  deduplicateValues,
+  ContraIndicator,
+  deduplicateContraIndicators,
 } from "./utils/ci-mapping-util";
 
 const logger = new Logger();
@@ -15,7 +16,7 @@ export class CiMappingHandler implements LambdaInterface {
   public async handler(
     event: CiMappingEvent,
     _context: unknown
-  ): Promise<Array<string>> {
+  ): Promise<Array<ContraIndicator>> {
     try {
       return getCIsForHmrcErrors(event);
     } catch (error: unknown) {
@@ -30,7 +31,7 @@ export class CiMappingHandler implements LambdaInterface {
   }
 }
 
-const getCIsForHmrcErrors = (event: CiMappingEvent): Array<string> => {
+const getCIsForHmrcErrors = (event: CiMappingEvent): Array<ContraIndicator> => {
   const { ci_mappings, hmrc_errors } = validateInputs(event);
 
   const contraIndicators = ci_mappings?.flatMap((ci) => {
@@ -44,10 +45,10 @@ const getCIsForHmrcErrors = (event: CiMappingEvent): Array<string> => {
           .map((value) => value.trim())
           .includes(hmrcError)
       )
-      .map(() => ciValue.trim());
+      .map((hmrcError) => ({ ci: ciValue.trim(), reason: hmrcError.trim() }));
   });
 
-  return deduplicateValues(contraIndicators);
+  return deduplicateContraIndicators(contraIndicators);
 };
 
 const handlerClass = new CiMappingHandler();
