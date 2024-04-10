@@ -351,6 +351,10 @@ describe("nino-issue-credential-happy", () => {
           {
             failedCheckDetails: [{ checkMethod: "data" }],
             ci: [expect.any(String)],
+            ciReasons: [
+              { ci: expect.any(String), reason: expect.any(String) },
+              { ci: expect.any(String), reason: expect.any(String) },
+            ],
             strengthScore: 2,
             txn: expect.any(String),
             type: "IdentityCheck",
