@@ -1,8 +1,8 @@
 import {
-  deduplicateValues,
   getHmrcErrsCiRecord,
   allMappedHmrcErrors,
   isCiHmrcErrorsMappingValid,
+  deduplicateContraIndicators,
 } from "../../src/utils/ci-mapping-util";
 
 describe("ci-mapping-utils", () => {
@@ -16,15 +16,24 @@ describe("ci-mapping-utils", () => {
     goodHmrcErrsCiRecordStringThree,
   ];
   describe("deduplicate values", () => {
-    const test_cis = ["ci_1", "ci_2", "ci_3"];
+    const test_cis = [
+      { ci: "ci_1", reason: "aaaa" },
+      { ci: "ci_2", reason: "bbbb" },
+      { ci: "ci_3", reason: "cccc" },
+    ];
     it("should remove duplicates from inputs", () => {
-      expect(deduplicateValues(["ci_1", "ci_2", "ci_1", "ci_3"])).toEqual(
-        test_cis
-      );
+      expect(
+        deduplicateContraIndicators([
+          { reason: "aaaa", ci: "ci_1" },
+          { ci: "ci_2", reason: "bbbb" },
+          { ci: "ci_1", reason: "aaaa" },
+          { ci: "ci_3", reason: "cccc" },
+        ])
+      ).toEqual(test_cis);
     });
 
     it("should return input same input array, when no duplicates exist", () => {
-      expect(deduplicateValues(test_cis)).toEqual(test_cis);
+      expect(deduplicateContraIndicators(test_cis)).toEqual(test_cis);
     });
   });
 
