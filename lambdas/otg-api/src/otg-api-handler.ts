@@ -26,10 +26,8 @@ export class OTGApiHandler implements LambdaInterface {
       throw new Error(
         `Error response received from OTG ${response.status} ${response.statusText}`)
     } catch (error: unknown) {
-      let message;
-      if (error instanceof Error) message = error.message;
-      else message = String(error);
-      logger.error("Error in MatchingHandler: " + message);
+      const message = (error instanceof Error) ? error.message : String(error);
+      logger.error("Error in OTGApiHandler: " + message);
       throw error;
     }
   }

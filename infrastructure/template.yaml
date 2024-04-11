@@ -544,7 +544,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   OTGFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
