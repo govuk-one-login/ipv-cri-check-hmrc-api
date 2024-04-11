@@ -527,6 +527,127 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
+  OTGFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/otg-api/src/otg-api-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+
+  OTGFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  OTGFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevLikeEnvironment
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref OTGFunctionLogGroup
+
+  OTGFunctionEventErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref OTGFunctionLogGroup
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
+      MetricTransformations:
+        - MetricValue: 1
+          MetricName: !Sub ${MatchingFunction}-Error
+          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+
+  OTGFunctionEventErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-${OTGFunction}-Errors"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${OTGFunction} errors. ${SupportManualURL}"
+      ActionsEnabled: true
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      InsufficientDataActions: []
+      MetricName: !Sub ${OTGFunction}-Error
+      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Statistic: Sum
+      Dimensions: []
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  OTGFunctionFatalErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref OTGFunctionLogGroup
+      FilterPattern: '{ $.level = "FATAL" || $.message = "Unhandled Exception:*" }'
+      MetricTransformations:
+        -
+          MetricValue: "1"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
+          MetricName: "OTGFunction-Fatalerror"
+
+  OTGFunctionFatalErrorAlarm:
+    DependsOn:
+      - "OTGFunctionFatalErrorMetricFilter"
+    Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-BearerTokenHandlerFunction-FatalErrorAlarm"
+      AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs. ${SupportManualURL}"
+      ActionsEnabled: true
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      InsufficientDataActions: [ ]
+      MetricName: BearerTokenHandlerFunction-Fatalerror
+      Namespace: !Sub "${AWS::StackName}/LogMessages"
+      Statistic: Sum
+      Dimensions: [ ]
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  OTGFunctionThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue platform-alarm-critical-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-critical-alert-topic
+      InsufficientDataActions: []
+      AlarmDescription: !Sub "Trigger if the ${OTGFunction} lambda throttles. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-throttles"
+      MetricName: Throttles
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref OTGFunction
+      TreatMissingData: notBreaching
+      Period: 60 # This is the minimum value for the AWS Namespace
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+
   MatchingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -1055,6 +1176,7 @@ Resources:
         BearerTokenName: !Ref BearerTokenName
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction
+        OTGFunction: !Ref OTGFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
         AuditEventNameResponseReceived:
@@ -1067,6 +1189,8 @@ Resources:
         IncludeExecutionData: True
         Level: ALL
       Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref OTGFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref SsmParametersFunction
         - LambdaInvokePolicy:

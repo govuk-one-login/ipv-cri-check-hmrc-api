@@ -324,31 +324,4 @@ describe("nino-check-unhappy", () => {
       expect(startExecutionResult.status).toEqual("FAILED");
     });
   });
-
-  describe("HMRC bearer token is invalid", () => {
-    beforeAll(
-      async () =>
-        await secretsManager.updateSecret({
-          SecretId: "HMRCBearerToken",
-          SecretString: "badToken",
-        })
-    );
-
-    afterAll(
-      async () =>
-        await secretsManager.updateSecret({
-          SecretId: "HMRCBearerToken",
-          SecretString: "goodToken",
-        })
-    );
-
-    it("should throw an error when token is invalid", async () => {
-      const startExecutionResult = await executeStepFunction(
-        output.NinoCheckStateMachineArn as string,
-        input
-      );
-
-      expect(startExecutionResult.status).toEqual("FAILED");
-    });
-  });
 });

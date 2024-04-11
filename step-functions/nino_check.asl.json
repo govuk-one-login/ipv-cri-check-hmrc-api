@@ -33,7 +33,7 @@
       "Parameters": {
         "FunctionName": "${SsmParametersFunction}",
         "Payload": {
-          "parameters.$": "States.Array('/${CommonStackName}/PersonIdentityTableName', '${UserAgent}', '/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId), '/${CommonStackName}/verifiable-credential/issuer')"
+          "parameters.$": "States.Array(States.Format('/check-hmrc-cri-api/OtgUrl/{}', $.sessionCheck.clientId), '/${CommonStackName}/PersonIdentityTableName', '${UserAgent}', '/${CommonStackName}/SessionTableName', States.Format('/check-hmrc-cri-api/NinoCheckUrl/{}', $.sessionCheck.clientId), '/${CommonStackName}/verifiable-credential/issuer')"
         }
       },
       "Retry": [
@@ -52,11 +52,12 @@
       "Next": "Query User Attempts",
       "ResultPath": "$.parameters",
       "ResultSelector": {
-        "PersonIdentityTableName.$": "$.Payload[0].Value",
-        "UserAgent.$": "$.Payload[1].Value",
-        "SessionTableName.$": "$.Payload[2].Value",
-        "CheckUrl.$": "$.Payload[3].Value",
-        "Issuer.$": "$.Payload[4].Value"
+        "OtgUrl.$": "$.Payload[0].Value",
+        "PersonIdentityTableName.$": "$.Payload[1].Value",
+        "UserAgent.$": "$.Payload[2].Value",
+        "SessionTableName.$": "$.Payload[3].Value",
+        "CheckUrl.$": "$.Payload[4].Value",
+        "Issuer.$": "$.Payload[5].Value"
       }
     },
     "Err: Invalid Session": {
@@ -151,28 +152,41 @@
               ]
             }
           ],
-          "Next": "Get OAuth Token"
+          "Next": "Call OTG API"
         }
       ],
       "Default": "Err: No user found in Person Identity"
+    },
+    "Call OTG API": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${OTGFunction}",
+        "Payload": {
+          "apiURL.$": "$.parameters.OtgUrl"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Audit Event Request Sent",
+      "ResultPath": "$.otg"
     },
     "Err: No user found in Person Identity": {
       "Type": "Pass",
       "End": true,
       "Parameters": {
         "httpStatus": 500
-      }
-    },
-    "Get OAuth Token": {
-      "Type": "Task",
-      "Next": "Audit Event Request Sent",
-      "Parameters": {
-        "SecretId": "HMRCBearerToken"
-      },
-      "Resource": "arn:aws:states:::aws-sdk:secretsmanager:getSecretValue",
-      "ResultPath": "$.oAuthToken",
-      "ResultSelector": {
-        "value.$": "$.SecretString"
       }
     },
     "Audit Event Request Sent": {
@@ -212,7 +226,7 @@
           },
           "userAgent.$": "$.parameters.UserAgent",
           "apiURL.$": "$.parameters.CheckUrl",
-          "oAuthToken.$": "$.oAuthToken.value",
+          "oAuthToken.$": "$.otg.Payload.token",
           "user.$": "$.sessionCheck.userAuditInfo",
           "userInfo.$": "$.userInfo"
         }
