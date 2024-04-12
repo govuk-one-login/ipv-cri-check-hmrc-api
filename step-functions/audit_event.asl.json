@@ -132,7 +132,7 @@
     },
     "AuditEvent Without Restricted Info": {
       "Type": "Pass",
-      "Comment": "The user context info is returned only is there is no Restricted user information",
+      "Comment": "The user context info is returned only if there is no Restricted user information",
       "Parameters": {
         "event_name.$": "States.Format('{}_{}', $[0].prefix, $[0].type)",
         "timestamp.$": "$[1].epochSeconds.value",
@@ -182,7 +182,7 @@
     },
     "Audit Event With Evidence & Restricted Info": {
       "Type": "Pass",
-      "Comment": "Merges the evidence detail contained in the details input by interpolating is into a stringified version of {evidence: {}}, {} is replaced with string form of the incoming evidence detail, which is then converted to Json and merge with the auditEvent state",
+      "Comment": "Merges the evidence detail contained in the details input by interpolating it into a stringified version of {evidence: {}}, {} is replaced with string form of the incoming evidence detail, which is then converted to Json and merge with the auditEvent state",
       "Parameters": {
         "auditEvent.$": "States.JsonMerge($.[0].auditEvent, States.StringToJson(States.Format('\\{\"extensions\":\\{\"evidence\": {}\\}\\}', States.JsonToString($$.Execution.Input.detail.evidence))), false)"
       },

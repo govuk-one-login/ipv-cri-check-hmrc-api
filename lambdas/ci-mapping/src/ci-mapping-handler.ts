@@ -2,14 +2,11 @@ import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import {
   CiMappingEvent,
   HMRC_ERRORS_ABSENT,
+  getContraIndicatorWithReason,
   validateInputs,
 } from "./ci-mapping-event-validator";
 import { Logger } from "@aws-lambda-powertools/logger";
-import {
-  getHmrcErrsCiRecord,
-  ContraIndicator,
-  deduplicateContraIndicators,
-} from "./utils/ci-mapping-util";
+import { getHmrcErrsCiRecord, ContraIndicator } from "./utils/ci-mapping-util";
 
 const logger = new Logger();
 export class CiMappingHandler implements LambdaInterface {
@@ -32,12 +29,13 @@ export class CiMappingHandler implements LambdaInterface {
 }
 
 const getCIsForHmrcErrors = (event: CiMappingEvent): Array<ContraIndicator> => {
-  const { ci_mappings, hmrc_errors } = validateInputs(event);
+  const { contraIndicationMapping, hmrcErrors, contraIndicatorReasonsMapping } =
+    validateInputs(event);
 
-  const contraIndicators = ci_mappings?.flatMap((ci) => {
+  const contraIndicators = contraIndicationMapping?.flatMap((ci) => {
     const { mappedHmrcErrors, ciValue } = getHmrcErrsCiRecord(ci);
 
-    return hmrc_errors
+    return hmrcErrors
       .flatMap((hmrcError) => hmrcError)
       .filter((hmrcError) =>
         mappedHmrcErrors
@@ -48,7 +46,10 @@ const getCIsForHmrcErrors = (event: CiMappingEvent): Array<ContraIndicator> => {
       .map((hmrcError) => ({ ci: ciValue.trim(), reason: hmrcError.trim() }));
   });
 
-  return deduplicateContraIndicators(contraIndicators);
+  return getContraIndicatorWithReason(
+    contraIndicatorReasonsMapping,
+    contraIndicators
+  );
 };
 
 const handlerClass = new CiMappingHandler();

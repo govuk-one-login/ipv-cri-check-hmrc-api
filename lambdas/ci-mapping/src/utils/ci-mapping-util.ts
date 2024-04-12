@@ -1,26 +1,7 @@
 export type HmrcErrsCiRecord = Record<"mappedHmrcErrors" | "ciValue", string>;
 export type ContraIndicator = {
-  ci: string;
-  reason: string;
-};
-
-export const deduplicateValues = (values: string[]): string[] =>
-  Array.from(new Set(values));
-export const deduplicateContraIndicators = (
-  values: Array<ContraIndicator>
-): Array<ContraIndicator> => {
-  const uniqueIndicators = new Set<string>();
-
-  const uniqueStrings = values.map(
-    (indicator) => `${indicator.ci}@${indicator.reason}`
-  );
-
-  uniqueStrings.forEach(uniqueIndicators.add, uniqueIndicators);
-
-  return Array.from(uniqueIndicators).map((str) => {
-    const [ci, reason] = str.split("@");
-    return { ci, reason };
-  });
+  ci?: string;
+  reason?: string;
 };
 
 export const getHmrcErrsCiRecord = (pair: string): HmrcErrsCiRecord => {
@@ -45,7 +26,5 @@ export const isCiHmrcErrorsMappingValid = (mappings: string[]) =>
     );
   });
 
-export const flattenCommaSepInput = (CommaSepInput: string) =>
-  CommaSepInput.split(",").flatMap((comma_sep_string) =>
-    comma_sep_string.split(",").map((value) => value.trim())
-  );
+export const convertInputToArray = (CommaSepInput: string) =>
+  CommaSepInput.split(",").map((CommaSepInput) => CommaSepInput.trim());
