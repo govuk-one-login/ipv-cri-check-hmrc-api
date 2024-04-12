@@ -1,21 +1,21 @@
 export type HmrcErrsCiRecord = Record<"mappedHmrcErrors" | "ciValue", string>;
 export type ContraIndicator = {
-  ci: string;
-  reason: string;
+  ci?: string;
+  reason?: string;
 };
 
 export const deduplicateValues = (values: string[]): string[] =>
   Array.from(new Set(values));
 export const deduplicateContraIndicators = (
-  values: Array<ContraIndicator>
+  values?: Array<ContraIndicator>
 ): Array<ContraIndicator> => {
   const uniqueIndicators = new Set<string>();
 
-  const uniqueStrings = values.map(
+  const uniqueStrings = values?.map(
     (indicator) => `${indicator.ci}@${indicator.reason}`
   );
 
-  uniqueStrings.forEach(uniqueIndicators.add, uniqueIndicators);
+  uniqueStrings?.forEach(uniqueIndicators.add, uniqueIndicators);
 
   return Array.from(uniqueIndicators).map((str) => {
     const [ci, reason] = str.split("@");

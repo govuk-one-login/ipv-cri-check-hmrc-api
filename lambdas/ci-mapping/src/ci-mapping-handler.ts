@@ -1,7 +1,9 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import {
   CiMappingEvent,
+  CiReasonsMapping,
   HMRC_ERRORS_ABSENT,
+  areCIsEqual,
   validateInputs,
 } from "./ci-mapping-event-validator";
 import { Logger } from "@aws-lambda-powertools/logger";
@@ -32,7 +34,8 @@ export class CiMappingHandler implements LambdaInterface {
 }
 
 const getCIsForHmrcErrors = (event: CiMappingEvent): Array<ContraIndicator> => {
-  const { ci_mappings, hmrc_errors } = validateInputs(event);
+  const { ci_mappings, hmrc_errors, ci_reasons_mapping } =
+    validateInputs(event);
 
   const contraIndicators = ci_mappings?.flatMap((ci) => {
     const { mappedHmrcErrors, ciValue } = getHmrcErrsCiRecord(ci);
@@ -48,7 +51,20 @@ const getCIsForHmrcErrors = (event: CiMappingEvent): Array<ContraIndicator> => {
       .map((hmrcError) => ({ ci: ciValue.trim(), reason: hmrcError.trim() }));
   });
 
-  return deduplicateContraIndicators(contraIndicators);
+  return deduplicateContraIndicators(
+    getContraIndicatorWithReason(ci_reasons_mapping, contraIndicators)
+  );
+};
+
+const getContraIndicatorWithReason = (
+  ciReasons?: CiReasonsMapping[],
+  contraIndicators?: ContraIndicator[]
+): ContraIndicator[] | undefined => {
+  return contraIndicators?.map((contra) => ({
+    ci: contra.ci,
+    reason: ciReasons?.find((reason) => areCIsEqual(reason.ci, contra.ci))
+      ?.reason,
+  }));
 };
 
 const handlerClass = new CiMappingHandler();

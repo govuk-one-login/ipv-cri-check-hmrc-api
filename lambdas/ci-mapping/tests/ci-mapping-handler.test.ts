@@ -12,34 +12,29 @@ const testCiMapping = [
   "bbbb,cccc,dddd:ci_2",
   "eeee,ffff,gggg:ci_3",
 ];
+const testCiReasons = [
+  { ci: "ci_1", reason: "ci_1 reason" },
+  { ci: "ci_2", reason: "ci_2 reason" },
+  { ci: "ci_3", reason: "ci_3 reason" },
+];
 
 const testCases = [
   [
     {
       inputHmrcErrors: ["eeee", "ffff"],
-      expectedCIs: [
-        { ci: "ci_3", reason: "eeee" },
-        { ci: "ci_3", reason: "ffff" },
-      ],
+      expectedCIs: [{ ci: "ci_3", reason: "ci_3 reason" }],
     },
   ],
   [
     {
       inputHmrcErrors: ["eeee", "ffff", "gggg"],
-      expectedCIs: [
-        { ci: "ci_3", reason: "eeee" },
-        { ci: "ci_3", reason: "ffff" },
-        { ci: "ci_3", reason: "gggg" },
-      ],
+      expectedCIs: [{ ci: "ci_3", reason: "ci_3 reason" }],
     },
   ],
   [
     {
       inputHmrcErrors: ["eeee", "gggg"],
-      expectedCIs: [
-        { ci: "ci_3", reason: "eeee" },
-        { ci: "ci_3", reason: "gggg" },
-      ],
+      expectedCIs: [{ ci: "ci_3", reason: "ci_3 reason" }],
     },
   ],
 ];
@@ -49,12 +44,13 @@ describe("ci-mapping-handler", () => {
     const event = {
       ci_mapping: testCiMapping,
       hmrc_errors: ["aaaa"],
+      ci_reason_mapping: testCiReasons,
     } as CiMappingEvent;
     const ciMappingHandler = new CiMappingHandler();
 
     const result = await ciMappingHandler.handler(event, {} as Context);
 
-    expect(result).toEqual([{ ci: "ci_1", reason: "aaaa" }]);
+    expect(result).toEqual([{ ci: "ci_1", reason: "ci_1 reason" }]);
   });
 
   it.each([[["bbbb"], [["cccc"]]]])(
@@ -63,20 +59,23 @@ describe("ci-mapping-handler", () => {
       const event = {
         ci_mapping: testCiMapping,
         hmrc_errors: input,
+        ci_reason_mapping: testCiReasons,
       } as CiMappingEvent;
       const ciMappingHandler = new CiMappingHandler();
 
       const result = await ciMappingHandler.handler(event, {} as Context);
 
-      expect(result).toEqual([{ ci: "ci_2", reason: "bbbb" }]);
+      expect(result).toEqual([{ ci: "ci_2", reason: "ci_2 reason" }]);
     }
   );
+
   it.each(testCases)(
     "should return unique ContraIndicator code and reason pairs for hmrc errors input [%j]",
     async (testCase: TestCase) => {
       const event = {
         ci_mapping: testCiMapping,
         hmrc_errors: testCase.inputHmrcErrors,
+        ci_reason_mapping: testCiReasons,
       } as CiMappingEvent;
       const ciMappingHandler = new CiMappingHandler();
 
@@ -90,14 +89,15 @@ describe("ci-mapping-handler", () => {
     const event = {
       ci_mapping: testCiMapping,
       hmrc_errors: ["gggg,aaaa,gggg"],
+      ci_reason_mapping: testCiReasons,
     } as CiMappingEvent;
     const ciMappingHandler = new CiMappingHandler();
 
     const result = await ciMappingHandler.handler(event, {} as Context);
 
     expect(result).toEqual([
-      { ci: "ci_1", reason: "aaaa" },
-      { ci: "ci_3", reason: "gggg" },
+      { ci: "ci_1", reason: "ci_1 reason" },
+      { ci: "ci_3", reason: "ci_3 reason" },
     ]);
   });
 
@@ -105,14 +105,15 @@ describe("ci-mapping-handler", () => {
     const event = {
       ci_mapping: testCiMapping,
       hmrc_errors: [" aaaa , gggg "],
+      ci_reason_mapping: testCiReasons,
     } as CiMappingEvent;
     const ciMappingHandler = new CiMappingHandler();
 
     const result = await ciMappingHandler.handler(event, {} as Context);
 
     expect(result).toEqual([
-      { ci: "ci_1", reason: "aaaa" },
-      { ci: "ci_3", reason: "gggg" },
+      { ci: "ci_1", reason: "ci_1 reason" },
+      { ci: "ci_3", reason: "ci_3 reason" },
     ]);
   });
 
@@ -124,19 +125,21 @@ describe("ci-mapping-handler", () => {
         " eeee , ffff , gggg : ci_3 ",
       ],
       hmrc_errors: ["aaaa ,gggg"],
+      ci_reason_mapping: testCiReasons,
     } as CiMappingEvent;
     const ciMappingHandler = new CiMappingHandler();
 
     const result = await ciMappingHandler.handler(event, {} as Context);
 
     expect(result).toEqual([
-      { ci: "ci_1", reason: "aaaa" },
-      { ci: "ci_3", reason: "gggg" },
+      { ci: "ci_1", reason: "ci_1 reason" },
+      { ci: "ci_3", reason: "ci_3 reason" },
     ]);
   });
   it("should not produce a CI if there are no hmrc_errors", async () => {
     const event = {
       ci_mapping: testCiMapping,
+      ci_reason_mapping: testCiReasons,
     } as CiMappingEvent;
     const ciMappingHandler = new CiMappingHandler();
 
