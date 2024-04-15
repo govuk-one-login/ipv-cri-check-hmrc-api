@@ -1,8 +1,7 @@
 import { getJarAuthorizationPayload, Payload } from "./crypto/create-jar-request-payload";
+import { getSSMParameter } from "../../step-functions/aws/resources/ssm-param-helper";
 
-const environment = process.env.Environment;
-const publicEncryptionKeyBase64 = process.env.publicEncryptionKeyBase64;
-const privateSigningKey = JSON.parse(process.env.privateSigningKey || "");
+const environment = process.env.Environment || "dev";
 
 let claimSet = {
   sub: "urn:fdc:gov.uk:2022:0df67954-5537-4c98-92d9-e95f0b2e6f44",
@@ -46,6 +45,14 @@ let claimSet = {
 };
 
 describe("Private API", () => {
+  let publicEncryptionKeyBase64: string;
+  let privateSigningKey: any;
+
+  beforeAll(async () => {
+    publicEncryptionKeyBase64 = await getSSMParameter("/check-hmrc-cri-api/test/publicEncryptionKeyBase64") || "";
+    privateSigningKey = JSON.parse(await getSSMParameter("/check-hmrc-cri-api/test/privateSigningKey") || "");
+  });
+
     it("should produce a \"client_id\" and \"request\" in the session request body", async () => {
       const payload = {
         clientId: 'ipv-core-stub-aws-prod',
