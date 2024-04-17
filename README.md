@@ -4,7 +4,7 @@ HMRC Check Credential Issuer API
 
 ## Integration Tests
 
-There are 2 types of Integration Tests: Mocked and AWS
+There are 3 types of Integration Tests: Mocked, AWS and API Gateway
 
 ### AWS
 
@@ -37,6 +37,26 @@ To run the mocked step function tests run
 `npm run test:mocked --workspace integration-tests`
 
 _You can omit the `--workspace` parameter if the current working directory is `integration-tests`._
+
+### API Gateway
+These tests run against API Gateway in AWS.
+To run these tests the following environment variables are needed:
+
+- STACK_NAME
+- AWS_REGION
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+- AWS_SESSION_TOKEN
+
+Temporary credentials can be found by going to the [AWS start page](https://uk-digital-identity.awsapps.com/start#/), selecting the account and clicking
+`Access Keys` and clicking the copy next to `Option 1: Set AWS environment variables` to authenticate the correct account.
+
+To run the tests against a stack deployed in AWS, update `env-variables.ts` file to include the `PUBLIC_API` which is the `PublicNinoCheckApi` value and `PRIVATE_API` which is the `PrivateNinoCheckApi` value.
+
+Then run the command:
+`npm run integration:all`
+
+This will run all tests in the `api-gateway` directory.
 
 ### MAKE
 
