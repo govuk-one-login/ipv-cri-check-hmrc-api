@@ -1,98 +1,163 @@
 import { CiMappingHandler } from "../src/ci-mapping-handler";
 import { Context } from "aws-lambda";
 import { CiMappingEvent } from "../src/ci-mapping-event-validator";
+import { ContraIndicator } from "../src/utils/ci-mapping-util";
+type TestCase = {
+  inputHmrcErrors: string[];
+  expectedCIs: ContraIndicator[];
+};
 
-const testCiMapping = [
-  "aaaa:ci_1",
-  "bbbb,cccc,dddd:ci_2",
-  "eeee,ffff,gggg:ci_3",
+const contraIndicationMapping = [
+  '"An error description, with a comma", aaaa:ci_1',
+  '"A second one with, a comma", bbbb,cccc,dddd:ci_2',
+  '"Another error, description", eeee,ffff,gggg:ci_3',
+];
+const contraIndicatorReasonsMapping = [
+  { ci: "ci_1", reason: "ci_1 reason" },
+  { ci: "ci_2", reason: "ci_2 reason" },
+  { ci: "ci_3", reason: "ci_3 reason" },
+];
+const testCases = [
+  [
+    {
+      inputHmrcErrors: ["eeee", "ffff"],
+      expectedCIs: [
+        { ci: "ci_3", reason: "ci_3 reason" },
+        { ci: "ci_3", reason: "ci_3 reason" },
+      ],
+    },
+  ],
+  [
+    {
+      inputHmrcErrors: ["eeee", "ffff", "gggg"],
+      expectedCIs: [
+        { ci: "ci_3", reason: "ci_3 reason" },
+        { ci: "ci_3", reason: "ci_3 reason" },
+        { ci: "ci_3", reason: "ci_3 reason" },
+      ],
+    },
+  ],
+  [
+    {
+      inputHmrcErrors: ["eeee", "gggg"],
+      expectedCIs: [
+        { ci: "ci_3", reason: "ci_3 reason" },
+        { ci: "ci_3", reason: "ci_3 reason" },
+      ],
+    },
+  ],
+  [
+    {
+      inputHmrcErrors: ['"An error description, with a comma"', "aaaa"],
+      expectedCIs: [
+        { ci: "ci_1", reason: "ci_1 reason" },
+        { ci: "ci_1", reason: "ci_1 reason" },
+        { ci: "ci_1", reason: "ci_1 reason" },
+      ],
+    },
+  ],
 ];
 
 describe("ci-mapping-handler", () => {
-  it("should return the mapped CI for a single matching hmrc_error in ci_mapping", async () => {
+  it("should return the mapped CI for a single matching hmrc_error in ContraIndicationMapping", async () => {
     const event = {
-      ci_mapping: testCiMapping,
-      hmrc_errors: ["aaaa"],
+      contraIndicationMapping,
+      hmrcErrors: ["aaaa"],
+      contraIndicatorReasonsMapping,
     } as CiMappingEvent;
     const ciMappingHandler = new CiMappingHandler();
 
     const result = await ciMappingHandler.handler(event, {} as Context);
 
-    expect(result).toEqual(["ci_1"]);
+    expect(result).toEqual([{ ci: "ci_1", reason: "ci_1 reason" }]);
   });
 
   it.each([[["bbbb"], [["cccc"]]]])(
-    "should return ci_2 for input '%s'",
+    "should return contraIndicator code ci_2 and reason 'bbbb' for input '%s'",
     async (input) => {
       const event = {
-        ci_mapping: testCiMapping,
-        hmrc_errors: input,
+        contraIndicationMapping,
+        hmrcErrors: input,
+        contraIndicatorReasonsMapping,
       } as CiMappingEvent;
       const ciMappingHandler = new CiMappingHandler();
 
       const result = await ciMappingHandler.handler(event, {} as Context);
 
-      expect(result).toEqual(["ci_2"]);
+      expect(result).toEqual([{ ci: "ci_2", reason: "ci_2 reason" }]);
     }
   );
-
-  it.each([[["eeee", "ffff"]], [["eeee", "ffff", "gggg"]], [["eeee", "gggg"]]])(
-    "should not return duplicate CIs for input [%s]",
-    async (input) => {
+  it.each(testCases)(
+    "should return all ContraIndicator code and reason pairs for hmrc errors input [%j]",
+    async (testCase: TestCase) => {
       const event = {
-        ci_mapping: testCiMapping,
-        hmrc_errors: input,
+        contraIndicationMapping,
+        hmrcErrors: testCase.inputHmrcErrors,
+        contraIndicatorReasonsMapping,
       } as CiMappingEvent;
       const ciMappingHandler = new CiMappingHandler();
 
       const result = await ciMappingHandler.handler(event, {} as Context);
 
-      expect(result).toEqual(["ci_3"]);
+      expect(result).toEqual(testCase.expectedCIs);
     }
   );
 
-  it("should return multiple CIs when input contains different groups", async () => {
+  it("returns multiple ContraIndicator code and reasons when input contains different groups", async () => {
     const event = {
-      ci_mapping: testCiMapping,
-      hmrc_errors: ["gggg,aaaa,gggg"],
+      contraIndicationMapping,
+      hmrcErrors: ["gggg,aaaa"],
+      contraIndicatorReasonsMapping,
     } as CiMappingEvent;
     const ciMappingHandler = new CiMappingHandler();
 
     const result = await ciMappingHandler.handler(event, {} as Context);
 
-    expect(result).toEqual(["ci_1", "ci_3"]);
+    expect(result).toEqual([
+      { ci: "ci_1", reason: "ci_1 reason" },
+      { ci: "ci_3", reason: "ci_3 reason" },
+    ]);
   });
 
-  it("should return multiple CIs when input contains different groups with spaces around hmrc errors", async () => {
+  it("returns ContraIndicator code and reasons when input contains different groups with spaces around hmrc errors", async () => {
     const event = {
-      ci_mapping: testCiMapping,
-      hmrc_errors: [" aaaa , gggg "],
+      contraIndicationMapping,
+      hmrcErrors: [" aaaa , gggg "],
+      contraIndicatorReasonsMapping,
     } as CiMappingEvent;
     const ciMappingHandler = new CiMappingHandler();
 
     const result = await ciMappingHandler.handler(event, {} as Context);
 
-    expect(result).toEqual(["ci_1", "ci_3"]);
+    expect(result).toEqual([
+      { ci: "ci_1", reason: "ci_1 reason" },
+      { ci: "ci_3", reason: "ci_3 reason" },
+    ]);
   });
 
-  it("should return multiple CIs when input contains different groups with spaces CI mapping components", async () => {
+  it("returns ContraIndicator code and reasons when input contains different groups with spaces CI mapping components", async () => {
     const event = {
-      ci_mapping: [
+      contraIndicationMapping: [
         " aaaa:ci_1",
         "bbbb,cccc,dddd: ci_2",
         " eeee , ffff , gggg : ci_3 ",
       ],
-      hmrc_errors: ["aaaa ,gggg"],
+      hmrcErrors: ["aaaa ,gggg"],
+      contraIndicatorReasonsMapping,
     } as CiMappingEvent;
     const ciMappingHandler = new CiMappingHandler();
 
     const result = await ciMappingHandler.handler(event, {} as Context);
 
-    expect(result).toEqual(["ci_1", "ci_3"]);
+    expect(result).toEqual([
+      { ci: "ci_1", reason: "ci_1 reason" },
+      { ci: "ci_3", reason: "ci_3 reason" },
+    ]);
   });
   it("should not produce a CI if there are no hmrc_errors", async () => {
     const event = {
-      ci_mapping: testCiMapping,
+      contraIndicationMapping,
+      contraIndicatorReasonsMapping,
     } as CiMappingEvent;
     const ciMappingHandler = new CiMappingHandler();
 
@@ -101,76 +166,139 @@ describe("ci-mapping-handler", () => {
     expect(result).toEqual([]);
   });
 
-  it("throws error, no matching hmrc_error for any ci_mapping", async () => {
+  it("throws error, no matching hmrc_error for any ContraIndicationMapping", async () => {
     const event = {
-      ci_mapping: testCiMapping,
-      hmrc_errors: ["not-a-mapped-error"],
+      contraIndicationMapping,
+      hmrcErrors: ["not-a-mapped-error"],
+      contraIndicatorReasonsMapping,
     } as CiMappingEvent;
     const ciMappingHandler = new CiMappingHandler();
 
     await expect(
       ciMappingHandler.handler(event, {} as Context)
-    ).rejects.toThrow("No matching hmrc_error for any ci_mapping");
+    ).rejects.toThrow("No matching hmrcError for any ContraIndicationMapping");
   });
 
-  it("throws error, not all items in hmrc_errors have matching ci_mapping", async () => {
+  it("throws error, not all items in hmrc_errors have matching ContraIndicationMapping", async () => {
     const event = {
-      ci_mapping: testCiMapping,
-      hmrc_errors: ["aaaa", "not-a-mapped-error"],
+      contraIndicationMapping,
+      hmrcErrors: ["aaaa", "not-a-mapped-error"],
+      contraIndicatorReasonsMapping,
     } as CiMappingEvent;
     const ciMappingHandler = new CiMappingHandler();
 
     await expect(
       ciMappingHandler.handler(event, {} as Context)
-    ).rejects.toThrow("Not all items in hmrc_errors have matching ci_mapping");
+    ).rejects.toThrow(
+      "Not all items in hmrc_errors have matching ContraIndicationMapping"
+    );
   });
   describe("Given CI mapping format is Invalid", () => {
     it("throws error when entries that are colon separated with hmrc error key and without matching ci value", async () => {
       const event = {
-        ci_mapping: ["aaaa:"],
-        hmrc_errors: ["aaaa"],
+        contraIndicationMapping: ["aaaa:"],
+        hmrcErrors: ["aaaa"],
+        contraIndicatorReasonsMapping: [{ ci: "", reason: "" }],
       } as CiMappingEvent;
       const ciMappingHandler = new CiMappingHandler();
 
       await expect(
         ciMappingHandler.handler(event, {} as Context)
-      ).rejects.toThrow("ci_mapping format is invalid");
+      ).rejects.toThrow("ContraIndicationMapping format is invalid");
     });
     it("throws error with ci entries that are colon separated and has a CI value without hmrc error key", async () => {
       const event = {
-        ci_mapping: [":Ci_1"],
-        hmrc_errors: [""],
+        contraIndicationMapping: [":Ci_1"],
+        hmrcErrors: [""],
+        contraIndicatorReasonsMapping,
       } as CiMappingEvent;
       const ciMappingHandler = new CiMappingHandler();
 
       await expect(
         ciMappingHandler.handler(event, {} as Context)
-      ).rejects.toThrow("ci_mapping format is invalid");
+      ).rejects.toThrow("ContraIndicationMapping format is invalid");
     });
     it("throws error for ci entries containing anything other than colon separators", async () => {
       const event = {
-        ci_mapping: ["aaaa,ci_1", "bbbb,cccc,dddd;ci_2", "eeee,ffff,gggg/ci_3"],
-        hmrc_errors: ["aaaa"],
-      } as CiMappingEvent;
+        contraIndicationMapping: [
+          "aaaa,ci_1",
+          "bbbb,cccc,dddd;ci_2",
+          "eeee,ffff,gggg/ci_3",
+        ],
+        hmrcErrors: ["aaaa"],
+        contraIndicatorReasonsMapping,
+      } as unknown as CiMappingEvent;
       const ciMappingHandler = new CiMappingHandler();
 
       await expect(
         ciMappingHandler.handler(event, {} as Context)
-      ).rejects.toThrow("ci_mapping format is invalid");
+      ).rejects.toThrow("ContraIndicationMapping format is invalid");
     });
     it.each([undefined, "", []])(
       "throws error, ci mapping is undefined, given %s as input",
       async (actual) => {
         const event = {
-          ci_mapping: actual,
+          ContraIndicationMapping: actual,
           hmrc_errors: ["aaaa"],
         } as unknown as CiMappingEvent;
         const ciMappingHandler = new CiMappingHandler();
 
         await expect(
           ciMappingHandler.handler(event, {} as Context)
-        ).rejects.toThrow("ci_mapping cannot be undefined");
+        ).rejects.toThrow(
+          "ContraIndicationMapping cannot be undefined in CiMappingEvent"
+        );
       }
     );
+  });
+  describe("Given ContraIndication Mapping and ContraIndicator reason mapping are out of sync", () => {
+    it("throws an error when ContraIndicationMapping is missing a CI", async () => {
+      const contraIndicatorReasonsMapping = [
+        { ci: "ci_1", reason: "ci_1 reason" },
+        { ci: "ci_2", reason: "ci_2 reason" },
+        { ci: "ci_3", reason: "ci_3 reason" },
+      ];
+
+      const testCiMappingWithMissingCi = ["aaaa:ci_1", "eeee,ffff,gggg:ci_3"];
+
+      const event = {
+        contraIndicationMapping: testCiMappingWithMissingCi,
+        hmrcErrors: ["aaaa"],
+        contraIndicatorReasonsMapping,
+      } as CiMappingEvent;
+
+      const ciMappingHandler = new CiMappingHandler();
+
+      await expect(
+        ciMappingHandler.handler(event, {} as Context)
+      ).rejects.toThrow(
+        "Unmatched ContraIndicatorReasonsMapping ci_2 detected"
+      );
+    });
+
+    it("throws an error when ContraIndicatorReasonsMapping is missing a CI", async () => {
+      const testCiReasons = [
+        { ci: "ci_1", reason: "ci_1 reason" },
+        { ci: "ci_3", reason: "ci_3 reason" },
+      ];
+
+      const testCiReasonsMappingWithMissingCi = [
+        "aaaa:ci_1",
+        "bbbb,cccc,dddd:ci_2",
+        "eeee,ffff,gggg:ci_3",
+      ];
+
+      const event = {
+        contraIndicationMapping: testCiReasonsMappingWithMissingCi,
+        hmrcErrors: ["aaaa"],
+        contraIndicatorReasonsMapping: testCiReasons,
+      } as CiMappingEvent;
+
+      const ciMappingHandler = new CiMappingHandler();
+
+      await expect(
+        ciMappingHandler.handler(event, {} as Context)
+      ).rejects.toThrow("Unmatched ContraIndicationMappings ci_2 detected");
+    });
   });
 });
