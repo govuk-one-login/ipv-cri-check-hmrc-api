@@ -39,7 +39,7 @@ export const buildJarAuthorizationRequest = async (params: any) => {
     govuk_signin_journey_id: uuid(),
     sub: uuid(),
     aud: params.audience,
-    ...params.customClaims,
+    ...params.claimSet,
   };
   const signedJwt = await signJwt(jwtPayload, params);
   const encryptionKeyJwk = await publicKeyToJwk(params.publicEncryptionKeyBase64);
