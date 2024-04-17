@@ -1,5 +1,5 @@
 import { CompactEncrypt, importJWK, JWK, JWTHeaderParameters, JWTPayload, SignJWT } from "jose";
-
+import { client_assertion_type, CLIENT_URL, grant_type } from "../env-variables";
 export type PrivateKeyType = { privateSigningKey: string | JWK } | { privateSigningKeyId: string };
 export type BaseParams = {
   issuer?: string;
@@ -24,6 +24,15 @@ const signJwt = async (
   } else {
     throw new Error("No signing key provided!");
   }
+};
+
+const signJwtForToken = async (
+  jwtPayload: JWTPayload,
+  privateSigningKey: JWK,
+  jwtHeader: JWTHeaderParameters = { alg: "ES256", typ: "JWT" }
+) => {
+
+    return await new SignJWT(jwtPayload).setProtectedHeader(jwtHeader).sign(await importJWK(privateSigningKey as JWK, "ES256"));
 };
 
 export const buildJarAuthorizationRequest = async (params: any) => {
@@ -52,7 +61,21 @@ export const buildJarAuthorizationRequest = async (params: any) => {
   };
 };
 
-const uuid = () => {
+
+export const buildPrivateKeyJwtParams = async (code: string, params: any, signingKey: JWK) => {
+  const signedJwt = await signJwtForToken(params, signingKey);
+
+  return new URLSearchParams({
+    client_assertion_type: client_assertion_type,
+    code: code,
+    grant_type: grant_type,
+    redirect_uri: `${CLIENT_URL}/callback`,
+    client_assertion: signedJwt
+  });
+};
+
+
+export const uuid = () => {
   const hexValues = '0123456789abcdef';
   let uuid = '';
   for (let i = 0; i < 36; i++) {

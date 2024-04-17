@@ -1,45 +1,75 @@
 import { stackOutputs } from "../../../step-functions/aws/resources/cloudformation-helper";
-import { getItemByKey } from "../../../step-functions/aws/resources/dynamodb-helper";
-import { abandonEndpoint, authorizationEndpoint, checkEndpoint, createSession } from "../../endpoints";
+import {
+  clearAttemptsTable,
+  clearItemsFromTables,
+  getItemByKey,
+} from "../../../step-functions/aws/resources/dynamodb-helper";
+import {
+  abandonEndpoint,
+  authorizationEndpoint,
+  checkEndpoint,
+  createSession,
+} from "../../endpoints";
+import { CLIENT_ID, CLIENT_URL, nino } from "../env-variables";
 
-let sessionId: string;
-let sessionTableName: string;
-let state: string;
-let redirect_uri: string;
-let client_id = 'ipv-core-stub-aws-build';
-let nino = "AA123456C";
-
-
-let output: Partial<{
-    CommonStackName: string;
-  }>;
-
-output = await stackOutputs(process.env.STACK_NAME);
-sessionTableName = `session-${output.CommonStackName}`;
-
+jest.setTimeout(30000);
 
 describe("Private API Happy Path Tests", () => {
+  let sessionId: string;
+  let sessionTableName: string;
+  let state: string;
+  let personIDTableName: string;
+  let output: Partial<{
+    CommonStackName: string;
+    StackName: string;
+    NinoUsersTable: string;
+    UserAttemptsTable: string;
+  }>;
 
-    beforeAll ( async ()  => {
-        const session = await createSession()
-        const sessionData = await session.json()
-        sessionId = sessionData.session_id
-        state = sessionData.state
-        redirect_uri = sessionData.redirect_uri
-        await checkEndpoint(sessionId, nino)
-        await authorizationEndpoint(sessionId, client_id, redirect_uri, state)
-    })
+  beforeAll(async () => {
+    output = await stackOutputs(process.env.STACK_NAME);
+    sessionTableName = `session-${output.CommonStackName}`;
 
-    it("Abandon API", async () => {
-        const abandonResponse = await abandonEndpoint (sessionId)
-        expect(abandonResponse).toEqual(200);
+    const session = await createSession();
+    const sessionData = await session.json();
+    sessionId = sessionData.session_id;
+    state = sessionData.state;
+    await checkEndpoint(sessionId, nino);
+    await authorizationEndpoint(sessionId, CLIENT_ID, `${CLIENT_URL}/callback`, state);
+  });
 
-        const sessionRecord = await getItemByKey(sessionTableName, {
-            sessionId: sessionId,
-          });
+  afterEach(async () => {
+    output = await stackOutputs(process.env.STACK_NAME);
+    personIDTableName = `person-identity-${output.CommonStackName}`;
+    sessionTableName = `session-${output.CommonStackName}`;
 
-         //Checking DynamoDB to ensure authCode is displayed
-        expect(sessionRecord.Item?.authorizationCode).toBeUndefined();
-        expect(sessionRecord.Item?.authorizationCodeExpiryDate).toBe(0);
+    await clearItemsFromTables(
+      {
+        tableName: personIDTableName,
+        items: { sessionId: sessionId },
+      },
+      {
+        tableName: `${output.NinoUsersTable}`,
+        items: { sessionId: sessionId },
+      },
+      {
+        tableName: sessionTableName,
+        items: { sessionId: sessionId },
+      }
+    );
+    await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
+  });
+
+  it("Abandon API", async () => {
+    const abandonResponse = await abandonEndpoint(sessionId);
+    expect(abandonResponse.status).toEqual(200);
+
+    const sessionRecord = await getItemByKey(sessionTableName, {
+      sessionId: sessionId,
     });
+
+    //Checking DynamoDB to ensure authCode is displayed
+    expect(sessionRecord.Item?.authorizationCode).toBeUndefined();
+    expect(sessionRecord.Item?.authorizationCodeExpiryDate).toBe(0);
+  });
 });
