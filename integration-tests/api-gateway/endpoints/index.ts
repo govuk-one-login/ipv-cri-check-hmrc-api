@@ -3,7 +3,12 @@ import {
   Payload,
   getJarAuthorizationPayload,
 } from "../aws/crypto/create-jar-request-payload";
-import { claimSet, CLIENT_ID, CLIENT_URL, env } from "../aws/env-variables";
+import {
+  claimSet,
+  CLIENT_ID,
+  CLIENT_URL,
+  environment,
+} from "../aws/env-variables";
 import { stackOutputs } from "../../step-functions/aws/resources/cloudformation-helper";
 
 let publicEncryptionKeyBase64: string;
@@ -12,8 +17,6 @@ let privateAPI: string;
 let preOutput: Partial<{
   PrivateApiGatewayId: string;
 }>;
-
-const environment = process.env.Environment || "dev";
 
 export const createPayload = async () => {
   publicEncryptionKeyBase64 =
@@ -25,17 +28,18 @@ export const createPayload = async () => {
   );
   preOutput = await stackOutputs(process.env.STACK_NAME);
   privateAPI = `${preOutput.PrivateApiGatewayId}`;
-
+  const correctClaimSet = await claimSet();
+  const audience = correctClaimSet.aud;
   const payload = {
     clientId: CLIENT_ID,
-    audience: `https://review-hc.${environment}.account.gov.uk`,
-    authorizationEndpoint: `https://review-hc.${environment}.account.gov.uk/oauth2/authorize`,
+    audience,
+    authorizationEndpoint: `${audience}/oauth2/authorize`,
     redirectUrl: `${CLIENT_URL}/callback`,
     publicEncryptionKeyBase64: publicEncryptionKeyBase64,
     privateSigningKey: privateSigningKey,
     issuer: CLIENT_URL,
-    claimSet: claimSet,
-  } as Payload;
+    claimSet: correctClaimSet,
+  } as unknown as Payload;
   const ipvCoreAuthorizationUrl = await getJarAuthorizationPayload(payload);
   return ipvCoreAuthorizationUrl;
 };
@@ -43,7 +47,7 @@ export const createPayload = async () => {
 
 export const createSession = async (): Promise<Response> => {
   const ipvCoreAuthorizationUrl = await createPayload();
-  const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${env}/session`;
+  const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
   const sessionResponse = await fetch(sessionApiUrl, {
     method: "POST",
     headers: {
@@ -60,7 +64,7 @@ export const checkEndpoint = async (
   sessionId: string,
   nino: string
 ): Promise<Response> => {
-  const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${env}/check`;
+  const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
   const jsonData = JSON.stringify({ nino: nino });
   const checkResponse = await fetch(checkApiUrl, {
     method: "POST",
@@ -89,7 +93,7 @@ export const authorizationEndpoint = async (
   };
   const queryString = new URLSearchParams(queryParams);
 
-  const authApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${env}/authorization?${queryString}`;
+  const authApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/authorization?${queryString}`;
   const authResponse = await fetch(authApiUrl, {
     method: "GET",
     headers: {
@@ -102,7 +106,7 @@ export const authorizationEndpoint = async (
 };
 
 export const abandonEndpoint = async (sessionId: string): Promise<Response> => {
-  const abandonUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${env}/abandon`;
+  const abandonUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/abandon`;
   const abandonResponse = await fetch(abandonUrl, {
     method: "POST",
     headers: {

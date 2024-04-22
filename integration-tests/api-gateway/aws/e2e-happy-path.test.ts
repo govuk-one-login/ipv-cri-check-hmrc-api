@@ -3,7 +3,13 @@ import {
   Payload,
   getJarAuthorizationPayload,
 } from "./crypto/create-jar-request-payload";
-import { nino, CLIENT_ID, claimSet, CLIENT_URL, env } from "./env-variables";
+import {
+  nino,
+  CLIENT_ID,
+  claimSet,
+  CLIENT_URL,
+  environment,
+} from "./env-variables";
 import { buildPrivateKeyJwtParams } from "./crypto/client";
 import { JWK } from "jose";
 import {
@@ -11,6 +17,8 @@ import {
   clearItemsFromTables,
 } from "../../step-functions/aws/resources/dynamodb-helper";
 import { stackOutputs } from "../../step-functions/aws/resources/cloudformation-helper";
+// import { claimsSet } from "jwt-signer/tests/test-data";
+
 let data: any;
 let state: string;
 let authCode: any;
@@ -22,15 +30,13 @@ let preOutput: Partial<{
 }>;
 jest.setTimeout(30000);
 
-const environment = process.env.Environment || "dev";
-
 const createSessionId = async (
   ipvCoreAuthorizationUrl: { client_id: any; request: string } | null
 ): Promise<Response> => {
   preOutput = await stackOutputs(process.env.STACK_NAME);
   privateAPI = `${preOutput.PrivateApiGatewayId}`;
   publicAPI = `${preOutput.PublicApiGatewayId}`;
-  const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${env}/session`;
+  const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
   const sessionResponse = await fetch(sessionApiUrl, {
     method: "POST",
     headers: {
@@ -52,6 +58,7 @@ describe("Private API Happy Path Tests", () => {
   let privateSigningKey: JWK;
   let personIDTableName: string;
   let sessionTableName: string;
+  let audience: string;
   let output: Partial<{
     CommonStackName: string;
     StackName: string;
@@ -61,6 +68,8 @@ describe("Private API Happy Path Tests", () => {
   }>;
 
   beforeAll(async () => {
+    audience = (await claimSet()).aud;
+    output = await stackOutputs(process.env.STACK_NAME);
     publicEncryptionKeyBase64 =
       (await getSSMParameter(
         "/check-hmrc-cri-api/test/publicEncryptionKeyBase64"
@@ -72,16 +81,19 @@ describe("Private API Happy Path Tests", () => {
   });
 
   beforeEach(async () => {
+    const claimsSet = await claimSet();
+    const audience = claimsSet.aud;
     const payload = {
       clientId: CLIENT_ID,
-      audience: `https://review-hc.${environment}.account.gov.uk`,
-      authorizationEndpoint: `https://review-hc.${environment}.account.gov.uk/oauth2/authorize`,
+      audience,
+      authorizationEndpoint: `${audience}/oauth2/authorize`,
       redirectUrl: `${CLIENT_URL}/callback`,
       publicEncryptionKeyBase64: publicEncryptionKeyBase64,
       privateSigningKey: privateSigningKey,
       issuer: CLIENT_URL,
-      claimSet: claimSet,
-    } as Payload;
+      claimSet: claimsSet,
+    } as unknown as Payload;
+    console.log(claimsSet);
     const ipvCoreAuthorizationUrl = await getJarAuthorizationPayload(payload);
     console.log("ipv core url", ipvCoreAuthorizationUrl);
     session = await createSessionId(ipvCoreAuthorizationUrl);
@@ -114,7 +126,7 @@ describe("Private API Happy Path Tests", () => {
   it("E2E Happy Path Test", async () => {
     expect(data.status).toEqual(201);
     state = session.state;
-    const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${env}/check`;
+    const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
     const jsonData = JSON.stringify({ nino: nino });
 
     const checkResponse = await fetch(checkApiUrl, {
@@ -137,7 +149,7 @@ describe("Private API Happy Path Tests", () => {
       scope: "openid",
     });
 
-    const authApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${env}/authorization?${queryString}`;
+    const authApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/authorization?${queryString}`;
     const authResponse = await fetch(authApiUrl, {
       method: "GET",
       headers: {
@@ -154,9 +166,9 @@ describe("Private API Happy Path Tests", () => {
     const tokenData = await buildPrivateKeyJwtParams(
       authCode.value,
       {
-        iss: "ipv-core-stub-aws-prod",
-        sub: "ipv-core-stub-aws-prod",
-        aud: "https://review-hc.dev.account.gov.uk",
+        iss: CLIENT_ID,
+        sub: CLIENT_ID,
+        aud: audience,
         exp: 41024444800,
         jti: "47e86fa9-3966-49ac-96ab-5fd2a31e9e56",
         redirect_uri: `${CLIENT_URL}/callback`,
@@ -166,7 +178,7 @@ describe("Private API Happy Path Tests", () => {
 
     console.log("token data", tokenData);
 
-    const tokenApiURL = `https://${publicAPI}.execute-api.eu-west-2.amazonaws.com/${env}/token`;
+    const tokenApiURL = `https://${publicAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/token`;
     const tokenResponse = await fetch(tokenApiURL, {
       method: "POST",
       headers: {
@@ -180,7 +192,7 @@ describe("Private API Happy Path Tests", () => {
 
     const accessToken = token.access_token;
 
-    const credIssApiURL = `https://${publicAPI}.execute-api.eu-west-2.amazonaws.com/${env}/credential/issue`;
+    const credIssApiURL = `https://${publicAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/credential/issue`;
     const credIssResponse = await fetch(credIssApiURL, {
       method: "POST",
       headers: {
