@@ -162,6 +162,11 @@ paths:
       summary: "IP address of the client."
       parameters:
         - $ref: "#/components/parameters/SessionHeader"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmptyBody"
       x-amazon-apigateway-request-validator: "Validate both"
       responses:
         "200":
@@ -217,6 +222,9 @@ components:
         500:
           value: "f27b8afc-90ef-4e0f-83ad-00a2f5692590"
   schemas:
+    EmptyBody:
+      type: object
+      nullable: true
     Nino:
       required: true
       type: "object"

@@ -61,7 +61,6 @@ export const buildJarAuthorizationRequest = async (params: any) => {
   };
 };
 
-
 export const buildPrivateKeyJwtParams = async (code: string, params: any, signingKey: JWK) => {
   const signedJwt = await signJwtForToken(params, signingKey);
 

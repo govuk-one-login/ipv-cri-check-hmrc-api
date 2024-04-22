@@ -1438,6 +1438,7 @@ Resources:
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${MaxJwtTtlParameter}"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${JwtTtlUnitParameter}"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/contraindicationMappings"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/contraIndicatorReasonsMapping"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName"
