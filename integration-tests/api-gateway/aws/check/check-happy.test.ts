@@ -4,32 +4,40 @@ import {
   clearItemsFromTables,
 } from "../../../step-functions/aws/resources/dynamodb-helper";
 import { nino } from "../env-variables";
+import { stackOutputs } from "../../../step-functions/aws/resources/cloudformation-helper";
 
 jest.setTimeout(30000);
 
 describe("Private API Happy Path Tests", () => {
-  let sessionId: any;
+  let sessionId: string;
+  let personIDTableName: string;
+  let sessionTableName: string;
+  let output: Partial<{
+    CommonStackName: string;
+    StackName: string;
+    NinoUsersTable: string;
+    UserAttemptsTable: string;
+  }>;
 
   afterEach(async () => {
+    output = await stackOutputs(process.env.STACK_NAME);
+    personIDTableName = `person-identity-${output.CommonStackName}`;
+    sessionTableName = `session-${output.CommonStackName}`;
     await clearItemsFromTables(
       {
-        tableName: "person-identity-common-cri-api",
+        tableName: personIDTableName,
         items: { sessionId: sessionId },
       },
       {
-        tableName:
-          "preview-check-hmrc-api-oj-2484-happy-path-api-tests-nino-users",
+        tableName: `${output.NinoUsersTable}`,
         items: { sessionId: sessionId },
       },
       {
-        tableName: "session-common-cri-api",
+        tableName: sessionTableName,
         items: { sessionId: sessionId },
       }
     );
-    await clearAttemptsTable(
-      sessionId,
-      "preview-check-hmrc-api-oj-2484-happy-path-api-tests-user-attempts"
-    );
+    await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
   });
 
   it("Check API", async () => {
