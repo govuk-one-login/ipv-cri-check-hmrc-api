@@ -1,4 +1,4 @@
-name: AWS tests
+name: API Gateway tests
 
 on:
   workflow_call:
@@ -12,11 +12,11 @@ permissions:
 
 concurrency:
   group: aws-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   run-tests:
-    name: AWS
+    name: API Gateway
     timeout-minutes: 15
     runs-on: ubuntu-latest
     environment: development
