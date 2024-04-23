@@ -59,11 +59,11 @@
               "Value": "dummy-value"
             },
             {
-              "Name": "/check-hmrc-cri-api-suraj-cache/MaxJwtTtl",
+              "Name": "/check-hmrc-cri-api-cache/MaxJwtTtl",
               "Value": "dummy-value"
             },
             {
-              "Name": "/check-hmrc-cri-api-suraj-cache/JwtTtlUnit",
+              "Name": "/check-hmrc-cri-api-cache/JwtTtlUnit",
               "Value": "dummy-value"
             },
             {
@@ -81,6 +81,10 @@
             {
               "Name": "/common-cri-api/verifiable-credential/issuer",
               "Value": "dummy-value"
+            },
+            {
+              "Name": "/check-hmrc-cri-api/contraIndicatorReasonsMapping",
+              "Value": "[{\"ci\":\"AAA\",\"reason\":\"The reason for the CI\"}]"
             }
           ]
         }
@@ -363,7 +367,12 @@
     "FetchCI": {
       "0": {
         "Return": {
-          "Payload": ["AAA"],
+          "Payload": [
+            {
+              "ci": "AAA",
+              "reason": "The reason for the CI"
+            }
+          ],
           "SdkHttpMetadata": {
             "HttpStatusCode": 200
           },
