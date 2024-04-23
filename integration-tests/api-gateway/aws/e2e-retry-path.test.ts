@@ -11,13 +11,12 @@ import {
   environment,
 } from "./env-variables";
 import { buildPrivateKeyJwtParams } from "./crypto/client";
-import { JWK } from "jose";
+import { JWK, decodeJwt} from "jose";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
 } from "../../step-functions/aws/resources/dynamodb-helper";
 import { stackOutputs } from "../../step-functions/aws/resources/cloudformation-helper";
-// import { claimsSet } from "jwt-signer/tests/test-data";
 
 let data: any;
 let state: string;
@@ -29,6 +28,13 @@ let preOutput: Partial<{
   PublicApiGatewayId: string;
 }>;
 jest.setTimeout(30000);
+
+const createUpdatedClaimset = async (): Promise<any> => {
+  const updatedClaimset = await claimSet();
+  updatedClaimset.shared_claims.name[0].nameParts[0].value = "Error";
+  updatedClaimset.shared_claims.name[0].nameParts[1].value = "NoCidForNino";
+  return updatedClaimset;
+};
 
 const createSessionId = async (
   ipvCoreAuthorizationUrl: { client_id: any; request: string } | null
@@ -51,7 +57,7 @@ const createSessionId = async (
   return session;
 };
 
-describe("Private API Happy Path Tests", () => {
+describe("Retry Scenario Path Tests", () => {
   let session: any;
   let sessionId: string;
   let publicEncryptionKeyBase64: string;
@@ -81,7 +87,7 @@ describe("Private API Happy Path Tests", () => {
   });
 
   beforeEach(async () => {
-    const claimsSet = await claimSet();
+    const claimsSet = await createUpdatedClaimset();
     const audience = claimsSet.aud;
     const payload = {
       clientId: CLIENT_ID,
@@ -122,11 +128,23 @@ describe("Private API Happy Path Tests", () => {
     await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
   });
 
-  it("E2E Happy Path Test", async () => {
+  it("E2E Retry D02 Test", async () => {
     expect(data.status).toEqual(201);
     state = session.state;
     const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
     const jsonData = JSON.stringify({ nino: nino });
+
+    const checkRetryResponse = await fetch(checkApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "session-id": sessionId,
+      },
+      body: jsonData,
+    });
+
+    const checkData = checkRetryResponse.status;
+    expect(checkData).toEqual(422);
 
     const checkResponse = await fetch(checkApiUrl, {
       method: "POST",
@@ -136,9 +154,7 @@ describe("Private API Happy Path Tests", () => {
       },
       body: jsonData,
     });
-
-    const checkData = checkResponse.status;
-    expect(checkData).toEqual(200);
+    expect(checkResponse.status).toEqual(200);
 
     const queryString = new URLSearchParams({
       client_id: CLIENT_ID,
@@ -202,5 +218,9 @@ describe("Private API Happy Path Tests", () => {
     expect(credIssResponse.status).toEqual(200);
     const VC = await credIssResponse.text();
     expect(VC).toBeDefined();
+    const decodedVc = decodeJwt(VC);
+    const stringifyVc = JSON.stringify(decodedVc);
+    const parseVc = JSON.parse(stringifyVc);
+    expect(parseVc.vc.evidence[0].ci[0]).toEqual("D02");
   });
 });
