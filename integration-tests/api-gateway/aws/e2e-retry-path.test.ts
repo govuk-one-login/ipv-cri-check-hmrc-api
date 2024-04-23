@@ -4,9 +4,9 @@ import {
   getJarAuthorizationPayload,
 } from "./crypto/create-jar-request-payload";
 import {
-  nino,
+  NINO,
   CLIENT_ID,
-  claimSet,
+  getClaimSet,
   CLIENT_URL,
   environment,
 } from "./env-variables";
@@ -30,7 +30,7 @@ let preOutput: Partial<{
 jest.setTimeout(30000);
 
 const createUpdatedClaimset = async (): Promise<any> => {
-  const updatedClaimset = await claimSet();
+  const updatedClaimset = await getClaimSet();
   updatedClaimset.shared_claims.name[0].nameParts[0].value = "Error";
   updatedClaimset.shared_claims.name[0].nameParts[1].value = "NoCidForNino";
   return updatedClaimset;
@@ -74,7 +74,7 @@ describe("Retry Scenario Path Tests", () => {
   }>;
 
   beforeAll(async () => {
-    audience = (await claimSet()).aud;
+    audience = (await getClaimSet()).aud;
     output = await stackOutputs(process.env.STACK_NAME);
     publicEncryptionKeyBase64 =
       (await getSSMParameter(
@@ -132,7 +132,7 @@ describe("Retry Scenario Path Tests", () => {
     expect(data.status).toEqual(201);
     state = session.state;
     const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
-    const jsonData = JSON.stringify({ nino: nino });
+    const jsonData = JSON.stringify({ nino: NINO });
 
     const checkRetryResponse = await fetch(checkApiUrl, {
       method: "POST",

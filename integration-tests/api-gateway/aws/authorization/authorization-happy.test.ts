@@ -9,7 +9,7 @@ import {
   checkEndpoint,
   createSession,
 } from "../../endpoints";
-import { CLIENT_ID, CLIENT_URL, nino } from "../env-variables";
+import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
 
 jest.setTimeout(30000);
 
@@ -34,7 +34,7 @@ describe("Private API Happy Path Tests", () => {
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
     state = sessionData.state;
-    await checkEndpoint(sessionId, nino);
+    await checkEndpoint(sessionId, NINO);
   });
 
   afterEach(async () => {

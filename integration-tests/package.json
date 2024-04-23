@@ -7,7 +7,7 @@
     "unit:aws": "jest --silent --select-projects integration-tests/aws --runInBand",
     "unit:mocked": "jest --silent --select-projects integration-tests/mocked",
     "integration:all": "jest --select-projects integration-tests/api-gateway/aws",
-    "integration:e2e": "jest integration-tests/api-gateway/aws/e2e-happy-path.test.ts",
+    "integration:e2e": "jest integration-tests/api-gateway/aws/e2e-retry-path.test.ts",
     "test:all": "npm run unit:all --",
     "test:aws": "npm run unit:aws --",
     "test:integration": "npm run integration:all --",

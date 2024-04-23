@@ -4,9 +4,9 @@ import {
   getJarAuthorizationPayload,
 } from "./crypto/create-jar-request-payload";
 import {
-  nino,
+  NINO,
   CLIENT_ID,
-  claimSet,
+  getClaimSet,
   CLIENT_URL,
   environment,
 } from "./env-variables";
@@ -17,7 +17,7 @@ import {
   clearItemsFromTables,
 } from "../../step-functions/aws/resources/dynamodb-helper";
 import { stackOutputs } from "../../step-functions/aws/resources/cloudformation-helper";
-// import { claimsSet } from "jwt-signer/tests/test-data";
+
 
 let data: any;
 let state: string;
@@ -56,7 +56,7 @@ describe("Private API Happy Path Tests", () => {
   let sessionId: string;
   let publicEncryptionKeyBase64: string;
   let privateSigningKey: JWK;
-  let personIDTableName: string;
+  let personIdTableName: string;
   let sessionTableName: string;
   let audience: string;
   let output: Partial<{
@@ -68,7 +68,7 @@ describe("Private API Happy Path Tests", () => {
   }>;
 
   beforeAll(async () => {
-    audience = (await claimSet()).aud;
+    audience = (await getClaimSet()).aud;
     output = await stackOutputs(process.env.STACK_NAME);
     publicEncryptionKeyBase64 =
       (await getSSMParameter(
@@ -81,7 +81,7 @@ describe("Private API Happy Path Tests", () => {
   });
 
   beforeEach(async () => {
-    const claimsSet = await claimSet();
+    const claimsSet = await getClaimSet();
     const audience = claimsSet.aud;
     const payload = {
       clientId: CLIENT_ID,
@@ -102,12 +102,12 @@ describe("Private API Happy Path Tests", () => {
   afterEach(async () => {
     console.log(sessionId);
     output = await stackOutputs(process.env.STACK_NAME);
-    personIDTableName = `person-identity-${output.CommonStackName}`;
+    personIdTableName = `person-identity-${output.CommonStackName}`;
     sessionTableName = `session-${output.CommonStackName}`;
 
     await clearItemsFromTables(
       {
-        tableName: personIDTableName,
+        tableName: personIdTableName,
         items: { sessionId: sessionId },
       },
       {
@@ -126,7 +126,7 @@ describe("Private API Happy Path Tests", () => {
     expect(data.status).toEqual(201);
     state = session.state;
     const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
-    const jsonData = JSON.stringify({ nino: nino });
+    const jsonData = JSON.stringify({ nino: NINO });
 
     const checkResponse = await fetch(checkApiUrl, {
       method: "POST",

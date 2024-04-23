@@ -3,7 +3,7 @@ import {
   clearAttemptsTable,
   clearItemsFromTables,
 } from "../../../step-functions/aws/resources/dynamodb-helper";
-import { nino } from "../env-variables";
+import { NINO } from "../env-variables";
 import { stackOutputs } from "../../../step-functions/aws/resources/cloudformation-helper";
 
 jest.setTimeout(30000);
@@ -44,7 +44,7 @@ describe("Private API Happy Path Tests", () => {
     const session = await createSession();
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
-    const check = await checkEndpoint(sessionId, nino);
+    const check = await checkEndpoint(sessionId, NINO);
     const checkData = check.status;
     expect(checkData).toEqual(200);
   });

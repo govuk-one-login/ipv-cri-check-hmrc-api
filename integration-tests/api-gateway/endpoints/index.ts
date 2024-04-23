@@ -4,7 +4,7 @@ import {
   getJarAuthorizationPayload,
 } from "../aws/crypto/create-jar-request-payload";
 import {
-  claimSet,
+  getClaimSet,
   CLIENT_ID,
   CLIENT_URL,
   environment,
@@ -28,7 +28,7 @@ export const createPayload = async () => {
   );
   preOutput = await stackOutputs(process.env.STACK_NAME);
   privateAPI = `${preOutput.PrivateApiGatewayId}`;
-  const correctClaimSet = await claimSet();
+  const correctClaimSet = await getClaimSet();
   const audience = correctClaimSet.aud;
   const payload = {
     clientId: CLIENT_ID,
