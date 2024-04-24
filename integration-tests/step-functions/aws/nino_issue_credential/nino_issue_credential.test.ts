@@ -13,6 +13,11 @@ import { getPublicKey } from "../resources/kms-helper";
 
 jest.setTimeout(30_000);
 
+type EvidenceRequest = {
+  scoringPolicy: string;
+  strengthScore: number;
+};
+
 describe("nino-issue-credential-happy", () => {
   const input = {
     sessionId: "issue-credential-happy",
@@ -91,12 +96,15 @@ describe("nino-issue-credential-happy", () => {
     await clearAttemptsTable(input.sessionId, output.UserAttemptsTable);
   });
 
-  describe("Nino check is successful", () => {
+  describe("Nino Check Hmrc Issue Credential Identity Check with success check details", () => {
     beforeEach(async () => {
       await populateTables(
         {
           tableName: sessionTableName,
-          items: getSessionItem(input, "Bearer happy"),
+          items: getSessionItem(input, "Bearer happy", {
+            scoringPolicy: "gpg45",
+            strengthScore: 2,
+          }),
         },
         {
           tableName: output.UserAttemptsTable as string,
@@ -142,7 +150,7 @@ describe("nino-issue-credential-happy", () => {
         algorithms: [alg],
       });
 
-      const result = await aVcWithCheckDetailsAndNoCi();
+      const result = await aVcWithCheckDetails();
       expect(isValidTimestamp(payload.exp || 0)).toBe(true);
       expect(isValidTimestamp(payload.nbf || 0)).toBe(true);
       expect(payload).toEqual(result);
@@ -166,18 +174,21 @@ describe("nino-issue-credential-happy", () => {
         kid: currentCredentialKmsSigningKeyId,
       });
 
-      const result = await aVcWithCheckDetailsAndNoCi();
+      const result = await aVcWithCheckDetails();
       expect(isValidTimestamp(payload.exp)).toBe(true);
       expect(isValidTimestamp(payload.nbf)).toBe(true);
       expect(payload).toEqual(result);
     });
   });
-  describe("Nino check is unsuccessful", () => {
+  describe("Nino Check Hmrc Issue Credential Identity Check with failed check details", () => {
     beforeEach(async () => {
       await populateTables(
         {
           tableName: sessionTableName,
-          items: getSessionItem(input, "Bearer unhappy"),
+          items: getSessionItem(input, "Bearer unhappy", {
+            scoringPolicy: "gpg45",
+            strengthScore: 2,
+          }),
         },
         {
           tableName: output.UserAttemptsTable as string,
@@ -254,6 +265,106 @@ describe("nino-issue-credential-happy", () => {
       expect(payload).toEqual(result);
     });
   });
+
+  describe("Nino Check Hmrc Issue Credential Record Check with success check details", () => {
+    beforeEach(async () => {
+      await populateTables(
+        {
+          tableName: sessionTableName,
+          items: getSessionItem(input, "Bearer happy"),
+        },
+        {
+          tableName: output.UserAttemptsTable as string,
+          items: {
+            sessionId: input.sessionId,
+            timestamp: Date.now().toString(),
+            attempts: 1,
+            outcome: "PASS",
+          },
+        }
+      );
+    });
+    it("should create a VC with a checkDetail Record Check with no scores", async () => {
+      const startExecutionResult = await getExecutionResult("Bearer happy");
+
+      const currentCredentialKmsSigningKeyId = await getSSMParameter(
+        `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
+      );
+
+      const token = JSON.parse(startExecutionResult.output as string);
+
+      const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
+      const header = JSON.parse(base64decode(headerEncoded));
+      const payload = JSON.parse(base64decode(payloadEncoded));
+
+      expect(header).toEqual({
+        typ: "JWT",
+        alg: "ES256",
+        kid: currentCredentialKmsSigningKeyId,
+      });
+
+      const result = await aVcWithCheckDetailsDataCheck();
+      expect(isValidTimestamp(payload.exp)).toBe(true);
+      expect(isValidTimestamp(payload.nbf)).toBe(true);
+      expect(payload).toEqual(result);
+    });
+  });
+  describe("Nino Check Hmrc Issue Credential Record Check with failed check details no scores", () => {
+    beforeEach(async () => {
+      await populateTables(
+        {
+          tableName: sessionTableName,
+          items: getSessionItem(input, "Bearer unhappy"),
+        },
+        {
+          tableName: output.UserAttemptsTable as string,
+          items: {
+            sessionId: input.sessionId,
+            timestamp: Date.now().toString() + 1,
+            attempt: "FAIL",
+            status: 200,
+            text: "DOB does not match CID, First Name does not match CID",
+          },
+        },
+        {
+          tableName: output.UserAttemptsTable as string,
+          items: {
+            sessionId: input.sessionId,
+            timestamp: Date.now().toString(),
+            attempt: "FAIL",
+            status: 200,
+            text: "DOB does not match CID, First Name does not match CID",
+          },
+        }
+      );
+    });
+
+    it("should create a VC with a failedCheckDetail for Record Check", async () => {
+      const startExecutionResult = await getExecutionResult("Bearer unhappy");
+
+      const currentCredentialKmsSigningKeyId = await getSSMParameter(
+        `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
+      );
+
+      const token = JSON.parse(startExecutionResult.output as string);
+
+      const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
+      const header = JSON.parse(base64decode(headerEncoded));
+      const payload = JSON.parse(base64decode(payloadEncoded));
+
+      expect(header).toEqual({
+        typ: "JWT",
+        alg: "ES256",
+        kid: currentCredentialKmsSigningKeyId,
+      });
+
+      const result = await aVcWithFailedCheckDetailsRecordCheck();
+      expect(isValidTimestamp(payload.exp)).toBe(true);
+      expect(isValidTimestamp(payload.nbf)).toBe(true);
+      expect(payload).toEqual(result);
+    });
+  });
+
   const getExecutionResult = async (token: string) =>
     executeStepFunction(output.NinoIssueCredentialStateMachineArn as string, {
       bearerToken: token,
@@ -322,7 +433,7 @@ describe("nino-issue-credential-happy", () => {
     };
   };
 
-  const aVcWithCheckDetailsAndNoCi = async () => {
+  const aVcWithCheckDetails = async () => {
     const { vc: customClaims, ...standardClaims } = await getBaseVcCredential();
     return {
       ...standardClaims,
@@ -335,6 +446,42 @@ describe("nino-issue-credential-happy", () => {
             txn: expect.any(String),
             type: "IdentityCheck",
             validityScore: 2,
+          },
+        ],
+      },
+    };
+  };
+
+  const aVcWithCheckDetailsDataCheck = async () => {
+    const { vc: customClaims, ...standardClaims } = await getBaseVcCredential();
+    return {
+      ...standardClaims,
+      vc: {
+        ...customClaims,
+        evidence: [
+          {
+            checkDetails: [{ checkMethod: "data", dataCheck: "record_check" }],
+            txn: expect.any(String),
+            type: "IdentityCheck",
+          },
+        ],
+      },
+    };
+  };
+
+  const aVcWithFailedCheckDetailsRecordCheck = async () => {
+    const { vc: customClaims, ...standardClaims } = await getBaseVcCredential();
+    return {
+      ...standardClaims,
+      vc: {
+        ...customClaims,
+        evidence: [
+          {
+            failedCheckDetails: [
+              { checkMethod: "data", dataCheck: "record_check" },
+            ],
+            txn: expect.any(String),
+            type: "IdentityCheck",
           },
         ],
       },
@@ -366,7 +513,8 @@ describe("nino-issue-credential-happy", () => {
       sessionId: string;
       nino: string;
     },
-    accessToken: string
+    accessToken: string,
+    evidenceRequest?: EvidenceRequest
   ): {
     [x: string]: unknown;
   } => ({
@@ -380,9 +528,6 @@ describe("nino-issue-credential-happy", () => {
     clientIpAddress: "00.100.8.20",
     clientSessionId: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
     persistentSessionId: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-    evidenceRequest: {
-      scoringPolicy: "gpg45",
-      strengthScore: 2
-    }
+    evidenceRequest,
   });
 });
