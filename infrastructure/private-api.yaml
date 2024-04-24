@@ -113,6 +113,7 @@ paths:
       summary: "IP address of the client."
       parameters:
         - $ref: "#/components/parameters/SessionHeader"
+        - $ref: '#/components/parameters/AuditHeader'
       requestBody:
         content:
           application/json:
