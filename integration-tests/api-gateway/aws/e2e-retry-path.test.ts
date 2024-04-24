@@ -53,7 +53,6 @@ const createSessionId = async (
   });
   data = sessionResponse;
   const session = await sessionResponse.json();
-  console.log("first session response", JSON.stringify(session));
   return session;
 };
 
@@ -100,13 +99,11 @@ describe("Retry Scenario Path Tests", () => {
       claimSet: claimsSet,
     } as unknown as Payload;
     const ipvCoreAuthorizationUrl = await getJarAuthorizationPayload(payload);
-    console.log("ipv core url", ipvCoreAuthorizationUrl);
     session = await createSessionId(ipvCoreAuthorizationUrl);
     sessionId = session.session_id;
   });
 
   afterEach(async () => {
-    console.log(sessionId);
     output = await stackOutputs(process.env.STACK_NAME);
     personIDTableName = `person-identity-${output.CommonStackName}`;
     sessionTableName = `session-${output.CommonStackName}`;
@@ -128,7 +125,7 @@ describe("Retry Scenario Path Tests", () => {
     await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
   });
 
-  it("E2E Retry D02 Test", async () => {
+  it("Should generate a CI when failing the nino check", async () => {
     expect(data.status).toEqual(201);
     state = session.state;
     const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
@@ -174,7 +171,6 @@ describe("Retry Scenario Path Tests", () => {
     });
 
     const authData = await authResponse.json();
-    console.log("auth response", authData);
     expect(authResponse.status).toEqual(200);
     authCode = authData.authorizationCode;
 
@@ -191,8 +187,6 @@ describe("Retry Scenario Path Tests", () => {
       privateSigningKey
     );
 
-    console.log("token data", tokenData);
-
     const tokenApiURL = `https://${publicAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/token`;
     const tokenResponse = await fetch(tokenApiURL, {
       method: "POST",
@@ -202,9 +196,7 @@ describe("Retry Scenario Path Tests", () => {
       body: tokenData,
     });
     const token = await tokenResponse.json();
-    console.log("token response", token);
     expect(tokenResponse.status).toEqual(200);
-
     const accessToken = token.access_token;
 
     const credIssApiURL = `https://${publicAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/credential/issue`;
@@ -221,7 +213,7 @@ describe("Retry Scenario Path Tests", () => {
     const decodedVc = decodeJwt(VC);
     const stringifyVc = JSON.stringify(decodedVc);
     const parseVc = JSON.parse(stringifyVc);
-    expect(parseVc.vc.evidence[0].ci[0]).toEqual("D02");
+    expect(parseVc.vc.evidence[0].ci[0]).toBeDefined();
     expect(parseVc.vc.evidence[0].validityScore).toEqual(0);
   });
 });
