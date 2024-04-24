@@ -3,7 +3,7 @@ import baseConfig from "../jest.config.base";
 
 export default {
   ...baseConfig,
-  projects: ["*/jest.config.ts"],
+  projects: ["*/*/jest.config.ts", "*/jest.config.ts"],
   testMatch: ["<rootDir>/**/*.test.ts"],
   collectCoverage: false,
   modulePaths: [],
