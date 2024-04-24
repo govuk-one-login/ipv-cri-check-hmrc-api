@@ -330,7 +330,7 @@ describe("nino-issue-credential-happy", () => {
         ...customClaims,
         evidence: [
           {
-            checkDetails: [{ checkMethod: "data" }],
+            checkDetails: [{ checkMethod: "data", "dataCheck": "record_check", }],
             txn: expect.any(String),
             type: "IdentityCheck",
           },
