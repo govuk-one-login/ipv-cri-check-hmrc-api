@@ -331,10 +331,8 @@ describe("nino-issue-credential-happy", () => {
         evidence: [
           {
             checkDetails: [{ checkMethod: "data" }],
-            strengthScore: 2,
             txn: expect.any(String),
             type: "IdentityCheck",
-            validityScore: 2,
           },
         ],
       },
