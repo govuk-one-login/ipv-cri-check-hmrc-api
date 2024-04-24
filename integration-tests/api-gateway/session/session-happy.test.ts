@@ -1,5 +1,5 @@
-import { createSession } from "../../endpoints";
-import { clearItemsFromTables } from "../../../step-functions/aws/resources/dynamodb-helper";
+import { createSession } from "../endpoints";
+import { clearItemsFromTables } from "../../step-functions/aws/resources/dynamodb-helper";
 describe("Private API Happy Path Tests", () => {
   let sessionId: string;
 

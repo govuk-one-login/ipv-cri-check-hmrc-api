@@ -1,10 +1,10 @@
-import { checkEndpoint, createSession } from "../../endpoints";
+import { checkEndpoint, createSession } from "../endpoints";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
-} from "../../../step-functions/aws/resources/dynamodb-helper";
+} from "../../step-functions/aws/resources/dynamodb-helper";
 import { NINO } from "../env-variables";
-import { stackOutputs } from "../../../step-functions/aws/resources/cloudformation-helper";
+import { stackOutputs } from "../../step-functions/aws/resources/cloudformation-helper";
 
 jest.setTimeout(30000);
 
