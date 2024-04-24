@@ -51,6 +51,7 @@ paths:
             type: string
             format: string
           required: false
+        - $ref: '#/components/parameters/AuditHeader'
       requestBody:
         content:
           application/json:
@@ -221,6 +222,13 @@ components:
           value: "fad21bea-bce9-4aa7-8889-d50c7d26616e"
         500:
           value: "f27b8afc-90ef-4e0f-83ad-00a2f5692590"
+    AuditHeader:
+      name: txma-audit-encoded
+      in: header
+      description: An encoded header sent by the FE containing info about request origin
+      required: false
+      schema:
+        type: string
   schemas:
     EmptyBody:
       type: object
