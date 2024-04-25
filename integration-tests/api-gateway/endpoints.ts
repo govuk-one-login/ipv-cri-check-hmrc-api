@@ -1,15 +1,15 @@
-import { getSSMParameter } from "../../step-functions/aws/resources/ssm-param-helper";
+import { getSSMParameter } from "../step-functions/aws/resources/ssm-param-helper";
 import {
   Payload,
   getJarAuthorizationPayload,
-} from "../aws/crypto/create-jar-request-payload";
+} from "./crypto/create-jar-request-payload";
 import {
   getClaimSet,
   CLIENT_ID,
   CLIENT_URL,
   environment,
-} from "../aws/env-variables";
-import { stackOutputs } from "../../step-functions/aws/resources/cloudformation-helper";
+} from "./env-variables";
+import { stackOutputs } from "../step-functions/aws/resources/cloudformation-helper";
 
 let publicEncryptionKeyBase64: string;
 let privateSigningKey: any;

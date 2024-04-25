@@ -1,5 +1,5 @@
-import { getSSMParameter } from "../../step-functions/aws/resources/ssm-param-helper";
-import { stackOutputs } from "../../step-functions/aws/resources/cloudformation-helper";
+import { getSSMParameter } from "../step-functions/aws/resources/ssm-param-helper";
+import { stackOutputs } from "../step-functions/aws/resources/cloudformation-helper";
 
 export const CLIENT_ID = process.env.CLIENTID ?? "ipv-core-stub-aws-prod";
 export const CLIENT_URL =
