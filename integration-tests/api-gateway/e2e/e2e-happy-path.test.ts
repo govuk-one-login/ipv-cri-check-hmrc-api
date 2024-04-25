@@ -207,6 +207,7 @@ describe("End to end happy path journey", () => {
     const decodedVc = decodeJwt(VC);
     const stringifyVc = JSON.stringify(decodedVc);
     const parseVc = JSON.parse(stringifyVc);
+
     expect(parseVc.vc.evidence[0].validityScore).toBe(2);
     expect(parseVc.vc.evidence[0].strengthScore).toBe(2);
     expect(parseVc.vc.evidence[0].ci).toBeUndefined();
