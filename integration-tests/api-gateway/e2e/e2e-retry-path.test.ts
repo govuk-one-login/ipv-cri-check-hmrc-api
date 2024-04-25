@@ -2,16 +2,16 @@ import { getSSMParameter } from "../../step-functions/aws/resources/ssm-param-he
 import {
   Payload,
   getJarAuthorizationPayload,
-} from "./crypto/create-jar-request-payload";
+} from "../crypto/create-jar-request-payload";
 import {
   NINO,
   CLIENT_ID,
   getClaimSet,
   CLIENT_URL,
   environment,
-} from "./env-variables";
-import { buildPrivateKeyJwtParams } from "./crypto/client";
-import { JWK, decodeJwt} from "jose";
+} from "../env-variables";
+import { buildPrivateKeyJwtParams } from "../crypto/client";
+import { JWK, decodeJwt } from "jose";
 import {
   clearAttemptsTable,
   clearItemsFromTables,

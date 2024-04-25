@@ -1,6 +1,6 @@
 import { createSession } from "../endpoints";
 import { clearItemsFromTables } from "../../step-functions/aws/resources/dynamodb-helper";
-describe("Private API Happy Path Tests", () => {
+describe("Given the session is valid", () => {
   let sessionId: string;
 
   afterEach(async () => {
@@ -16,7 +16,7 @@ describe("Private API Happy Path Tests", () => {
     );
   });
 
-  it("Session API", async () => {
+  it("Should receive a valid session id when /session endpoint is called", async () => {
     const sessionResponse = await createSession();
     const jsonSession = await sessionResponse.json();
     sessionId = jsonSession.session_id;

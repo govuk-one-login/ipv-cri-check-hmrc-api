@@ -13,7 +13,7 @@ import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
 
 jest.setTimeout(30000);
 
-describe("Private API Happy Path Tests", () => {
+describe("Given the session is valid and expecting to be authorized", () => {
   let authCode: any;
   let sessionId: string;
   let state: string;
@@ -38,7 +38,6 @@ describe("Private API Happy Path Tests", () => {
   });
 
   afterEach(async () => {
-    console.log(sessionId);
     output = await stackOutputs(process.env.STACK_NAME);
     personIDTableName = `person-identity-${output.CommonStackName}`;
     sessionTableName = `session-${output.CommonStackName}`;
@@ -60,7 +59,7 @@ describe("Private API Happy Path Tests", () => {
     await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
   });
 
-  it("Authorization API", async () => {
+  it("Should return an authorizationCode when /authorization endpoint is called", async () => {
     const authResponse = await authorizationEndpoint(
       sessionId,
       CLIENT_ID,

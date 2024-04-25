@@ -8,7 +8,7 @@ import { stackOutputs } from "../../step-functions/aws/resources/cloudformation-
 
 jest.setTimeout(30000);
 
-describe("Private API Happy Path Tests", () => {
+describe("Given the session and NINO is valid", () => {
   let sessionId: string;
   let personIDTableName: string;
   let sessionTableName: string;
@@ -40,7 +40,7 @@ describe("Private API Happy Path Tests", () => {
     await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
   });
 
-  it("Check API", async () => {
+  it("Should receive a 200 response when /check endpoint is called", async () => {
     const session = await createSession();
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
