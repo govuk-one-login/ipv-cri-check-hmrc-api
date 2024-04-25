@@ -1,10 +1,10 @@
-import { stackOutputs } from "../resources/cloudformation-helper";
-import { executeStepFunction } from "../resources/stepfunction-helper";
+import { stackOutputs } from "../../../resources/cloudformation-helper";
+import { executeStepFunction } from "../../../resources/stepfunction-helper";
 import {
   clearItemsFromTables,
   clearAttemptsTable,
   populateTables,
-} from "../resources/dynamodb-helper";
+} from "../../../resources/dynamodb-helper";
 
 jest.setTimeout(30_000);
 

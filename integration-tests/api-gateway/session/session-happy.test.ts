@@ -1,5 +1,5 @@
 import { createSession } from "../endpoints";
-import { clearItemsFromTables } from "../../step-functions/aws/resources/dynamodb-helper";
+import { clearItemsFromTables } from "../../resources/dynamodb-helper";
 describe("Given the session is valid", () => {
   let sessionId: string;
 

@@ -1,15 +1,15 @@
 import { JWK, importJWK, jwtVerify } from "jose";
 import { createPublicKey } from "crypto";
-import { stackOutputs } from "../resources/cloudformation-helper";
-import { executeStepFunction } from "../resources/stepfunction-helper";
+import { stackOutputs } from "../../../resources/cloudformation-helper";
+import { executeStepFunction } from "../../../resources/stepfunction-helper";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
   populateTables,
-} from "../resources/dynamodb-helper";
+} from "../../../resources/dynamodb-helper";
 
-import { getSSMParameter } from "../resources/ssm-param-helper";
-import { getPublicKey } from "../resources/kms-helper";
+import { getSSMParameter } from "../../../resources/ssm-param-helper";
+import { getPublicKey } from "../../../resources/kms-helper";
 
 jest.setTimeout(30_000);
 

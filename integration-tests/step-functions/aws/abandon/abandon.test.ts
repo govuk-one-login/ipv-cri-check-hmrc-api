@@ -1,10 +1,10 @@
-import { stackOutputs } from "../resources/cloudformation-helper";
+import { stackOutputs } from "../../../resources/cloudformation-helper";
 import {
   clearItems,
   getItemByKey,
   populateTable,
-} from "../resources/dynamodb-helper";
-import { executeStepFunction } from "../resources/stepfunction-helper";
+} from "../../../resources/dynamodb-helper";
+import { executeStepFunction } from "../../../resources/stepfunction-helper";
 
 describe("abandon", () => {
   const input = {

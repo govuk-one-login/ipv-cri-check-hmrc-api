@@ -1,4 +1,4 @@
-import { getSSMParameter } from "../../step-functions/aws/resources/ssm-param-helper";
+import { getSSMParameter } from "../../resources/ssm-param-helper";
 import {
   Payload,
   getJarAuthorizationPayload,
@@ -15,9 +15,8 @@ import { decodeJwt, JWK } from "jose";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
-} from "../../step-functions/aws/resources/dynamodb-helper";
-import { stackOutputs } from "../../step-functions/aws/resources/cloudformation-helper";
-
+} from "../../resources/dynamodb-helper";
+import { stackOutputs } from "../../resources/cloudformation-helper";
 
 let data: any;
 let state: string;

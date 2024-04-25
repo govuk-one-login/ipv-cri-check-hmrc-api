@@ -1,9 +1,9 @@
-import { stackOutputs } from "../../step-functions/aws/resources/cloudformation-helper";
+import { stackOutputs } from "../../resources/cloudformation-helper";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
   getItemByKey,
-} from "../../step-functions/aws/resources/dynamodb-helper";
+} from "../../resources/dynamodb-helper";
 import {
   authorizationEndpoint,
   checkEndpoint,
@@ -47,8 +47,7 @@ describe("Given the session is valid and expecting to be authorized", () => {
         items: { sessionId: sessionId },
       },
       {
-        tableName:
-          `${output.NinoUsersTable}`,
+        tableName: `${output.NinoUsersTable}`,
         items: { sessionId: sessionId },
       },
       {

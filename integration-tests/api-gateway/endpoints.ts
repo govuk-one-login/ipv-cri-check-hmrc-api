@@ -1,4 +1,4 @@
-import { getSSMParameter } from "../step-functions/aws/resources/ssm-param-helper";
+import { getSSMParameter } from "../resources/ssm-param-helper";
 import {
   Payload,
   getJarAuthorizationPayload,
@@ -9,7 +9,7 @@ import {
   CLIENT_URL,
   environment,
 } from "./env-variables";
-import { stackOutputs } from "../step-functions/aws/resources/cloudformation-helper";
+import { stackOutputs } from "../resources/cloudformation-helper";
 
 let publicEncryptionKeyBase64: string;
 let privateSigningKey: any;
@@ -43,7 +43,6 @@ export const createPayload = async () => {
   const ipvCoreAuthorizationUrl = await getJarAuthorizationPayload(payload);
   return ipvCoreAuthorizationUrl;
 };
-
 
 export const createSession = async (): Promise<Response> => {
   const ipvCoreAuthorizationUrl = await createPayload();
