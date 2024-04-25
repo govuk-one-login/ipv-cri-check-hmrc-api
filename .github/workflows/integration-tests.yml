@@ -1,4 +1,4 @@
-name: Integration tests
+name: Integration stepfunction mocked tests
 
 on: workflow_dispatch
 permissions: {}
@@ -14,7 +14,7 @@ jobs:
   aws-tests:
     name: Integration tests
     needs: deploy
-    uses: ./.github/workflows/run-aws-tests.yml
+    uses: ./.github/workflows/run-stepfunctions-aws-tests.yml
     permissions:
       id-token: write
       contents: read
@@ -23,5 +23,5 @@ jobs:
       aws-region: ${{ needs.deploy.outputs.aws-region }}
 
   mocked-tests:
-    name: Integration tests
-    uses: ./.github/workflows/run-mocked-tests.yml
+    name: Stepfunction Mocked Integration tests
+    uses: ./.github/workflows/run-stepfunctions-mocked-tests.yml

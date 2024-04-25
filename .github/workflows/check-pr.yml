@@ -22,9 +22,9 @@ jobs:
     with:
       coverage-report: true
 
-  mocked-tests:
+  stepfunction-mocked-tests:
     name: Run tests
-    uses: ./.github/workflows/run-mocked-tests.yml
+    uses: ./.github/workflows/run-stepfunctions-mocked-tests.yml
 
   deploy:
     name: Preview
@@ -36,7 +36,7 @@ jobs:
   aws-tests:
     name: Run tests
     needs: deploy
-    uses: ./.github/workflows/run-aws-tests.yml
+    uses: ./.github/workflows/run-stepfunctions-aws-tests.yml
     permissions:
       id-token: write
       contents: read
