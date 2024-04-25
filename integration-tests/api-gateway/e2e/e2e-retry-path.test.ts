@@ -33,6 +33,10 @@ const createUpdatedClaimset = async (): Promise<any> => {
   const updatedClaimset = await getClaimSet();
   updatedClaimset.shared_claims.name[0].nameParts[0].value = "Error";
   updatedClaimset.shared_claims.name[0].nameParts[1].value = "NoCidForNino";
+  updatedClaimset.evidence_requested = {
+    scoringPolicy: "gpg45",
+    strengthScore: 2,
+  };
   return updatedClaimset;
 };
 
@@ -208,12 +212,16 @@ describe("Retry Scenario Path Tests", () => {
       },
     });
     expect(credIssResponse.status).toEqual(200);
+
     const VC = await credIssResponse.text();
     expect(VC).toBeDefined();
+
     const decodedVc = decodeJwt(VC);
     const stringifyVc = JSON.stringify(decodedVc);
     const parseVc = JSON.parse(stringifyVc);
-    expect(parseVc.vc.evidence[0].ci[0]).toBeDefined();
-    expect(parseVc.vc.evidence[0].validityScore).toEqual(0);
+
+    expect(parseVc.vc.evidence[0].validityScore).toBe(0);
+    expect(parseVc.vc.evidence[0].strengthScore).toBe(2);
+    expect(parseVc.vc.evidence[0].ci).toBeDefined();
   });
 });

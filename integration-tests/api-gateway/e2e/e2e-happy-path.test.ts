@@ -11,7 +11,7 @@ import {
   environment,
 } from "../env-variables";
 import { buildPrivateKeyJwtParams } from "../crypto/client";
-import { JWK } from "jose";
+import { decodeJwt, JWK } from "jose";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
@@ -29,6 +29,15 @@ let preOutput: Partial<{
   PublicApiGatewayId: string;
 }>;
 jest.setTimeout(30000);
+
+const createUpdatedClaimset = async (): Promise<any> => {
+  const updatedClaimset = await getClaimSet();
+  updatedClaimset.evidence_requested = {
+    scoringPolicy: "gpg45",
+    strengthScore: 2,
+  };
+  return updatedClaimset;
+};
 
 const createSessionId = async (
   ipvCoreAuthorizationUrl: { client_id: any; request: string } | null
@@ -67,7 +76,7 @@ describe("End to end happy path journey", () => {
   }>;
 
   beforeAll(async () => {
-    audience = (await getClaimSet()).aud;
+    audience = (await createUpdatedClaimset()).aud;
     output = await stackOutputs(process.env.STACK_NAME);
     publicEncryptionKeyBase64 =
       (await getSSMParameter(
@@ -80,7 +89,7 @@ describe("End to end happy path journey", () => {
   });
 
   beforeEach(async () => {
-    const claimsSet = await getClaimSet();
+    const claimsSet = await createUpdatedClaimset();
     const audience = claimsSet.aud;
     const payload = {
       clientId: CLIENT_ID,
@@ -195,5 +204,11 @@ describe("End to end happy path journey", () => {
     expect(credIssResponse.status).toEqual(200);
     const VC = await credIssResponse.text();
     expect(VC).toBeDefined();
+    const decodedVc = decodeJwt(VC);
+    const stringifyVc = JSON.stringify(decodedVc);
+    const parseVc = JSON.parse(stringifyVc);
+    expect(parseVc.vc.evidence[0].validityScore).toBe(2);
+    expect(parseVc.vc.evidence[0].strengthScore).toBe(2);
+    expect(parseVc.vc.evidence[0].ci).toBeUndefined();
   });
 });
