@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   run-tests:
-    name: API Gateway
+    name: API
     timeout-minutes: 15
     runs-on: ubuntu-latest
     environment: development
@@ -45,4 +45,4 @@ jobs:
           AWS_REGION: ${{ inputs.aws-region }}
         with:
           working-directory: integration-tests
-          script: npm run integration:e2e -- --config jest.config.ci.ts
+          script: npm run test:api:e2e -- --config jest.config.ci.ts

@@ -1,4 +1,4 @@
-name: Integration stepfunction mocked tests
+name: Integration tests
 
 on: workflow_dispatch
 permissions: {}
@@ -11,10 +11,10 @@ jobs:
       id-token: write
       contents: read
 
-  aws-tests:
-    name: Integration tests
+  api-tests:
+    name: API tests
     needs: deploy
-    uses: ./.github/workflows/run-stepfunctions-aws-tests.yml
+    uses: ./.github/workflows/run-apigw-tests.yml
     permissions:
       id-token: write
       contents: read
@@ -22,6 +22,17 @@ jobs:
       stack-name: ${{ needs.deploy.outputs.stack-name }}
       aws-region: ${{ needs.deploy.outputs.aws-region }}
 
-  mocked-tests:
-    name: Stepfunction Mocked Integration tests
-    uses: ./.github/workflows/run-stepfunctions-mocked-tests.yml
+  stepfunction-aws-tests:
+    name: SFN AWS tests
+    needs: deploy
+    uses: ./.github/workflows/run-sfn-aws-tests.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      stack-name: ${{ needs.deploy.outputs.stack-name }}
+      aws-region: ${{ needs.deploy.outputs.aws-region }}
+
+  stepfunction-mocked-tests:
+    name: SFN Mocked tests
+    uses: ./.github/workflows/run-sfn-mocked-tests.yml

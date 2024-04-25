@@ -24,7 +24,7 @@ jobs:
 
   stepfunction-mocked-tests:
     name: Run tests
-    uses: ./.github/workflows/run-stepfunctions-mocked-tests.yml
+    uses: ./.github/workflows/run-sfn-mocked-tests.yml
 
   deploy:
     name: Preview
@@ -33,10 +33,10 @@ jobs:
       id-token: write
       contents: read
 
-  aws-tests:
+  stepfunction-aws-tests:
     name: Run tests
     needs: deploy
-    uses: ./.github/workflows/run-stepfunctions-aws-tests.yml
+    uses: ./.github/workflows/run-sfn-aws-tests.yml
     permissions:
       id-token: write
       contents: read
