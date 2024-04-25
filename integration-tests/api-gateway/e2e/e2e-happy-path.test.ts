@@ -11,7 +11,7 @@ import {
   environment,
 } from "../env-variables";
 import { buildPrivateKeyJwtParams } from "../crypto/client";
-import { JWK } from "jose";
+import { decodeJwt, JWK } from "jose";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
@@ -30,6 +30,15 @@ let preOutput: Partial<{
 }>;
 jest.setTimeout(30000);
 
+const createUpdatedClaimset = async (): Promise<any> => {
+  const updatedClaimset = await getClaimSet();
+  updatedClaimset.evidence_requested = {
+    scoringPolicy: "gpg45",
+    strengthScore: 2,
+  };
+  return updatedClaimset;
+};
+
 const createSessionId = async (
   ipvCoreAuthorizationUrl: { client_id: any; request: string } | null
 ): Promise<Response> => {
@@ -47,11 +56,10 @@ const createSessionId = async (
   });
   data = sessionResponse;
   const session = await sessionResponse.json();
-  console.log("first session response", JSON.stringify(session));
   return session;
 };
 
-describe("Private API Happy Path Tests", () => {
+describe("End to end happy path journey", () => {
   let session: any;
   let sessionId: string;
   let publicEncryptionKeyBase64: string;
@@ -68,7 +76,7 @@ describe("Private API Happy Path Tests", () => {
   }>;
 
   beforeAll(async () => {
-    audience = (await getClaimSet()).aud;
+    audience = (await createUpdatedClaimset()).aud;
     output = await stackOutputs(process.env.STACK_NAME);
     publicEncryptionKeyBase64 =
       (await getSSMParameter(
@@ -81,7 +89,7 @@ describe("Private API Happy Path Tests", () => {
   });
 
   beforeEach(async () => {
-    const claimsSet = await getClaimSet();
+    const claimsSet = await createUpdatedClaimset();
     const audience = claimsSet.aud;
     const payload = {
       clientId: CLIENT_ID,
@@ -94,13 +102,11 @@ describe("Private API Happy Path Tests", () => {
       claimSet: claimsSet,
     } as unknown as Payload;
     const ipvCoreAuthorizationUrl = await getJarAuthorizationPayload(payload);
-    console.log("ipv core url", ipvCoreAuthorizationUrl);
     session = await createSessionId(ipvCoreAuthorizationUrl);
     sessionId = session.session_id;
   });
 
   afterEach(async () => {
-    console.log(sessionId);
     output = await stackOutputs(process.env.STACK_NAME);
     personIdTableName = `person-identity-${output.CommonStackName}`;
     sessionTableName = `session-${output.CommonStackName}`;
@@ -122,7 +128,7 @@ describe("Private API Happy Path Tests", () => {
     await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
   });
 
-  it("E2E Happy Path Test", async () => {
+  it("Should receive a successful VC when valid name and NINO are entered", async () => {
     expect(data.status).toEqual(201);
     state = session.state;
     const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
@@ -158,7 +164,6 @@ describe("Private API Happy Path Tests", () => {
     });
 
     const authData = await authResponse.json();
-    console.log("auth response", authData);
     expect(authResponse.status).toEqual(200);
     authCode = authData.authorizationCode;
 
@@ -175,8 +180,6 @@ describe("Private API Happy Path Tests", () => {
       privateSigningKey
     );
 
-    console.log("token data", tokenData);
-
     const tokenApiURL = `https://${publicAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/token`;
     const tokenResponse = await fetch(tokenApiURL, {
       method: "POST",
@@ -186,7 +189,6 @@ describe("Private API Happy Path Tests", () => {
       body: tokenData,
     });
     const token = await tokenResponse.json();
-    console.log("token response", token);
     expect(tokenResponse.status).toEqual(200);
 
     const accessToken = token.access_token;
@@ -202,5 +204,12 @@ describe("Private API Happy Path Tests", () => {
     expect(credIssResponse.status).toEqual(200);
     const VC = await credIssResponse.text();
     expect(VC).toBeDefined();
+    const decodedVc = decodeJwt(VC);
+    const stringifyVc = JSON.stringify(decodedVc);
+    const parseVc = JSON.parse(stringifyVc);
+
+    expect(parseVc.vc.evidence[0].validityScore).toBe(2);
+    expect(parseVc.vc.evidence[0].strengthScore).toBe(2);
+    expect(parseVc.vc.evidence[0].ci).toBeUndefined();
   });
 });

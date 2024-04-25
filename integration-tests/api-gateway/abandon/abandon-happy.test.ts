@@ -14,7 +14,7 @@ import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
 
 jest.setTimeout(30000);
 
-describe("Private API Happy Path Tests", () => {
+describe("Given the session is valid and expecting to abandon the journey", () => {
   let sessionId: string;
   let sessionTableName: string;
   let state: string;
@@ -60,7 +60,7 @@ describe("Private API Happy Path Tests", () => {
     await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
   });
 
-  it("Abandon API", async () => {
+  it("Should receive a 200 response when /abandon endpoint is called", async () => {
     const abandonResponse = await abandonEndpoint(sessionId);
     expect(abandonResponse.status).toEqual(200);
 

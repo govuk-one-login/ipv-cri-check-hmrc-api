@@ -1,6 +1,10 @@
 import { getSSMParameter } from "../step-functions/aws/resources/ssm-param-helper";
 import { stackOutputs } from "../step-functions/aws/resources/cloudformation-helper";
 
+type EvidenceRequest = {
+  scoringPolicy: string;
+  strengthScore: number;
+};
 export const CLIENT_ID = process.env.CLIENTID ?? "ipv-core-stub-aws-prod";
 export const CLIENT_URL =
   process.env.CLIENT_URL ?? "https://cri.core.stubs.account.gov.uk";
@@ -52,7 +56,7 @@ export const getClaimSet = async () => {
     govuk_signin_journey_id: "84521e2b-43ab-4437-a118-f7c3a6d24c8e",
     aud: audience,
     nbf: 1697516406,
-    scope: "openid",
+    evidence_requested: undefined as unknown as EvidenceRequest,
     redirect_uri: `${CLIENT_URL}/callback`,
     state: "diWgdrCGYnjrZK7cMPEKwJXvpGn6rvhCBteCl_I2ejg",
     exp: Date.now() + 100000000000,
