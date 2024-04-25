@@ -4,5 +4,5 @@ import baseConfig from "../../jest.config";
 export default {
   ...baseConfig,
   projects: [],
-  displayName: "integration-tests/mocked",
+  displayName: "integration-tests/step-functions/mocked",
 } satisfies Config;

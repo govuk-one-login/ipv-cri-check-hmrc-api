@@ -1,4 +1,4 @@
-name: AWS tests
+name: Step Function AWS tests
 
 on:
   workflow_call:
@@ -11,12 +11,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: aws-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  group: sfn-aws-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
   run-tests:
-    name: AWS
+    name: SFN - AWS
     timeout-minutes: 15
     runs-on: ubuntu-latest
     environment: development
@@ -45,4 +45,4 @@ jobs:
           AWS_REGION: ${{ inputs.aws-region }}
         with:
           working-directory: integration-tests
-          script: npm run test:aws -- --config jest.config.ci.ts
+          script: npm run test:sfn:aws -- --config jest.config.ci.ts
