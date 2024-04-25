@@ -1,9 +1,9 @@
-import { stackOutputs } from "../../step-functions/aws/resources/cloudformation-helper";
+import { stackOutputs } from "../../resources/cloudformation-helper";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
   getItemByKey,
-} from "../../step-functions/aws/resources/dynamodb-helper";
+} from "../../resources/dynamodb-helper";
 import {
   abandonEndpoint,
   authorizationEndpoint,
@@ -35,7 +35,12 @@ describe("Given the session is valid and expecting to abandon the journey", () =
     sessionId = sessionData.session_id;
     state = sessionData.state;
     await checkEndpoint(sessionId, NINO);
-    await authorizationEndpoint(sessionId, CLIENT_ID, `${CLIENT_URL}/callback`, state);
+    await authorizationEndpoint(
+      sessionId,
+      CLIENT_ID,
+      `${CLIENT_URL}/callback`,
+      state
+    );
   });
 
   afterEach(async () => {

@@ -1,16 +1,16 @@
-import { stackOutputs } from "../resources/cloudformation-helper";
-import { executeStepFunction } from "../resources/stepfunction-helper";
+import { stackOutputs } from "../../../resources/cloudformation-helper";
+import { executeStepFunction } from "../../../resources/stepfunction-helper";
 import {
   clearAttemptsTable,
   clearItems,
   clearItemsFromTables,
   populateTable,
   populateTables,
-} from "../resources/dynamodb-helper";
+} from "../../../resources/dynamodb-helper";
 import {
   deleteSSMParameter,
   updateSSMParameter,
-} from "../resources/ssm-param-helper";
+} from "../../../resources/ssm-param-helper";
 import { SecretsManager } from "@aws-sdk/client-secrets-manager";
 
 jest.setTimeout(30_000);

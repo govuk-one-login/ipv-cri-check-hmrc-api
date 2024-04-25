@@ -1,5 +1,5 @@
-import { getSSMParameter } from "../step-functions/aws/resources/ssm-param-helper";
-import { stackOutputs } from "../step-functions/aws/resources/cloudformation-helper";
+import { getSSMParameter } from "../resources/ssm-param-helper";
+import { stackOutputs } from "../resources/cloudformation-helper";
 
 type EvidenceRequest = {
   scoringPolicy: string;
