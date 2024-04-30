@@ -139,8 +139,17 @@ paths:
         requestTemplates:
           application/json:
             Fn::Sub: |-
+              #set($nino = $util.parseJson($input.json('$.nino').trim()))
+              #set($headers = {})
+              #foreach($header in $input.params().header.keySet())
+                #set($headerName = $util.escapeJavaScript($header))
+                #set($headerValue = $input.params().header.get($header))
+                #if($headerName.trim() && $headerValue.trim())
+                  $util.qr($headers.put($headerName, $headerValue))
+                #end
+              #end
               {
-                "input": "{\"nino\": \"$util.parseJson($input.json('$.nino').trim())\",\"sessionId\": \"$input.params('session-id').trim()\"}",
+                "input":"{\"nino\":\"$nino\",\"sessionId\":\"$input.params('session-id').trim()\",#set($headerKeys = $headers.keySet())#set($headerCount = $headerKeys.size())#foreach($headerKey in $headerKeys)#if($headerKey != 'session-id')\"$headerKey\": \"$headers.get($headerKey)\"#if($foreach.hasNext && $foreach.index != $headerCount - 1),#end#end#end}",
                 "stateMachineArn": "${NinoCheckStateMachine.Arn}"
               }
         responses:
