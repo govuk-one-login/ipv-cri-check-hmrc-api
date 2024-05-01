@@ -35,7 +35,7 @@ Parameters:
   EventBusState:
     Type: String
     Description: The state of rule i.e Enabled or !Ref EventBusState
-    Default: DISABLED
+    Default: ENABLED
   CriIdentifier:
     Description: "The unique credential issuer identifier"
     Type: AWS::SSM::Parameter::Value<String>
@@ -52,10 +52,6 @@ Conditions:
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
   IsDevLikeEnvironment:
     !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
-  IsUpToStagingEnvironment: !Or
-    - !Condition IsDevLikeEnvironment
-    - !Equals [!Ref Environment, build]
-    - !Equals [!Ref Environment, staging]
   IsProdEnvironment: !Equals
     - !Ref Environment
     - production
@@ -1536,7 +1532,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event RESPONSE_RECEIVED
-      State: !If [IsUpToStagingEnvironment, ENABLED, !Ref EventBusState]
+      State: !Ref EventBusState
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1551,7 +1547,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event REQUEST_SENT
-      State: !If [IsUpToStagingEnvironment, ENABLED, !Ref EventBusState]
+      State: !Ref EventBusState
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1566,7 +1562,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event VC_ISSUED
-      State: !If [IsUpToStagingEnvironment, ENABLED, !Ref EventBusState]
+      State: !Ref EventBusState
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1581,7 +1577,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the END event
-      State: !If [IsUpToStagingEnvironment, ENABLED, !Ref EventBusState]
+      State: !Ref EventBusState
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1596,7 +1592,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the ABANDONED event
-      State: !If [IsUpToStagingEnvironment, ENABLED, !Ref EventBusState]
+      State: !Ref EventBusState
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
