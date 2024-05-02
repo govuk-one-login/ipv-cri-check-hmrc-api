@@ -35,7 +35,7 @@ Parameters:
   EventBusState:
     Type: String
     Description: The state of rule i.e Enabled or !Ref EventBusState
-    Default: ENABLED
+    Default: "ENABLED"
   CriIdentifier:
     Description: "The unique credential issuer identifier"
     Type: AWS::SSM::Parameter::Value<String>
