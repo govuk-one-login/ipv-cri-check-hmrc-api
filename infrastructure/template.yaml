@@ -32,10 +32,6 @@ Parameters:
     Description: "Set to the string value `true` to deploy alarms in a DEV environment"
     Type: String
     Default: true
-  EventBusState:
-    Type: String
-    Description: The state of rule i.e Enabled or !Ref EventBusState
-    Default: "ENABLED"
   CriIdentifier:
     Description: "The unique credential issuer identifier"
     Type: AWS::SSM::Parameter::Value<String>
@@ -1532,7 +1528,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event RESPONSE_RECEIVED
-      State: !Ref EventBusState
+      State: ENABLED
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1547,7 +1543,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event REQUEST_SENT
-      State: !Ref EventBusState
+      State: ENABLED
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1562,7 +1558,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the audit event VC_ISSUED
-      State: !Ref EventBusState
+      State: ENABLED
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1577,7 +1573,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the END event
-      State: !Ref EventBusState
+      State: ENABLED
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
@@ -1592,7 +1588,7 @@ Resources:
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
       Description: Capture the ABANDONED event
-      State: !Ref EventBusState
+      State: ENABLED
       EventPattern:
         source:
           - !FindInMap [Audit, Source, !Ref Environment]
