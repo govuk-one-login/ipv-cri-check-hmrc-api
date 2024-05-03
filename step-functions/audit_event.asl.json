@@ -191,10 +191,11 @@
 		},
 		"publish event to TxMa Queue": {
 			"Type": "Task",
+      "InputPath": "$[0]",
 			"Resource": "arn:aws:states:::sqs:sendMessage",
 			"Parameters": {
 				"QueueUrl": "${SqsAuditEventQueueUrl}",
-				"MessageBody.$": "$[0].audit"
+				"MessageBody.$": "$.auditEvent"
 			},
 			"End": true
 		}
