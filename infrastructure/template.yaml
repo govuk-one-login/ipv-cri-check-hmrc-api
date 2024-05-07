@@ -1836,3 +1836,33 @@ Outputs:
   AbandonStateMachineArn:
     Description: Abandon state machine ARN
     Value: !Ref AbandonStateMachine
+  AuditEventResponseReceivedRule:
+    Description: AuditEvent Response Received Rule
+    Value: !Ref AuditEventResponseReceivedRule
+  AuditEventResponseReceivedRuleArn:
+    Description: AuditEvent Response Received Rule Arn
+    Value: !GetAtt AuditEventResponseReceivedRule.Arn
+  AuditEventRequestSentRule:
+    Description: AuditEvent Request Sent Rule
+    Value: !Ref AuditEventRequestSentRule
+  AuditEventRequestSentRuleArn:
+    Description: AuditEvent Request Sent Rule Arn
+    Value: !GetAtt AuditEventRequestSentRule.Arn
+  AuditEventAbandonedRule:
+    Description: AuditEvent Abandon Rule
+    Value: !Ref AuditEventAbandonedRule
+  AuditEventAbandonedRuleArn:
+    Description: AuditEvent Abandon Rule Arn
+    Value: !GetAtt AuditEventAbandonedRule.Arn
+  AuditEventVcIssuedRule:
+    Description: AuditEvent VC Issued Rule
+    Value: !Ref AuditEventVcIssuedRule
+  AuditEventVcIssuedRuleArn:
+    Description: AuditEvent VC Issued Rule Arn
+    Value: !GetAtt AuditEventVcIssuedRule.Arn
+  AuditEventEndRule:
+    Description: AuditEvent End Rule
+    Value: !Ref AuditEventEndRule
+  AuditEventEndRuleArn:
+    Description: AuditEvent End Rule
+    Value: !GetAtt AuditEventEndRule.Arn
