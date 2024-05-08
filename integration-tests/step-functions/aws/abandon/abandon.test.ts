@@ -22,6 +22,7 @@ import { RetryConfig, pause, retry } from "../../../resources/util";
 describe("Abandon", () => {
   const input = {
     sessionId: "abandon-test",
+    "txma-audit-encoded": "test encoded header",
   };
   let output: Partial<{
     CommonStackName: string;
