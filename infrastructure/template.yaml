@@ -419,7 +419,7 @@ Resources:
             - Name: subject
               Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
             - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   CredentialSubjectFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -790,7 +790,7 @@ Resources:
             - Name: subject
               Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
             - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   MatchingFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1435,7 +1435,7 @@ Resources:
             - Name: subject
               Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
             - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   NinoCheckStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1592,7 +1592,7 @@ Resources:
             - Name: subject
               Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
             - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   AbandonStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1780,7 +1780,7 @@ Resources:
             - Name: subject
               Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
             - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   NinoIssueCredentialLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1893,7 +1893,7 @@ Resources:
             - Name: subject
               Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
             - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   CheckSessionStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -2120,7 +2120,7 @@ Resources:
             - Name: subject
               Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
             - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   AuditEventStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
