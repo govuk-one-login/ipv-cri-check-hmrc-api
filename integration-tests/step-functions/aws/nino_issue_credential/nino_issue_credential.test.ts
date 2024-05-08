@@ -10,6 +10,15 @@ import {
 
 import { getSSMParameter } from "../../../resources/ssm-param-helper";
 import { getPublicKey } from "../../../resources/kms-helper";
+import {
+  deleteQueue,
+  getQueueMessages,
+  setUpQueueAndAttachToRule,
+  targetId,
+} from "../../../resources/queue-helper";
+import { removeTargetFromRule } from "../../../resources/event-bridge-helper";
+import { RetryConfig, retry } from "../../../resources/util";
+import { CreateQueueCommandOutput } from "@aws-sdk/client-sqs";
 
 jest.setTimeout(30_000);
 
@@ -39,6 +48,10 @@ describe("nino-issue-credential-happy", () => {
     UserAttemptsTable: string;
     NinoUsersTable: string;
     NinoIssueCredentialStateMachineArn: string;
+    AuditEventVcIssuedRule: string;
+    AuditEventEndRule: string;
+    AuditEventEndRuleArn: string;
+    AuditEventVcIssuedRuleArn: string;
   }>;
 
   beforeEach(async () => {
@@ -362,6 +375,210 @@ describe("nino-issue-credential-happy", () => {
       expect(isValidTimestamp(payload.exp)).toBe(true);
       expect(isValidTimestamp(payload.nbf)).toBe(true);
       expect(payload).toEqual(result);
+    });
+  });
+
+  describe("Nino Hmrc Issue Credential Step Function publishes VC_ISSUED and END events successfully", () => {
+    jest.setTimeout(120_000);
+    let vcIssuedEventTestQueue: CreateQueueCommandOutput;
+    let endEventTestQueue: CreateQueueCommandOutput;
+
+    beforeEach(async () => {
+      await populateTables(
+        {
+          tableName: sessionTableName,
+          items: getSessionItem(input, "Bearer unhappy"),
+        },
+        {
+          tableName: output.UserAttemptsTable as string,
+          items: {
+            sessionId: input.sessionId,
+            timestamp: Date.now().toString() + 1,
+            attempt: "FAIL",
+            status: 200,
+            text: "DOB does not match CID, First Name does not match CID",
+          },
+        },
+        {
+          tableName: output.UserAttemptsTable as string,
+          items: {
+            sessionId: input.sessionId,
+            timestamp: Date.now().toString(),
+            attempt: "FAIL",
+            status: 200,
+            text: "DOB does not match CID, First Name does not match CID",
+          },
+        }
+      );
+      const [vcIssuedBusName, vcIssuedRuleName] = (
+        output.AuditEventVcIssuedRule as string
+      ).split("|");
+      const [endRuleBusName, endRuleName] = (
+        output.AuditEventEndRule as string
+      ).split("|");
+
+      vcIssuedEventTestQueue = await setUpQueueAndAttachToRule(
+        output.AuditEventVcIssuedRuleArn as string,
+        vcIssuedRuleName,
+        vcIssuedBusName
+      );
+      endEventTestQueue = await setUpQueueAndAttachToRule(
+        output.AuditEventEndRuleArn as string,
+        endRuleName,
+        endRuleBusName
+      );
+    });
+
+    afterEach(async () => {
+      const [vcIssuedBusName, vcIssuedRule] = (
+        output.AuditEventVcIssuedRule as string
+      ).split("|");
+      const [endBusName, endRuleName] = (
+        output.AuditEventEndRule as string
+      ).split("|");
+
+      await retry({ intervalInMs: 1000, maxRetries: 20 }, async () => {
+        await removeTargetFromRule(targetId, vcIssuedBusName, vcIssuedRule);
+        await removeTargetFromRule(targetId, endBusName, endRuleName);
+      });
+      await retry({ intervalInMs: 1000, maxRetries: 20 }, async () => {
+        await deleteQueue(vcIssuedEventTestQueue.QueueUrl);
+        await deleteQueue(endEventTestQueue.QueueUrl);
+      });
+    });
+    it("should create a VC with a failedCheckDetail for Record Check", async () => {
+      const startExecutionResult = await getExecutionResult("Bearer unhappy");
+
+      const vcIssuedTestQueueMessage = await getQueueMessages(
+        vcIssuedEventTestQueue.QueueUrl as string,
+        {
+          intervalInMs: 0,
+          maxRetries: 10,
+        } as RetryConfig
+      );
+      const endEventTestQueueMessage = await getQueueMessages(
+        endEventTestQueue.QueueUrl as string,
+        {
+          intervalInMs: 0,
+          maxRetries: 10,
+        } as RetryConfig
+      );
+      const {
+        "detail-type": vcIssuedDetailType,
+        source: vcIssuedSource,
+        detail: vcIssuedDetail,
+      } = JSON.parse(vcIssuedTestQueueMessage[0].Body as string);
+      const {
+        "detail-type": endDetailType,
+        source: endSource,
+        detail: endDetail,
+      } = JSON.parse(endEventTestQueueMessage[0].Body as string);
+
+      expect(startExecutionResult.output).toBeDefined();
+      expect(vcIssuedDetailType).toBe("VC_ISSUED");
+      expect(vcIssuedSource).toBe("review-hc.localdev.account.gov.uk");
+      expect(vcIssuedDetail).toEqual({
+        auditPrefix: "IPV_HMRC_RECORD_CHECK_CRI",
+        nino: "AA000003D",
+        user: {
+          govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+          user_id: "test",
+          persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+          session_id: "issue-credential-happy",
+          ip_address: "00.100.8.20",
+        },
+        userInfoEvent: {
+          Count: 1,
+          Items: [
+            {
+              names: {
+                L: [
+                  {
+                    M: {
+                      nameParts: {
+                        L: [
+                          {
+                            M: {
+                              type: {
+                                S: "GivenName",
+                              },
+                              value: {
+                                S: "Jim",
+                              },
+                            },
+                          },
+                          {
+                            M: {
+                              type: {
+                                S: "FamilyName",
+                              },
+                              value: {
+                                S: "Ferguson",
+                              },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                ],
+              },
+              sessionId: {
+                S: "issue-credential-happy",
+              },
+              birthDates: {
+                L: [
+                  {
+                    M: {
+                      value: {
+                        S: "1948-04-23",
+                      },
+                    },
+                  },
+                ],
+              },
+              nino: {
+                S: "AA000003D",
+              },
+            },
+          ],
+          ScannedCount: 1,
+        },
+        evidence: [
+          {
+            failedCheckDetails: [
+              {
+                checkMethod: "data",
+                dataCheck: "record_check",
+              },
+            ],
+            txn: expect.any(String),
+            type: "IdentityCheck",
+            attemptNum: 2,
+            ciReasons: [
+              {
+                ci: expect.any(String),
+                reason: expect.any(String),
+              },
+            ],
+          },
+        ],
+        issuer: "https://review-hc.dev.account.gov.uk",
+      });
+
+      expect(endDetailType).toBe("END");
+      expect(endSource).toBe("review-hc.localdev.account.gov.uk");
+      expect(endDetail).toEqual({
+        auditPrefix: "IPV_HMRC_RECORD_CHECK_CRI",
+        user: {
+          govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+          user_id: "test",
+          persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+          session_id: "issue-credential-happy",
+          ip_address: "00.100.8.20",
+        },
+        issuer: "https://review-hc.dev.account.gov.uk",
+      });
     });
   });
 
