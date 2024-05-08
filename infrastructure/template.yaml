@@ -417,7 +417,7 @@ Resources:
             - Name: addressPart2
               Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
             - Name: subject
-              Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+              Regex: "\\\\\"subject\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
             - Name: givenNameOrFamilyName
               Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
