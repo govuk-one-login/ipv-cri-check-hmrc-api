@@ -20,6 +20,7 @@ describe("nino-check-happy", () => {
     const input = JSON.stringify({
       nino: "AA000003D",
       sessionId: "12345",
+      "txma-audit-encoded": "test encoded header",
     });
     const responseStepFunction = await sfnContainer.startStepFunctionExecution(
       "APIFailRetrySuccessTest",
@@ -42,6 +43,7 @@ describe("nino-check-happy", () => {
     const input = JSON.stringify({
       nino: "AA000003D",
       sessionId: "12345",
+      "txma-audit-encoded": "test encoded header",
     });
     const responseStepFunction = await sfnContainer.startStepFunctionExecution(
       happyPath,

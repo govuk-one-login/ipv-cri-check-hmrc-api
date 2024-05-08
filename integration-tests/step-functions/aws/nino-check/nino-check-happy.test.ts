@@ -21,6 +21,7 @@ describe("nino-check-happy", () => {
   const input = {
     sessionId: "check-happy",
     nino: "AA000003D",
+    "txma-audit-encoded": "test encoded header",
   };
 
   const testUser = {
