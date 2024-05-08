@@ -355,6 +355,79 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      DataProtectionPolicy:
+        Name: data-protection-policy
+        Description: ""
+        Version: "2021-06-01"
+        Statement:
+          - Sid: audit-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Audit:
+                FindingsDestination: { }
+          - Sid: redact-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Deidentify:
+                MaskConfig: { }
+        Configuration:
+          CustomDataIdentifier:
+            - Name: userId
+              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: firstName
+              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: lastName
+              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: DOBInQuery
+              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
+            - Name: buildingName
+              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: addressLocality
+              Regex: "\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: buildingNumber
+              Regex: "\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: postalCode
+              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: streetName
+              Regex: "\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: givenNameOrFamilyName
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   CredentialSubjectFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -661,6 +734,79 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
       RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      DataProtectionPolicy:
+        Name: data-protection-policy
+        Description: ""
+        Version: "2021-06-01"
+        Statement:
+          - Sid: audit-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Audit:
+                FindingsDestination: { }
+          - Sid: redact-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Deidentify:
+                MaskConfig: { }
+        Configuration:
+          CustomDataIdentifier:
+            - Name: userId
+              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: firstName
+              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: lastName
+              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: DOBInQuery
+              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
+            - Name: buildingName
+              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: addressLocality
+              Regex: "\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: buildingNumber
+              Regex: "\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: postalCode
+              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: streetName
+              Regex: "\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: givenNameOrFamilyName
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   MatchingFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1241,6 +1387,79 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+      DataProtectionPolicy:
+        Name: data-protection-policy
+        Description: ""
+        Version: "2021-06-01"
+        Statement:
+          - Sid: audit-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Audit:
+                FindingsDestination: { }
+          - Sid: redact-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Deidentify:
+                MaskConfig: { }
+        Configuration:
+          CustomDataIdentifier:
+            - Name: userId
+              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: firstName
+              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: lastName
+              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: DOBInQuery
+              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
+            - Name: buildingName
+              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: addressLocality
+              Regex: "\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: buildingNumber
+              Regex: "\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: postalCode
+              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: streetName
+              Regex: "\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: givenNameOrFamilyName
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   NinoCheckStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1333,6 +1552,79 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+      DataProtectionPolicy:
+        Name: data-protection-policy
+        Description: ""
+        Version: "2021-06-01"
+        Statement:
+          - Sid: audit-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Audit:
+                FindingsDestination: { }
+          - Sid: redact-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Deidentify:
+                MaskConfig: { }
+        Configuration:
+          CustomDataIdentifier:
+            - Name: userId
+              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: firstName
+              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: lastName
+              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: DOBInQuery
+              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
+            - Name: buildingName
+              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: addressLocality
+              Regex: "\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: buildingNumber
+              Regex: "\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: postalCode
+              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: streetName
+              Regex: "\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: givenNameOrFamilyName
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   AbandonStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1456,6 +1748,79 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+      DataProtectionPolicy:
+        Name: data-protection-policy
+        Description: ""
+        Version: "2021-06-01"
+        Statement:
+          - Sid: audit-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Audit:
+                FindingsDestination: { }
+          - Sid: redact-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Deidentify:
+                MaskConfig: { }
+        Configuration:
+          CustomDataIdentifier:
+            - Name: userId
+              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: firstName
+              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: lastName
+              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: DOBInQuery
+              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
+            - Name: buildingName
+              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: addressLocality
+              Regex: "\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: buildingNumber
+              Regex: "\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: postalCode
+              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: streetName
+              Regex: "\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: givenNameOrFamilyName
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   NinoIssueCredentialLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1504,6 +1869,79 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+      DataProtectionPolicy:
+        Name: data-protection-policy
+        Description: ""
+        Version: "2021-06-01"
+        Statement:
+          - Sid: audit-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Audit:
+                FindingsDestination: { }
+          - Sid: redact-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Deidentify:
+                MaskConfig: { }
+        Configuration:
+          CustomDataIdentifier:
+            - Name: userId
+              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: firstName
+              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: lastName
+              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: DOBInQuery
+              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
+            - Name: buildingName
+              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: addressLocality
+              Regex: "\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: buildingNumber
+              Regex: "\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: postalCode
+              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: streetName
+              Regex: "\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: givenNameOrFamilyName
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   CheckSessionStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1666,6 +2104,79 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+      DataProtectionPolicy:
+        Name: data-protection-policy
+        Description: ""
+        Version: "2021-06-01"
+        Statement:
+          - Sid: audit-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Audit:
+                FindingsDestination: { }
+          - Sid: redact-policy
+            DataIdentifier:
+              - arn:aws:dataprotection::aws:data-identifier/Address
+              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+              - arn:aws:dataprotection::aws:data-identifier/IpAddress
+              - arn:aws:dataprotection::aws:data-identifier/Name
+              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+              - userId
+              - firstName
+              - lastName
+              - DOBInQuery
+              - buildingName
+              - addressLocality
+              - buildingNumber
+              - postalCode
+              - streetName
+              - givenNameOrFamilyName
+            Operation:
+              Deidentify:
+                MaskConfig: { }
+        Configuration:
+          CustomDataIdentifier:
+            - Name: userId
+              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: firstName
+              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: lastName
+              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+            - Name: DOBInQuery
+              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
+            - Name: buildingName
+              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: addressLocality
+              Regex: "\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: buildingNumber
+              Regex: "\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: postalCode
+              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: streetName
+              Regex: "\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+            - Name: givenNameOrFamilyName
+              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}||\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
 
   AuditEventStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
