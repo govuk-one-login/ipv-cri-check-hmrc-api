@@ -286,6 +286,7 @@ describe("nino-check-happy", () => {
       expect(requestSentSource).toBe("review-hc.localdev.account.gov.uk");
       expect(requestSentDetail).toEqual({
         auditPrefix: "IPV_HMRC_RECORD_CHECK_CRI",
+        deviceInformation: "test encoded header",
         nino: "AA000003D",
         user: {
           govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
@@ -358,6 +359,7 @@ describe("nino-check-happy", () => {
       expect(responseReceivedSource).toBe("review-hc.localdev.account.gov.uk");
       expect(responseReceivedDetail).toEqual({
         auditPrefix: "IPV_HMRC_RECORD_CHECK_CRI",
+        deviceInformation: "test encoded header",
         user: {
           govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
           user_id: "test",
