@@ -191,12 +191,19 @@
 		},
 		"publish event to TxMa Queue": {
 			"Type": "Task",
-      "InputPath": "$[0]",
-			"Resource": "arn:aws:states:::sqs:sendMessage",
+      "InputPath": "$[0].auditEvent",
+			"Resource": "arn:aws:states:::events:putEvents",
 			"Parameters": {
-				"QueueUrl": "${SqsAuditEventQueueUrl}",
-				"MessageBody.$": "$.auditEvent"
+				"Entries": [
+					{
+						"Detail.$": "$",
+						"DetailType.$": "$.event_name",
+						"EventBusName": "${CheckHmrcEventBus}",
+            "Source": "${CheckHmrcEventBusSource}"
+					}
+				]
 			},
+      "ResultPath": null,
 			"End": true
 		}
 	}

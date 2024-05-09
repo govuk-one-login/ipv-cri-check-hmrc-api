@@ -1598,6 +1598,46 @@ Resources:
         - Arn: !Ref AuditEventStateMachine
           Id: AuditEventStateMachineAbandonedTarget
           RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
+  TxMaAuditEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref CheckHmrcEventBus
+      Description: Capture all the TxMA Audit event
+      State: ENABLED
+      EventPattern:
+        source:
+          - !FindInMap [Audit, Source, !Ref Environment]
+        detail:
+          timestamp: [{ "exists": true }]
+          event_timestamp_ms: [{ "exists": true }]
+      Targets:
+        - Arn: !Sub
+            - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
+            - auditEventQueueName: !ImportValue "AuditEventQueueName"
+          Id: AuditEventQueue
+          InputPath: "$.detail"
+  EventBridgeToSqsPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: SQS:SendMessage
+            Resource: !Sub
+              - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
+              - auditEventQueueName: !ImportValue "AuditEventQueueName"
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action:
+              - "kms:Decrypt"
+              - "kms:GenerateDataKey"
+            Resource:
+              - !ImportValue AuditEventQueueEncryptionKeyArn
+      Queues:
+        - !ImportValue "AuditEventQueueName"
   EventBridgeStateMachineExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -1756,7 +1796,8 @@ Resources:
       DefinitionSubstitutions:
         CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
         EpochTimeArn: !GetAtt EpochTimeFunction.Arn
-        SqsAuditEventQueueUrl: !ImportValue AuditEventQueueUrl
+        CheckHmrcEventBus: !Ref CheckHmrcEventBus
+        CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -1768,16 +1809,8 @@ Resources:
             FunctionName: !Ref CredentialSubjectFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref EpochTimeFunction
-        - SQSSendMessagePolicy:
-            QueueName: !ImportValue AuditEventQueueName
-        - Statement:
-            - Sid: auditEventQueueKmsEncryptionKeyPermission
-              Effect: Allow
-              Action:
-                - "kms:Decrypt"
-                - "kms:GenerateDataKey"
-              Resource:
-                - !ImportValue AuditEventQueueEncryptionKeyArn
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
         - Statement:
             Effect: Allow
             Action: logs:*
