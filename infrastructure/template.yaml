@@ -31,7 +31,7 @@ Parameters:
   DeployAlarmsInDevEnvironment:
     Description: "Set to the string value `true` to deploy alarms in a DEV environment"
     Type: String
-    Default: true
+    Default: false
   CriIdentifier:
     Description: "The unique credential issuer identifier"
     Type: AWS::SSM::Parameter::Value<String>
@@ -196,6 +196,7 @@ Resources:
 
   EpochTimeFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-${EpochTimeFunction}-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${EpochTimeFunction} errors. ${SupportManualURL}"
@@ -254,6 +255,7 @@ Resources:
 
   CiMappingFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-${CiMappingFunction}-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CiMappingFunction} errors. ${SupportManualURL}"
@@ -314,6 +316,7 @@ Resources:
 
   CreateAuthCodeFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-${CreateAuthCodeFunction}-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CreateAuthCodeFunction} errors. ${SupportManualURL}"
@@ -439,6 +442,7 @@ Resources:
 
   CredentialSubjectFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-${CredentialSubjectFunction}-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CredentialSubjectFunction} errors. ${SupportManualURL}"
@@ -499,6 +503,7 @@ Resources:
 
   CurrentTimeFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-${CurrentTimeFunction}-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CurrentTimeFunction} errors. ${SupportManualURL}"
@@ -564,6 +569,7 @@ Resources:
 
   JwtSignerFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-${JwtSignerFunction}-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${JwtSignerFunction} errors. ${SupportManualURL}"
@@ -624,6 +630,7 @@ Resources:
 
   OTGFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-${OTGFunction}-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${OTGFunction} errors. ${SupportManualURL}"
@@ -809,6 +816,7 @@ Resources:
 
   MatchingFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-${MatchingFunction}-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${MatchingFunction} errors. ${SupportManualURL}"
@@ -872,6 +880,7 @@ Resources:
 
   SsmParametersFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-${SsmParametersFunction}-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${SsmParametersFunction} errors. ${SupportManualURL}"
@@ -932,6 +941,7 @@ Resources:
 
   TimeFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: "DeployAlarms"
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-${TimeFunction}-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${TimeFunction} errors. ${SupportManualURL}"
@@ -1260,7 +1270,7 @@ Resources:
 
   CheckSessionStateMachineAlarm:
     Type: "AWS::CloudWatch::Alarm"
-    Condition:
+    Condition: "DeployAlarms"
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
@@ -1454,7 +1464,7 @@ Resources:
 
   NinoCheckStateMachineAlarm:
     Type: "AWS::CloudWatch::Alarm"
-    Condition:
+    Condition: "DeployAlarms"
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
@@ -1611,7 +1621,7 @@ Resources:
 
   AbandonStateMachineAlarm:
     Type: "AWS::CloudWatch::Alarm"
-    Condition:
+    Condition: "DeployAlarms"
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
@@ -1799,7 +1809,7 @@ Resources:
 
   NinoIssueCredentialStateMachineAlarm:
     Type: "AWS::CloudWatch::Alarm"
-    Condition:
+    Condition: "DeployAlarms"
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
