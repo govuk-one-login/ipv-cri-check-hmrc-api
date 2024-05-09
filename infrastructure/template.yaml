@@ -52,14 +52,11 @@ Conditions:
     - !Ref Environment
     - production
 
-  IsNotDevEnvironment: !Not
-    - !Condition IsDevEnvironment
-
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
 
   DeployAlarms: !Or
-    - !Condition IsNotDevEnvironment
+    - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
 
 Mappings:
@@ -1668,6 +1665,7 @@ Resources:
   #                                                                  #
   ####################################################################
   TxMaAuditEventRuleAlarm:
+    Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
@@ -1692,6 +1690,7 @@ Resources:
           Value: !Ref CheckHmrcEventBus
 
   AuditEventRequestSentRuleAlarm:
+    Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
@@ -1716,6 +1715,7 @@ Resources:
           Value: !Ref CheckHmrcEventBus
 
   AuditEventResponseReceivedRuleAlarm:
+    Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
@@ -1740,6 +1740,7 @@ Resources:
           Value: !Ref CheckHmrcEventBus
 
   AuditEventVcIssuedRuleAlarm:
+    Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
@@ -1764,6 +1765,7 @@ Resources:
           Value: !Ref CheckHmrcEventBus
 
   AuditEventEndRuleAlarm:
+    Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
@@ -1788,6 +1790,7 @@ Resources:
           Value: !Ref CheckHmrcEventBus
 
   AuditEventAbandonedRuleAlarm:
+    Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
