@@ -11,13 +11,10 @@ import {
   deleteSSMParameter,
   updateSSMParameter,
 } from "../../../resources/ssm-param-helper";
-import { SecretsManager } from "@aws-sdk/client-secrets-manager";
 
 jest.setTimeout(30_000);
 
 describe("nino-check-unhappy", () => {
-  const secretsManager = new SecretsManager();
-
   const input = {
     sessionId: "check-unhappy",
     nino: "AB123003C",
@@ -259,6 +256,9 @@ describe("nino-check-unhappy", () => {
             sessionId: mockInput2.sessionId,
             expiryDate: 9999999999,
             clientId: mockClientId2,
+            subject: "test",
+            clientIpAddress: "00.100.8.20",
+            clientSessionId: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
           },
         },
         {
