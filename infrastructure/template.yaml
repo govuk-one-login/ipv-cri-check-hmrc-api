@@ -1520,7 +1520,7 @@ Resources:
       Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
   ##################################################################
   #                                                                  #
-  # Audit Event Consumer                                             #
+  # Nino Check Audit Event Consumer                                  #
   #                                                                  #
   ####################################################################
   AuditEventResponseReceivedRule:
@@ -1621,6 +1621,132 @@ Resources:
         - UsePermissionsBoundary
         - !Ref PermissionsBoundary
         - !Ref AWS::NoValue
+  ##################################################################
+  #                                                                  #
+  # Audit Event Consumer Rule Alarms                                 #
+  #                                                                  #
+  ####################################################################
+  AuditEventRequestSentRuleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "AuditEventRequestSentRule (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventRequestSentRule-alarm"
+      MetricName: "FailedInvocations"
+      Namespace: "AWS/Events"
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Sum
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      Period: 300
+      Threshold: 0
+      TreatMissingData: missing
+      Dimensions:
+        - Name: RuleName
+          Value: !Select [1, !Split ["|", !Ref AuditEventRequestSentRule]]
+        - Name: EventBusName
+          Value: !Ref CheckHmrcEventBus
+
+  AuditEventResponseReceivedRuleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "AuditEventResponseReceivedRule (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventResponseReceivedRule-alarm"
+      MetricName: "FailedInvocations"
+      Namespace: "AWS/Events"
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Sum
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      Period: 300
+      Threshold: 0
+      TreatMissingData: missing
+      Dimensions:
+        - Name: RuleName
+          Value: !Select [1, !Split ["|", !Ref AuditEventResponseReceivedRule]]
+        - Name: EventBusName
+          Value: !Ref CheckHmrcEventBus
+
+  AuditEventVcIssuedRuleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "AuditEventVcIssuedRule (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventVcIssuedRule-alarm"
+      MetricName: "FailedInvocations"
+      Namespace: "AWS/Events"
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Sum
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      Period: 300
+      Threshold: 0
+      TreatMissingData: missing
+      Dimensions:
+        - Name: RuleName
+          Value: !Select [1, !Split ["|", !Ref AuditEventVcIssuedRule]]
+        - Name: EventBusName
+          Value: !Ref CheckHmrcEventBus
+
+  AuditEventEndRuleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "AuditEventEndRule (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventEndRule-alarm"
+      MetricName: "FailedInvocations"
+      Namespace: "AWS/Events"
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Sum
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      Period: 300
+      Threshold: 0
+      TreatMissingData: missing
+      Dimensions:
+        - Name: RuleName
+          Value: !Select [1, !Split ["|", !Ref AuditEventEndRule]]
+        - Name: EventBusName
+          Value: !Ref CheckHmrcEventBus
+
+  AuditEventAbandonedRuleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "AuditEventAbandonedRule (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventAbandonedRule-alarm"
+      MetricName: "FailedInvocations"
+      Namespace: "AWS/Events"
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Sum
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      Period: 300
+      Threshold: 0
+      TreatMissingData: missing
+      Dimensions:
+        - Name: RuleName
+          Value: !Select [1, !Split ["|", !Ref AuditEventAbandonedRule]]
+        - Name: EventBusName
+          Value: !Ref CheckHmrcEventBus
+
+  ###############################################################################
 
   AuditEventStateMachine:
     Type: AWS::Serverless::StateMachine
