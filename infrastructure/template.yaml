@@ -59,6 +59,72 @@ Conditions:
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
 
+Metadata: &DataProtectionPolicy
+  Name: data-protection-policy
+  Description: ""
+  Version: "2021-06-01"
+  Statement:
+    - Sid: audit-policy
+      DataIdentifier:
+        - arn:aws:dataprotection::aws:data-identifier/Address
+        - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+        - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+        - arn:aws:dataprotection::aws:data-identifier/IpAddress
+        - arn:aws:dataprotection::aws:data-identifier/Name
+        - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+        - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+        - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+        - userId
+        - firstName
+        - lastName
+        - DOBInQuery
+        - addressPart1
+        - addressPart2
+        - subject
+        - givenNameOrFamilyName
+      Operation:
+        Audit:
+          FindingsDestination: { }
+    - Sid: redact-policy
+      DataIdentifier:
+        - arn:aws:dataprotection::aws:data-identifier/Address
+        - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
+        - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
+        - arn:aws:dataprotection::aws:data-identifier/IpAddress
+        - arn:aws:dataprotection::aws:data-identifier/Name
+        - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
+        - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
+        - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
+        - userId
+        - firstName
+        - lastName
+        - DOBInQuery
+        - addressPart1
+        - addressPart2
+        - subject
+        - givenNameOrFamilyName
+      Operation:
+        Deidentify:
+          MaskConfig: { }
+  Configuration:
+    CustomDataIdentifier:
+      - Name: userId
+        Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+      - Name: firstName
+        Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+      - Name: lastName
+        Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+      - Name: DOBInQuery
+        Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
+      - Name: addressPart1
+        Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+      - Name: addressPart2
+        Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+      - Name: subject
+        Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
+      - Name: givenNameOrFamilyName
+        Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+
 Mappings:
   # Only numeric values should be assigned here
   MaxJwtTtl:
@@ -173,7 +239,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   EpochTimeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -198,7 +264,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-${EpochTimeFunction}-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-EpochTimeFunction-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${EpochTimeFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions: [!ImportValue platform-alarm-warning-alert-topic]
@@ -232,7 +298,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   CiMappingFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -257,7 +323,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-${CiMappingFunction}-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CiMappingFunction-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CiMappingFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -293,7 +359,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   CreateAuthCodeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -318,7 +384,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-${CreateAuthCodeFunction}-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CreateAuthCodeFunction-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CreateAuthCodeFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -354,72 +420,9 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
       DataProtectionPolicy:
-        Name: data-protection-policy
-        Description: ""
-        Version: "2021-06-01"
-        Statement:
-          - Sid: audit-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Audit:
-                FindingsDestination: { }
-          - Sid: redact-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Deidentify:
-                MaskConfig: { }
-        Configuration:
-          CustomDataIdentifier:
-            - Name: userId
-              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: firstName
-              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: lastName
-              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: DOBInQuery
-              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
-            - Name: addressPart1
-              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: addressPart2
-              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: subject
-              Regex: "\\\\\"subject\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+        <<: *DataProtectionPolicy
 
   CredentialSubjectFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -444,7 +447,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-${CredentialSubjectFunction}-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CredentialSubjectFunction-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CredentialSubjectFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -480,7 +483,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   CurrentTimeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -505,7 +508,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-${CurrentTimeFunction}-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CurrentTimeFunction-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CurrentTimeFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -546,7 +549,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   JwtSignerFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -571,7 +574,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-${JwtSignerFunction}-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-JwtSignerFunction-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${JwtSignerFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -632,7 +635,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-${OTGFunction}-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${OTGFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -667,15 +670,15 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-BearerTokenHandlerFunction-FatalErrorAlarm"
-      AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-FatalErrorAlarm"
+      AlarmDescription: !Sub "Trigger an alarm when Fatal ${OTGFunction} Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
-      MetricName: BearerTokenHandlerFunction-Fatalerror
+      MetricName: !Sub ${OTGFunction}-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
       Statistic: Sum
       Dimensions: []
@@ -728,72 +731,9 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
       DataProtectionPolicy:
-        Name: data-protection-policy
-        Description: ""
-        Version: "2021-06-01"
-        Statement:
-          - Sid: audit-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Audit:
-                FindingsDestination: { }
-          - Sid: redact-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Deidentify:
-                MaskConfig: { }
-        Configuration:
-          CustomDataIdentifier:
-            - Name: userId
-              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: firstName
-              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: lastName
-              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: DOBInQuery
-              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
-            - Name: addressPart1
-              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: addressPart2
-              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: subject
-              Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+        <<: *DataProtectionPolicy
 
   MatchingFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -818,7 +758,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-${MatchingFunction}-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-MatchingFunction-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${MatchingFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -857,7 +797,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   SsmParametersFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -882,7 +822,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-${SsmParametersFunction}-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-SsmParametersFunction-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${SsmParametersFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -918,7 +858,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
-      RetentionInDays: !If [IsDevLikeEnvironment, 7, 30]
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
   TimeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -943,7 +883,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-${TimeFunction}-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-TimeFunction-Errors"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${TimeFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -1057,7 +997,7 @@ Resources:
     Condition: "DeployAlarms"
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-PublicNinoCheckApi-FatalErrorAlarm"
-      AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs. ${SupportManualURL}"
+      AlarmDescription: !Sub "Trigger an alarm when Fatal ${PublicNinoCheckApi} Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
         - !ImportValue platform-alarm-critical-alert-topic
@@ -1158,7 +1098,7 @@ Resources:
     Condition: "DeployAlarms"
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-PrivateNinoCheckApi-FatalErrorAlarm"
-      AlarmDescription: !Sub "Trigger an alarm when Fatal Error occurs. ${SupportManualURL}"
+      AlarmDescription: !Sub "Trigger an alarm when Fatal ${PrivateNinoCheckApi} Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
         - !ImportValue platform-alarm-critical-alert-topic
@@ -1276,8 +1216,8 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Check Session failed 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckSessionStateMachineAlarm"
+      AlarmDescription: !Sub "${CheckSessionStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckSessionStateMachine-Alarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1378,70 +1318,7 @@ Resources:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       DataProtectionPolicy:
-        Name: data-protection-policy
-        Description: ""
-        Version: "2021-06-01"
-        Statement:
-          - Sid: audit-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Audit:
-                FindingsDestination: { }
-          - Sid: redact-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Deidentify:
-                MaskConfig: { }
-        Configuration:
-          CustomDataIdentifier:
-            - Name: userId
-              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: firstName
-              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: lastName
-              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: DOBInQuery
-              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
-            - Name: addressPart1
-              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: addressPart2
-              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: subject
-              Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+        <<: *DataProtectionPolicy
 
   NinoCheckStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1470,8 +1347,8 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "NINO Check failed 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachineAlarm"
+      AlarmDescription: !Sub "${NinoCheckStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachine-Alarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1535,70 +1412,7 @@ Resources:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       DataProtectionPolicy:
-        Name: data-protection-policy
-        Description: ""
-        Version: "2021-06-01"
-        Statement:
-          - Sid: audit-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Audit:
-                FindingsDestination: { }
-          - Sid: redact-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Deidentify:
-                MaskConfig: { }
-        Configuration:
-          CustomDataIdentifier:
-            - Name: userId
-              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: firstName
-              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: lastName
-              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: DOBInQuery
-              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
-            - Name: addressPart1
-              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: addressPart2
-              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: subject
-              Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+        <<: *DataProtectionPolicy
 
   AbandonStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1627,8 +1441,8 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Abandon failed 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-AbandonStateMachineAlarm"
+      AlarmDescription: !Sub "${AbandonStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AbandonStateMachine-Alarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1723,70 +1537,7 @@ Resources:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       DataProtectionPolicy:
-        Name: data-protection-policy
-        Description: ""
-        Version: "2021-06-01"
-        Statement:
-          - Sid: audit-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Audit:
-                FindingsDestination: { }
-          - Sid: redact-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Deidentify:
-                MaskConfig: { }
-        Configuration:
-          CustomDataIdentifier:
-            - Name: userId
-              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: firstName
-              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: lastName
-              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: DOBInQuery
-              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
-            - Name: addressPart1
-              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: addressPart2
-              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: subject
-              Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+        <<: *DataProtectionPolicy
 
   NinoIssueCredentialLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1815,8 +1566,8 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "NINO Issue Credential failed 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachineAlarm"
+      AlarmDescription: !Sub "${NinoIssueCredentialStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachine-Alarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1836,70 +1587,7 @@ Resources:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       DataProtectionPolicy:
-        Name: data-protection-policy
-        Description: ""
-        Version: "2021-06-01"
-        Statement:
-          - Sid: audit-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Audit:
-                FindingsDestination: { }
-          - Sid: redact-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Deidentify:
-                MaskConfig: { }
-        Configuration:
-          CustomDataIdentifier:
-            - Name: userId
-              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: firstName
-              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: lastName
-              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: DOBInQuery
-              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
-            - Name: addressPart1
-              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: addressPart2
-              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: subject
-              Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+        <<: *DataProtectionPolicy
 
   CheckSessionStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -2072,7 +1760,7 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "TxMaAuditEventRule (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub "${TxMaAuditEventRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-TxMaAuditEventRule-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
@@ -2097,7 +1785,7 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "AuditEventRequestSentRule (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub "${AuditEventRequestSentRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventRequestSentRule-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
@@ -2122,7 +1810,7 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "AuditEventResponseReceivedRule (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub "${AuditEventResponseReceivedRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventResponseReceivedRule-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
@@ -2147,7 +1835,7 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "AuditEventVcIssuedRule (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub "${AuditEventVcIssuedRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventVcIssuedRule-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
@@ -2172,7 +1860,7 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "AuditEventEndRule (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub "${AuditEventEndRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventEndRule-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
@@ -2197,7 +1885,7 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "AuditEventAbandonedRule (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub "${AuditEventAbandonedRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventAbandonedRule-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
@@ -2213,6 +1901,29 @@ Resources:
           Value: !Select [1, !Split ["|", !Ref AuditEventAbandonedRule]]
         - Name: EventBusName
           Value: !Ref CheckHmrcEventBus
+
+  CheckHmrcEventBusPutEventAlarm:
+    Condition: "DeployAlarms"
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      InsufficientDataActions: []
+      AlarmDescription: !Sub "${CheckHmrcEventBus} PutEvents (PutEvents Failed) 4 or more requests in the last hour. ${SupportManualURL}"
+      MetricName: PutEventsApproximateFailedCount
+      ComparisonOperator: GreaterThanThreshold
+      Namespace: "AWS/Events"
+      Statistic: Sum
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      Dimensions:
+        - Name: EventBusName
+          Value: !Ref CheckHmrcEventBus
+      Period: 300
+      Threshold: 0
+      TreatMissingData: missing
 
   ###############################################################################
 
@@ -2254,70 +1965,7 @@ Resources:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       DataProtectionPolicy:
-        Name: data-protection-policy
-        Description: ""
-        Version: "2021-06-01"
-        Statement:
-          - Sid: audit-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Audit:
-                FindingsDestination: { }
-          - Sid: redact-policy
-            DataIdentifier:
-              - arn:aws:dataprotection::aws:data-identifier/Address
-              - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-              - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-              - arn:aws:dataprotection::aws:data-identifier/IpAddress
-              - arn:aws:dataprotection::aws:data-identifier/Name
-              - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-              - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-              - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-              - userId
-              - firstName
-              - lastName
-              - DOBInQuery
-              - addressPart1
-              - addressPart2
-              - subject
-              - givenNameOrFamilyName
-            Operation:
-              Deidentify:
-                MaskConfig: { }
-        Configuration:
-          CustomDataIdentifier:
-            - Name: userId
-              Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: firstName
-              Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: lastName
-              Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: DOBInQuery
-              Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
-            - Name: addressPart1
-              Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: addressPart2
-              Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-            - Name: subject
-              Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-            - Name: givenNameOrFamilyName
-              Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
+        <<: *DataProtectionPolicy
 
   AuditEventStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
