@@ -59,72 +59,6 @@ Conditions:
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
 
-Metadata: &DataProtectionPolicy
-  Name: data-protection-policy
-  Description: ""
-  Version: "2021-06-01"
-  Statement:
-    - Sid: audit-policy
-      DataIdentifier:
-        - arn:aws:dataprotection::aws:data-identifier/Address
-        - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-        - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-        - arn:aws:dataprotection::aws:data-identifier/IpAddress
-        - arn:aws:dataprotection::aws:data-identifier/Name
-        - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-        - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-        - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-        - userId
-        - firstName
-        - lastName
-        - DOBInQuery
-        - addressPart1
-        - addressPart2
-        - subject
-        - givenNameOrFamilyName
-      Operation:
-        Audit:
-          FindingsDestination: { }
-    - Sid: redact-policy
-      DataIdentifier:
-        - arn:aws:dataprotection::aws:data-identifier/Address
-        - arn:aws:dataprotection::aws:data-identifier/AwsSecretKey
-        - arn:aws:dataprotection::aws:data-identifier/DateOfBirth
-        - arn:aws:dataprotection::aws:data-identifier/IpAddress
-        - arn:aws:dataprotection::aws:data-identifier/Name
-        - arn:aws:dataprotection::aws:data-identifier/NationalInsuranceNumber-GB
-        - arn:aws:dataprotection::aws:data-identifier/PgpPrivateKey
-        - arn:aws:dataprotection::aws:data-identifier/PkcsPrivateKey
-        - userId
-        - firstName
-        - lastName
-        - DOBInQuery
-        - addressPart1
-        - addressPart2
-        - subject
-        - givenNameOrFamilyName
-      Operation:
-        Deidentify:
-          MaskConfig: { }
-  Configuration:
-    CustomDataIdentifier:
-      - Name: userId
-        Regex: "\\\\\"user_id\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-      - Name: firstName
-        Regex: "\\\\\"firstName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-      - Name: lastName
-        Regex: "\\\\\"lastName\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-      - Name: DOBInQuery
-        Regex: "(?:\\\\\"birthDates\\\\\").*?\\\\\"S\\\\\":\\\\\"(\\d{4}-\\d{2}-\\d{2})\\\\\""
-      - Name: addressPart1
-        Regex: "\\\\\"buildingName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"addressLocality\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"buildingNumber\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-      - Name: addressPart2
-        Regex: "\\\\\"postalCode\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\"|\\\\\"streetName\\\\\":\\{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-      - Name: subject
-        Regex: "\\\\\"subject\\\\\"\\s*:\\s*\\\\\"([^\"]*)\\\\\""
-      - Name: givenNameOrFamilyName
-        Regex: "(?:\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"GivenName\\\\\"}|\\\\\"type\\\\\":{\\\\\"S\\\\\":\\\\\"FamilyName\\\\\"}),\\\\\"value\\\\\":{\\\\\"S\\\\\":\\\\\"([^\"]*)\\\\\""
-
 Mappings:
   # Only numeric values should be assigned here
   MaxJwtTtl:
@@ -241,14 +175,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
-  EpochTimeFunctionLogsSubscriptionFilterCSLS:
+  PIIRedactedEpochTimeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref EpochTimeFunctionLogGroup
+      LogGroupName: !Ref PIIRedactedEpochTimeFunctionLogGroup
 
   EpochTimeFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -300,14 +234,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
-  CiMappingFunctionLogsSubscriptionFilterCSLS:
+  PIIRedactedCiMappingFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref CiMappingFunctionLogGroup
+      LogGroupName: !Ref PIIRedactedCiMappingFunctionLogGroup
 
   CiMappingFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -361,14 +295,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
-  CreateAuthCodeFunctionLogsSubscriptionFilterCSLS:
+  PIIRedactedCreateAuthCodeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref CreateAuthCodeFunctionLogGroup
+      LogGroupName: !Ref PIIRedactedCreateAuthCodeFunctionLogGroup
 
   CreateAuthCodeFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -421,17 +355,15 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
-      DataProtectionPolicy:
-        <<: *DataProtectionPolicy
 
-  CredentialSubjectFunctionLogsSubscriptionFilterCSLS:
+  PIIRedactedCredentialSubjectFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref CredentialSubjectFunctionLogGroup
+      LogGroupName: !Ref PIIRedactedCredentialSubjectFunctionLogGroup
 
   CredentialSubjectFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -485,14 +417,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
-  CurrentTimeFunctionLogsSubscriptionFilterCSLS:
+  PIIRedactedCurrentTimeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref CurrentTimeFunctionLogGroup
+      LogGroupName: !Ref PIIRedactedCurrentTimeFunctionLogGroup
 
   CurrentTimeFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -551,14 +483,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
-  JwtSignerFunctionLogsSubscriptionFilterCSLS:
+  PIIRedactedJwtSignerFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref JwtSignerFunctionLogGroup
+      LogGroupName: !Ref PIIRedactedJwtSignerFunctionLogGroup
 
   JwtSignerFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -612,14 +544,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
-  OTGFunctionLogsSubscriptionFilterCSLS:
+  PIIRedactedOTGFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref OTGFunctionLogGroup
+      LogGroupName: !Ref PIIRedactedOTGFunctionLogGroup
 
   OTGFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -732,17 +664,15 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
-      DataProtectionPolicy:
-        <<: *DataProtectionPolicy
 
-  MatchingFunctionLogsSubscriptionFilterCSLS:
+  PIIRedactedMatchingFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref MatchingFunctionLogGroup
+      LogGroupName: !Ref PIIRedactedMatchingFunctionLogGroup
 
   MatchingFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -799,14 +729,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
-  SsmParametersFunctionLogsSubscriptionFilterCSLS:
+  PIIRedactedSsmParametersFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref SsmParametersFunctionLogGroup
+      LogGroupName: !Ref PIIRedactedSsmParametersFunctionLogGroup
 
   SsmParametersFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -860,14 +790,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
-  TimeFunctionLogsSubscriptionFilterCSLS:
+  PIIRedactedTimeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref TimeFunctionLogGroup
+      LogGroupName: !Ref PIIRedactedTimeFunctionLogGroup
 
   TimeFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -971,14 +901,14 @@ Resources:
       LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
-  PublicNinoCheckApiLogsSubscriptionFilterCSLS:
+  PIIRedactedPublicNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref PublicNinoCheckApiAccessLogGroup
+      LogGroupName: !Ref PIIRedactedPublicNinoCheckApiAccessLogGroup
 
   PublicNinoCheckApiFatalErorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -1072,14 +1002,14 @@ Resources:
       LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
 
-  PrivateNinoCheckApiLogsSubscriptionFilterCSLS:
+  PIIRedactedPrivateNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref PrivateNinoCheckApiAccessLogGroup
+      LogGroupName: !Ref PIIRedactedPrivateNinoCheckApiAccessLogGroup
 
   PrivateNinoCheckApiFatalErorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -1317,17 +1247,15 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
-      DataProtectionPolicy:
-        <<: *DataProtectionPolicy
 
-  NinoCheckStateMachineLogsSubscriptionFilterCSLS:
+  PIIRedactedNinoCheckStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
+      LogGroupName: !Ref PIIRedactedNinoCheckStateMachineLogGroup
 
   NinoCheckStateMachineFailedMetric:
     Type: AWS::Logs::MetricFilter
@@ -1411,17 +1339,15 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
-      DataProtectionPolicy:
-        <<: *DataProtectionPolicy
 
-  AbandonStateMachineLogsSubscriptionFilterCSLS:
+  PIIRedactedAbandonStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref AbandonStateMachineLogGroup
+      LogGroupName: !Ref PIIRedactedAbandonStateMachineLogGroup
 
   AbandonStateMachineFailedMetric:
     Type: AWS::Logs::MetricFilter
@@ -1536,17 +1462,15 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
-      DataProtectionPolicy:
-        <<: *DataProtectionPolicy
 
-  NinoIssueCredentialLogsSubscriptionFilterCSLS:
+  PIIRedactedNinoIssueCredentialLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref NinoIssueCredentialLogGroup
+      LogGroupName: !Ref PIIRedactedNinoIssueCredentialLogGroup
 
   NinoIssueCredentialStateMachineFailedMetric:
     Type: AWS::Logs::MetricFilter
@@ -1586,17 +1510,15 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs"
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
-      DataProtectionPolicy:
-        <<: *DataProtectionPolicy
 
-  CheckSessionStateMachineLogsSubscriptionFilterCSLS:
+  PIIRedactedCheckSessionStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref CheckSessionStateMachineLogGroup
+      LogGroupName: !Ref PIIRedactedCheckSessionStateMachineLogGroup
 
   CheckHmrcEventBus:
     Type: AWS::Events::EventBus
@@ -1965,17 +1887,15 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
-      DataProtectionPolicy:
-        <<: *DataProtectionPolicy
 
-  AuditEventStateMachineLogsSubscriptionFilterCSLS:
+  PIIRedactedAuditEventStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref AuditEventStateMachineLogGroup
+      LogGroupName: !Ref PIIRedactedAuditEventStateMachineLogGroup
 
   ####################################################################
   #                                                                  #
@@ -2091,6 +2011,326 @@ Resources:
         - MetricValue: 1
           MetricName: AbandonedAuthMetric
           MetricNamespace: !Ref CriIdentifier
+
+  ####################################################################
+  #                                                                  #
+  # Log Groups for Slunk (PII Redacted)                              #
+  #                                                                  #
+  ####################################################################
+  PIIRedactedEpochTimeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction-pii-redacted
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedCiMappingFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction-pii-redacted
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedCreateAuthCodeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction-pii-redacted
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedCredentialSubjectFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction-pii-redacted
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedCurrentTimeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction-pii-redacted
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedJwtSignerFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction-pii-redacted
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedOTGFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/OTGFunction-pii-redacted
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedMatchingFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction-pii-redacted
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedSsmParametersFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction-pii-redacted
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedTimeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/TimeFunction-pii-redacted
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedPublicNinoCheckApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs-pii-redacted"
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedPrivateNinoCheckApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs-pii-redacted"
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedNinoCheckStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs-pii-redacted"
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedAbandonStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs-pii-redacted"
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedNinoIssueCredentialLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs-pii-redacted"
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedCheckSessionStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs-pii-redacted"
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactedAuditEventStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs-pii-redacted
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  ####################################################################
+  #                                                                  #
+  # PIIRedactFunction SubscriptionFilter                             #
+  #                                                                  #
+  ####################################################################
+  InvokeLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXrayFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+
+  PIIRedactFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/pii-redact/src/pii-redact-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/PIIRedactFunction
+      CodeSigningConfigArn:
+        !If [ EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue ]
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action: logs:*
+            Resource: "*"
+        - Statement:
+            Effect: Allow
+            Action: lambda:*
+            Resource: "*"
+
+  PIIRedactFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/PIIRedactFunction
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+
+  PIIRedactFunctionCloudWatchPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PIIRedactFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: !Join [ ".", [ "logs", !Ref "AWS::Region", "amazonaws.com" ] ]
+      SourceAccount: !Ref AWS::AccountId
+
+  EpochTimeFunctionLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref EpochTimeFunctionLogGroup
+
+  CiMappingFunctionLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref CiMappingFunctionLogGroup
+
+  CreateAuthCodeFunctionLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref CreateAuthCodeFunctionLogGroup
+
+  CredentialSubjectFunctionLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref CredentialSubjectFunctionLogGroup
+
+  CurrentTimeFunctionLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref CurrentTimeFunctionLogGroup
+
+  JwtSignerFunctionLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref JwtSignerFunctionLogGroup
+
+  OTGFunctionLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref OTGFunctionLogGroup
+
+  MatchingFunctionLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref MatchingFunctionLogGroup
+
+  SsmParametersFunctionLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref SsmParametersFunctionLogGroup
+
+  TimeFunctionLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref TimeFunctionLogGroup
+
+  PublicNinoCheckApiLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref PublicNinoCheckApiAccessLogGroup
+
+  PrivateNinoCheckApiLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref PrivateNinoCheckApiAccessLogGroup
+
+  NinoCheckStateMachineLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref NinoCheckStateMachineLogGroup
+
+  AbandonStateMachineLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref AbandonStateMachineLogGroup
+
+  NinoIssueCredentialLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref NinoIssueCredentialLogGroup
+
+  CheckSessionStateMachineLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref CheckSessionStateMachineLogGroup
+
+  AuditEventStateMachineLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref AuditEventStateMachineLogGroup
 
 ##################################################################
 #                                                                  #
