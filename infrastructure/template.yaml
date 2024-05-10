@@ -1892,6 +1892,105 @@ Resources:
         - Name: EventBusName
           Value: !Ref CheckHmrcEventBus
 
+  AuditEventRequestSentPutEventsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      InsufficientDataActions: []
+      AlarmDescription: !Sub "AuditEventRequestSentPutEvents (PutEvents Failed) 4 or more requests in the last hour. ${SupportManualURL}"
+      MetricName: PutEventsApproximateFailedCount
+      ComparisonOperator: GreaterThanThreshold
+      Namespace: "AWS/Events"
+      Statistic: Sum
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      Dimensions: []
+      Period: 300
+      Threshold: 0
+      TreatMissingData: missing
+
+  AuditEventResponseReceivedPutEventsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      InsufficientDataActions: []
+      AlarmDescription: !Sub "AuditEventResponseReceivedPutEvents (PutEvents Failed) 4 or more requests in the last hour. ${SupportManualURL}"
+      MetricName: PutEventsApproximateFailedCount
+      ComparisonOperator: GreaterThanThreshold
+      Namespace: "AWS/Events"
+      Statistic: Sum
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      Dimensions: []
+      Period: 300
+      Threshold: 0
+      TreatMissingData: missing
+
+  AuditEventVcIssuedPutEventsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      InsufficientDataActions: []
+      AlarmDescription: !Sub "AuditEventVcIssuedPutEvents (PutEvents Failed) 4 or more requests in the last hour. ${SupportManualURL}"
+      MetricName: PutEventsApproximateFailedCount
+      ComparisonOperator: GreaterThanThreshold
+      Namespace: "AWS/Events"
+      Statistic: Sum
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      Dimensions: []
+      Period: 300
+      Threshold: 0
+      TreatMissingData: missing
+
+  AuditEventAbandonedPutEventsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      InsufficientDataActions: []
+      AlarmDescription: !Sub "AuditEventAbandonedPutEvents (PutEvents Failed) 4 or more requests in the last hour. ${SupportManualURL}"
+      MetricName: PutEventsApproximateFailedCount
+      ComparisonOperator: GreaterThanThreshold
+      Namespace: "AWS/Events"
+      Statistic: Sum
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      Dimensions: []
+      Period: 300
+      Threshold: 0
+      TreatMissingData: missing
+
+  AuditEventEndPutEventsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      InsufficientDataActions: []
+      AlarmDescription: !Sub "AuditEventEndPutEvents (PutEvents Failed) 4 or more requests in the last hour. ${SupportManualURL}"
+      MetricName: PutEventsApproximateFailedCount
+      ComparisonOperator: GreaterThanThreshold
+      Namespace: "AWS/Events"
+      Statistic: Sum
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      Dimensions: []
+      Period: 300
+      Threshold: 0
+      TreatMissingData: missing
   ###############################################################################
 
   AuditEventStateMachine:
