@@ -264,7 +264,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-EpochTimeFunction-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-EpochTimeFunction-Errors-alarm"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${EpochTimeFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions: [!ImportValue platform-alarm-warning-alert-topic]
@@ -323,7 +323,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-CiMappingFunction-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CiMappingFunction-Errors-alarm"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CiMappingFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -384,7 +384,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-CreateAuthCodeFunction-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CreateAuthCodeFunction-Errors-alarm"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CreateAuthCodeFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -447,7 +447,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-CredentialSubjectFunction-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CredentialSubjectFunction-Errors-alarm"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CredentialSubjectFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -508,7 +508,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-CurrentTimeFunction-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CurrentTimeFunction-Errors-alarm"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CurrentTimeFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -574,7 +574,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-JwtSignerFunction-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-JwtSignerFunction-Errors-alarm"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${JwtSignerFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -635,7 +635,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-Errors-alarm"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${OTGFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -670,7 +670,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-FatalErrorAlarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-FatalError-alarm"
       AlarmDescription: !Sub "Trigger an alarm when Fatal ${OTGFunction} Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -700,7 +700,7 @@ Resources:
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       AlarmDescription: !Sub "Trigger if the ${OTGFunction} lambda throttles. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-throttles"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-Throttles-alarm"
       MetricName: Throttles
       Namespace: AWS/Lambda
       Statistic: Sum
@@ -758,7 +758,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-MatchingFunction-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-MatchingFunction-Errors-alarm"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${MatchingFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -822,7 +822,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-SsmParametersFunction-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-SsmParametersFunction-Errors-alarm"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${SsmParametersFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -883,7 +883,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-TimeFunction-Errors"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-TimeFunction-Errors-alarm"
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${TimeFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -996,7 +996,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-PublicNinoCheckApi-FatalErrorAlarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-PublicNinoCheckApi-FatalError-alarm"
       AlarmDescription: !Sub "Trigger an alarm when Fatal ${PublicNinoCheckApi} Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -1097,7 +1097,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-PrivateNinoCheckApi-FatalErrorAlarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-PrivateNinoCheckApi-FatalError-alarm"
       AlarmDescription: !Sub "Trigger an alarm when Fatal ${PrivateNinoCheckApi} Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
@@ -1217,7 +1217,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "${CheckSessionStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckSessionStateMachine-Alarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckSessionStateMachine-alarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1348,7 +1348,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "${NinoCheckStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachine-Alarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachine-ExecutionsFailed-alarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1442,7 +1442,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "${AbandonStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-AbandonStateMachine-Alarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AbandonStateMachine-ExecutionsFailed-alarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1567,7 +1567,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "${NinoIssueCredentialStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachine-Alarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachine-ExecutionsFailed-alarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
@@ -1761,7 +1761,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "${TxMaAuditEventRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-TxMaAuditEventRule-alarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-TxMaAuditEventRule-FailedInvocations-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
@@ -1786,7 +1786,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "${AuditEventRequestSentRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventRequestSentRule-alarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventRequestSentRule-FailedInvocations-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
@@ -1811,7 +1811,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "${AuditEventResponseReceivedRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventResponseReceivedRule-alarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventResponseReceivedRule-FailedInvocations-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
@@ -1836,7 +1836,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "${AuditEventVcIssuedRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventVcIssuedRule-alarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventVcIssuedRule-FailedInvocations-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
@@ -1861,7 +1861,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "${AuditEventEndRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventEndRule-alarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventEndRule-FailedInvocations-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
@@ -1886,7 +1886,7 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "${AuditEventAbandonedRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventAbandonedRule-alarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventAbandonedRule-FailedInvocations-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
@@ -1912,6 +1912,7 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       AlarmDescription: !Sub "${CheckHmrcEventBus} PutEvents (PutEvents Failed) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckHmrcEventBus-PutEventsApproximateFailedCount-alarm"
       MetricName: PutEventsApproximateFailedCount
       ComparisonOperator: GreaterThanThreshold
       Namespace: "AWS/Events"
