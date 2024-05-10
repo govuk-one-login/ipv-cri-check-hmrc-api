@@ -1912,6 +1912,7 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       AlarmDescription: !Sub "${CheckHmrcEventBus} PutEvents (PutEvents Failed) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckHmrcEventBusPutEvents-alarm"
       MetricName: PutEventsApproximateFailedCount
       ComparisonOperator: GreaterThanThreshold
       Namespace: "AWS/Events"
