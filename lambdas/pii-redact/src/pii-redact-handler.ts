@@ -1,8 +1,8 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import { Logger } from "@aws-lambda-powertools/logger";
-import * as zlib from 'zlib';
+import * as zlib from "zlib";
 import { CloudWatchLogsDecodedData } from "aws-lambda";
-import { CloudWatchLogsEvent,  } from "aws-lambda/trigger/cloudwatch-logs";
+import { CloudWatchLogsEvent } from "aws-lambda/trigger/cloudwatch-logs";
 import {
   CloudWatchLogsClient,
   PutLogEventsCommand,
@@ -18,46 +18,56 @@ const ipAddressRegex = /\\"ip_address\\":\s*\\"([^"]*)\\"/g;
 const userIdRegex = /\\"user_id\\":\s*\\"([^"]*)\\"/g;
 const firstNameRegex = /\\"firstName\\":\s*\\"([^"]*)\\"/g;
 const lastNameRegex = /\\"lastName\\":\s*\\"([^"]*)\\"/g;
-const birthDates = /\\"birthDates\\"\s*:\s*\{\s*\\"L\\"\s*:\s*\[\s*\{\s*\\"M\\"\s*:\s*\{\s*\\"value\\"\s*:\s*\{\s*\\"S\\"\s*:\s*\\"(\d{4}-\d{2}-\d{2})\\"\s*}\s*}\s*}\s*]\s*}/g;
+const birthDates =
+  /\\"birthDates\\"\s*:\s*\{\s*\\"L\\"\s*:\s*\[\s*\{\s*\\"M\\"\s*:\s*\{\s*\\"value\\"\s*:\s*\{\s*\\"S\\"\s*:\s*\\"(\d{4}-\d{2}-\d{2})\\"\s*}\s*}\s*}\s*]\s*}/g;
 const subjectRegex = /\\"subject\\":\s*\\"([^"]*)\\"/g;
 const tokenRegex = /\\"token\\":\s*\\"([^"]*)\\"/g;
 const dateOfBirthRegex = /\\"dateOfBirth\\":\s*\\"([^"]*)\\"/g;
 
-const buildingNameRegex = /\\"buildingName\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
-const addressLocalityRegex = /\\"addressLocality\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
-const buildingNumberRegex = /\\"buildingNumber\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
-const postalCodeRegex = /\\"postalCode\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
-const streetNameRegex = /\\"streetName\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
+const buildingNameRegex =
+  /\\"buildingName\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
+const addressLocalityRegex =
+  /\\"addressLocality\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
+const buildingNumberRegex =
+  /\\"buildingNumber\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
+const postalCodeRegex =
+  /\\"postalCode\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
+const streetNameRegex =
+  /\\"streetName\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
 
-const givenNameRegex = /\\"type\\":{\\"S\\":\\"GivenName\\"},\s*\\"value\\":{\\"S\\":\\"([^"]*)\\"/g;
-const familyNameRegex = /\\"type\\":{\\"S\\":\\"FamilyName\\"},\s*\\"value\\":{\\"S\\":\\"([^"]*)\\"/g;
+const givenNameRegex =
+  /\\"type\\":{\\"S\\":\\"GivenName\\"},\s*\\"value\\":{\\"S\\":\\"([^"]*)\\"/g;
+const familyNameRegex =
+  /\\"type\\":{\\"S\\":\\"FamilyName\\"},\s*\\"value\\":{\\"S\\":\\"([^"]*)\\"/g;
 
 export class PiiRedactHandler implements LambdaInterface {
   public async handler(
     event: CloudWatchLogsEvent,
     _context: unknown
-  ): Promise<any> {
+  ): Promise<object> {
     try {
       logger.info("Received " + JSON.stringify(event));
 
       const logDataBase64 = event.awslogs.data;
-      const logDataBuffer = Buffer.from(logDataBase64, 'base64');
-      const decompressedData = zlib.unzipSync(logDataBuffer).toString('utf-8');
+      const logDataBuffer = Buffer.from(logDataBase64, "base64");
+      const decompressedData = zlib.unzipSync(logDataBuffer).toString("utf-8");
       const logEvents: CloudWatchLogsDecodedData = JSON.parse(decompressedData);
-      const piiRedactLogGroup = logEvents.logGroup + "-pii-redacted"
+      const piiRedactLogGroup = logEvents.logGroup + "-pii-redacted";
       const logStream = logEvents.logStream;
 
       try {
-        await cloudwatch.send(new CreateLogStreamCommand({
-          logGroupName: piiRedactLogGroup,
-          logStreamName: logStream
-        }));
-      } catch (error: any) {
+        await cloudwatch.send(
+          new CreateLogStreamCommand({
+            logGroupName: piiRedactLogGroup,
+            logStreamName: logStream,
+          })
+        );
+      } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
-        if(!message.includes("The specified log stream already exists")) {
+        if (!message.includes("The specified log stream already exists")) {
           throw error;
         }
-        logger.info(logStream + " already exists")
+        logger.info(logStream + " already exists");
       }
 
       for (const logEvent of logEvents.logEvents) {
@@ -67,17 +77,21 @@ export class PiiRedactHandler implements LambdaInterface {
       logger.info("Putting redacted logs into " + piiRedactLogGroup);
 
       try {
-        const response: PutLogEventsCommandOutput = await cloudwatch.send(new PutLogEventsCommand({
-          logGroupName: piiRedactLogGroup,
-          logStreamName: logStream,
-          logEvents: logEvents.logEvents.map(event => ({
-            message: event.message,
-            timestamp: event.timestamp
-          }))
-        }));
+        const response: PutLogEventsCommandOutput = await cloudwatch.send(
+          new PutLogEventsCommand({
+            logGroupName: piiRedactLogGroup,
+            logStreamName: logStream,
+            logEvents: logEvents.logEvents.map((event) => ({
+              message: event.message,
+              timestamp: event.timestamp,
+            })),
+          })
+        );
         logger.info(JSON.stringify(response));
       } catch (error) {
-        logger.error(`Error putting log events into ${piiRedactLogGroup}: ${error}`);
+        logger.error(
+          `Error putting log events into ${piiRedactLogGroup}: ${error}`
+        );
         throw error;
       }
 
@@ -102,8 +116,14 @@ export class PiiRedactHandler implements LambdaInterface {
       .replaceAll(postalCodeRegex, '"postalCode": { "S": "***"')
       .replaceAll(streetNameRegex, '"streetName": { "S": "***"')
       .replaceAll(subjectRegex, '"subject": "***"')
-      .replaceAll(givenNameRegex, '"type": { "S": "GivenName" }, "value": { "S": "***"')
-      .replaceAll(familyNameRegex, '"type": { "S": "FamilyName" }, "value": { "S": "***"')
+      .replaceAll(
+        givenNameRegex,
+        '"type": { "S": "GivenName" }, "value": { "S": "***"'
+      )
+      .replaceAll(
+        familyNameRegex,
+        '"type": { "S": "FamilyName" }, "value": { "S": "***"'
+      )
       .replaceAll(ninoRegex, '"nino": "***"')
       .replaceAll(ipAddressRegex, '"ip_address": "***"')
       .replaceAll(tokenRegex, '"token": "***"');
