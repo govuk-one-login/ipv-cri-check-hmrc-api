@@ -4,7 +4,7 @@ const userIdRegex = /\\"user_id\\":\s*\\"([^"]*)\\"/g;
 const firstNameRegex = /\\"firstName\\":\s*\\"([^"]*)\\"/g;
 const lastNameRegex = /\\"lastName\\":\s*\\"([^"]*)\\"/g;
 const birthDates =
-  /\\"birthDates\\"\s*:\s*\{\s*\\"L\\"\s*:\s*\[\s*\{\s*\\"M\\"\s*:\s*\{\s*\\"value\\"\s*:\s*\{\s*\\"S\\"\s*:\s*\\"(\d{4}-\d{2}-\d{2})\\"\s*}\s*}\s*}\s*]\s*}/g;
+  /\\"birthDates\\"\s*:\s*\{\s*\\"L\\"\s*:\s*\[\s*\{\s*\\"M\\"\s*:\s*\{\s*\\"value\\"\s*:\s*\{\s*\\"S\\"\s*:\s*\\"(\d{4}-\d{2}-\d{2})\\".*]\s*}/g;
 const subjectRegex = /\\"subject\\":\s*\\"([^"]*)\\"/g;
 const tokenRegex = /\\"token\\":\s*\\"([^"]*)\\"/g;
 const dateOfBirthRegex = /\\"dateOfBirth\\":\s*\\"([^"]*)\\"/g;
