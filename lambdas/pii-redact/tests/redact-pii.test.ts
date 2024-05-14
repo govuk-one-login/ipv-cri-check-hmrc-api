@@ -96,4 +96,24 @@ describe("redact-pii", () => {
       '{\\"names\\":{\\"L\\":[{\\"M\\":{\\"nameParts\\":{\\"L\\":[{\\"M\\":{\\"type\\":{\\"S\\":\\"GivenName\\"},\\"value\\":{\\"S\\":\\"Jim\\"}}},{\\"M\\":{\\"type\\":{\\"S\\":\\"FamilyName\\"},\\"value\\":{\\"S\\":\\"Ferguson\\"}}}]}}}]}';
     expect(redactPII(names)).toStrictEqual(namesRedacted);
   });
+
+  it("should not redact govuk_signin_journey_id field", async () => {
+    const govSigninJourneyID =
+      '{\\"userAuditInfo\\":{\\"govuk_signin_journey_id\\":\\"02d56902-96bb-4669-ba18-be6c2b002f36\\"}';
+    expect(redactPII(govSigninJourneyID)).toStrictEqual(govSigninJourneyID);
+  });
+
+  it("should not redact sessionCheck field", async () => {
+    const sessionCheck =
+      '{"\\sessionCheck\\":{\\"status\\":\\"SESSION_OK\\",\\"clientId\\":\\"ipv-core-stub-aws-prod\\",\\"userAuditInfo\\":{}}}';
+    expect(redactPII(sessionCheck)).toStrictEqual(sessionCheck);
+  });
+
+  it("should not redact date fields", async () => {
+    const dateWithBrackets = '\\"Date\\":[\\"Sat, 11 May 2024 11:24:11 GMT\\"]';
+    expect(redactPII(dateWithBrackets)).toStrictEqual(dateWithBrackets);
+    const dateWithoutBrackets =
+      '\\"Date\\":\\"Sat, 11 May 2024 11:24:24 GMT\\",';
+    expect(redactPII(dateWithoutBrackets)).toStrictEqual(dateWithoutBrackets);
+  });
 });
