@@ -30,7 +30,7 @@ describe("check-session", () => {
         responseStepFunction
       );
       expect(results[0].stateExitedEventDetails?.output).toBe(
-        '{"status":"SESSION_OK","clientId":"exampleClientId","userAuditInfo":{"govuk_signin_journey_id":"252561a2-c6ef-47e7-87ab-93891a2a6a41","user_id":"urn:fdc:gov.uk:2022:da580c9d-cdf9-4961-afde-233249db04d2","persistent_session_id":"156714ef-f9df-48c2-ada8-540e7bce44f7","session_id":"12345","ip_address":"51.149.8.29"}}'
+        '{"status":"SESSION_OK","txmaAuditHeader":"{}","clientId":"exampleClientId","userAuditInfo":{"govuk_signin_journey_id":"252561a2-c6ef-47e7-87ab-93891a2a6a41","user_id":"urn:fdc:gov.uk:2022:da580c9d-cdf9-4961-afde-233249db04d2","persistent_session_id":"156714ef-f9df-48c2-ada8-540e7bce44f7","session_id":"12345","ip_address":"51.149.8.29"}}'
       );
     });
     it("it should pass when a valid session exists and persistent_session_id is absent", async () => {
@@ -49,7 +49,7 @@ describe("check-session", () => {
         responseStepFunction
       );
       expect(results[0].stateExitedEventDetails?.output).toBe(
-        '{"status":"SESSION_OK","clientId":"exampleClientId","userAuditInfo":{"govuk_signin_journey_id":"252561a2-c6ef-47e7-87ab-93891a2a6a41","user_id":"urn:fdc:gov.uk:2022:da580c9d-cdf9-4961-afde-233249db04d2","session_id":"12345","ip_address":"51.149.8.29"}}'
+        '{"status":"SESSION_OK","txmaAuditHeader":"{}","clientId":"exampleClientId","userAuditInfo":{"govuk_signin_journey_id":"252561a2-c6ef-47e7-87ab-93891a2a6a41","user_id":"urn:fdc:gov.uk:2022:da580c9d-cdf9-4961-afde-233249db04d2","session_id":"12345","ip_address":"51.149.8.29"}}'
       );
     });
   });

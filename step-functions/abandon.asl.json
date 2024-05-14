@@ -84,6 +84,7 @@
             "Detail": {
               "auditPrefix": "${AuditEventPrefix}",
               "user.$": "$.sessionCheck.userAuditInfo",
+              "deviceInformation.$": "$.sessionCheck.txmaAuditHeader",
               "issuer.$": "$.parameters.Issuer"
             },
             "DetailType": "${AuditEventNameAbandoned}",

@@ -20,6 +20,7 @@ describe("abandon", () => {
     it("should pass when session exists", async () => {
       const input = JSON.stringify({
         sessionId: "12345",
+        "txma-audit-encoded": "test encoded header",
       });
       const responseStepFunction =
         await sfnContainer.startStepFunctionExecution("Happy", input);

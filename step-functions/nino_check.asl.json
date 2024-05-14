@@ -198,6 +198,7 @@
             "Detail": {
               "auditPrefix": "${AuditEventPrefix}",
               "user.$": "$.sessionCheck.userAuditInfo",
+              "deviceInformation.$": "$.sessionCheck.txmaAuditHeader",
               "nino.$": "$.nino",
               "userInfoEvent.$": "$.userInfo",
               "issuer.$": "$.parameters.Issuer"
@@ -263,6 +264,7 @@
             "Detail": {
               "auditPrefix": "${AuditEventPrefix}",
               "user.$": "$.sessionCheck.userAuditInfo",
+              "deviceInformation.$": "$.sessionCheck.txmaAuditHeader",
               "issuer.$": "$.parameters.Issuer"
             },
             "DetailType": "${AuditEventNameResponseReceived}",
