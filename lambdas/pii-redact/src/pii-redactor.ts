@@ -71,7 +71,7 @@ export const redactPII = (message: string) => {
     .replaceAll(familyName2Regex, '"type": "FamilyName", "value": "***"')
     .replaceAll(givenName2Regex, '"type": "GivenName", "value": "***"')
     .replaceAll(givenNameValueRegex, '"type": "GivenName", "value": "***"')
-    .replaceAll(familyNameValueRegex, '"type": "GivenName", "value": "***"')
+    .replaceAll(familyNameValueRegex, '"type": "FamilyName", "value": "***"')
     .replaceAll(birthDateRegex, '"birthDate":[{"value":"***"}]')
     .replaceAll(tokenRegex, '"token": "***"')
     .replaceAll(ipRegex, '"ip": "***"')
