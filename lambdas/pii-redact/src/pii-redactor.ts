@@ -42,6 +42,12 @@ const givenNameValueRegex =
 const familyNameValueRegex =
   /\\\\\\"FamilyName\\\\\\",\\\\\\"value\\\\\\":\\\\\\"([^"]*)\\\\\\"/g;
 
+const userIdTripleBackslashesRegex =
+  /\\\\\\"user_id\\\\\\":\\\\\\"([^"]*)\\\\\\"/g;
+const subjectTripleBackslashesRegex =
+  /\\\\"subject\\\\":\{\\\\"S\\\\":\\\\"([^"]*)\\\\"/g;
+const ninoTripleBackslashesRegex = /\\\\\\"nino\\\\\\":\\\\\\"([^"]*)\\\\\\"/g;
+
 export const redactPII = (message: string) => {
   return message
     .replaceAll(userIdRegex, '"user_id": "***"')
@@ -78,6 +84,15 @@ export const redactPII = (message: string) => {
     .replaceAll(dobRegex, '"dob": "***"')
     .replaceAll(ipAddressRegex2, '\\\\\\"ip_address\\\\\\": "***"')
     .replaceAll(ninoInSRegex, '"nino":{"S": "***"')
+    .replaceAll(
+      userIdTripleBackslashesRegex,
+      '\\\\\\"user_id": \\\\\\"***\\\\\\"'
+    )
+    .replaceAll(
+      subjectTripleBackslashesRegex,
+      '\\\\\\"subject": \\\\\\"***\\\\\\"'
+    )
+    .replaceAll(ninoTripleBackslashesRegex, '\\\\\\"nino": \\\\\\"***\\\\\\"')
     .replaceAll(
       birthDate2Regex,
       '\\\\\\"birthDate\\\\\\":[{\\\\\\"value\\\\\\":\\\\\\"***\\\\\\"}]'
