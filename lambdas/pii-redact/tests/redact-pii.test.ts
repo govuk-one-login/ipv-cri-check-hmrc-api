@@ -41,6 +41,30 @@ describe("redact-pii", () => {
     expect(redactPII(birthDates)).toStrictEqual(birthDatesRedacted);
   });
 
+  it("should redact birthDate field", async () => {
+    const birthDateRedacted = '"birthDate":[{"value":"***"}]';
+    const birthDate = '\\"birthDate\\":[{\\"value\\":\\"1970-01-01\\"}]';
+    expect(redactPII(birthDate)).toStrictEqual(birthDateRedacted);
+  });
+
+  it("should redact the FamilyName", async () => {
+    const familyNameRedacted = '"type": "FamilyName", "value": "***"';
+    const familyName = '\\"type\\":\\"FamilyName\\",\\"value\\":\\"test\\"';
+    expect(redactPII(familyName)).toStrictEqual(familyNameRedacted);
+  });
+
+  it("should redact the GivenName", async () => {
+    const givenNameRedacted = '"type": "GivenName", "value": "***"';
+    const givenName = '\\"type\\":\\"GivenName\\",\\"value\\":\\"test\\"';
+    expect(redactPII(givenName)).toStrictEqual(givenNameRedacted);
+  });
+
+  it("should redact personalNumber field", async () => {
+    const personalNumberRedacted = '{"personalNumber": "***"}';
+    const personalNumber = '{\\"personalNumber\\":\\"123\\"}';
+    expect(redactPII(personalNumber)).toStrictEqual(personalNumberRedacted);
+  });
+
   it("should redact subject field", async () => {
     const subjectRedacted = '{"subject": "***"}';
     const subject = '{\\"subject\\":\\"subject\\"}';
