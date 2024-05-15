@@ -9,7 +9,7 @@ const personalNumberPatterns = [
   },
   {
     regex: /\\\\\\"personalNumber\\\\\\":\\\\\\"([^"]*)\\\\\\"/g,
-    replacement: '\\"personalNumber\\":\\\\"***\\\\"',
+    replacement: '\\\\\\"personalNumber\\\\\\":\\\\\\"***\\\\\\"',
   },
   {
     regex: /\\"nino\\":\s*\\"([^"]*)\\"/g,
