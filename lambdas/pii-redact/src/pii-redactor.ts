@@ -1,101 +1,206 @@
-const personalNumberRegex = /\\"personalNumber\\":\s*\\"([^"]*)\\"/g;
-const ninoRegex = /\\"nino\\":\s*\\"([^"]*)\\"/g;
-const nino2Regex = /\\\\"nino\\\\":\s*\\\\"([^"]*)\\\\"/g;
-const clientIpAddressRegex = /\\"clientIpAddress\\":\s*\\"([^"]*)\\"/g;
-const dobRegex = /\\"dob\\":\s*\\"([^"]*)\\"/g;
-const ipAddressRegex = /\\"ip_address\\":\s*\\"([^"]*)\\"/g;
-const ipAddressRegex2 = /\\\\"ip_address\\\\":\s*\\"([^"]*)\\"/g;
-const userId2 = /\\\\"user_id\\\\":\s*\\"([^"]*)\\"/g;
-const ipRegex = /"ip":\s*"([^"]*)"/g;
-const userIdRegex = /\\"user_id\\":\s*\\"([^"]*)\\"/g;
-const firstNameRegex = /\\"firstName\\":\s*\\"([^"]*)\\"/g;
-const lastNameRegex = /\\"lastName\\":\s*\\"([^"]*)\\"/g;
-const birthDatesRegex =
-  /\\"birthDates\\"\s*:\s*\{\s*\\"L\\"\s*:\s*\[\s*\{\s*\\"M\\"\s*:\s*\{\s*\\"value\\"\s*:\s*\{\s*\\"S\\"\s*:\s*\\"(\d{4}-\d{2}-\d{2})\\".*]\s*}/g;
-const birthDateRegex = /\\"birthDate\\":\[{\\"value\\":\\"([^"]*)\\"}]/g;
-const birthDate2Regex =
-  /\\\\\\"birthDate\\\\\\":\[\{\\\\\\"value\\\\\\":\\\\\\"([^"]*)\\\\\\"}/g;
-const subjectRegex = /\\"subject\\":\s*\\"([^"]*)\\"/g;
-const tokenRegex = /\\"token\\":\s*\\"([^"]*)\\"/g;
-const dateOfBirthRegex = /\\"dateOfBirth\\":\s*\\"([^"]*)\\"/g;
-const buildingNameRegex =
-  /\\"buildingName\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
-const addressLocalityRegex =
-  /\\"addressLocality\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
-const buildingNumberRegex =
-  /\\"buildingNumber\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
-const postalCodeRegex =
-  /\\"postalCode\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
-const streetNameRegex =
-  /\\"streetName\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g;
-const givenNameRegex =
-  /\\"type\\":{\\"S\\":\\"GivenName\\"},\s*\\"value\\":{\\"S\\":\\"([^"]*)\\"/g;
-const familyNameRegex =
-  /\\"type\\":{\\"S\\":\\"FamilyName\\"},\s*\\"value\\":{\\"S\\":\\"([^"]*)\\"/g;
-const familyName2Regex =
-  /\\"type\\":\s*\\"FamilyName\\",\s*\\"value\\":\\"([^"]*)\\"/g;
-const givenName2Regex =
-  /\\"type\\":\s*\\"GivenName\\",\s*\\"value\\":\\"([^"]*)\\"/g;
-const ninoInSRegex = /\\"nino\\":\{\\"S\\":\\"([^"]*)\\"/g;
-const givenNameValueRegex =
-  /\\\\\\"GivenName\\\\\\",\\\\\\"value\\\\\\":\\\\\\"([^"]*)\\\\\\"/g;
-const familyNameValueRegex =
-  /\\\\\\"FamilyName\\\\\\",\\\\\\"value\\\\\\":\\\\\\"([^"]*)\\\\\\"/g;
+const personalNumberPatterns = [
+  {
+    regex: /\\"personalNumber\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\"personalNumber\\": \\"***\\"',
+  },
+  {
+    regex: /\\\\"personalNumber\\\\":\\\\"([^"]*)\\\\"/g,
+    replacement: '\\\\"personalNumber\\\\":\\\\"***\\\\"',
+  },
+  {
+    regex: /\\\\\\"personalNumber\\\\\\":\\\\\\"([^"]*)\\\\\\"/g,
+    replacement: '\\\\\\"personalNumber\\\\\\":\\\\\\"***\\\\\\"',
+  },
+  {
+    regex: /\\"nino\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\"nino\\": \\"***\\"',
+  },
+  {
+    regex: /\\\\"nino\\\\":\s*\\\\"([^"]*)\\\\"/g,
+    replacement: '\\\\"nino\\\\": \\\\"***\\\\"',
+  },
+  {
+    regex: /\\\\\\"nino\\\\\\":\\\\\\"([^"]*)\\\\\\"/g,
+    replacement: '\\\\\\"nino\\\\\\": \\\\\\"***\\\\\\"',
+  },
+  {
+    regex: /"nino":{"S": "\\"([^"]*)\\"}/g,
+    replacement: '"nino":{"S": \\"***\\"}',
+  },
+  {
+    regex: /\\"nino\\":{\\"S\\":"\\"([^"]*)\\"}/g,
+    replacement: '\\"nino\\":{\\"S\\":\\"***\\"}',
+  },
+  {
+    regex: /\\"nino\\":\{\\"S\\":\\"([^"]*)\\"}/g,
+    replacement: '\\"nino\\":{\\"S\\":\\"***\\"}',
+  },
+];
 
-const userIdTripleBackslashesRegex =
-  /\\\\\\"user_id\\\\\\":\\\\\\"([^"]*)\\\\\\"/g;
-const subjectTripleBackslashesRegex =
-  /\\\\"subject\\\\":\{\\\\"S\\\\":\\\\"([^"]*)\\\\"/g;
-const ninoTripleBackslashesRegex = /\\\\\\"nino\\\\\\":\\\\\\"([^"]*)\\\\\\"/g;
+const ipAddressPatterns = [
+  {
+    regex: /\\"clientIpAddress\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\"clientIpAddress\\": \\"***\\"',
+  },
+  {
+    regex: /\\"clientIpAddress\\":{\\"S\\":"\\"([^"]*)\\"}/g,
+    replacement: '\\"nino\\":{\\"S\\":\\"***\\"}',
+  },
+  {
+    regex: /\\"clientIpAddress\\":\{\\"S\\":\\"([^"]*)\\"}/g,
+    replacement: '\\"clientIpAddress\\":{\\"S\\":\\"***\\"}',
+  },
+  {
+    regex: /\\"ip_address\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\"ip_address\\": \\"***\\"',
+  },
+  {
+    regex: /\\\\"ip_address\\\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\\\\\"ip_address\\\\\\": \\"***\\"',
+  },
+  {
+    regex: /"ip":\s*"([^"]*)"/g,
+    replacement: '"ip": "***"',
+  },
+];
+
+const namePatterns = [
+  {
+    regex: /\\"firstName\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\"firstName\\": \\"***\\"',
+  },
+  {
+    regex: /\\"lastName\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\"lastName\\": \\"***\\"',
+  },
+  {
+    regex:
+      /\\"type\\":{\\"S\\":\\"GivenName\\"},\s*\\"value\\":{\\"S\\":\\"([^"]*)\\"/g,
+    replacement:
+      '\\"type\\": {\\"S\\": \\"GivenName\\"}, \\"value\\": {\\"S\\": \\"***\\"}',
+  },
+  {
+    regex:
+      /\\"type\\":{\\"S\\":\\"FamilyName\\"},\s*\\"value\\":{\\"S\\":\\"([^"]*)\\"/g,
+    replacement:
+      '\\"type\\": {\\"S\\": \\"FamilyName\\"}, \\"value\\": {\\"***\\"}',
+  },
+  {
+    regex: /\\"type\\":\s*\\"FamilyName\\",\s*\\"value\\":\\"([^"]*)\\"/g,
+    replacement: '\\"type\\": \\"FamilyName\\", \\"value\\": \\"***\\"',
+  },
+  {
+    regex: /\\"type\\":\s*\\"GivenName\\",\s*\\"value\\":\\"([^"]*)\\"/g,
+    replacement: '\\"type\\": \\"GivenName\\", \\"value\\": \\"***\\"',
+  },
+  {
+    regex: /\\\\\\"GivenName\\\\\\",\\\\\\"value\\\\\\":\\\\\\"([^"]*)\\\\\\"/g,
+    replacement:
+      '\\\\\\"GivenName\\\\\\",\\\\\\"value\\\\\\":\\\\\\"***\\\\\\"',
+  },
+  {
+    regex:
+      /\\\\\\"FamilyName\\\\\\",\\\\\\"value\\\\\\":\\\\\\"([^"]*)\\\\\\"/g,
+    replacement:
+      '\\\\\\"FamilyName\\\\\\",\\\\\\"value\\\\\\":\\\\\\"***\\\\\\"',
+  },
+];
+
+const dobPatterns = [
+  {
+    regex: /\\"dob\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\"dob\\": \\"***\\"',
+  },
+  {
+    regex:
+      /\\"birthDates\\"\s*:\s*\{\s*\\"L\\"\s*:\s*\[\s*\{\s*\\"M\\"\s*:\s*\{\s*\\"value\\"\s*:\s*\{\s*\\"S\\"\s*:\s*\\"(\d{4}-\d{2}-\d{2})\\".*]\s*}/g,
+    replacement: '\\"birthDates\\": \\"***\\"',
+  },
+  {
+    regex: /\\"birthDate\\":\[{\\"value\\":\\"([^"]*)\\"}]/g,
+    replacement: '\\"birthDate\\":[{\\"value\\":\\"***\\"}]',
+  },
+  {
+    regex:
+      /\\\\\\"birthDate\\\\\\":\[\{\\\\\\"value\\\\\\":\\\\\\"([^"]*)\\\\\\"}/g,
+    replacement:
+      '\\\\\\"birthDate\\\\\\":[{\\\\\\"value\\\\\\":\\\\\\"***\\\\\\"}]',
+  },
+  {
+    regex: /\\"dateOfBirth\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\"dateOfBirth\\": \\"***\\"',
+  },
+];
+
+const addressPatterns = [
+  {
+    regex: /\\"buildingName\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g,
+    replacement: '\\"buildingName\\": { \\"S\\": \\"***\\"',
+  },
+  {
+    regex: /\\"addressLocality\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g,
+    replacement: '\\"addressLocality\\": { \\"S\\": \\"***\\"',
+  },
+  {
+    regex: /\\"buildingNumber\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g,
+    replacement: '\\"buildingNumber\\": { \\"S\\": \\"***\\"',
+  },
+  {
+    regex: /\\"postalCode\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g,
+    replacement: '\\"postalCode\\": { \\"S\\": \\"***\\"',
+  },
+  {
+    regex: /\\"streetName\\"\s*:\s*{\s*\\"S\\"\s*:\s*\\"([^"]*)\\"/g,
+    replacement: '\\"streetName\\": { \\"S\\": \\"***\\"',
+  },
+];
+
+const otherPatterns = [
+  {
+    regex: /\\"user_id\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\"user_id\\": \\"***\\"',
+  },
+  {
+    regex: /\\\\"user_id\\\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\\\\\"user_id\\\\\\": \\"***\\"',
+  },
+  {
+    regex: /\\\\\\"user_id\\\\\\":\\\\\\"([^"]*)\\\\\\"/g,
+    replacement: '\\\\\\"user_id\\\\\\": \\\\\\"***\\\\\\"',
+  },
+  {
+    regex: /\\\\"subject\\\\":\{\\\\"S\\\\":\\\\"([^"]*)\\\\"/g,
+    replacement: '\\\\\\"subject\\\\": \\\\\\"***\\\\\\"',
+  },
+  {
+    regex: /\\"subject\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\"subject\\": \\"***\\"',
+  },
+  {
+    regex: /\\"subject\\":{\\"S\\": "\\"([^"]*)\\"}/g,
+    replacement: '\\"subject\\":{\\"S\\": \\"***\\"}',
+  },
+  {
+    regex: /\\"subject\\":\{\\"S\\":\\"([^"]*)\\"/g,
+    replacement: '\\"subject\\":{\\"S\\":\\"***\\"',
+  },
+  {
+    regex: /\\"token\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\"token\\": \\"***\\"',
+  },
+];
 
 export const redactPII = (message: string) => {
-  return message
-    .replaceAll(userIdRegex, '"user_id": "***"')
-    .replaceAll(dateOfBirthRegex, '"dateOfBirth": "***"')
-    .replaceAll(firstNameRegex, '"firstName": "***"')
-    .replaceAll(lastNameRegex, '"lastName": "***"')
-    .replaceAll(birthDatesRegex, '"birthDates": "***"')
-    .replaceAll(buildingNameRegex, '"buildingName": { "S": "***"')
-    .replaceAll(addressLocalityRegex, '"addressLocality": { "S": "***"')
-    .replaceAll(buildingNumberRegex, '"buildingNumber": { "S": "***"')
-    .replaceAll(postalCodeRegex, '"postalCode": { "S": "***"')
-    .replaceAll(streetNameRegex, '"streetName": { "S": "***"')
-    .replaceAll(subjectRegex, '"subject": "***"')
-    .replaceAll(
-      givenNameRegex,
-      '"type": { "S": "GivenName" }, "value": { "S": "***"'
-    )
-    .replaceAll(
-      familyNameRegex,
-      '"type": { "S": "FamilyName" }, "value": { "S": "***"'
-    )
-    .replaceAll(ninoRegex, '"nino": "***"')
-    .replaceAll(nino2Regex, '\\"nino\\": \\"***\\"')
-    .replaceAll(ipAddressRegex, '"ip_address": "***"')
-    .replaceAll(clientIpAddressRegex, '"clientIpAddress": "***"')
-    .replaceAll(personalNumberRegex, '"personalNumber": "***"')
-    .replaceAll(familyName2Regex, '"type": "FamilyName", "value": "***"')
-    .replaceAll(givenName2Regex, '"type": "GivenName", "value": "***"')
-    .replaceAll(givenNameValueRegex, '"type": "GivenName", "value": "***"')
-    .replaceAll(familyNameValueRegex, '"type": "FamilyName", "value": "***"')
-    .replaceAll(birthDateRegex, '"birthDate":[{"value":"***"}]')
-    .replaceAll(tokenRegex, '"token": "***"')
-    .replaceAll(ipRegex, '"ip": "***"')
-    .replaceAll(dobRegex, '"dob": "***"')
-    .replaceAll(ipAddressRegex2, '\\\\\\"ip_address\\\\\\": "***"')
-    .replaceAll(ninoInSRegex, '"nino":{"S": "***"')
-    .replaceAll(
-      userIdTripleBackslashesRegex,
-      '\\\\\\"user_id": \\\\\\"***\\\\\\"'
-    )
-    .replaceAll(
-      subjectTripleBackslashesRegex,
-      '\\\\\\"subject": \\\\\\"***\\\\\\"'
-    )
-    .replaceAll(ninoTripleBackslashesRegex, '\\\\\\"nino": \\\\\\"***\\\\\\"')
-    .replaceAll(
-      birthDate2Regex,
-      '\\\\\\"birthDate\\\\\\":[{\\\\\\"value\\\\\\":\\\\\\"***\\\\\\"}]'
-    )
-    .replaceAll(userId2, '\\\\\\"user_id\\\\\\": "***"');
+  const allPatterns = [
+    ...personalNumberPatterns,
+    ...ipAddressPatterns,
+    ...namePatterns,
+    ...dobPatterns,
+    ...addressPatterns,
+    ...otherPatterns,
+  ];
+
+  return allPatterns.reduce((redactedMessage, pattern) => {
+    return redactedMessage.replaceAll(pattern.regex, pattern.replacement);
+  }, message);
 };
