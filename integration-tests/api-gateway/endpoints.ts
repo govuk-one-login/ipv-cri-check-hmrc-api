@@ -52,6 +52,7 @@ export const createSession = async (): Promise<Response> => {
     headers: {
       "Content-Type": "application/json",
       "X-Forwarded-For": "localhost",
+      "txma-audit-encoded": "test encoded header",
     },
     body: JSON.stringify(ipvCoreAuthorizationUrl),
   });
@@ -70,6 +71,7 @@ export const checkEndpoint = async (
     headers: {
       "Content-Type": "application/json",
       "session-id": sessionId,
+      "txma-audit-encoded": "test encoded header",
     },
     body: jsonData,
   });
@@ -111,6 +113,7 @@ export const abandonEndpoint = async (sessionId: string): Promise<Response> => {
     headers: {
       "Content-Type": "application/json",
       "session-id": sessionId,
+      "txma-audit-encoded": "test encoded header",
     },
     body: JSON.stringify({}),
   });

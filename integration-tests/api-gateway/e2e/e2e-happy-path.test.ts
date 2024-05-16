@@ -50,6 +50,7 @@ const createSessionId = async (
     headers: {
       "Content-Type": "application/json",
       "X-Forwarded-For": "localhost",
+      "txma-audit-encoded": "test encoded header",
     },
     body: JSON.stringify(ipvCoreAuthorizationUrl),
   });
@@ -138,6 +139,7 @@ describe("End to end happy path journey", () => {
       headers: {
         "Content-Type": "application/json",
         "session-id": sessionId,
+        "txma-audit-encoded": "test encoded header",
       },
       body: jsonData,
     });
