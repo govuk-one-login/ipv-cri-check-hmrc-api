@@ -3,6 +3,8 @@ import { Context } from "aws-lambda";
 import { jest } from "@jest/globals";
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
 
+const mockGovernmentJourneyId = "test-government-journey-id";
+
 describe("ssm-parameters-handler", () => {
   const ssmParametersHandler = new SsmParametersHandler();
   const ssmProvider = jest.mocked(SSMProvider).prototype;
@@ -22,6 +24,7 @@ describe("ssm-parameters-handler", () => {
     const result = await ssmParametersHandler.handler(
       {
         parameters: ["ssmTestName"],
+        govJourneyId: mockGovernmentJourneyId
       },
       {} as Context
     );
@@ -42,7 +45,7 @@ describe("ssm-parameters-handler", () => {
     ssmProvider.getParametersByName.mockResolvedValueOnce(parameters);
 
     const result = await ssmParametersHandler.handler(
-      { parameters: [] },
+      { parameters: [], govJourneyId: mockGovernmentJourneyId },
       {} as Context
     );
 
@@ -61,6 +64,7 @@ describe("ssm-parameters-handler", () => {
       ssmParametersHandler.handler(
         {
           parameters: ["BadParameter"],
+          govJourneyId: mockGovernmentJourneyId
         },
         {} as Context
       )
@@ -79,7 +83,8 @@ describe("ssm-parameters-handler", () => {
 
     await expect(
       ssmParametersHandler.handler(
-        { parameters: ["BadParameter", "SecondBadParameter"] },
+        { parameters: ["BadParameter", "SecondBadParameter"],
+        govJourneyId: mockGovernmentJourneyId },
         {} as Context
       )
     ).rejects.toThrow(
@@ -97,7 +102,8 @@ describe("ssm-parameters-handler", () => {
 
     await expect(
       ssmParametersHandler.handler(
-        { parameters: ["GoodParameter", "BadParameter"] },
+        { parameters: ["GoodParameter", "BadParameter"],
+        govJourneyId: mockGovernmentJourneyId },
         {} as Context
       )
     ).rejects.toThrow(
@@ -109,7 +115,7 @@ describe("ssm-parameters-handler", () => {
   it("should throw error when not given an array", async () => {
     await expect(
       ssmParametersHandler.handler(
-        { parameters: "hello" } as never,
+        { parameters: "hello", govJourneyId: mockGovernmentJourneyId } as never,
         {} as Context
       )
     ).rejects.toThrow(new Error("Input must be string array"));

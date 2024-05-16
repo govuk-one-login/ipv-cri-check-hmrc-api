@@ -9,6 +9,7 @@ export class MatchingHandler implements LambdaInterface {
     event: MatchEvent,
     _context: unknown
   ): Promise<{ status: string; body: string }> {
+    logger.info(`Lambda invoked with government journey id: ${event.user.govuk_signin_journey_id}`);
     try {
       const response = await fetch(event.apiURL, {
         method: "POST",

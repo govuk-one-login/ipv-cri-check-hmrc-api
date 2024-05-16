@@ -14,6 +14,7 @@ export class CiMappingHandler implements LambdaInterface {
     event: CiMappingEvent,
     _context: unknown
   ): Promise<Array<ContraIndicator>> {
+    logger.info(`Lambda invoked with government journey id: ${event.govJourneyId}`);
     try {
       return getCIsForHmrcErrors(event);
     } catch (error: unknown) {

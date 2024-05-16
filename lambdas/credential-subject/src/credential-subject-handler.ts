@@ -15,6 +15,7 @@ export class CredentialSubjectHandler implements LambdaInterface {
     event: UserInfoEvent,
     _context: unknown
   ): Promise<CredentialSubject> {
+    logger.info(`Lambda invoked with government journey id: ${event.user.govuk_signin_journey_id}`);
     const birthDateDates = event?.userInfoEvent?.Items[0]?.birthDates?.L || []
     try {
       return credentialSubjectBuilder

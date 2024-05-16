@@ -8,6 +8,7 @@ export class OTGApiHandler implements LambdaInterface {
     event: { apiURL: string, govJourneyId: string },
     _context: unknown
   ): Promise<{ token: string, expiry: number }> {
+    logger.info(`Lambda invoked with government journey id: ${event.govJourneyId}`);
     try {
       const response = await fetch(event.apiURL, {
         method: "GET",

@@ -7,6 +7,7 @@ const logger = new Logger();
 
 export class TimeHandler implements LambdaInterface {
   public async handler(event: TimeEvent, _context: unknown) {
+    logger.info(`Lambda invoked with government journey id: ${event.govJourneyId}`);
     if (event.ttlValue < 0) {
       throw new Error(`ttlValue must be positive (provided ${event.ttlValue})`);
     }
