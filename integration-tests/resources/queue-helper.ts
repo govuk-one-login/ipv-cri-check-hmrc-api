@@ -88,22 +88,21 @@ export const addQueuePolicy = async (
     },
   });
 };
-
-export const getQueueMessages = (
+export const getQueueMessages = async (
   queueUrl: string,
   retryConfig: RetryConfig = {
     intervalInMs: 0,
     maxRetries: 5,
   }
-) => {
-  return retry(async () => {
+): Promise<Message[]> => {
+  try {
     let allMessages: Message[] = [];
     let shouldContinue = true;
 
     while (shouldContinue) {
       const { Messages } = await sendCommand(ReceiveMessageCommand, {
         QueueUrl: queueUrl,
-        WaitTimeSeconds: 20,
+        WaitTimeSeconds: 10,
       });
 
       if (!Messages || Messages.length === 0) {
@@ -118,9 +117,12 @@ export const getQueueMessages = (
     }
 
     return allMessages;
-  }, retryConfig);
+  } catch (error) {
+    return retry(() => {
+      return getQueueMessages(queueUrl, retryConfig);
+    }, retryConfig);
+  }
 };
-
 export const setUpQueueAndAttachToRule = async (
   ruleArn: string,
   ruleName: string,
@@ -131,13 +133,13 @@ export const setUpQueueAndAttachToRule = async (
   );
   const queueArn = (await getQueueArn(queueResponse.QueueUrl)) as string;
 
-  await pause(10);
+  await pause(2);
 
   await addQueuePolicy(queueArn, queueResponse.QueueUrl, ruleArn);
 
-  await pause(10);
+  await pause(2);
   await attachTargetToRule(targetId, eventBusName, ruleName, queueArn);
-  await pause(10);
+  await pause(2);
   return queueResponse;
 };
 
