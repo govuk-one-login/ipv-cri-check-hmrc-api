@@ -8,8 +8,8 @@ export const pause = (seconds: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 
 const retry = async <T>(
-  config: RetryConfig,
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
+  config: RetryConfig = { intervalInMs: 1000, maxRetries: 10 },
 ): Promise<T> => {
   const { intervalInMs = 1000, maxRetries = 10 } = config;
   try {
@@ -32,7 +32,7 @@ const retry = async <T>(
       throw err;
     }
     await pause(intervalInMs);
-    return retry({ ...config, maxRetries: maxRetries - 1 }, fn);
+    return retry(fn, { ...config, maxRetries: maxRetries - 1 });
   }
 };
 

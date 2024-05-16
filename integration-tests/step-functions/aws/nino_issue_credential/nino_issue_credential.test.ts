@@ -17,7 +17,7 @@ import {
   targetId,
 } from "../../../resources/queue-helper";
 import { removeTargetFromRule } from "../../../resources/event-bridge-helper";
-import { RetryConfig, retry } from "../../../resources/util";
+import { retry } from "../../../resources/util";
 import { CreateQueueCommandOutput } from "@aws-sdk/client-sqs";
 
 jest.setTimeout(30_000);
@@ -52,6 +52,8 @@ describe("nino-issue-credential-happy", () => {
     AuditEventEndRule: string;
     AuditEventEndRuleArn: string;
     AuditEventVcIssuedRuleArn: string;
+    TxMaAuditEventRule: string;
+    TxMaAuditEventRuleArn: string;
   }>;
 
   beforeEach(async () => {
@@ -109,475 +111,472 @@ describe("nino-issue-credential-happy", () => {
     await clearAttemptsTable(input.sessionId, output.UserAttemptsTable);
   });
 
-  describe("Nino Check Hmrc Issue Credential Identity Check with success check details", () => {
-    beforeEach(async () => {
-      await populateTables(
-        {
-          tableName: sessionTableName,
-          items: getSessionItem(input, "Bearer happy", {
-            scoringPolicy: "gpg45",
-            strengthScore: 2,
-          }),
-        },
-        {
-          tableName: output.UserAttemptsTable as string,
-          items: {
-            sessionId: input.sessionId,
-            timestamp: Date.now().toString(),
-            attempts: 1,
-            outcome: "PASS",
-          },
-        }
-      );
-    });
-
-    it("should create the valid expiry date", async () => {
-      const startExecutionResult = await getExecutionResult("Bearer happy");
-      const token = JSON.parse(startExecutionResult.output as string);
-      const [_, payloadEncoded, __] = token.jwt.split(".");
-      const payload = JSON.parse(base64decode(payloadEncoded));
-
-      expect(isValidTimestamp(payload.exp)).toBe(true);
-      expect(isValidTimestamp(payload.nbf)).toBe(true);
-      expect(payload.exp).toBe(payload.nbf + 120 * 60);
-    });
-
-    it("should have a VC with a valid signature", async () => {
-      const kid = (await getSSMParameter(
-        `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
-      )) as string;
-      const alg = (await getSSMParameter(
-        `/${output.CommonStackName}/clients/ipv-core-stub-aws-build/jwtAuthentication/authenticationAlg`
-      )) as string;
-
-      const startExecutionResult = await getExecutionResult("Bearer happy");
-      const token = JSON.parse(startExecutionResult.output as string);
-
-      const signingPublicJwk = await createSigningPublicJWK(kid, alg);
-      const publicVerifyingJwk = await importJWK(
-        signingPublicJwk,
-        signingPublicJwk?.alg || alg
-      );
-
-      const { payload } = await jwtVerify(token.jwt, publicVerifyingJwk, {
-        algorithms: [alg],
-      });
-
-      const result = await aVcWithCheckDetails();
-      expect(isValidTimestamp(payload.exp || 0)).toBe(true);
-      expect(isValidTimestamp(payload.nbf || 0)).toBe(true);
-      expect(payload).toEqual(result);
-    });
-    it("should create a VC with a checkDetail, Validity Score of 2 and no Ci", async () => {
-      const startExecutionResult = await getExecutionResult("Bearer happy");
-
-      const currentCredentialKmsSigningKeyId = await getSSMParameter(
-        `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
-      );
-
-      const token = JSON.parse(startExecutionResult.output as string);
-
-      const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
-      const header = JSON.parse(base64decode(headerEncoded));
-      const payload = JSON.parse(base64decode(payloadEncoded));
-
-      expect(header).toEqual({
-        typ: "JWT",
-        alg: "ES256",
-        kid: currentCredentialKmsSigningKeyId,
-      });
-
-      const result = await aVcWithCheckDetails();
-      expect(isValidTimestamp(payload.exp)).toBe(true);
-      expect(isValidTimestamp(payload.nbf)).toBe(true);
-      expect(payload).toEqual(result);
-    });
-  });
-  describe("Nino Check Hmrc Issue Credential Identity Check with failed check details", () => {
-    beforeEach(async () => {
-      await populateTables(
-        {
-          tableName: sessionTableName,
-          items: getSessionItem(input, "Bearer unhappy", {
-            scoringPolicy: "gpg45",
-            strengthScore: 2,
-          }),
-        },
-        {
-          tableName: output.UserAttemptsTable as string,
-          items: {
-            sessionId: input.sessionId,
-            timestamp: Date.now().toString() + 1,
-            attempt: "FAIL",
-            status: 200,
-            text: "DOB does not match CID, First Name does not match CID",
-          },
-        },
-        {
-          tableName: output.UserAttemptsTable as string,
-          items: {
-            sessionId: input.sessionId,
-            timestamp: Date.now().toString(),
-            attempt: "FAIL",
-            status: 200,
-            text: "DOB does not match CID, First Name does not match CID",
-          },
-        }
-      );
-    });
-
-    it("should have a VC with a valid signature", async () => {
-      const kid = (await getSSMParameter(
-        `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
-      )) as string;
-      const alg = (await getSSMParameter(
-        `/${output.CommonStackName}/clients/ipv-core-stub-aws-build/jwtAuthentication/authenticationAlg`
-      )) as string;
-
-      const startExecutionResult = await getExecutionResult("Bearer unhappy");
-      const token = JSON.parse(startExecutionResult.output as string);
-
-      const signingPublicJwk = await createSigningPublicJWK(kid, alg);
-      const publicVerifyingJwk = await importJWK(
-        signingPublicJwk,
-        signingPublicJwk?.alg || alg
-      );
-
-      const { payload } = await jwtVerify(token.jwt, publicVerifyingJwk, {
-        algorithms: [alg],
-      });
-
-      const result = await aVcWithFailedCheckDetailsAndCi();
-      expect(isValidTimestamp(payload.exp || 0)).toBe(true);
-      expect(isValidTimestamp(payload.nbf || 0)).toBe(true);
-      expect(payload).toEqual(result);
-    });
-
-    it("should create a VC with a failedCheckDetail, validity score of 0 and Ci", async () => {
-      const startExecutionResult = await getExecutionResult("Bearer unhappy");
-
-      const currentCredentialKmsSigningKeyId = await getSSMParameter(
-        `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
-      );
-
-      const token = JSON.parse(startExecutionResult.output as string);
-
-      const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
-      const header = JSON.parse(base64decode(headerEncoded));
-      const payload = JSON.parse(base64decode(payloadEncoded));
-
-      expect(header).toEqual({
-        typ: "JWT",
-        alg: "ES256",
-        kid: currentCredentialKmsSigningKeyId,
-      });
-
-      const result = await aVcWithFailedCheckDetailsAndCi();
-      expect(isValidTimestamp(payload.exp)).toBe(true);
-      expect(isValidTimestamp(payload.nbf)).toBe(true);
-      expect(payload).toEqual(result);
-    });
-  });
-
-  describe("Nino Check Hmrc Issue Credential Record Check with success check details", () => {
-    beforeEach(async () => {
-      await populateTables(
-        {
-          tableName: sessionTableName,
-          items: getSessionItem(input, "Bearer happy"),
-        },
-        {
-          tableName: output.UserAttemptsTable as string,
-          items: {
-            sessionId: input.sessionId,
-            timestamp: Date.now().toString(),
-            attempts: 1,
-            outcome: "PASS",
-          },
-        }
-      );
-    });
-    it("should create a VC with a checkDetail Record Check with no scores", async () => {
-      const startExecutionResult = await getExecutionResult("Bearer happy");
-
-      const currentCredentialKmsSigningKeyId = await getSSMParameter(
-        `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
-      );
-
-      const token = JSON.parse(startExecutionResult.output as string);
-
-      const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
-      const header = JSON.parse(base64decode(headerEncoded));
-      const payload = JSON.parse(base64decode(payloadEncoded));
-
-      expect(header).toEqual({
-        typ: "JWT",
-        alg: "ES256",
-        kid: currentCredentialKmsSigningKeyId,
-      });
-
-      const result = await aVcWithCheckDetailsDataCheck();
-      expect(isValidTimestamp(payload.exp)).toBe(true);
-      expect(isValidTimestamp(payload.nbf)).toBe(true);
-      expect(payload).toEqual(result);
-    });
-  });
-  describe("Nino Check Hmrc Issue Credential Record Check with failed check details no scores", () => {
-    beforeEach(async () => {
-      await populateTables(
-        {
-          tableName: sessionTableName,
-          items: getSessionItem(input, "Bearer unhappy"),
-        },
-        {
-          tableName: output.UserAttemptsTable as string,
-          items: {
-            sessionId: input.sessionId,
-            timestamp: Date.now().toString() + 1,
-            attempt: "FAIL",
-            status: 200,
-            text: "DOB does not match CID, First Name does not match CID",
-          },
-        },
-        {
-          tableName: output.UserAttemptsTable as string,
-          items: {
-            sessionId: input.sessionId,
-            timestamp: Date.now().toString(),
-            attempt: "FAIL",
-            status: 200,
-            text: "DOB does not match CID, First Name does not match CID",
-          },
-        }
-      );
-    });
-
-    it("should create a VC with a failedCheckDetail for Record Check", async () => {
-      const startExecutionResult = await getExecutionResult("Bearer unhappy");
-
-      const currentCredentialKmsSigningKeyId = await getSSMParameter(
-        `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
-      );
-
-      const token = JSON.parse(startExecutionResult.output as string);
-
-      const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
-      const header = JSON.parse(base64decode(headerEncoded));
-      const payload = JSON.parse(base64decode(payloadEncoded));
-
-      expect(header).toEqual({
-        typ: "JWT",
-        alg: "ES256",
-        kid: currentCredentialKmsSigningKeyId,
-      });
-
-      const result = await aVcWithFailedCheckDetailsRecordCheck();
-      expect(isValidTimestamp(payload.exp)).toBe(true);
-      expect(isValidTimestamp(payload.nbf)).toBe(true);
-      expect(payload).toEqual(result);
-    });
-  });
-
-  describe("Nino Hmrc Issue Credential Step Function publishes VC_ISSUED and END events successfully", () => {
-    jest.setTimeout(120_000);
-    let vcIssuedEventTestQueue: CreateQueueCommandOutput;
-    let endEventTestQueue: CreateQueueCommandOutput;
-
-    beforeEach(async () => {
-      await populateTables(
-        {
-          tableName: sessionTableName,
-          items: getSessionItem(input, "Bearer unhappy"),
-        },
-        {
-          tableName: output.UserAttemptsTable as string,
-          items: {
-            sessionId: input.sessionId,
-            timestamp: Date.now().toString() + 1,
-            attempt: "FAIL",
-            status: 200,
-            text: "DOB does not match CID, First Name does not match CID",
-          },
-        },
-        {
-          tableName: output.UserAttemptsTable as string,
-          items: {
-            sessionId: input.sessionId,
-            timestamp: Date.now().toString(),
-            attempt: "FAIL",
-            status: 200,
-            text: "DOB does not match CID, First Name does not match CID",
-          },
-        }
-      );
-      const [vcIssuedBusName, vcIssuedRuleName] = (
-        output.AuditEventVcIssuedRule as string
-      ).split("|");
-      const [endRuleBusName, endRuleName] = (
-        output.AuditEventEndRule as string
-      ).split("|");
-
-      vcIssuedEventTestQueue = await setUpQueueAndAttachToRule(
-        output.AuditEventVcIssuedRuleArn as string,
-        vcIssuedRuleName,
-        vcIssuedBusName
-      );
-      endEventTestQueue = await setUpQueueAndAttachToRule(
-        output.AuditEventEndRuleArn as string,
-        endRuleName,
-        endRuleBusName
-      );
-    });
-
-    afterEach(async () => {
-      const [vcIssuedBusName, vcIssuedRule] = (
-        output.AuditEventVcIssuedRule as string
-      ).split("|");
-      const [endBusName, endRuleName] = (
-        output.AuditEventEndRule as string
-      ).split("|");
-
-      await retry({ intervalInMs: 1000, maxRetries: 20 }, async () => {
-        await removeTargetFromRule(targetId, vcIssuedBusName, vcIssuedRule);
-        await removeTargetFromRule(targetId, endBusName, endRuleName);
-      });
-      await retry({ intervalInMs: 1000, maxRetries: 20 }, async () => {
-        await deleteQueue(vcIssuedEventTestQueue.QueueUrl);
-        await deleteQueue(endEventTestQueue.QueueUrl);
-      });
-    });
-    it("should create a VC with a failedCheckDetail for Record Check", async () => {
-      const startExecutionResult = await getExecutionResult("Bearer unhappy");
-
-      const vcIssuedTestQueueMessage = await getQueueMessages(
-        vcIssuedEventTestQueue.QueueUrl as string,
-        {
-          intervalInMs: 0,
-          maxRetries: 10,
-        } as RetryConfig
-      );
-      const endEventTestQueueMessage = await getQueueMessages(
-        endEventTestQueue.QueueUrl as string,
-        {
-          intervalInMs: 0,
-          maxRetries: 10,
-        } as RetryConfig
-      );
-      const {
-        "detail-type": vcIssuedDetailType,
-        source: vcIssuedSource,
-        detail: vcIssuedDetail,
-      } = JSON.parse(vcIssuedTestQueueMessage[0].Body as string);
-      const {
-        "detail-type": endDetailType,
-        source: endSource,
-        detail: endDetail,
-      } = JSON.parse(endEventTestQueueMessage[0].Body as string);
-
-      expect(startExecutionResult.output).toBeDefined();
-      expect(vcIssuedDetailType).toBe("VC_ISSUED");
-      expect(vcIssuedSource).toBe("review-hc.localdev.account.gov.uk");
-      expect(vcIssuedDetail).toEqual({
-        auditPrefix: "IPV_HMRC_RECORD_CHECK_CRI",
-        nino: "AA000003D",
-        user: {
-          govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-          user_id: "test",
-          persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-          session_id: "issue-credential-happy",
-          ip_address: "00.100.8.20",
-        },
-        userInfoEvent: {
-          Count: 1,
-          Items: [
+  describe("Nino Check Hmrc Issue Credential", () => {
+    describe("Identity Check", () => {
+      describe("passed with success check details", () => {
+        beforeEach(async () => {
+          await populateTables(
             {
-              names: {
-                L: [
-                  {
-                    M: {
-                      nameParts: {
-                        L: [
-                          {
-                            M: {
-                              type: {
-                                S: "GivenName",
-                              },
-                              value: {
-                                S: "Jim",
-                              },
-                            },
-                          },
-                          {
-                            M: {
-                              type: {
-                                S: "FamilyName",
-                              },
-                              value: {
-                                S: "Ferguson",
-                              },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  },
-                ],
+              tableName: sessionTableName,
+              items: getSessionItem(input, "Bearer happy", {
+                scoringPolicy: "gpg45",
+                strengthScore: 2,
+              }),
+            },
+            {
+              tableName: output.UserAttemptsTable as string,
+              items: {
+                sessionId: input.sessionId,
+                timestamp: Date.now().toString(),
+                attempts: 1,
+                outcome: "PASS",
               },
-              sessionId: {
-                S: "issue-credential-happy",
-              },
-              birthDates: {
-                L: [
-                  {
-                    M: {
-                      value: {
-                        S: "1948-04-23",
-                      },
-                    },
-                  },
-                ],
-              },
-              nino: {
-                S: "AA000003D",
+            }
+          );
+        });
+
+        it("should create the valid expiry date", async () => {
+          const startExecutionResult = await getExecutionResult("Bearer happy");
+          const token = JSON.parse(startExecutionResult.output as string);
+          const [_, payloadEncoded, __] = token.jwt.split(".");
+          const payload = JSON.parse(base64decode(payloadEncoded));
+
+          expect(isValidTimestamp(payload.exp)).toBe(true);
+          expect(isValidTimestamp(payload.nbf)).toBe(true);
+          expect(payload.exp).toBe(payload.nbf + 120 * 60);
+        });
+
+        it("should have a VC with a valid signature", async () => {
+          const kid = (await getSSMParameter(
+            `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
+          )) as string;
+          const alg = (await getSSMParameter(
+            `/${output.CommonStackName}/clients/ipv-core-stub-aws-build/jwtAuthentication/authenticationAlg`
+          )) as string;
+
+          const startExecutionResult = await getExecutionResult("Bearer happy");
+          const token = JSON.parse(startExecutionResult.output as string);
+
+          const signingPublicJwk = await createSigningPublicJWK(kid, alg);
+          const publicVerifyingJwk = await importJWK(
+            signingPublicJwk,
+            signingPublicJwk?.alg || alg
+          );
+
+          const { payload } = await jwtVerify(token.jwt, publicVerifyingJwk, {
+            algorithms: [alg],
+          });
+
+          const result = await aVcWithCheckDetails();
+          expect(isValidTimestamp(payload.exp || 0)).toBe(true);
+          expect(isValidTimestamp(payload.nbf || 0)).toBe(true);
+          expect(payload).toEqual(result);
+        });
+        it("should create a VC with a checkDetail, Validity Score of 2 and no Ci", async () => {
+          const startExecutionResult = await getExecutionResult("Bearer happy");
+
+          const currentCredentialKmsSigningKeyId = await getSSMParameter(
+            `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
+          );
+
+          const token = JSON.parse(startExecutionResult.output as string);
+
+          const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
+          const header = JSON.parse(base64decode(headerEncoded));
+          const payload = JSON.parse(base64decode(payloadEncoded));
+
+          expect(header).toEqual({
+            typ: "JWT",
+            alg: "ES256",
+            kid: currentCredentialKmsSigningKeyId,
+          });
+
+          const result = await aVcWithCheckDetails();
+          expect(isValidTimestamp(payload.exp)).toBe(true);
+          expect(isValidTimestamp(payload.nbf)).toBe(true);
+          expect(payload).toEqual(result);
+        });
+      });
+      describe("failed with check details", () => {
+        beforeEach(async () => {
+          await populateTables(
+            {
+              tableName: sessionTableName,
+              items: getSessionItem(input, "Bearer unhappy", {
+                scoringPolicy: "gpg45",
+                strengthScore: 2,
+              }),
+            },
+            {
+              tableName: output.UserAttemptsTable as string,
+              items: {
+                sessionId: input.sessionId,
+                timestamp: Date.now().toString() + 1,
+                attempt: "FAIL",
+                status: 200,
+                text: "DOB does not match CID, First Name does not match CID",
               },
             },
-          ],
-          ScannedCount: 1,
-        },
-        evidence: [
-          {
-            failedCheckDetails: [
-              {
-                checkMethod: "data",
-                dataCheck: "record_check",
+            {
+              tableName: output.UserAttemptsTable as string,
+              items: {
+                sessionId: input.sessionId,
+                timestamp: Date.now().toString(),
+                attempt: "FAIL",
+                status: 200,
+                text: "DOB does not match CID, First Name does not match CID",
               },
-            ],
-            txn: expect.any(String),
-            type: "IdentityCheck",
-            attemptNum: 2,
-            ciReasons: [
-              {
-                ci: expect.any(String),
-                reason: expect.any(String),
+            }
+          );
+        });
+
+        it("should have a VC with a valid signature", async () => {
+          const kid = (await getSSMParameter(
+            `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
+          )) as string;
+          const alg = (await getSSMParameter(
+            `/${output.CommonStackName}/clients/ipv-core-stub-aws-build/jwtAuthentication/authenticationAlg`
+          )) as string;
+
+          const startExecutionResult =
+            await getExecutionResult("Bearer unhappy");
+          const token = JSON.parse(startExecutionResult.output as string);
+
+          const signingPublicJwk = await createSigningPublicJWK(kid, alg);
+          const publicVerifyingJwk = await importJWK(
+            signingPublicJwk,
+            signingPublicJwk?.alg || alg
+          );
+
+          const { payload } = await jwtVerify(token.jwt, publicVerifyingJwk, {
+            algorithms: [alg],
+          });
+
+          const result = await aVcWithFailedCheckDetailsAndCi();
+          expect(isValidTimestamp(payload.exp || 0)).toBe(true);
+          expect(isValidTimestamp(payload.nbf || 0)).toBe(true);
+          expect(payload).toEqual(result);
+        });
+
+        it("should create a VC with a failedCheckDetail, validity score of 0 and Ci", async () => {
+          const startExecutionResult =
+            await getExecutionResult("Bearer unhappy");
+
+          const currentCredentialKmsSigningKeyId = await getSSMParameter(
+            `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
+          );
+
+          const token = JSON.parse(startExecutionResult.output as string);
+
+          const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
+          const header = JSON.parse(base64decode(headerEncoded));
+          const payload = JSON.parse(base64decode(payloadEncoded));
+
+          expect(header).toEqual({
+            typ: "JWT",
+            alg: "ES256",
+            kid: currentCredentialKmsSigningKeyId,
+          });
+
+          const result = await aVcWithFailedCheckDetailsAndCi();
+          expect(isValidTimestamp(payload.exp)).toBe(true);
+          expect(isValidTimestamp(payload.nbf)).toBe(true);
+          expect(payload).toEqual(result);
+        });
+      });
+    });
+
+    describe("Record Check", () => {
+      describe("passed with success check details", () => {
+        beforeEach(async () => {
+          await populateTables(
+            {
+              tableName: sessionTableName,
+              items: getSessionItem(input, "Bearer happy"),
+            },
+            {
+              tableName: output.UserAttemptsTable as string,
+              items: {
+                sessionId: input.sessionId,
+                timestamp: Date.now().toString(),
+                attempts: 1,
+                outcome: "PASS",
               },
-            ],
-          },
-        ],
-        issuer: "https://review-hc.dev.account.gov.uk",
+            }
+          );
+        });
+        it("should create a VC with a checkDetail Record Check with no scores", async () => {
+          const startExecutionResult = await getExecutionResult("Bearer happy");
+
+          const currentCredentialKmsSigningKeyId = await getSSMParameter(
+            `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
+          );
+
+          const token = JSON.parse(startExecutionResult.output as string);
+
+          const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
+          const header = JSON.parse(base64decode(headerEncoded));
+          const payload = JSON.parse(base64decode(payloadEncoded));
+
+          expect(header).toEqual({
+            typ: "JWT",
+            alg: "ES256",
+            kid: currentCredentialKmsSigningKeyId,
+          });
+
+          const result = await aVcWithCheckDetailsDataCheck();
+          expect(isValidTimestamp(payload.exp)).toBe(true);
+          expect(isValidTimestamp(payload.nbf)).toBe(true);
+          expect(payload).toEqual(result);
+        });
       });
 
-      expect(endDetailType).toBe("END");
-      expect(endSource).toBe("review-hc.localdev.account.gov.uk");
-      expect(endDetail).toEqual({
-        auditPrefix: "IPV_HMRC_RECORD_CHECK_CRI",
-        user: {
-          govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-          user_id: "test",
-          persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-          session_id: "issue-credential-happy",
-          ip_address: "00.100.8.20",
-        },
-        issuer: "https://review-hc.dev.account.gov.uk",
+      describe("failed with", () => {
+        beforeEach(async () => {
+          await populateTables(
+            {
+              tableName: sessionTableName,
+              items: getSessionItem(input, "Bearer unhappy"),
+            },
+            {
+              tableName: output.UserAttemptsTable as string,
+              items: {
+                sessionId: input.sessionId,
+                timestamp: Date.now().toString() + 1,
+                attempt: "FAIL",
+                status: 200,
+                text: "DOB does not match CID, First Name does not match CID",
+              },
+            },
+            {
+              tableName: output.UserAttemptsTable as string,
+              items: {
+                sessionId: input.sessionId,
+                timestamp: Date.now().toString(),
+                attempt: "FAIL",
+                status: 200,
+                text: "DOB does not match CID, First Name does not match CID",
+              },
+            }
+          );
+        });
+        describe("check details no scores", () => {
+          it("should create a VC with a failedCheckDetail for Record Check", async () => {
+            const startExecutionResult =
+              await getExecutionResult("Bearer unhappy");
+
+            const currentCredentialKmsSigningKeyId = await getSSMParameter(
+              `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
+            );
+
+            const token = JSON.parse(startExecutionResult.output as string);
+
+            const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
+            const header = JSON.parse(base64decode(headerEncoded));
+            const payload = JSON.parse(base64decode(payloadEncoded));
+
+            expect(header).toEqual({
+              typ: "JWT",
+              alg: "ES256",
+              kid: currentCredentialKmsSigningKeyId,
+            });
+
+            const result = await aVcWithFailedCheckDetailsRecordCheck();
+            expect(isValidTimestamp(payload.exp)).toBe(true);
+            expect(isValidTimestamp(payload.nbf)).toBe(true);
+            expect(payload).toEqual(result);
+          });
+        });
+        describe("step function publishes to EventBridge Bus", () => {
+          jest.setTimeout(120_000);
+          let vcIssuedEventTestQueue: CreateQueueCommandOutput;
+          let endEventTestQueue: CreateQueueCommandOutput;
+
+          beforeEach(async () => {
+            const [checkHmrcEventBus, vcIssuedRuleName] = (
+              output.AuditEventVcIssuedRule as string
+            ).split("|");
+            const [_, endRuleName] = (output.AuditEventEndRule as string).split(
+              "|"
+            );
+            vcIssuedEventTestQueue = await setUpQueueAndAttachToRule(
+              output.AuditEventVcIssuedRuleArn as string,
+              vcIssuedRuleName,
+              checkHmrcEventBus
+            );
+            endEventTestQueue = await setUpQueueAndAttachToRule(
+              output.AuditEventEndRuleArn as string,
+              endRuleName,
+              checkHmrcEventBus
+            );
+          });
+          afterEach(async () => {
+            const [checkHmrcEventBus, vcIssuedRuleName] = (
+              output.AuditEventVcIssuedRule as string
+            ).split("|");
+            const [_, endRuleName] = (output.AuditEventEndRule as string).split(
+              "|"
+            );
+            await retry(async () => {
+              await Promise.all([
+                removeTargetFromRule(
+                  targetId,
+                  checkHmrcEventBus,
+                  vcIssuedRuleName
+                ),
+                removeTargetFromRule(targetId, checkHmrcEventBus, endRuleName),
+              ]);
+            });
+            await retry(async () => {
+              await Promise.all([
+                deleteQueue(vcIssuedEventTestQueue.QueueUrl),
+                deleteQueue(endEventTestQueue.QueueUrl),
+              ]);
+            });
+          });
+          it("should publish END event to CheckHmrcBus successfully", async () => {
+            const startExecutionResult =
+              await getExecutionResult("Bearer unhappy");
+            const endEventTestQueueMessage = await getQueueMessages(
+              endEventTestQueue.QueueUrl as string
+            );
+            const { "detail-type": endDetailType, source: endSource } =
+              JSON.parse(endEventTestQueueMessage[0].Body as string);
+
+            expect(startExecutionResult.output).toBeDefined();
+            expect(endEventTestQueueMessage).not.toHaveLength(0);
+            expect(endDetailType).toBe("END");
+            expect(endSource).toBe("review-hc.localdev.account.gov.uk");
+          });
+          it("should publish VC_ISSUED event to CheckHmrcBus", async () => {
+            const startExecutionResult =
+              await getExecutionResult("Bearer unhappy");
+
+            const vcIssuedTestQueueMessage = await getQueueMessages(
+              vcIssuedEventTestQueue.QueueUrl as string
+            );
+
+            const {
+              "detail-type": vcIssuedDetailType,
+              source: vcIssuedSource,
+            } = JSON.parse(vcIssuedTestQueueMessage[0].Body as string);
+
+            expect(startExecutionResult.output).toBeDefined();
+            expect(vcIssuedTestQueueMessage).not.toHaveLength(0);
+            expect(vcIssuedDetailType).toBe("VC_ISSUED");
+            expect(vcIssuedSource).toBe("review-hc.localdev.account.gov.uk");
+          });
+        });
+        describe("step function execution causes AuditEvent step function to receive published events", () => {
+          jest.setTimeout(120_000);
+          let txMaAuditEventTestQueue: CreateQueueCommandOutput;
+
+          beforeEach(async () => {
+            const [checkHmrcEventBus, txMaAuditEventRuleName] = (
+              output.TxMaAuditEventRule as string
+            ).split("|");
+            txMaAuditEventTestQueue = await setUpQueueAndAttachToRule(
+              output.TxMaAuditEventRuleArn as string,
+              txMaAuditEventRuleName,
+              checkHmrcEventBus
+            );
+          });
+          afterEach(async () => {
+            const [checkHmrcEventBus, txMaAuditEventRuleName] = (
+              output.TxMaAuditEventRule as string
+            ).split("|");
+            txMaAuditEventTestQueue = await setUpQueueAndAttachToRule(
+              output.TxMaAuditEventRuleArn as string,
+              txMaAuditEventRuleName,
+              checkHmrcEventBus
+            );
+            await retry(async () => {
+              await removeTargetFromRule(
+                targetId,
+                checkHmrcEventBus,
+                txMaAuditEventRuleName
+              );
+            });
+            await retry(async () => {
+              await deleteQueue(txMaAuditEventTestQueue.QueueUrl);
+            });
+          });
+          it("should produce END and VC_ISSUED Events structure expected for the TxMA destination queue", async () => {
+            const startExecutionResult =
+              await getExecutionResult("Bearer unhappy");
+            const txMaAuditEventTestQueueMessage = await getQueueMessages(
+              txMaAuditEventTestQueue.QueueUrl as string
+            );
+
+            const txMaPayload = txMaAuditEventTestQueueMessage.map(
+              (queueMessage) => JSON.parse(queueMessage.Body as string).detail
+            );
+
+            expect(startExecutionResult.output).toBeDefined();
+            const expected = [
+              {
+                component_id: "https://review-hc.dev.account.gov.uk",
+                event_name: "IPV_HMRC_RECORD_CHECK_CRI_END",
+                event_timestamp_ms: expect.any(Number),
+                timestamp: expect.any(Number),
+                user: {
+                  govuk_signin_journey_id:
+                    "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+                  ip_address: "00.100.8.20",
+                  persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+                  session_id: "issue-credential-happy",
+                  user_id: "test",
+                },
+              },
+              {
+                component_id: "https://review-hc.dev.account.gov.uk",
+                event_name: "IPV_HMRC_RECORD_CHECK_CRI_VC_ISSUED",
+                event_timestamp_ms: expect.any(Number),
+                extensions: {
+                  evidence: [
+                    {
+                      attemptNum: 2,
+                      ciReasons: [
+                        {
+                          ci: expect.any(String),
+                          reason: expect.any(String),
+                        },
+                      ],
+                      failedCheckDetails: [
+                        { checkMethod: "data", dataCheck: "record_check" },
+                      ],
+                      txn: expect.any(String),
+                      type: "IdentityCheck",
+                    },
+                  ],
+                },
+                restricted: {
+                  birthDate: [{ value: "1948-04-23" }],
+                  name: [
+                    {
+                      nameParts: [
+                        { type: "GivenName", value: "Jim" },
+                        { type: "FamilyName", value: "Ferguson" },
+                      ],
+                    },
+                  ],
+                  socialSecurityRecord: [{ personalNumber: "AA000003D" }],
+                },
+                timestamp: expect.any(Number),
+                user: {
+                  govuk_signin_journey_id:
+                    "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+                  ip_address: "00.100.8.20",
+                  persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+                  session_id: "issue-credential-happy",
+                  user_id: "test",
+                },
+              },
+            ];
+            expect(txMaPayload).toContainEqual(expected[0]);
+            expect(txMaPayload).toContainEqual(expected[1]);
+          });
+        });
       });
     });
   });

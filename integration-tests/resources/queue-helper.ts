@@ -3,6 +3,7 @@ import {
   CreateQueueCommandOutput,
   DeleteQueueCommand,
   GetQueueAttributesCommand,
+  Message,
   QueueAttributeName,
   ReceiveMessageCommand,
   SQSClient,
@@ -90,19 +91,34 @@ export const addQueuePolicy = async (
 
 export const getQueueMessages = (
   queueUrl: string,
-  retryConfig: RetryConfig
+  retryConfig: RetryConfig = {
+    intervalInMs: 0,
+    maxRetries: 5,
+  }
 ) => {
-  return retry(retryConfig, async () => {
-    const { Messages } = await sendCommand(ReceiveMessageCommand, {
-      QueueUrl: queueUrl,
-      WaitTimeSeconds: 20,
-    });
-    if (!Messages || Messages.length === 0) {
+  return retry(async () => {
+    let allMessages: Message[] = [];
+    let shouldContinue = true;
+
+    while (shouldContinue) {
+      const { Messages } = await sendCommand(ReceiveMessageCommand, {
+        QueueUrl: queueUrl,
+        WaitTimeSeconds: 20,
+      });
+
+      if (!Messages || Messages.length === 0) {
+        shouldContinue = false;
+      } else {
+        allMessages = allMessages.concat(Messages);
+      }
+    }
+
+    if (allMessages.length === 0) {
       throw new Error("No messages received.");
     }
 
-    return Messages;
-  });
+    return allMessages;
+  }, retryConfig);
 };
 
 export const setUpQueueAndAttachToRule = async (
@@ -115,14 +131,15 @@ export const setUpQueueAndAttachToRule = async (
   );
   const queueArn = (await getQueueArn(queueResponse.QueueUrl)) as string;
 
-  await pause(15);
+  await pause(10);
 
   await addQueuePolicy(queueArn, queueResponse.QueueUrl, ruleArn);
 
-  await pause(15);
+  await pause(10);
   await attachTargetToRule(targetId, eventBusName, ruleName, queueArn);
-  await pause(15);
+  await pause(10);
   return queueResponse;
 };
+
 export const deleteQueue = async (QueueUrl?: string) =>
   sendCommand(DeleteQueueCommand, { QueueUrl });

@@ -13,7 +13,7 @@ import {
   targetId,
 } from "../../../resources/queue-helper";
 import { removeTargetFromRule } from "../../../resources/event-bridge-helper";
-import { RetryConfig, retry } from "../../../resources/util";
+import { pause, retry } from "../../../resources/util";
 
 jest.setTimeout(30_000);
 
@@ -43,6 +43,8 @@ describe("nino-check-happy", () => {
     AuditEventResponseReceivedRule: string;
     AuditEventRequestSentRuleArn: string;
     AuditEventResponseReceivedRuleArn: string;
+    TxMaAuditEventRule: string;
+    TxMaAuditEventRuleArn: string;
   }>;
 
   beforeEach(async () => {
@@ -199,176 +201,196 @@ describe("nino-check-happy", () => {
     });
   });
 
-  describe("Nino Hmrc Check Step Function execution", () => {
-    jest.setTimeout(120_000);
+  describe("Nino Hmrc Check Step Function publishes to EventBridge Bus", () => {
     let requestSentEventTestQueue: CreateQueueCommandOutput;
     let responseReceivedEventTestQueue: CreateQueueCommandOutput;
 
     beforeEach(async () => {
-      const [requestSentBusName, requestSentRuleName] = (
+      const [checkHmrcEventBus, requestSentRuleName] = (
         output.AuditEventRequestSentRule as string
       ).split("|");
-      const [responseReceivedBusName, responseReceivedRuleName] = (
+      const [_, responseReceivedRuleName] = (
         output.AuditEventResponseReceivedRule as string
       ).split("|");
 
       requestSentEventTestQueue = await setUpQueueAndAttachToRule(
         output.AuditEventRequestSentRuleArn as string,
         requestSentRuleName,
-        requestSentBusName
+        checkHmrcEventBus
       );
       responseReceivedEventTestQueue = await setUpQueueAndAttachToRule(
         output.AuditEventResponseReceivedRuleArn as string,
         responseReceivedRuleName,
-        responseReceivedBusName
+        checkHmrcEventBus
       );
     });
 
     afterEach(async () => {
-      const [requestSentBusName, requestSentRuleName] = (
+      const [checkHmrcEventBus, requestSentRuleName] = (
         output.AuditEventRequestSentRule as string
       ).split("|");
-      const [responseReceivedBusName, responseReceivedRuleName] = (
+      const [_, responseReceivedRuleName] = (
         output.AuditEventResponseReceivedRule as string
       ).split("|");
 
-      await retry({ intervalInMs: 1000, maxRetries: 20 }, async () => {
-        await removeTargetFromRule(
-          targetId,
-          requestSentBusName,
-          requestSentRuleName
-        );
-        await removeTargetFromRule(
-          targetId,
-          responseReceivedBusName,
-          responseReceivedRuleName
-        );
+      await retry(async () => {
+        await Promise.all([
+          removeTargetFromRule(
+            targetId,
+            checkHmrcEventBus,
+            requestSentRuleName
+          ),
+          removeTargetFromRule(
+            targetId,
+            checkHmrcEventBus,
+            responseReceivedRuleName
+          ),
+        ]);
       });
-      await retry({ intervalInMs: 1000, maxRetries: 20 }, async () => {
-        await deleteQueue(requestSentEventTestQueue.QueueUrl);
-        await deleteQueue(responseReceivedEventTestQueue.QueueUrl);
+      await retry(async () => {
+        await Promise.all([
+          deleteQueue(requestSentEventTestQueue.QueueUrl),
+          deleteQueue(responseReceivedEventTestQueue.QueueUrl),
+        ]);
+        await pause(60);
       });
     });
-    it("publishes REQUEST_SENT and RESPONSE_RECEIVED events successfully", async () => {
+    it("should publish REQUEST_SENT event to CheckHmrcBus successfully", async () => {
       const startExecutionResult = await executeStepFunction(
         output.NinoCheckStateMachineArn as string,
         input
       );
       const requestSentQueueMessage = await getQueueMessages(
-        requestSentEventTestQueue.QueueUrl as string,
-        {
-          intervalInMs: 0,
-          maxRetries: 10,
-        } as RetryConfig
-      );
-      const responseReceivedQueueMessage = await getQueueMessages(
-        responseReceivedEventTestQueue.QueueUrl as string,
-        {
-          intervalInMs: 0,
-          maxRetries: 10,
-        } as RetryConfig
+        requestSentEventTestQueue.QueueUrl as string
       );
       const {
         "detail-type": requestSentDetailType,
         source: requestSentSource,
-        detail: requestSentDetail,
       } = JSON.parse(requestSentQueueMessage[0].Body as string);
+
+      expect(startExecutionResult.output).toBe('{"httpStatus":200}');
+
+      expect(startExecutionResult.output).toBeDefined();
+      expect(requestSentQueueMessage).not.toHaveLength(0);
+      expect(requestSentDetailType).toBe("REQUEST_SENT");
+      expect(requestSentSource).toBe("review-hc.localdev.account.gov.uk");
+    });
+    it("should publish RESPONSE_RECEIVED event to CheckHmrcBus successfully", async () => {
+      const startExecutionResult = await executeStepFunction(
+        output.NinoCheckStateMachineArn as string,
+        input
+      );
+
+      const responseReceivedQueueMessage = await getQueueMessages(
+        responseReceivedEventTestQueue.QueueUrl as string
+      );
       const {
         "detail-type": responseReceivedDetailType,
         source: responseReceivedSource,
-        detail: responseReceivedDetail,
       } = JSON.parse(responseReceivedQueueMessage[0].Body as string);
 
       expect(startExecutionResult.output).toBe('{"httpStatus":200}');
 
       expect(startExecutionResult.output).toBeDefined();
-      expect(requestSentDetailType).toBe("REQUEST_SENT");
-      expect(requestSentSource).toBe("review-hc.localdev.account.gov.uk");
-      expect(requestSentDetail).toEqual({
-        auditPrefix: "IPV_HMRC_RECORD_CHECK_CRI",
-        deviceInformation: "test encoded header",
-        nino: "AA000003D",
-        user: {
-          govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-          user_id: "test",
-          persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-          session_id: "check-happy",
-          ip_address: "00.100.8.20",
-        },
-        userInfoEvent: {
-          Count: 1,
-          Items: [
-            {
-              names: {
-                L: [
-                  {
-                    M: {
-                      nameParts: {
-                        L: [
-                          {
-                            M: {
-                              type: {
-                                S: "GivenName",
-                              },
-                              value: {
-                                S: "Jim",
-                              },
-                            },
-                          },
-                          {
-                            M: {
-                              type: {
-                                S: "FamilyName",
-                              },
-                              value: {
-                                S: "Ferguson",
-                              },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  },
-                ],
-              },
-              sessionId: {
-                S: "check-happy",
-              },
-              birthDates: {
-                L: [
-                  {
-                    M: {
-                      value: {
-                        S: "1948-04-23",
-                      },
-                    },
-                  },
-                ],
-              },
-              nino: {
-                S: "AA000003D",
-              },
-            },
-          ],
-          ScannedCount: 1,
-        },
-        issuer: "https://review-hc.dev.account.gov.uk",
-      });
-
+      expect(responseReceivedQueueMessage).not.toHaveLength(0);
       expect(responseReceivedDetailType).toBe("RESPONSE_RECEIVED");
       expect(responseReceivedSource).toBe("review-hc.localdev.account.gov.uk");
-      expect(responseReceivedDetail).toEqual({
-        auditPrefix: "IPV_HMRC_RECORD_CHECK_CRI",
-        deviceInformation: "test encoded header",
-        user: {
-          govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-          user_id: "test",
-          persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-          session_id: "check-happy",
-          ip_address: "00.100.8.20",
-        },
-        issuer: "https://review-hc.dev.account.gov.uk",
+    });
+  });
+  describe("Nino Hmrc Issue Credential Step Function execution causes AuditEvent step function to receive published events", () => {
+    jest.setTimeout(120_000);
+    let txMaAuditEventTestQueue: CreateQueueCommandOutput;
+
+    beforeEach(async () => {
+      const [checkHmrcEventBus, txMaAuditEventRuleName] = (
+        output.TxMaAuditEventRule as string
+      ).split("|");
+      txMaAuditEventTestQueue = await setUpQueueAndAttachToRule(
+        output.TxMaAuditEventRuleArn as string,
+        txMaAuditEventRuleName,
+        checkHmrcEventBus
+      );
+    });
+    afterEach(async () => {
+      const [checkHmrcEventBus, txMaAuditEventRuleName] = (
+        output.TxMaAuditEventRule as string
+      ).split("|");
+      txMaAuditEventTestQueue = await setUpQueueAndAttachToRule(
+        output.TxMaAuditEventRuleArn as string,
+        txMaAuditEventRuleName,
+        checkHmrcEventBus
+      );
+      await retry(async () => {
+        await removeTargetFromRule(
+          targetId,
+          checkHmrcEventBus,
+          txMaAuditEventRuleName
+        );
       });
+      await retry(async () => {
+        await deleteQueue(txMaAuditEventTestQueue.QueueUrl);
+      });
+    });
+    it("should produce REQUEST_SENT and RESPONSE_RECEIVED Events structure expected for TxMA queue", async () => {
+      const startExecutionResult = await executeStepFunction(
+        output.NinoCheckStateMachineArn as string,
+        input
+      );
+      const txMaAuditEventTestQueueMessage = await getQueueMessages(
+        txMaAuditEventTestQueue.QueueUrl as string
+      );
+
+      const txMaPayload = txMaAuditEventTestQueueMessage.map(
+        (queueMessage) => JSON.parse(queueMessage.Body as string).detail
+      );
+
+      expect(startExecutionResult.output).toBeDefined();
+      const expectedAuditEventPayloads = [
+        {
+          component_id: "https://review-hc.dev.account.gov.uk",
+          event_name: "IPV_HMRC_RECORD_CHECK_CRI_REQUEST_SENT",
+          event_timestamp_ms: expect.any(Number),
+          restricted: {
+            birthDate: [{ value: "1948-04-23" }],
+            device_information: { encoded: "test encoded header" },
+            name: [
+              {
+                nameParts: [
+                  { type: "GivenName", value: "Jim" },
+                  { type: "FamilyName", value: "Ferguson" },
+                ],
+              },
+            ],
+            socialSecurityRecord: [{ personalNumber: "AA000003D" }],
+          },
+          timestamp: expect.any(Number),
+          user: {
+            govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+            ip_address: "00.100.8.20",
+            persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+            session_id: "check-happy",
+            user_id: "test",
+          },
+        },
+        {
+          component_id: "https://review-hc.dev.account.gov.uk",
+          event_name: "IPV_HMRC_RECORD_CHECK_CRI_RESPONSE_RECEIVED",
+          event_timestamp_ms: expect.any(Number),
+          restricted: {
+            device_information: { encoded: "test encoded header" },
+          },
+          timestamp: expect.any(Number),
+          user: {
+            govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+            ip_address: "00.100.8.20",
+            persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+            session_id: "check-happy",
+            user_id: "test",
+          },
+        },
+      ];
+      expect(txMaPayload).toContainEqual(expectedAuditEventPayloads[0]);
+      expect(txMaPayload).toContainEqual(expectedAuditEventPayloads[1]);
     });
   });
 });
