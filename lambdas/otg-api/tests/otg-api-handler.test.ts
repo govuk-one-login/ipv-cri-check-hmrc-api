@@ -1,6 +1,8 @@
 import { Context } from "aws-lambda";
 import { OTGApiHandler } from "../src/otg-api-handler";
 
+const govJourneyId = "test-government-journey-id"
+
 describe("otg-api-handler", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -23,6 +25,7 @@ describe("otg-api-handler", () => {
     const otgApiHandler = new OTGApiHandler();
     const event = {
       apiURL: "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub",
+      govJourneyId
     };
     const result = await otgApiHandler.handler(event, {} as Context);
     expect(result.token).toBe(mockToken);
@@ -40,7 +43,8 @@ describe("otg-api-handler", () => {
 
     const otgApiHandler = new OTGApiHandler();
     const event = {
-      apiURL: "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub"
+      apiURL: "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub",
+      govJourneyId
     };
 
     await expect(() => otgApiHandler.handler(event, {})).rejects.toThrow(
@@ -63,7 +67,8 @@ describe("otg-api-handler", () => {
 
     const otgApiHandler = new OTGApiHandler();
     const event = {
-      apiURL: "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub"
+      apiURL: "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub",
+      govJourneyId
     };
 
     await expect(() => otgApiHandler.handler(event, {})).rejects.toThrow(

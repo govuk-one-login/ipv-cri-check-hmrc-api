@@ -20,7 +20,10 @@ export class TimeHandler implements LambdaInterface {
       };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.error(`Error in TimeHandler: ${message}`);
+      logger.error({
+        message: `Error in TimeHandler: ${message}`,
+        govJourneyId: event.govJourneyId
+      });
       throw error;
     }
   }

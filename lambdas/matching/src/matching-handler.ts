@@ -25,7 +25,7 @@ export class MatchingHandler implements LambdaInterface {
         }),
       });
       const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
+      if (contentType?.includes("application/json")) {
         return {
           status: response.status.toString(),
           body: await response.json(),
@@ -40,7 +40,10 @@ export class MatchingHandler implements LambdaInterface {
       let message;
       if (error instanceof Error) message = error.message;
       else message = String(error);
-      logger.error("Error in MatchingHandler: " + message);
+      logger.error({
+        message: "Error in MatchingHandler: " + message,
+        govJourneyId: event.user.govuk_signin_journey_id
+      });
       throw error;
     }
   }

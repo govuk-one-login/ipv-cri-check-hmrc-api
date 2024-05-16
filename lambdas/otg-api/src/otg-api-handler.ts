@@ -5,7 +5,7 @@ const logger = new Logger();
 
 export class OTGApiHandler implements LambdaInterface {
   public async handler(
-    event: { apiURL: string },
+    event: { apiURL: string, govJourneyId: string },
     _context: unknown
   ): Promise<{ token: string, expiry: number }> {
     try {
@@ -27,7 +27,10 @@ export class OTGApiHandler implements LambdaInterface {
         `Error response received from OTG ${response.status} ${response.statusText}`)
     } catch (error: unknown) {
       const message = (error instanceof Error) ? error.message : String(error);
-      logger.error("Error in OTGApiHandler: " + message);
+      logger.error({
+        message: "Error in OTGApiHandler: " + message,
+        govJourneyId: event.govJourneyId
+      });
       throw error;
     }
   }

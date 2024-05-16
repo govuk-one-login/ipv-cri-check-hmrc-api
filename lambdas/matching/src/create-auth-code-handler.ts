@@ -6,7 +6,7 @@ const DEFAULT_AUTHORIZATION_CODE_TTL_IN_MILLIS = 600 * 1000;
 
 export class CreateAuthCodeHandler implements LambdaInterface {
   public async handler(
-    _event: unknown,
+    event: {govuk_signin_journey_id: string},
     _context: unknown
   ): Promise<{ authCodeExpiry: number }> {
     try {
@@ -19,7 +19,10 @@ export class CreateAuthCodeHandler implements LambdaInterface {
       let message;
       if (error instanceof Error) message = error.message;
       else message = String(error);
-      logger.error("Error in CreateAuthCodeHandler: " + message);
+      logger.error({
+        message: "Error in CreateAuthCodeHandler: " + message,
+        govJourneyId: event.govuk_signin_journey_id
+      });
       throw error;
     }
   }

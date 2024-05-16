@@ -10,4 +10,5 @@ export interface MatchEvent {
   userAgent: string;
   apiURL: string;
   oAuthToken: string;
+  user: { govuk_signin_journey_id: string; }
 }

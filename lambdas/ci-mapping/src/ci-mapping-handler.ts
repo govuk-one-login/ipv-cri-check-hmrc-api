@@ -21,7 +21,10 @@ export class CiMappingHandler implements LambdaInterface {
       if (message === HMRC_ERRORS_ABSENT) {
         return [];
       }
-      logger.error(`Error in CiMappingHandler: ${message}`);
+      logger.error({
+        message: `Error in CiMappingHandler: ${message}`,
+        govJourneyId: event.govJourneyId
+      });
 
       throw error;
     }

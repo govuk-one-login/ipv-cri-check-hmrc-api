@@ -1,13 +1,13 @@
 export type UserInfoEvent = {
   userInfoEvent: {
-    Items: [
+    Items:
       {
         names: {
-          L: [
+          L:
             {
               M: {
                 nameParts: {
-                  L: [
+                  L:
                     {
                       M: {
                         type: {
@@ -17,31 +17,28 @@ export type UserInfoEvent = {
                           S: string;
                         };
                       };
-                    },
-                  ];
+                    }[];
                 };
               };
-            },
-          ];
+            }[];
         };
-        birthDates: {
-          L: [
+        birthDates?: {
+          L:
             {
               M: {
                 value: {
                   S: string;
                 };
               };
-            },
-          ];
+            }[];
         };
-      },
-    ];
+      }[];
   };
   nino: string;
+  user: { govuk_signin_journey_id: string;}
 };
 
-export const mockUserInfoEventItem = {
+export const mockUserInfoEventItem: UserInfoEvent = {
   userInfoEvent: {
     Items: [
       {
@@ -65,9 +62,10 @@ export const mockUserInfoEventItem = {
     ],
   },
   nino: "BB000001D",
+  user: {govuk_signin_journey_id: "test-government-journey-id"}
 };
 
-export const mockUserInfoEventItemWithBirthDates = {
+export const mockUserInfoEventItemWithBirthDates: UserInfoEvent = {
   userInfoEvent: {
     Items: [
       {
@@ -97,4 +95,5 @@ export const mockUserInfoEventItemWithBirthDates = {
     ],
   },
   nino: "BB000001D",
+  user: {govuk_signin_journey_id: "test-government-journey-id"}
 };
