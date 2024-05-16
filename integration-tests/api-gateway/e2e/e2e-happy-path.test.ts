@@ -1,4 +1,6 @@
+import { SQSClient, ReceiveMessageCommand } from "@aws-sdk/client-sqs";
 import { getSSMParameter } from "../../resources/ssm-param-helper";
+import { isAuditEventValid } from "../../resources/validation-helper";
 import {
   Payload,
   getJarAuthorizationPayload,
@@ -212,5 +214,43 @@ describe("End to end happy path journey", () => {
     expect(parseVc.vc.evidence[0].validityScore).toBe(2);
     expect(parseVc.vc.evidence[0].strengthScore).toBe(2);
     expect(parseVc.vc.evidence[0].ci).toBeUndefined();
+  });
+
+  it("TXMA event is added to the sqs queue containing header value", async () => {
+    const sqsClient = new SQSClient({
+      region: process.env.AWS_REGION,
+    });
+
+    const queueURL =
+      "https://sqs.eu-west-2.amazonaws.com/562670266496/txma-infrastructure-AuditEventQueue-NhMKkeE5BaMf";
+    const input = {
+      QueueUrl: queueURL,
+      MaxNumberOfMessages: 10,
+      WaitTimeSeconds: 20,
+      VisibilityTimeout: 20,
+    };
+
+    const receiveCommand = new ReceiveMessageCommand(input);
+    const { Messages } = await sqsClient.send(receiveCommand);
+
+    if (Messages) {
+      expect(
+        isAuditEventValid(
+          "IPV_HMRC_RECORD_CHECK_CRI_START",
+          "IPV_HMRC_RECORD_CHECK_CRI_START",
+          Messages
+        )
+      ).toBe(true);
+      expect(
+        isAuditEventValid(
+          "IPV_HMRC_RECORD_CHECK_CRI_REQUEST_SENT",
+          "IPV_HMRC_RECORD_CHECK_CRI_REQUEST_SENT",
+          Messages
+        )
+      ).toBe(true);
+    }
+    // ...etc
+
+    // delete the messages from the queue
   });
 });
