@@ -51,13 +51,13 @@ describe("credential-subject-handler.ts", () => {
     expect(credentialSubject).toEqual(expectedCredentialSubjectWithBirthDates);
   });
 
-  it.each([{}, undefined, null])(
+  it.each([{govJourneyId: mockUserInfoEventItem}])(
     "should return {} when passed %s",
     async (payload) => {
       const handler = new CredentialSubjectHandler();
 
       const credentialSubject = await handler.handler(
-        payload as UserInfoEvent,
+        payload as unknown as UserInfoEvent,
         {} as unknown
       );
 

@@ -1,72 +1,75 @@
 export type UserInfoEvent = {
-  userInfoEvent: {
-    Items:
+  detail: {
+    userInfoEvent: {
+      Items:
       {
         names: {
           L:
-            {
-              M: {
-                nameParts: {
-                  L:
-                    {
-                      M: {
-                        type: {
-                          S: string;
-                        };
-                        value: {
-                          S: string;
-                        };
-                      };
-                    }[];
-                };
+          {
+            M: {
+              nameParts: {
+                L:
+                {
+                  M: {
+                    type: {
+                      S: string;
+                    };
+                    value: {
+                      S: string;
+                    };
+                  };
+                }[];
               };
-            }[];
+            };
+          }[];
         };
         birthDates?: {
           L:
-            {
-              M: {
-                value: {
-                  S: string;
-                };
+          {
+            M: {
+              value: {
+                S: string;
               };
-            }[];
+            };
+          }[];
         };
       }[];
+    }
   };
   nino: string;
-  user: { govuk_signin_journey_id: string;}
+  govJourneyId: string;
 };
 
 export const mockUserInfoEventItem: UserInfoEvent = {
-  userInfoEvent: {
-    Items: [
-      {
-        names: {
-          L: [
-            {
-              M: {
-                nameParts: {
-                  L: [
-                    { M: { type: { S: "GivenName" }, value: { S: "Rishi" } } },
-                    {
-                      M: { type: { S: "FamilyName" }, value: { S: "Johnson" } },
-                    },
-                  ],
+  detail: {
+    userInfoEvent: {
+      Items: [
+        {
+          names: {
+            L: [
+              {
+                M: {
+                  nameParts: {
+                    L: [
+                      { M: { type: { S: "GivenName" }, value: { S: "Rishi" } } },
+                      {
+                        M: { type: { S: "FamilyName" }, value: { S: "Johnson" } },
+                      },
+                    ],
+                  },
                 },
               },
-            },
-          ],
+            ],
+          },
         },
-      },
-    ],
-  },
-  nino: "BB000001D",
-  user: {govuk_signin_journey_id: "test-government-journey-id"}
+      ],
+    }},
+    nino: "BB000001D",
+    govJourneyId:  "test-government-journey-id"
 };
 
 export const mockUserInfoEventItemWithBirthDates: UserInfoEvent = {
-  userInfoEvent: {
+  detail: { userInfoEvent: {
     Items: [
       {
         names: {
@@ -93,7 +96,7 @@ export const mockUserInfoEventItemWithBirthDates: UserInfoEvent = {
         },
       },
     ],
-  },
+  }},
   nino: "BB000001D",
-  user: {govuk_signin_journey_id: "test-government-journey-id"}
+  govJourneyId:  "test-government-journey-id"
 };

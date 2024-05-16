@@ -25,7 +25,10 @@
 							"Resource": "arn:aws:states:::lambda:invoke",
 							"Parameters": {
 								"FunctionName": "${CredentialSubjectFunctionArn}",
-								"Payload.$": "$$.Execution.Input.detail"
+								"Payload": {
+									"detail.$": "$$.Execution.Input.detail",
+									"govJourneyId.$": "$$.Execution.Input.detail.user.govuk_signin_journey_id"
+								},
 							},
 							"Retry": [
 								{
