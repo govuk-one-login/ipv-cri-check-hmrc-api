@@ -1,4 +1,7 @@
-import { SQSClient, ReceiveMessageCommand } from "@aws-sdk/client-sqs";
+import {
+  getMessageBatch,
+  deleteMessageBatch,
+} from "../../resources/queue-helper";
 import { getSSMParameter } from "../../resources/ssm-param-helper";
 import { isAuditEventValid } from "../../resources/validation-helper";
 import {
@@ -217,21 +220,11 @@ describe("End to end happy path journey", () => {
   });
 
   it("TXMA event is added to the sqs queue containing header value", async () => {
-    const sqsClient = new SQSClient({
-      region: process.env.AWS_REGION,
-    });
-
-    const queueURL =
+    // TODO
+    const QueueUrl =
       "https://sqs.eu-west-2.amazonaws.com/562670266496/txma-infrastructure-AuditEventQueue-NhMKkeE5BaMf";
-    const input = {
-      QueueUrl: queueURL,
-      MaxNumberOfMessages: 10,
-      WaitTimeSeconds: 20,
-      VisibilityTimeout: 20,
-    };
 
-    const receiveCommand = new ReceiveMessageCommand(input);
-    const { Messages } = await sqsClient.send(receiveCommand);
+    const Messages = await getMessageBatch(QueueUrl);
 
     if (Messages) {
       expect(
@@ -248,9 +241,9 @@ describe("End to end happy path journey", () => {
           Messages
         )
       ).toBe(true);
-    }
-    // ...etc
+      // ...TODO
 
-    // delete the messages from the queue
+      deleteMessageBatch(QueueUrl, Messages);
+    }
   });
 });

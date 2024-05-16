@@ -7,6 +7,9 @@ import {
   ReceiveMessageCommand,
   SQSClient,
   SetQueueAttributesCommand,
+  DeleteMessageBatchCommand,
+  DeleteMessageBatchRequestEntry,
+  Message,
 } from "@aws-sdk/client-sqs";
 import { createSendCommand } from "./aws-helper";
 import { RetryConfig, pause, retry } from "./util";
@@ -14,12 +17,12 @@ import { attachTargetToRule } from "./event-bridge-helper";
 
 export const targetId = `queue-target-id${Date.now()}`;
 
-const sendCommand = createSendCommand(
-  () =>
-    new SQSClient({
-      region: process.env.AWS_REGION,
-    })
-);
+const sqsClient = new SQSClient({
+  region: process.env.AWS_REGION,
+});
+
+const sendCommand = createSendCommand(() => sqsClient);
+
 export const createQueue = async (
   queueName: string,
   Attributes?: Partial<Record<QueueAttributeName, string>>
@@ -124,5 +127,47 @@ export const setUpQueueAndAttachToRule = async (
   await pause(15);
   return queueResponse;
 };
+
 export const deleteQueue = async (QueueUrl?: string) =>
   sendCommand(DeleteQueueCommand, { QueueUrl });
+
+export const getMessageBatch = async (
+  QueueUrl?: string
+): Promise<Message[] | undefined> => {
+  const recieveInput = {
+    QueueUrl,
+    MaxNumberOfMessages: 10,
+    WaitTimeSeconds: 20,
+    VisibilityTimeout: 20,
+  };
+
+  const receiveCommand = new ReceiveMessageCommand(recieveInput);
+  const { Messages } = await sqsClient.send(receiveCommand);
+  return Messages;
+};
+
+export const deleteMessageBatch = async (
+  QueueUrl: string,
+  eventsToDelete: Message[]
+) => {
+  const itemsToDelete = eventsToDelete.reduce<DeleteMessageBatchRequestEntry[]>(
+    (acc, { MessageId, ReceiptHandle }) => {
+      if (MessageId && ReceiptHandle) {
+        const obj = {
+          Id: MessageId,
+          ReceiptHandle,
+        } as DeleteMessageBatchRequestEntry;
+        acc.push(obj);
+      }
+      return acc;
+    },
+    []
+  );
+
+  const deleteInput = {
+    QueueUrl,
+    Entries: itemsToDelete,
+  };
+  const deleteCommand = new DeleteMessageBatchCommand(deleteInput);
+  await sqsClient.send(deleteCommand);
+};
