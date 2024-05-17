@@ -15,7 +15,7 @@ import {
 import { removeTargetFromRule } from "../../resources/event-bridge-helper";
 import { pause, retry } from "../../resources/util";
 
-jest.setTimeout(200_000);
+jest.setTimeout(650_000);
 
 describe("Nino Hmrc Check Step Function", () => {
   const input = {

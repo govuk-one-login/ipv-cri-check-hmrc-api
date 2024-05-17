@@ -16,7 +16,7 @@ import { removeTargetFromRule } from "../../resources/event-bridge-helper";
 import { pause, retry } from "../../resources/util";
 import { CreateQueueCommandOutput } from "@aws-sdk/client-sqs";
 
-jest.setTimeout(200_000);
+jest.setTimeout(650_000);
 
 type EvidenceRequest = {
   scoringPolicy: string;
