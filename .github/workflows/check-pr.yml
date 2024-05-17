@@ -54,3 +54,36 @@ jobs:
     with:
       stack-name: ${{ needs.deploy.outputs.stack-name }}
       aws-region: ${{ needs.deploy.outputs.aws-region }}
+
+  eventbridge-abandon-tests:
+    name: Run tests
+    needs: deploy
+    uses: ./.github/workflows/run-evn-abn-tests.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      stack-name: ${{ needs.deploy.outputs.stack-name }}
+      aws-region: ${{ needs.deploy.outputs.aws-region }}
+
+  eventbridge-nino-check-tests:
+    name: Run tests
+    needs: deploy
+    uses: ./.github/workflows/run-evn-nino-tests.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      stack-name: ${{ needs.deploy.outputs.stack-name }}
+      aws-region: ${{ needs.deploy.outputs.aws-region }}
+
+  eventbridge-issue-credential-check-tests:
+    name: Run tests
+    needs: deploy
+    uses: ./.github/workflows/run-evn-cred-tests.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      stack-name: ${{ needs.deploy.outputs.stack-name }}
+      aws-region: ${{ needs.deploy.outputs.aws-region }}
