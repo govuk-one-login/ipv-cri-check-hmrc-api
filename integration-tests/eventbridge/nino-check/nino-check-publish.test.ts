@@ -19,7 +19,7 @@ jest.setTimeout(200_000);
 
 describe("Nino Hmrc Check Step Function", () => {
   const input = {
-    sessionId: "check-happy",
+    sessionId: "check-happy-publish",
     nino: "AA000003D",
     "txma-audit-encoded": "test encoded header",
   };
@@ -258,7 +258,7 @@ describe("Nino Hmrc Check Step Function", () => {
           govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
           ip_address: "00.100.8.20",
           persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-          session_id: "check-happy",
+          session_id: "check-happy-publish",
           user_id: "test",
         },
       },
@@ -274,7 +274,7 @@ describe("Nino Hmrc Check Step Function", () => {
           govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
           ip_address: "00.100.8.20",
           persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-          session_id: "check-happy",
+          session_id: "check-happy-publish",
           user_id: "test",
         },
       },

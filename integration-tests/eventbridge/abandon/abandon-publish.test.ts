@@ -15,7 +15,7 @@ describe("Abandon Step Function", () => {
   jest.setTimeout(200_000);
 
   const input = {
-    sessionId: "abandon-test",
+    sessionId: "abandon-test-publish",
     "txma-audit-encoded": "test encoded header",
   };
 
@@ -139,7 +139,7 @@ describe("Abandon Step Function", () => {
         govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
         ip_address: "00.100.8.20",
         persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-        session_id: "abandon-test",
+        session_id: "abandon-test-publish",
         user_id: "test",
       },
     });
