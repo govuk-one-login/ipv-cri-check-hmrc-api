@@ -1,5 +1,4 @@
 export type UserInfoEvent = {
-  detail: {
     userInfoEvent: {
       Items:
       {
@@ -35,13 +34,11 @@ export type UserInfoEvent = {
         };
       }[];
     }
-  };
   nino: string;
   govJourneyId: string;
 };
 
 export const mockUserInfoEventItem: UserInfoEvent = {
-  detail: {
     userInfoEvent: {
       Items: [
         {
@@ -63,13 +60,13 @@ export const mockUserInfoEventItem: UserInfoEvent = {
           },
         },
       ],
-    }},
+    },
     nino: "BB000001D",
     govJourneyId:  "test-government-journey-id"
 };
 
 export const mockUserInfoEventItemWithBirthDates: UserInfoEvent = {
-  detail: { userInfoEvent: {
+ userInfoEvent: {
     Items: [
       {
         names: {
@@ -96,7 +93,7 @@ export const mockUserInfoEventItemWithBirthDates: UserInfoEvent = {
         },
       },
     ],
-  }},
+  },
   nino: "BB000001D",
   govJourneyId:  "test-government-journey-id"
 };

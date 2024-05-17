@@ -1,260 +1,254 @@
 {
-  "Comment": "The Audit Event State Machine, responsible for generating the overall event structure",
-  "StartAt": "Get Audit name components",
-  "States": {
-    "Get Audit name components": {
-      "Type": "Pass",
-      "Comment": "The details JSON object is stringified using States.JsonToString and then split it on ':\"' creating an array with key and value as items if a key called $$.Execution.Input.detail is found deviceInformation returns boolean value true",
-      "Parameters": {
-        "prefix.$": "$$.Execution.Input.detail.auditPrefix",
-        "type.$": "$$.Execution.Input.detail-type",
-        "deviceInformation.$": "States.ArrayContains(States.StringSplit(States.JsonToString($$.Execution.Input.detail), ':\"'), 'deviceInformation')",
-        "govJourneyId.$": "$$.Execution.Input.detail.user.govuk_signin_journey_id"
-      },
-      "Next": "Parallel"
-    },
-    "Parallel": {
-      "Type": "Parallel",
-      "Next": "Is Restricted Info Present?",
-      "Branches": [
-        {
-          "StartAt": "Get AuditContext Restricted Info",
-          "States": {
-            "Get AuditContext Restricted Info": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "Parameters": {
-                "FunctionName": "${CredentialSubjectFunctionArn}",
-                "Payload.$": "$$.Execution.Input.detail"
-              },
-              "Retry": [
-                {
-                  "ErrorEquals": [
-                    "Lambda.ServiceException",
-                    "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException",
-                    "Lambda.TooManyRequestsException"
-                  ],
-                  "IntervalSeconds": 1,
-                  "MaxAttempts": 3,
-                  "BackoffRate": 2
-                }
-              ],
-              "ResultSelector": {
-                "value.$": "$.Payload",
-                "containsUserInfo.$": "States.JsonToString($.Payload)"
-              },
-              "ResultPath": "$.restricted",
-              "End": true
-            }
-          }
-        },
-        {
-          "StartAt": "EpochTime in Seconds",
-          "States": {
-            "EpochTime in Seconds": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "Parameters": {
-                "Payload": {
-                  "dateTime.$": "$$.State.EnteredTime",
-                  "unit": "seconds",
-                  "govJourneyId.$": "$$.Execution.Input.detail.user.govuk_signin_journey_id"
-                },
-                "FunctionName": "${EpochTimeArn}"
-              },
-              "Retry": [
-                {
-                  "ErrorEquals": [
-                    "Lambda.ServiceException",
-                    "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException",
-                    "Lambda.TooManyRequestsException"
-                  ],
-                  "IntervalSeconds": 1,
-                  "MaxAttempts": 3,
-                  "BackoffRate": 2
-                }
-              ],
-              "ResultSelector": {
-                "value.$": "$.Payload"
-              },
-              "ResultPath": "$.epochSeconds",
-              "End": true
-            }
-          }
-        },
-        {
-          "StartAt": "EpochTime In Milliseconds",
-          "States": {
-            "EpochTime In Milliseconds": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "Parameters": {
-                "Payload": {
-                  "dateTime.$": "$$.State.EnteredTime",
-                  "unit": "milliseconds",
-                  "govJourneyId.$": "$$.Execution.Input.detail.user.govuk_signin_journey_id"
-                },
-                "FunctionName": "${EpochTimeArn}"
-              },
-              "Retry": [
-                {
-                  "ErrorEquals": [
-                    "Lambda.ServiceException",
-                    "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException",
-                    "Lambda.TooManyRequestsException"
-                  ],
-                  "IntervalSeconds": 1,
-                  "MaxAttempts": 3,
-                  "BackoffRate": 2
-                }
-              ],
-              "ResultSelector": {
-                "value.$": "$.Payload"
-              },
-              "ResultPath": "$.epochMilliseconds",
-              "End": true
-            }
-          }
-        }
-      ]
-    },
-    "Is Restricted Info Present?": {
-      "Type": "Choice",
-      "Comment": "This check uses the empty object returned from the CredentialSubjectFunction to determine there is no Restricted user info present",
-      "Choices": [
-        {
-          "And": [
-            {
-              "Variable": "$[0].restricted.containsUserInfo",
-              "StringEquals": "{}"
-            },
-            {
-              "Variable": "$[0].deviceInformation",
-              "BooleanEquals": false
-            }
-          ],
-          "Next": "AuditEvent Without Restricted Info"
-        }
-      ],
-      "Default": "Is Device Information Present?"
-    },
-    "Is Device Information Present?": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Variable": "$[0].deviceInformation",
-          "BooleanEquals": true,
-          "Next": "Is Device Information Value Present?"
-        }
-      ],
-      "Default": "Set Default Value For Formatted Device Information"
-    },
-    "Is Device Information Value Present?": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Variable": "$$.Execution.Input.detail.deviceInformation",
-          "StringEquals": "{}",
-          "Next": "Set Default Value For Formatted Device Information"
-        }
-      ],
-      "Default": "Format Device Information"
-    },
-    "Set Default Value For Formatted Device Information": {
-      "Type": "Pass",
-      "Next": "Add Restricted Info to AuditEvent",
-      "Parameters": {},
-      "ResultPath": "$[0].formattedDeviceInformation"
-    },
-    "Format Device Information": {
-      "Type": "Pass",
-      "Next": "Add Restricted Info to AuditEvent",
-      "Parameters": {
-        "device_information": {
-          "encoded.$": "$$.Execution.Input.detail.deviceInformation"
-        }
-      },
-      "ResultPath": "$[0].formattedDeviceInformation"
-    },
-    "AuditEvent Without Restricted Info": {
-      "Type": "Pass",
-      "Comment": "The user context info is returned only if there is no Restricted user information",
-      "Parameters": {
-        "event_name.$": "States.Format('{}_{}', $[0].prefix, $[0].type)",
-        "timestamp.$": "$[1].epochSeconds.value",
-        "event_timestamp_ms.$": "$[2].epochMilliseconds.value",
-        "component_id.$": "$$.Execution.Input.detail.issuer",
-        "user.$": "$$.Execution.Input.detail.user"
-      },
-      "ResultPath": "$[0].auditEvent",
-      "OutputPath": "$",
-      "Next": "Is evidence Present?"
-    },
-    "Add Restricted Info to AuditEvent": {
-      "Type": "Pass",
-      "Comment": "The user context info is returned in added with the Restricted user information",
-      "Parameters": {
-        "event_name.$": "States.Format('{}_{}', $[0].prefix, $[0].type)",
-        "timestamp.$": "$[1].epochSeconds.value",
-        "event_timestamp_ms.$": "$[2].epochMilliseconds.value",
-        "component_id.$": "$$.Execution.Input.detail.issuer",
-        "user.$": "$$.Execution.Input.detail.user",
-        "restricted.$": "States.JsonMerge($[0].restricted.value, $[0].formattedDeviceInformation, false)"
-      },
-      "ResultPath": "$[0].auditEvent",
-      "OutputPath": "$",
-      "Next": "Is evidence Present?"
-    },
-    "Is evidence Present?": {
-      "Type": "Choice",
-      "Comment": "This check if the input Details has an evidence to add to the audit structure",
-      "Choices": [
-        {
-          "Variable": "$$.Execution.Input.detail.evidence",
-          "IsPresent": true,
-          "Next": "Audit Event With Evidence & Restricted Info"
-        }
-      ],
-      "Default": "Add User Context"
-    },
-    "Add User Context": {
-      "Type": "Pass",
-      "Parameters": {
-        "auditEvent.$": "$[0].auditEvent"
-      },
-      "ResultPath": "$[0]",
-      "OutputPath": "$",
-      "Next": "publish event to TxMa Queue"
-    },
-    "Audit Event With Evidence & Restricted Info": {
-      "Type": "Pass",
-      "Comment": "Merges the evidence detail contained in the details input by interpolating it into a stringified version of {evidence: {}}, {} is replaced with string form of the incoming evidence detail, which is then converted to Json and merge with the auditEvent state",
-      "Parameters": {
-        "auditEvent.$": "States.JsonMerge($[0].auditEvent, States.StringToJson(States.Format('\\{\"extensions\":\\{\"evidence\": {}\\}\\}', States.JsonToString($$.Execution.Input.detail.evidence))), false)"
-      },
-      "ResultPath": "$[0]",
-      "OutputPath": "$",
-      "Next": "publish event to TxMa Queue"
-    },
-    "publish event to TxMa Queue": {
-      "Type": "Task",
+	"Comment": "The Audit Event State Machine, responsible for generating the overall event structure",
+	"StartAt": "Get Audit name components",
+	"States": {
+		"Get Audit name components": {
+			"Type": "Pass",
+			"Comment": "The details JSON object is stringified using States.JsonToString and then split it on ':\"' creating an array with key and value as items if a key called evidence is found DetailsContainsEvidence returns boolean value true",
+			"Parameters": {
+				"prefix.$": "$$.Execution.Input.detail.auditPrefix",
+				"type.$": "$$.Execution.Input.detail-type",
+				"deviceInformation.$": "$$.Execution.Input.detail.deviceInformation",
+				"govJourneyId.$": "$$.Execution.Input.detail.user.govuk_signin_journey_id"
+			},
+			"Next": "Parallel"
+		},
+		"Parallel": {
+			"Type": "Parallel",
+			"Next": "Is Restricted Info Present?",
+			"Branches": [
+				{
+					"StartAt": "Get AuditContext Restricted Info",
+					"States": {
+						"Get AuditContext Restricted Info": {
+							"Type": "Task",
+							"Resource": "arn:aws:states:::lambda:invoke",
+							"Parameters": {
+								"FunctionName": "${CredentialSubjectFunctionArn}",
+								"Payload": {
+									"userInfoEvent.$": "$$.Execution.Input.detail.userInfoEvent",
+									"govJourneyId.$": "$$.Execution.Input.detail.user.govuk_signin_journey_id"
+								}
+							},
+							"Retry": [
+								{
+									"ErrorEquals": [
+										"Lambda.ServiceException",
+										"Lambda.AWSLambdaException",
+										"Lambda.SdkClientException",
+										"Lambda.TooManyRequestsException"
+									],
+									"IntervalSeconds": 1,
+									"MaxAttempts": 3,
+									"BackoffRate": 2
+								}
+							],
+							"ResultSelector": {
+								"value.$": "$.Payload",
+								"containsUserInfo.$": "States.JsonToString($.Payload)"
+							},
+							"ResultPath": "$.restricted",
+							"End": true
+						}
+					}
+				},
+				{
+					"StartAt": "EpochTime in Seconds",
+					"States": {
+						"EpochTime in Seconds": {
+							"Type": "Task",
+							"Resource": "arn:aws:states:::lambda:invoke",
+							"Parameters": {
+								"Payload": {
+									"dateTime.$": "$$.State.EnteredTime",
+									"unit": "seconds",
+									"govJourneyId.$": "$$.Execution.Input.detail.user.govuk_signin_journey_id"
+								},
+								"FunctionName": "${EpochTimeArn}"
+							},
+							"Retry": [
+								{
+									"ErrorEquals": [
+										"Lambda.ServiceException",
+										"Lambda.AWSLambdaException",
+										"Lambda.SdkClientException",
+										"Lambda.TooManyRequestsException"
+									],
+									"IntervalSeconds": 1,
+									"MaxAttempts": 3,
+									"BackoffRate": 2
+								}
+							],
+							"ResultSelector": {
+								"value.$": "$.Payload"
+							},
+							"ResultPath": "$.epochSeconds",
+							"End": true
+						}
+					}
+				},
+				{
+					"StartAt": "EpochTime In Milliseconds",
+					"States": {
+						"EpochTime In Milliseconds": {
+							"Type": "Task",
+							"Resource": "arn:aws:states:::lambda:invoke",
+							"Parameters": {
+								"Payload": {
+									"dateTime.$": "$$.State.EnteredTime",
+									"unit": "milliseconds",
+									"govJourneyId.$": "$$.Execution.Input.detail.user.govuk_signin_journey_id"
+								},
+								"FunctionName": "${EpochTimeArn}"
+							},
+							"Retry": [
+								{
+									"ErrorEquals": [
+										"Lambda.ServiceException",
+										"Lambda.AWSLambdaException",
+										"Lambda.SdkClientException",
+										"Lambda.TooManyRequestsException"
+									],
+									"IntervalSeconds": 1,
+									"MaxAttempts": 3,
+									"BackoffRate": 2
+								}
+							],
+							"ResultSelector": {
+								"value.$": "$.Payload"
+							},
+							"ResultPath": "$.epochMilliseconds",
+							"End": true
+						}
+					}
+				}
+			]
+		},
+		"Is Restricted Info Present?": {
+			"Type": "Choice",
+			"Comment": "This check uses the empty object returned from the CredentialSubjectFunction to determine there is no Restricted user info present",
+			"Choices": [
+				{
+					"And": [
+						{
+							"Variable": "$[0].restricted.containsUserInfo",
+							"StringEquals": "{}"
+						},
+						{
+							"Variable": "$[0].deviceInformation",
+							"StringEquals": "{}"
+						}
+					],
+					"Next": "AuditEvent Without Restricted Info"
+				}
+			],
+			"Default": "Is Device Information Present?"
+		},
+		"Is Device Information Present?": {
+			"Type": "Choice",
+			"Choices": [
+				{
+					"Not": {
+						"Variable": "$[0].deviceInformation",
+						"StringEquals": "{}"
+					},
+					"Next": "Fromat Device Information"
+				}
+			],
+			"Default": "Set Default Value For Formatted Device Information"
+		},
+		"Set Default Value For Formatted Device Information": {
+			"Type": "Pass",
+			"Next": "Add Restricted Info to AuditEvent",
+			"Parameters": {},
+			"ResultPath": "$[0].formattedDeviceInformation"
+		},
+		"Fromat Device Information": {
+			"Type": "Pass",
+			"Next": "Add Restricted Info to AuditEvent",
+			"Parameters": {
+				"device_information": {
+					"encoded.$": "$[0].deviceInformation"
+				}
+			},
+			"ResultPath": "$[0].formattedDeviceInformation"
+		},
+		"AuditEvent Without Restricted Info": {
+			"Type": "Pass",
+			"Comment": "The user context info is returned only if there is no Restricted user information",
+			"Parameters": {
+				"event_name.$": "States.Format('{}_{}', $[0].prefix, $[0].type)",
+				"timestamp.$": "$[1].epochSeconds.value",
+				"event_timestamp_ms.$": "$[2].epochMilliseconds.value",
+				"component_id.$": "$$.Execution.Input.detail.issuer",
+				"user.$": "$$.Execution.Input.detail.user"
+			},
+			"ResultPath": "$[0].auditEvent",
+			"OutputPath": "$",
+			"Next": "Is evidence Present?"
+		},
+		"Add Restricted Info to AuditEvent": {
+			"Type": "Pass",
+			"Comment": "The user context info is returned in added with the Restricted user information",
+			"Parameters": {
+				"event_name.$": "States.Format('{}_{}', $[0].prefix, $[0].type)",
+				"timestamp.$": "$[1].epochSeconds.value",
+				"event_timestamp_ms.$": "$[2].epochMilliseconds.value",
+				"component_id.$": "$$.Execution.Input.detail.issuer",
+				"user.$": "$$.Execution.Input.detail.user",
+				"restricted.$": "States.JsonMerge($[0].restricted.value, $[0].formattedDeviceInformation, false)"
+			},
+			"ResultPath": "$[0].auditEvent",
+			"OutputPath": "$",
+			"Next": "Is evidence Present?"
+		},
+		"Is evidence Present?": {
+			"Type": "Choice",
+			"Comment": "This check if the input Details has an evidence to add to the audit structure",
+			"Choices": [
+				{
+					"Variable": "$$.Execution.Input.detail.evidence",
+					"IsPresent": true,
+					"Next": "Audit Event With Evidence & Restricted Info"
+				}
+			],
+			"Default": "Add User Context"
+		},
+		"Add User Context": {
+			"Type": "Pass",
+			"Parameters": {
+				"auditEvent.$": "$.[0].auditEvent"
+			},
+			"ResultPath": "$[0]",
+			"OutputPath": "$",
+			"Next": "publish event to TxMa Queue"
+		},
+		"Audit Event With Evidence & Restricted Info": {
+			"Type": "Pass",
+			"Comment": "Merges the evidence detail contained in the details input by interpolating it into a stringified version of {evidence: {}}, {} is replaced with string form of the incoming evidence detail, which is then converted to Json and merge with the auditEvent state",
+			"Parameters": {
+				"auditEvent.$": "States.JsonMerge($.[0].auditEvent, States.StringToJson(States.Format('\\{\"extensions\":\\{\"evidence\": {}\\}\\}', States.JsonToString($$.Execution.Input.detail.evidence))), false)"
+			},
+			"ResultPath": "$[0]",
+			"OutputPath": "$",
+			"Next": "publish event to TxMa Queue"
+		},
+		"publish event to TxMa Queue": {
+			"Type": "Task",
       "InputPath": "$[0].auditEvent",
-      "Resource": "arn:aws:states:::events:putEvents",
-      "Parameters": {
-        "Entries": [
-          {
-            "Detail.$": "$",
-            "DetailType.$": "$.event_name",
-            "EventBusName": "${CheckHmrcEventBus}",
+			"Resource": "arn:aws:states:::events:putEvents",
+			"Parameters": {
+				"Entries": [
+					{
+						"Detail.$": "$",
+						"DetailType.$": "$.event_name",
+						"EventBusName": "${CheckHmrcEventBus}",
             "Source": "${CheckHmrcEventBusSource}"
-          }
-        ]
-      },
+					}
+				]
+			},
       "ResultPath": null,
-      "End": true
-    }
-  }
+			"End": true
+		}
+	}
 }

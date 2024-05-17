@@ -16,7 +16,7 @@ export class CredentialSubjectHandler implements LambdaInterface {
     _context: unknown
   ): Promise<CredentialSubject> {
     logger.info(`Lambda invoked with government journey id: ${event.govJourneyId}`);
-    const birthDateDates = event?.detail?.userInfoEvent?.Items[0]?.birthDates?.L || []
+    const birthDateDates = event?.userInfoEvent?.Items[0]?.birthDates?.L || []
     try {
       return credentialSubjectBuilder
         .setPersonalNumber(event?.nino)
@@ -40,7 +40,7 @@ export class CredentialSubjectHandler implements LambdaInterface {
   private convertToCredentialSubjectNames = (
     event: UserInfoEvent
   ): Array<NamePart> => {
-    return event?.detail?.userInfoEvent?.Items[0]?.names?.L[0]?.M?.nameParts?.L?.map(
+    return event?.userInfoEvent?.Items[0]?.names?.L[0]?.M?.nameParts?.L?.map(
       (part) => ({ type: part.M.type.S, value: part.M.value.S }) as NamePart
     );
   };
