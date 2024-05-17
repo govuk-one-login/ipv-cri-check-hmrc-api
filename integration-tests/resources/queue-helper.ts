@@ -12,8 +12,9 @@ import {
 import { createSendCommand } from "./aws-helper";
 import { RetryConfig, pause, retry } from "./util";
 import { attachTargetToRule } from "./event-bridge-helper";
+import { v4 as uuidv4 } from "uuid";
 
-export const targetId = `queue-target-id${Date.now()}`;
+export const targetId = `queue-target-id${uuidv4()}`;
 
 const sendCommand = createSendCommand(
   () =>
@@ -66,7 +67,7 @@ export const addQueuePolicy = async (
     Version: "2012-10-17",
     Statement: [
       {
-        Sid: `sqs-Allow-eventBridge-to-sendMessage-${Date.now()}`,
+        Sid: `sqs-Allow-eventBridge-to-sendMessage-${uuidv4()}`,
         Effect: "Allow",
         Principal: {
           Service: "events.amazonaws.com",
@@ -129,7 +130,7 @@ export const setUpQueueAndAttachToRule = async (
   eventBusName: string
 ) => {
   const queueResponse: CreateQueueCommandOutput = await createQueue(
-    `event-bus-test-Queue-${Date.now()}`
+    `event-bus-test-Queue-${uuidv4()}`
   );
   const queueArn = (await getQueueArn(queueResponse.QueueUrl)) as string;
 

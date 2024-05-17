@@ -1,5 +1,6 @@
 import {
   EventBridgeClient,
+  ListTargetsByRuleCommand,
   PutTargetsCommand,
   RemoveTargetsCommand,
 } from "@aws-sdk/client-eventbridge";
@@ -21,16 +22,22 @@ export const attachTargetToRule = async (
   if (!targetArn)
     throw new Error(`TargetArn not valid, value is: ${targetArn}`);
 
-  sendCommand(PutTargetsCommand, {
+  const response = sendCommand(ListTargetsByRuleCommand, {
     Rule: ruleName,
     EventBusName: eventBusName,
-    Targets: [
-      {
-        Arn: targetArn,
-        Id: targetId,
-      },
-    ],
   });
+  if (((await response).Targets || [])?.length < 5) {
+    sendCommand(PutTargetsCommand, {
+      Rule: ruleName,
+      EventBusName: eventBusName,
+      Targets: [
+        {
+          Arn: targetArn,
+          Id: targetId,
+        },
+      ],
+    });
+  }
 };
 
 export const removeTargetFromRule = async (
