@@ -3,6 +3,7 @@ import {
   CreateQueueCommandOutput,
   DeleteQueueCommand,
   GetQueueAttributesCommand,
+  Message,
   QueueAttributeName,
   ReceiveMessageCommand,
   SQSClient,
@@ -11,8 +12,9 @@ import {
 import { createSendCommand } from "./aws-helper";
 import { RetryConfig, pause, retry } from "./util";
 import { attachTargetToRule } from "./event-bridge-helper";
+import { v4 as uuidv4 } from "uuid";
 
-export const targetId = `queue-target-id${Date.now()}`;
+export const targetId = `queue-target-id${uuidv4()}`;
 
 const sendCommand = createSendCommand(
   () =>
@@ -65,7 +67,7 @@ export const addQueuePolicy = async (
     Version: "2012-10-17",
     Statement: [
       {
-        Sid: `sqs-Allow-eventBridge-to-sendMessage-${Date.now()}`,
+        Sid: `sqs-Allow-eventBridge-to-sendMessage-${uuidv4()}`,
         Effect: "Allow",
         Principal: {
           Service: "events.amazonaws.com",
@@ -87,42 +89,60 @@ export const addQueuePolicy = async (
     },
   });
 };
-
-export const getQueueMessages = (
+export const getQueueMessages = async (
   queueUrl: string,
-  retryConfig: RetryConfig
-) => {
-  return retry(retryConfig, async () => {
-    const { Messages } = await sendCommand(ReceiveMessageCommand, {
-      QueueUrl: queueUrl,
-      WaitTimeSeconds: 20,
-    });
-    if (!Messages || Messages.length === 0) {
+  retryConfig: RetryConfig = {
+    intervalInMs: 0,
+    maxRetries: 5,
+  }
+): Promise<Message[]> => {
+  try {
+    let allMessages: Message[] = [];
+    let shouldContinue = true;
+
+    while (shouldContinue) {
+      const { Messages } = await sendCommand(ReceiveMessageCommand, {
+        QueueUrl: queueUrl,
+        WaitTimeSeconds: 10,
+      });
+
+      if (!Messages || Messages.length === 0) {
+        shouldContinue = false;
+      } else {
+        allMessages = allMessages.concat(Messages);
+      }
+    }
+
+    if (allMessages.length === 0) {
       throw new Error("No messages received.");
     }
 
-    return Messages;
-  });
+    return allMessages;
+  } catch (error) {
+    return retry(() => {
+      return getQueueMessages(queueUrl, retryConfig);
+    }, retryConfig);
+  }
 };
-
 export const setUpQueueAndAttachToRule = async (
   ruleArn: string,
   ruleName: string,
   eventBusName: string
 ) => {
   const queueResponse: CreateQueueCommandOutput = await createQueue(
-    `event-bus-test-Queue-${Date.now()}`
+    `event-bus-test-Queue-${uuidv4()}`
   );
   const queueArn = (await getQueueArn(queueResponse.QueueUrl)) as string;
 
-  await pause(15);
+  await pause(2);
 
   await addQueuePolicy(queueArn, queueResponse.QueueUrl, ruleArn);
 
-  await pause(15);
+  await pause(2);
   await attachTargetToRule(targetId, eventBusName, ruleName, queueArn);
-  await pause(15);
+  await pause(2);
   return queueResponse;
 };
+
 export const deleteQueue = async (QueueUrl?: string) =>
   sendCommand(DeleteQueueCommand, { QueueUrl });

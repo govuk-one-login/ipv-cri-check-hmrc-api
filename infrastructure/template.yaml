@@ -2407,5 +2407,11 @@ Outputs:
     Description: AuditEvent End Rule
     Value: !Ref AuditEventEndRule
   AuditEventEndRuleArn:
-    Description: AuditEvent End Rule
+    Description: AuditEvent Rule Arn
     Value: !GetAtt AuditEventEndRule.Arn
+  TxMaAuditEventRule:
+    Description: TxMaAuditEvent End Rule
+    Value: !Ref TxMaAuditEventRule
+  TxMaAuditEventRuleArn:
+    Description: TxMaAuditEvent Rule Arn
+    Value: !GetAtt TxMaAuditEventRule.Arn

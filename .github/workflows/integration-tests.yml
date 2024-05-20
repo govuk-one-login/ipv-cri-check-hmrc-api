@@ -36,3 +36,36 @@ jobs:
   stepfunction-mocked-tests:
     name: SFN Mocked tests
     uses: ./.github/workflows/run-sfn-mocked-tests.yml
+
+  eventbridge-abandon-tests:
+    name: EVN Abandon tests
+    needs: deploy
+    uses: ./.github/workflows/run-evn-abn-tests.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      stack-name: ${{ needs.deploy.outputs.stack-name }}
+      aws-region: ${{ needs.deploy.outputs.aws-region }}
+
+  eventbridge-nino-check-tests:
+    name: EVN Nino tests
+    needs: deploy
+    uses: ./.github/workflows/run-evn-nino-tests.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      stack-name: ${{ needs.deploy.outputs.stack-name }}
+      aws-region: ${{ needs.deploy.outputs.aws-region }}
+
+  eventbridge-issue-credential-check-tests:
+    name: EVN Issue Credential tests
+    needs: deploy
+    uses: ./.github/workflows/run-evn-cred-tests.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      stack-name: ${{ needs.deploy.outputs.stack-name }}
+      aws-region: ${{ needs.deploy.outputs.aws-region }}

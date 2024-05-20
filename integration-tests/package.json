@@ -6,6 +6,10 @@
     "test:sfn:all": "jest --runInBand",
     "test:sfn:aws": "jest --silent --select-projects integration-tests/step-functions/aws --runInBand",
     "test:sfn:mocked": "jest --silent --select-projects integration-tests/step-functions/mocked",
+    "test:evn": "jest --silent --select-projects integration-tests/eventbridge --runInBand",
+    "test:evn:abandon": "jest --silent integration-tests/eventbridge/abandon --runInBand",
+    "test:evn:nino": "jest --silent integration-tests/eventbridge/nino-check --runInBand",
+    "test:evn:cred": "jest --silent integration-tests/eventbridge/nino_issue_credential --runInBand",
     "test:api": "jest --silent --select-projects integration-tests/api-gateway",
     "test:api:e2e": "jest --silent integration-tests/api-gateway/e2e",
     "deploy": "../deploy.sh",
@@ -21,8 +25,10 @@
     "@aws-sdk/client-sqs": "^3.569.0",
     "@aws-sdk/client-ssm": "^3.454.0",
     "@aws-sdk/lib-dynamodb": "^3.398.0",
+    "@types/uuid": "^9.0.8",
     "aws-testing-library": "^4.0.6",
     "jose": "^5.1.3",
-    "testcontainers": "^10.0.2"
+    "testcontainers": "^10.0.2",
+    "uuid": "^8.3.2"
   }
 }
