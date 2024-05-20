@@ -95,7 +95,7 @@ describe("Abandon Step Function", () => {
       await pause(60);
     });
   });
-  it("should publish ABANDONED event to CheckHmrc EventBridge Bus successfully", async () => {
+  it("should publish ABANDONED event to a queue with an abandoned rule set", async () => {
     const startExecutionResult = await executeStepFunction(
       output.AbandonStateMachineArn as string,
       input
