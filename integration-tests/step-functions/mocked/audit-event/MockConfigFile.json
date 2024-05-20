@@ -1,0 +1,80 @@
+{
+  "StateMachines": {
+    "audit_event": {
+      "TestCases": {
+        "Happy": {
+          "Get AuditContext Restricted Info": "getAuditContextWithoutRestrictedInfo",
+          "EpochTime in Seconds": "epochTimeInSeconds",
+          "EpochTime In Milliseconds": "epochTimeInMilliseconds",
+          "publish event to TxMa Queue": "PublishAuditEventToTxMaQueue"
+        },
+        "HappyPersonalData": {
+          "Get AuditContext Restricted Info": "getAuditContextWithRestrictedInfo",
+          "EpochTime in Seconds": "epochTimeInSeconds",
+          "EpochTime In Milliseconds": "epochTimeInMilliseconds",
+          "publish event to TxMa Queue": "PublishAuditEventToTxMaQueue"
+        }
+      }
+    }
+  },
+  "MockedResponses": {
+    "getAuditContextWithoutRestrictedInfo": {
+      "0": {
+        "Return": {
+          "Payload": {}
+        }
+      }
+    },
+    "getAuditContextWithRestrictedInfo": {
+      "0": {
+        "Return": {
+          "Payload": {
+            "socialSecurityRecord": [
+              {
+                "personalNumber": "AA000003D"
+              }
+            ],
+            "birthDate": [
+              {
+                "value": "1948-04-23"
+              }
+            ],
+            "name": [
+              {
+                "nameParts": [
+                  {
+                    "type": "GivenName",
+                    "value": "Jim"
+                  },
+                  {
+                    "type": "FamilyName",
+                    "value": "Ferguson"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "epochTimeInSeconds": {
+      "0": {
+        "Return": {
+          "Payload": 1716162264
+        }
+      }
+    },
+    "epochTimeInMilliseconds": {
+      "0": {
+        "Return": {
+          "Payload": 1716162264134
+        }
+      }
+    },
+    "PublishAuditEventToTxMaQueue": {
+      "0": {
+        "Return": null
+      }
+    }
+  }
+}
