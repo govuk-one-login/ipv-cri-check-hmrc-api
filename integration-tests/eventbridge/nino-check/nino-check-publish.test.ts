@@ -235,7 +235,7 @@ describe("Nino Hmrc Check Step Function", () => {
     );
 
     expect(startExecutionResult.output).toBeDefined();
-    const expectedAuditEventPayloads = [
+    const requestSentEvent = [
       {
         component_id: "https://review-hc.dev.account.gov.uk",
         event_name: "IPV_HMRC_RECORD_CHECK_CRI_REQUEST_SENT",
@@ -262,6 +262,8 @@ describe("Nino Hmrc Check Step Function", () => {
           user_id: "test",
         },
       },
+    ];
+    const responseRecievedEvent = [
       {
         component_id: "https://review-hc.dev.account.gov.uk",
         event_name: "IPV_HMRC_RECORD_CHECK_CRI_RESPONSE_RECEIVED",
@@ -279,7 +281,7 @@ describe("Nino Hmrc Check Step Function", () => {
         },
       },
     ];
-    expect(txMaPayload).toContainEqual(expectedAuditEventPayloads[0]);
-    expect(txMaPayload).toContainEqual(expectedAuditEventPayloads[1]);
+    expect(txMaPayload).toContainEqual(requestSentEvent);
+    expect(txMaPayload).toContainEqual(responseRecievedEvent);
   });
 });

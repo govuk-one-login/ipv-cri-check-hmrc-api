@@ -223,7 +223,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
     );
 
     expect(startExecutionResult.output).toBeDefined();
-    const expected = [
+    const endEvent = [
       {
         component_id: "https://review-hc.dev.account.gov.uk",
         event_name: "IPV_HMRC_RECORD_CHECK_CRI_END",
@@ -237,6 +237,9 @@ describe("Nino Check Hmrc Issue Credential", () => {
           user_id: "test",
         },
       },
+    ];
+
+    const vcIssuedEvent = [
       {
         component_id: "https://review-hc.dev.account.gov.uk",
         event_name: "IPV_HMRC_RECORD_CHECK_CRI_VC_ISSUED",
@@ -281,8 +284,8 @@ describe("Nino Check Hmrc Issue Credential", () => {
         },
       },
     ];
-    expect(txMaPayload).toContainEqual(expected[0]);
-    expect(txMaPayload).toContainEqual(expected[1]);
+    expect(txMaPayload).toContainEqual(endEvent);
+    expect(txMaPayload).toContainEqual(vcIssuedEvent);
   });
 
   const getExecutionResult = async (token: string) =>
