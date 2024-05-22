@@ -169,7 +169,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedEpochTimeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -228,7 +228,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedCiMappingFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -289,7 +289,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedCreateAuthCodeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -350,7 +350,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedCredentialSubjectFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -411,7 +411,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedCurrentTimeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -477,7 +477,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedJwtSignerFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -538,7 +538,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedOTGFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -659,7 +659,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedMatchingFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -723,7 +723,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedSsmParametersFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -784,7 +784,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedTimeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -895,7 +895,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs"
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedPublicNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -996,7 +996,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs"
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedPrivateNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1242,7 +1242,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs"
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedNinoCheckStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1334,7 +1334,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs"
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedAbandonStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1457,7 +1457,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs"
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedNinoIssueCredentialLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1505,7 +1505,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs"
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedCheckSessionStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1882,7 +1882,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedAuditEventStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -2017,103 +2017,103 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction-pii-redacted
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedCiMappingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction-pii-redacted
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedCreateAuthCodeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction-pii-redacted
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedCredentialSubjectFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction-pii-redacted
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedCurrentTimeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction-pii-redacted
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedJwtSignerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction-pii-redacted
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedOTGFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/OTGFunction-pii-redacted
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedMatchingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction-pii-redacted
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedSsmParametersFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction-pii-redacted
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedTimeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/TimeFunction-pii-redacted
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedPublicNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs-pii-redacted"
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedPrivateNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs-pii-redacted"
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedNinoCheckStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs-pii-redacted"
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedAbandonStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs-pii-redacted"
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedNinoIssueCredentialLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs-pii-redacted"
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedCheckSessionStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs-pii-redacted"
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactedAuditEventStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs-pii-redacted
-      RetentionInDays: 
+      RetentionInDays: 30
 
   ####################################################################
   #                                                                  #
@@ -2167,7 +2167,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/PIIRedactFunction
-      RetentionInDays: 
+      RetentionInDays: 30
 
   PIIRedactFunctionCloudWatchPermissions:
     Type: AWS::Lambda::Permission
