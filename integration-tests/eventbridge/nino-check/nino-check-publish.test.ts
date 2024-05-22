@@ -143,18 +143,18 @@ describe("Nino Hmrc Check Step Function", () => {
       clearItemsFromTables(
         {
           tableName: sessionTableName,
-          items: { sessionId: "check-unhappy" },
+          items: { sessionId: "check-happy-publish" },
         },
         {
           tableName: personIdentityTableName,
-          items: { sessionId: "check-unhappy" },
+          items: { sessionId: "check-happy-publish" },
         },
         {
           tableName: output.NinoUsersTable as string,
-          items: { sessionId: "check-unhappy" },
+          items: { sessionId: "check-happy-publish" },
         }
       ),
-      clearAttemptsTable("check-unhappy", output.UserAttemptsTable),
+      clearAttemptsTable("check-happy-publish", output.UserAttemptsTable),
     ]);
 
     await retry(async () => {
