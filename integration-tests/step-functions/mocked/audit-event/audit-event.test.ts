@@ -3,6 +3,71 @@ import { SfnContainerHelper } from "./sfn-container-helper";
 
 jest.setTimeout(60_000);
 
+const userInfoEvent = {
+  Count: 1,
+  Items: [
+    {
+      names: {
+        L: [
+          {
+            M: {
+              nameParts: {
+                L: [
+                  {
+                    M: {
+                      type: {
+                        S: "GivenName",
+                      },
+                      value: {
+                        S: "Jim",
+                      },
+                    },
+                  },
+                  {
+                    M: {
+                      type: {
+                        S: "FamilyName",
+                      },
+                      value: {
+                        S: "Ferguson",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      sessionId: {
+        S: "issue-credential-happy",
+      },
+      birthDates: {
+        L: [
+          {
+            M: {
+              value: {
+                S: "1948-04-23",
+              },
+            },
+          },
+        ],
+      },
+      nino: {
+        S: "AA000003D",
+      },
+    },
+  ],
+  ScannedCount: 1,
+};
+const user = {
+  govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+  user_id: "test",
+  persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+  session_id: "issue-credential-happy-publish",
+  ip_address: "00.100.8.20",
+};
+
 describe("Audit events", () => {
   let sfnContainer: SfnContainerHelper;
 
@@ -23,13 +88,7 @@ describe("Audit events", () => {
         source: "review-hc.localdev.account.gov.uk",
         detail: {
           auditPrefix: "AUDIT_EVENT_PREFIX",
-          user: {
-            govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-            user_id: "test",
-            persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-            session_id: "issue-credential-happy-publish",
-            ip_address: "00.100.8.20",
-          },
+          user,
           issuer: "https://review-hc.dev.account.gov.uk",
         },
       });
@@ -59,13 +118,7 @@ describe("Audit events", () => {
         source: "review-hc.localdev.account.gov.uk",
         detail: {
           auditPrefix: "AUDIT_EVENT_PREFIX",
-          user: {
-            govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-            user_id: "test",
-            persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-            session_id: "issue-credential-happy-publish",
-            ip_address: "00.100.8.20",
-          },
+          user,
           issuer: "https://review-hc.dev.account.gov.uk",
           evidence: [{ ci: "some ci", ciReasons: "some reason for ci" }],
         },
@@ -98,13 +151,7 @@ describe("Audit events", () => {
               extensions: {
                 evidence: [{ ci: "some ci", ciReasons: "some reason for ci" }],
               },
-              user: {
-                govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-                user_id: "test",
-                persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-                session_id: "issue-credential-happy-publish",
-                ip_address: "00.100.8.20",
-              },
+              user,
               event_timestamp_ms: 1716162264134,
               timestamp: 1716162264,
             },
@@ -120,13 +167,7 @@ describe("Audit events", () => {
         detail: {
           auditPrefix: "AUDIT_EVENT_PREFIX",
           deviceInformation: "test encoded header",
-          user: {
-            govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-            user_id: "test",
-            persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-            session_id: "check-happy-publish",
-            ip_address: "00.100.8.20",
-          },
+          user,
           issuer: "https://review-hc.dev.account.gov.uk",
         },
       });
@@ -162,13 +203,7 @@ describe("Audit events", () => {
                 device_information: { encoded: "test encoded header" },
               },
               timestamp: 1716162264,
-              user: {
-                govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-                ip_address: "00.100.8.20",
-                persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-                session_id: "check-happy-publish",
-                user_id: "test",
-              },
+              user,
             },
           }),
         ])
@@ -182,13 +217,7 @@ describe("Audit events", () => {
         detail: {
           auditPrefix: "AUDIT_EVENT_PREFIX",
           deviceInformation: "{}", // default returned by the CheckSession State machine when the header
-          user: {
-            govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-            user_id: "test",
-            persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-            session_id: "check-happy-publish",
-            ip_address: "00.100.8.20",
-          },
+          user,
           issuer: "https://review-hc.dev.account.gov.uk",
         },
       });
@@ -222,13 +251,7 @@ describe("Audit events", () => {
               event_timestamp_ms: 1716162264134,
               restricted: {}, // ideally this should be present at all
               timestamp: 1716162264,
-              user: {
-                govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-                ip_address: "00.100.8.20",
-                persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-                session_id: "check-happy-publish",
-                user_id: "test",
-              },
+              user,
             },
           }),
         ])
@@ -241,70 +264,8 @@ describe("Audit events", () => {
           source: "review-hc.localdev.account.gov.uk",
           detail: {
             auditPrefix: "AUDIT_EVENT_PREFIX",
-            user: {
-              govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-              user_id: "test",
-              persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-              session_id: "issue-credential-happy-publish",
-              ip_address: "00.100.8.20",
-            },
-            userInfoEvent: {
-              Count: 1,
-              Items: [
-                {
-                  names: {
-                    L: [
-                      {
-                        M: {
-                          nameParts: {
-                            L: [
-                              {
-                                M: {
-                                  type: {
-                                    S: "GivenName",
-                                  },
-                                  value: {
-                                    S: "Jim",
-                                  },
-                                },
-                              },
-                              {
-                                M: {
-                                  type: {
-                                    S: "FamilyName",
-                                  },
-                                  value: {
-                                    S: "Ferguson",
-                                  },
-                                },
-                              },
-                            ],
-                          },
-                        },
-                      },
-                    ],
-                  },
-                  sessionId: {
-                    S: "issue-credential-happy",
-                  },
-                  birthDates: {
-                    L: [
-                      {
-                        M: {
-                          value: {
-                            S: "1948-04-23",
-                          },
-                        },
-                      },
-                    ],
-                  },
-                  nino: {
-                    S: "AA000003D",
-                  },
-                },
-              ],
-              ScannedCount: 1,
-            },
+            user,
+            userInfoEvent,
             nino: "AA000003D",
             issuer: "https://review-hc.dev.account.gov.uk",
           },
@@ -358,14 +319,7 @@ describe("Audit events", () => {
                   socialSecurityRecord: [{ personalNumber: "AA000003D" }],
                 },
                 timestamp: 1716162264,
-                user: {
-                  govuk_signin_journey_id:
-                    "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-                  ip_address: "00.100.8.20",
-                  persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-                  session_id: "issue-credential-happy-publish",
-                  user_id: "test",
-                },
+                user,
               },
             }),
           ])
@@ -396,70 +350,8 @@ describe("Audit events", () => {
                 ],
               },
             ],
-            user: {
-              govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-              user_id: "test",
-              persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-              session_id: "issue-credential-happy-publish",
-              ip_address: "00.100.8.20",
-            },
-            userInfoEvent: {
-              Count: 1,
-              Items: [
-                {
-                  names: {
-                    L: [
-                      {
-                        M: {
-                          nameParts: {
-                            L: [
-                              {
-                                M: {
-                                  type: {
-                                    S: "GivenName",
-                                  },
-                                  value: {
-                                    S: "Jim",
-                                  },
-                                },
-                              },
-                              {
-                                M: {
-                                  type: {
-                                    S: "FamilyName",
-                                  },
-                                  value: {
-                                    S: "Ferguson",
-                                  },
-                                },
-                              },
-                            ],
-                          },
-                        },
-                      },
-                    ],
-                  },
-                  sessionId: {
-                    S: "issue-credential-happy-publish",
-                  },
-                  birthDates: {
-                    L: [
-                      {
-                        M: {
-                          value: {
-                            S: "1948-04-23",
-                          },
-                        },
-                      },
-                    ],
-                  },
-                  nino: {
-                    S: "AA000003D",
-                  },
-                },
-              ],
-              ScannedCount: 1,
-            },
+            user,
+            userInfoEvent,
             issuer: "https://review-hc.dev.account.gov.uk",
             nino: "AA000003D",
           },
@@ -526,14 +418,7 @@ describe("Audit events", () => {
                   socialSecurityRecord: [{ personalNumber: "AA000003D" }],
                 },
                 timestamp: 1716162264,
-                user: {
-                  govuk_signin_journey_id:
-                    "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-                  ip_address: "00.100.8.20",
-                  persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-                  session_id: "issue-credential-happy-publish",
-                  user_id: "test",
-                },
+                user,
               },
             }),
           ])
@@ -567,70 +452,8 @@ describe("Audit events", () => {
                   ],
                 },
               ],
-              user: {
-                govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-                user_id: "test",
-                persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-                session_id: "issue-credential-happy-publish",
-                ip_address: "00.100.8.20",
-              },
-              userInfoEvent: {
-                Count: 1,
-                Items: [
-                  {
-                    names: {
-                      L: [
-                        {
-                          M: {
-                            nameParts: {
-                              L: [
-                                {
-                                  M: {
-                                    type: {
-                                      S: "GivenName",
-                                    },
-                                    value: {
-                                      S: "Jim",
-                                    },
-                                  },
-                                },
-                                {
-                                  M: {
-                                    type: {
-                                      S: "FamilyName",
-                                    },
-                                    value: {
-                                      S: "Ferguson",
-                                    },
-                                  },
-                                },
-                              ],
-                            },
-                          },
-                        },
-                      ],
-                    },
-                    sessionId: {
-                      S: "issue-credential-happy-publish",
-                    },
-                    birthDates: {
-                      L: [
-                        {
-                          M: {
-                            value: {
-                              S: "1948-04-23",
-                            },
-                          },
-                        },
-                      ],
-                    },
-                    nino: {
-                      S: "AA000003D",
-                    },
-                  },
-                ],
-                ScannedCount: 1,
-              },
+              user,
+              userInfoEvent,
               issuer: "https://review-hc.dev.account.gov.uk",
               nino: "AA000003D",
             },
@@ -693,15 +516,7 @@ describe("Audit events", () => {
                     socialSecurityRecord: [{ personalNumber: "AA000003D" }],
                   },
                   timestamp: 1716162264,
-                  user: {
-                    govuk_signin_journey_id:
-                      "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-                    ip_address: "00.100.8.20",
-                    persistent_session_id:
-                      "156714ef-f9df-48c2-ada8-540e7bce44f7",
-                    session_id: "issue-credential-happy-publish",
-                    user_id: "test",
-                  },
+                  user,
                 },
               }),
             ])
@@ -733,70 +548,8 @@ describe("Audit events", () => {
                   ],
                 },
               ],
-              user: {
-                govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-                user_id: "test",
-                persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-                session_id: "issue-credential-happy-publish",
-                ip_address: "00.100.8.20",
-              },
-              userInfoEvent: {
-                Count: 1,
-                Items: [
-                  {
-                    names: {
-                      L: [
-                        {
-                          M: {
-                            nameParts: {
-                              L: [
-                                {
-                                  M: {
-                                    type: {
-                                      S: "GivenName",
-                                    },
-                                    value: {
-                                      S: "Jim",
-                                    },
-                                  },
-                                },
-                                {
-                                  M: {
-                                    type: {
-                                      S: "FamilyName",
-                                    },
-                                    value: {
-                                      S: "Ferguson",
-                                    },
-                                  },
-                                },
-                              ],
-                            },
-                          },
-                        },
-                      ],
-                    },
-                    sessionId: {
-                      S: "issue-credential-happy-publish",
-                    },
-                    birthDates: {
-                      L: [
-                        {
-                          M: {
-                            value: {
-                              S: "1948-04-23",
-                            },
-                          },
-                        },
-                      ],
-                    },
-                    nino: {
-                      S: "AA000003D",
-                    },
-                  },
-                ],
-                ScannedCount: 1,
-              },
+              user,
+              userInfoEvent,
               issuer: "https://review-hc.dev.account.gov.uk",
               nino: "AA000003D",
             },
@@ -863,15 +616,7 @@ describe("Audit events", () => {
                     socialSecurityRecord: [{ personalNumber: "AA000003D" }],
                   },
                   timestamp: 1716162264,
-                  user: {
-                    govuk_signin_journey_id:
-                      "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-                    ip_address: "00.100.8.20",
-                    persistent_session_id:
-                      "156714ef-f9df-48c2-ada8-540e7bce44f7",
-                    session_id: "issue-credential-happy-publish",
-                    user_id: "test",
-                  },
+                  user,
                 },
               }),
             ])

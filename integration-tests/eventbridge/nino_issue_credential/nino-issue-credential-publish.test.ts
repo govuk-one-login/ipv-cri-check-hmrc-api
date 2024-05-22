@@ -223,66 +223,65 @@ describe("Nino Check Hmrc Issue Credential", () => {
     );
 
     expect(startExecutionResult.output).toBeDefined();
-    const expected = [
-      {
-        component_id: "https://review-hc.dev.account.gov.uk",
-        event_name: "IPV_HMRC_RECORD_CHECK_CRI_END",
-        event_timestamp_ms: expect.any(Number),
-        timestamp: expect.any(Number),
-        user: {
-          govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-          ip_address: "00.100.8.20",
-          persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-          session_id: "issue-credential-happy-publish",
-          user_id: "test",
-        },
+    const endEvent = {
+      component_id: "https://review-hc.dev.account.gov.uk",
+      event_name: "IPV_HMRC_RECORD_CHECK_CRI_END",
+      event_timestamp_ms: expect.any(Number),
+      timestamp: expect.any(Number),
+      user: {
+        govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+        ip_address: "00.100.8.20",
+        persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+        session_id: "issue-credential-happy-publish",
+        user_id: "test",
       },
-      {
-        component_id: "https://review-hc.dev.account.gov.uk",
-        event_name: "IPV_HMRC_RECORD_CHECK_CRI_VC_ISSUED",
-        event_timestamp_ms: expect.any(Number),
-        extensions: {
-          evidence: [
-            {
-              attemptNum: 2,
-              ciReasons: [
-                {
-                  ci: expect.any(String),
-                  reason: expect.any(String),
-                },
-              ],
-              failedCheckDetails: [
-                { checkMethod: "data", dataCheck: "record_check" },
-              ],
-              txn: expect.any(String),
-              type: "IdentityCheck",
-            },
-          ],
-        },
-        restricted: {
-          birthDate: [{ value: "1948-04-23" }],
-          name: [
-            {
-              nameParts: [
-                { type: "GivenName", value: "Jim" },
-                { type: "FamilyName", value: "Ferguson" },
-              ],
-            },
-          ],
-          socialSecurityRecord: [{ personalNumber: "AA000003D" }],
-        },
-        timestamp: expect.any(Number),
-        user: {
-          govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-          ip_address: "00.100.8.20",
-          persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-          session_id: "issue-credential-happy-publish",
-          user_id: "test",
-        },
+    };
+
+    const vcIssuedEvent = {
+      component_id: "https://review-hc.dev.account.gov.uk",
+      event_name: "IPV_HMRC_RECORD_CHECK_CRI_VC_ISSUED",
+      event_timestamp_ms: expect.any(Number),
+      extensions: {
+        evidence: [
+          {
+            attemptNum: 2,
+            ciReasons: [
+              {
+                ci: expect.any(String),
+                reason: expect.any(String),
+              },
+            ],
+            failedCheckDetails: [
+              { checkMethod: "data", dataCheck: "record_check" },
+            ],
+            txn: expect.any(String),
+            type: "IdentityCheck",
+          },
+        ],
       },
-    ];
-    expect(txMaPayload).toContainEqual(expected[0]);
-    expect(txMaPayload).toContainEqual(expected[1]);
+      restricted: {
+        birthDate: [{ value: "1948-04-23" }],
+        name: [
+          {
+            nameParts: [
+              { type: "GivenName", value: "Jim" },
+              { type: "FamilyName", value: "Ferguson" },
+            ],
+          },
+        ],
+        socialSecurityRecord: [{ personalNumber: "AA000003D" }],
+      },
+      timestamp: expect.any(Number),
+      user: {
+        govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+        ip_address: "00.100.8.20",
+        persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+        session_id: "issue-credential-happy-publish",
+        user_id: "test",
+      },
+    };
+    expect(txMaPayload).toContainEqual(endEvent);
+    expect(txMaPayload).toContainEqual(vcIssuedEvent);
   });
 
   const getExecutionResult = async (token: string) =>
