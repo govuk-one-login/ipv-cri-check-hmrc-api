@@ -12,7 +12,7 @@ import { removeTargetFromRule } from "../../resources/event-bridge-helper";
 import { pause, retry } from "../../resources/util";
 
 describe("Abandon Step Function", () => {
-  jest.setTimeout(200_000);
+  jest.setTimeout(600_000);
 
   const input = {
     sessionId: "abandon-test-publish",

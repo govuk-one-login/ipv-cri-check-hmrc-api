@@ -143,18 +143,18 @@ describe("Nino Hmrc Check Step Function", () => {
       clearItemsFromTables(
         {
           tableName: sessionTableName,
-          items: { sessionId: "check-unhappy" },
+          items: { sessionId: "check-happy-publish" },
         },
         {
           tableName: personIdentityTableName,
-          items: { sessionId: "check-unhappy" },
+          items: { sessionId: "check-happy-publish" },
         },
         {
           tableName: output.NinoUsersTable as string,
-          items: { sessionId: "check-unhappy" },
+          items: { sessionId: "check-happy-publish" },
         }
       ),
-      clearAttemptsTable("check-unhappy", output.UserAttemptsTable),
+      clearAttemptsTable("check-happy-publish", output.UserAttemptsTable),
     ]);
 
     await retry(async () => {
@@ -235,51 +235,50 @@ describe("Nino Hmrc Check Step Function", () => {
     );
 
     expect(startExecutionResult.output).toBeDefined();
-    const expectedAuditEventPayloads = [
-      {
-        component_id: "https://review-hc.dev.account.gov.uk",
-        event_name: "IPV_HMRC_RECORD_CHECK_CRI_REQUEST_SENT",
-        event_timestamp_ms: expect.any(Number),
-        restricted: {
-          birthDate: [{ value: "1948-04-23" }],
-          device_information: { encoded: "test encoded header" },
-          name: [
-            {
-              nameParts: [
-                { type: "GivenName", value: "Jim" },
-                { type: "FamilyName", value: "Ferguson" },
-              ],
-            },
-          ],
-          socialSecurityRecord: [{ personalNumber: "AA000003D" }],
-        },
-        timestamp: expect.any(Number),
-        user: {
-          govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-          ip_address: "00.100.8.20",
-          persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-          session_id: "check-happy-publish",
-          user_id: "test",
-        },
+    const requestSentEvent = {
+      component_id: "https://review-hc.dev.account.gov.uk",
+      event_name: "IPV_HMRC_RECORD_CHECK_CRI_REQUEST_SENT",
+      event_timestamp_ms: expect.any(Number),
+      restricted: {
+        birthDate: [{ value: "1948-04-23" }],
+        device_information: { encoded: "test encoded header" },
+        name: [
+          {
+            nameParts: [
+              { type: "GivenName", value: "Jim" },
+              { type: "FamilyName", value: "Ferguson" },
+            ],
+          },
+        ],
+        socialSecurityRecord: [{ personalNumber: "AA000003D" }],
       },
-      {
-        component_id: "https://review-hc.dev.account.gov.uk",
-        event_name: "IPV_HMRC_RECORD_CHECK_CRI_RESPONSE_RECEIVED",
-        event_timestamp_ms: expect.any(Number),
-        restricted: {
-          device_information: { encoded: "test encoded header" },
-        },
-        timestamp: expect.any(Number),
-        user: {
-          govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-          ip_address: "00.100.8.20",
-          persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-          session_id: "check-happy-publish",
-          user_id: "test",
-        },
+      timestamp: expect.any(Number),
+      user: {
+        govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+        ip_address: "00.100.8.20",
+        persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+        session_id: "check-happy-publish",
+        user_id: "test",
       },
-    ];
-    expect(txMaPayload).toContainEqual(expectedAuditEventPayloads[0]);
-    expect(txMaPayload).toContainEqual(expectedAuditEventPayloads[1]);
+    };
+    const responseRecievedEvent = {
+      component_id: "https://review-hc.dev.account.gov.uk",
+      event_name: "IPV_HMRC_RECORD_CHECK_CRI_RESPONSE_RECEIVED",
+      event_timestamp_ms: expect.any(Number),
+      restricted: {
+        device_information: { encoded: "test encoded header" },
+      },
+      timestamp: expect.any(Number),
+      user: {
+        govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+        ip_address: "00.100.8.20",
+        persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+        session_id: "check-happy-publish",
+        user_id: "test",
+      },
+    };
+
+    expect(txMaPayload).toContainEqual(requestSentEvent);
+    expect(txMaPayload).toContainEqual(responseRecievedEvent);
   });
 });
