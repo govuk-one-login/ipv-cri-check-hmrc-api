@@ -3,8 +3,8 @@
     "nino_issue_credential": {
       "TestCases": {
         "HappyPath": {
-          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query Session Item": "QuerySessionItem",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Fetch details from person identity": "FetchDetailsFromPersonIdentity",
           "Fetch Nino": "FetchNino",
           "Create Credential Subject": "CreateCredentialSubject",
@@ -14,8 +14,8 @@
           "Audit Event VC Issued Sent": "PublishAuditEventVcIssued"
         },
         "HappyPathWithoutPersistentSessionId": {
-          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query Session Item": "QuerySessionItemWithoutPersistentSessionId",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Fetch details from person identity": "FetchDetailsFromPersonIdentity",
           "Fetch Nino": "FetchNino",
           "Create Credential Subject": "CreateCredentialSubject",
@@ -25,8 +25,8 @@
           "Audit Event VC Issued Sent": "PublishAuditEventVcIssued"
         },
         "UnHappyPath": {
-          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query Session Item": "QuerySessionItem",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Fetch details from person identity": "FetchDetailsFromPersonIdentity",
           "Fetch Nino": "FetchNino",
           "Create Credential Subject": "CreateCredentialSubject",
@@ -37,8 +37,8 @@
           "Audit Event VC Issued Sent": "PublishAuditEventVcIssued"
         },
         "UnHappyPathBearerTokenInvalid": {
-          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Query Session Item": "QuerySessionItemHasNoItem",
+          "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Err: Invalid Bearer Token": "InvalidBearerToken"
         }
       }
