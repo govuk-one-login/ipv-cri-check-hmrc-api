@@ -8,7 +8,8 @@
       "Parameters": {
         "prefix.$": "$$.Execution.Input.detail.auditPrefix",
         "type.$": "$$.Execution.Input.detail-type",
-        "deviceInformation.$": "States.ArrayContains(States.StringSplit(States.JsonToString($$.Execution.Input.detail), ':\"'), 'deviceInformation')"
+        "deviceInformation.$": "States.ArrayContains(States.StringSplit(States.JsonToString($$.Execution.Input.detail), ':\"'), 'deviceInformation')",
+        "govJourneyId.$": "$$.Execution.Input.detail.user.govuk_signin_journey_id"
       },
       "Next": "Parallel"
     },
@@ -24,7 +25,8 @@
               "Resource": "arn:aws:states:::lambda:invoke",
               "Parameters": {
                 "FunctionName": "${CredentialSubjectFunctionArn}",
-                "Payload.$": "$$.Execution.Input.detail"
+                "Payload.$": "$$.Execution.Input.detail",
+                "govJourneyId.$": "$$.Execution.Input.detail.user.govuk_signin_journey_id"
               },
               "Retry": [
                 {
@@ -57,7 +59,8 @@
               "Parameters": {
                 "Payload": {
                   "dateTime.$": "$$.State.EnteredTime",
-                  "unit": "seconds"
+                  "unit": "seconds",
+                  "govJourneyId.$": "$$.Execution.Input.detail.user.govuk_signin_journey_id"
                 },
                 "FunctionName": "${EpochTimeArn}"
               },
