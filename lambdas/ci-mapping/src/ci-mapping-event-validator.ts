@@ -16,6 +16,7 @@ export interface CiMappingEvent {
   contraIndicationMapping: string[];
   hmrcErrors: string[];
   contraIndicatorReasonsMapping: Array<CiReasonsMapping>;
+  govJourneyId: string;
 }
 
 export interface CiReasonsMapping {

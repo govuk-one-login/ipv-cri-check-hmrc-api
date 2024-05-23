@@ -14,6 +14,9 @@ export class CiMappingHandler implements LambdaInterface {
     event: CiMappingEvent,
     _context: unknown
   ): Promise<Array<ContraIndicator>> {
+    logger.info(
+      `Lambda invoked with government journey id: ${event.govJourneyId}`
+    );
     try {
       return getCIsForHmrcErrors(event);
     } catch (error: unknown) {
@@ -21,8 +24,10 @@ export class CiMappingHandler implements LambdaInterface {
       if (message === HMRC_ERRORS_ABSENT) {
         return [];
       }
-      logger.error(`Error in CiMappingHandler: ${message}`);
-
+      logger.error({
+        message: `Error in CiMappingHandler: ${message}`,
+        govJourneyId: event.govJourneyId,
+      });
       throw error;
     }
   }
