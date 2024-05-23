@@ -389,7 +389,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
-        "Payload.$": "$.sessionCheck.userAuditInfo",
+        "Payload.$": "$",
         "FunctionName": "${CreateAuthCodeFunctionArn}"
       },
       "Next": "Set Auth Code for Session",
