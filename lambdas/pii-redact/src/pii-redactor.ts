@@ -39,6 +39,15 @@ const personalNumberPatterns = [
 
 const ipAddressPatterns = [
   {
+    regex:
+      /((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)/g,
+    replacement: "***",
+  },
+  {
+    regex: /\\"X-Forwarded-For\\":\s*\\"([^"]*)\\"/g,
+    replacement: '\\"X-Forwarded-For\\": \\"***\\"',
+  },
+  {
     regex: /\\"clientIpAddress\\":\s*\\"([^"]*)\\"/g,
     replacement: '\\"clientIpAddress\\": \\"***\\"',
   },
