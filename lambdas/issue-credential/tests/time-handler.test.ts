@@ -4,6 +4,7 @@ import { TimeUnits } from "../src/utils/time-units";
 const monday31st2021InMilliseconds = 1622502000000;
 const monday31st2021InSeconds = 1622502000;
 const timeHandler = new TimeHandler();
+const govJourneyId = "test-government-journey-id";
 
 jest.spyOn(Date, "now").mockReturnValue(monday31st2021InMilliseconds);
 
@@ -21,6 +22,7 @@ describe("time-handler", () => {
         {
           ttlValue,
           ttlUnit,
+          govJourneyId,
         },
         {}
       );
@@ -39,6 +41,7 @@ describe("time-handler", () => {
         {
           ttlValue: ttlValue as number,
           ttlUnit: TimeUnits.Seconds,
+          govJourneyId,
         },
         {}
       );
@@ -58,6 +61,7 @@ describe("time-handler", () => {
           {
             ttlValue: 0,
             ttlUnit: ttlUnit as string,
+            govJourneyId,
           },
           {}
         )
@@ -67,6 +71,9 @@ describe("time-handler", () => {
 
   it("should throw when ttl value is negative", () =>
     expect(
-      timeHandler.handler({ ttlValue: -1, ttlUnit: TimeUnits.Seconds }, {})
+      timeHandler.handler(
+        { ttlValue: -1, ttlUnit: TimeUnits.Seconds, govJourneyId },
+        {}
+      )
     ).rejects.toThrow(/must be positive/));
 });

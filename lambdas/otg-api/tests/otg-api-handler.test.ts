@@ -1,6 +1,8 @@
 import { Context } from "aws-lambda";
 import { OTGApiHandler } from "../src/otg-api-handler";
 
+const mockGovJourneyId = "test-government-journey-id";
+
 describe("otg-api-handler", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -15,14 +17,16 @@ describe("otg-api-handler", () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       json: jest.fn().mockResolvedValueOnce({
         token: mockToken,
-        expiry: mockExpiry
+        expiry: mockExpiry,
       }),
-      ok: true
+      ok: true,
     });
 
     const otgApiHandler = new OTGApiHandler();
     const event = {
-      apiURL: "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub",
+      apiURL:
+        "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub",
+      govJourneyId: mockGovJourneyId,
     };
     const result = await otgApiHandler.handler(event, {} as Context);
     expect(result.token).toBe(mockToken);
@@ -40,7 +44,9 @@ describe("otg-api-handler", () => {
 
     const otgApiHandler = new OTGApiHandler();
     const event = {
-      apiURL: "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub"
+      apiURL:
+        "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub",
+      govJourneyId: mockGovJourneyId,
     };
 
     await expect(() => otgApiHandler.handler(event, {})).rejects.toThrow(
@@ -56,19 +62,20 @@ describe("otg-api-handler", () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       json: jest.fn().mockResolvedValueOnce({
         token: mockToken,
-        expiry: mockExpiry
+        expiry: mockExpiry,
       }),
-      ok: true
+      ok: true,
     });
 
     const otgApiHandler = new OTGApiHandler();
     const event = {
-      apiURL: "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub"
+      apiURL:
+        "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub",
+      govJourneyId: mockGovJourneyId,
     };
 
     await expect(() => otgApiHandler.handler(event, {})).rejects.toThrow(
       new Error("OTG returned an expired Bearer Token")
     );
   });
-
 });

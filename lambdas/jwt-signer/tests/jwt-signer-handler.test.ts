@@ -15,6 +15,7 @@ import {
 
 const kmsClient = jest.mocked(KMSClient).prototype;
 const jwtSignerHandler = new JwtSignerHandler(kmsClient);
+const mockGovJourneyId = "test-government-journey-id";
 
 jest.spyOn(kmsClient, "send");
 
@@ -23,6 +24,7 @@ describe("Successfully signs a JWT", () => {
     kid,
     header: JSON.stringify(header),
     claimsSet: JSON.stringify(claimsSet),
+    govJourneyId: mockGovJourneyId,
   };
   describe("With RAW signing mode", () => {
     it("Should verify a signed JWT message smaller than 4096", async () => {
@@ -62,6 +64,7 @@ describe("Successfully signs a JWT", () => {
         kid,
         header: JSON.stringify(header),
         claimsSet: JSON.stringify(largeClaimsSet),
+        govJourneyId: mockGovJourneyId,
       };
       kmsClient.send.mockImplementationOnce(() =>
         Promise.resolve({
@@ -103,6 +106,7 @@ describe("Fails to sign a JWT", () => {
       kid,
       header: JSON.stringify(header),
       claimsSet: JSON.stringify(claimsSet),
+      govJourneyId: mockGovJourneyId,
     };
 
     kmsClient.send.mockImplementationOnce(() =>
@@ -120,6 +124,7 @@ describe("Fails to sign a JWT", () => {
     const event: Partial<SignerPayLoad> = {
       header: JSON.stringify(header),
       claimsSet: JSON.stringify(claimsSet),
+      govJourneyId: mockGovJourneyId,
     };
 
     kmsClient.send.mockImplementationOnce(() =>
@@ -141,6 +146,7 @@ describe("Fails to sign a JWT", () => {
     const event: Partial<SignerPayLoad> = {
       header: JSON.stringify(header),
       claimsSet: JSON.stringify(claimsSet),
+      govJourneyId: mockGovJourneyId,
     };
 
     kmsClient.send.mockImplementationOnce(() =>
@@ -158,6 +164,7 @@ describe("Fails to sign a JWT", () => {
     const event: Partial<SignerPayLoad> = {
       header: JSON.stringify(header),
       claimsSet: JSON.stringify(claimsSet),
+      govJourneyId: mockGovJourneyId,
     };
 
     kmsClient.send.mockImplementationOnce(() =>

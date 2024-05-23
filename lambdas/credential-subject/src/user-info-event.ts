@@ -66,6 +66,7 @@ export const mockUserInfoEventItem = {
     ],
   },
   nino: "BB000001D",
+  govJourneyId: "test-government-journey-id",
 };
 
 export const mockUserInfoEventItemWithBirthDates = {
@@ -98,4 +99,5 @@ export const mockUserInfoEventItemWithBirthDates = {
     ],
   },
   nino: "BB000001D",
+  govJourneyId: "test-government-journey-id",
 };

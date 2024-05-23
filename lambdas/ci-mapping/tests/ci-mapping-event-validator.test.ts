@@ -16,12 +16,14 @@ describe("ci-mapping-event-validator", () => {
       { ci: "ci_2", reason: "ci_2 reason" },
       { ci: "ci_3", reason: "ci_3 reason" },
     ];
+    const govJourneyId = "test-government-journey-id";
     it("should return successfully when CiMappingEvent is valid", () => {
       expect(
         validateInputs({
           contraIndicationMapping,
           hmrcErrors: ["aaaa"],
           contraIndicatorReasonsMapping,
+          govJourneyId,
         })
       ).toEqual({
         contraIndicationMapping,
@@ -36,6 +38,7 @@ describe("ci-mapping-event-validator", () => {
           contraIndicationMapping,
           hmrcErrors: ["not-a-mapped-error"],
           contraIndicatorReasonsMapping,
+          govJourneyId,
         })
       ).toThrow("No matching hmrcError for any ContraIndicationMapping");
     });
@@ -46,6 +49,7 @@ describe("ci-mapping-event-validator", () => {
           contraIndicationMapping,
           hmrcErrors: ["aaaa", "not-a-mapped-error"],
           contraIndicatorReasonsMapping,
+          govJourneyId,
         })
       ).toThrow(
         "Not all items in hmrc_errors have matching ContraIndicationMapping"
@@ -65,6 +69,7 @@ describe("ci-mapping-event-validator", () => {
             contraIndicationMapping: [],
             hmrcErrors: [],
             contraIndicatorReasonsMapping: [],
+            govJourneyId,
           })
         ).toThrow(
           "ContraIndicationMapping cannot be undefined in CiMappingEvent"
@@ -79,6 +84,7 @@ describe("ci-mapping-event-validator", () => {
               contraIndicationMapping,
               hmrcErrors: actual as unknown as string[],
               contraIndicatorReasonsMapping,
+              govJourneyId,
             })
           ).toThrow("Hmrc errors absent in CiMappingEvent");
         }
@@ -94,6 +100,7 @@ describe("ci-mapping-event-validator", () => {
               contraIndicatorReasonsMapping: [
                 { ci: "aaaa", reason: undefined as unknown as string },
               ],
+              govJourneyId,
             })
           ).toThrow(
             "ContraIndicationMapping cannot be undefined in CiMappingEvent"
@@ -110,6 +117,7 @@ describe("ci-mapping-event-validator", () => {
               hmrcErrors: ["aaaa"],
               contraIndicatorReasonsMapping:
                 actual as unknown as CiReasonsMapping[],
+              govJourneyId,
             })
           ).toThrow(
             "ContraIndicatorReasonsMapping cannot be undefined in CiMappingEvent"
@@ -125,6 +133,7 @@ describe("ci-mapping-event-validator", () => {
             contraIndicationMapping: [":Ci_1"],
             hmrcErrors: [""],
             contraIndicatorReasonsMapping: [{ ci: "Ci_1" } as CiReasonsMapping],
+            govJourneyId,
           })
         ).toThrow("ContraIndicationMapping format is invalid");
       });
@@ -135,6 +144,7 @@ describe("ci-mapping-event-validator", () => {
             contraIndicationMapping: ["err1:"],
             hmrcErrors: [""],
             contraIndicatorReasonsMapping: [{ ci: "" } as CiReasonsMapping],
+            govJourneyId,
           })
         ).toThrow("ContraIndicationMapping format is invalid");
       });
@@ -154,6 +164,7 @@ describe("ci-mapping-event-validator", () => {
                 reason: "",
               },
             ],
+            govJourneyId,
           })
         ).toThrow("ContraIndicationMapping format is invalid");
       });
@@ -170,6 +181,7 @@ describe("ci-mapping-event-validator", () => {
             contraIndicationMapping: contraIndicationMappingMissingCi_3,
             hmrcErrors: ["aaaa"],
             contraIndicatorReasonsMapping,
+            govJourneyId,
           })
         ).toThrow(
           "Unmatched ContraIndicatorReasonsMapping ci_3 detected in configured mappings"
@@ -183,6 +195,7 @@ describe("ci-mapping-event-validator", () => {
             contraIndicationMapping: contraIndicationMappingMissingCis,
             hmrcErrors: ["aaaa"],
             contraIndicatorReasonsMapping,
+            govJourneyId,
           })
         ).toThrow(
           "Unmatched ContraIndicatorReasonsMapping ci_2,ci_3 detected in configured mappings"
@@ -196,6 +209,7 @@ describe("ci-mapping-event-validator", () => {
             contraIndicationMapping: contraIndicationMappingMissingCi_3,
             hmrcErrors: ["aaaa"],
             contraIndicatorReasonsMapping: [],
+            govJourneyId,
           });
         expect(() => validatedResult()).not.toThrow(
           "Unmatched ContraIndicatorReasonsMapping ci_2,ci_3 detected in configured mappings"
@@ -215,6 +229,7 @@ describe("ci-mapping-event-validator", () => {
             hmrcErrors: ["aaaa"],
             contraIndicatorReasonsMapping:
               contraIndicatorReasonsMappingMissingCis,
+            govJourneyId,
           })
         ).toThrow(
           "Unmatched ContraIndicationMappings ci_1,ci_3 detected in configured mappings"
@@ -232,6 +247,7 @@ describe("ci-mapping-event-validator", () => {
             hmrcErrors: ["aaaa"],
             contraIndicatorReasonsMapping:
               contraIndicatorReasonsMappingMissingCi_1,
+            govJourneyId,
           })
         ).toThrow(
           "Unmatched ContraIndicationMappings ci_1 detected in configured mappings"

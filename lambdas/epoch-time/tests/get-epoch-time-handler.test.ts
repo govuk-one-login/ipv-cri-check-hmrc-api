@@ -1,13 +1,15 @@
 import { TimeUnit, lambdaHandler } from "../src/get-epoch-time-handler";
 
+const mockGovJourneyId = "test-government-journey-id";
 describe("lambdaHandler", () => {
   it("returns the seconds representation of the provided date", async () => {
     const event = {
       dateTime: "2024-02-26T12:00:00Z",
+      govJourneyId: mockGovJourneyId,
     };
     const expectedSeconds = 1708948800;
 
-    const result = await lambdaHandler(event);
+    const result = await lambdaHandler(event, {});
 
     expect(result).toBe(expectedSeconds);
   });
@@ -16,10 +18,11 @@ describe("lambdaHandler", () => {
     const event = {
       dateTime: "2024-02-26T12:00:00Z",
       unit: "milliseconds" as TimeUnit,
+      govJourneyId: mockGovJourneyId,
     };
     const expectedMilliseconds = 1708948800000;
 
-    const result = await lambdaHandler(event);
+    const result = await lambdaHandler(event, {});
 
     expect(result).toBe(expectedMilliseconds);
   });
@@ -28,9 +31,10 @@ describe("lambdaHandler", () => {
     const event = {
       dateTime: "invalidDateTimeFormat",
       unit: "milliseconds" as TimeUnit,
+      govJourneyId: mockGovJourneyId,
     };
 
-    expect(async () => await lambdaHandler(event)).rejects.toThrow(
+    expect(async () => await lambdaHandler(event, {})).rejects.toThrow(
       new Error("Invalid date format")
     );
   });
@@ -40,10 +44,14 @@ describe("lambdaHandler", () => {
     async (value) => {
       expect(
         async () =>
-          await lambdaHandler({
-            dateTime: value as unknown as string,
-            unit: "milliseconds" as TimeUnit,
-          })
+          await lambdaHandler(
+            {
+              dateTime: value as unknown as string,
+              unit: "milliseconds" as TimeUnit,
+              govJourneyId: mockGovJourneyId,
+            },
+            {}
+          )
       ).rejects.toThrow(new Error("Invalid event object: missing dateTime"));
     }
   );
@@ -53,10 +61,14 @@ describe("lambdaHandler", () => {
     async (value) => {
       expect(
         async () =>
-          await lambdaHandler({
-            dateTime: "2024-02-26T12:00:00Z",
-            unit: value as TimeUnit,
-          })
+          await lambdaHandler(
+            {
+              dateTime: "2024-02-26T12:00:00Z",
+              unit: value as TimeUnit,
+              govJourneyId: mockGovJourneyId,
+            },
+            {}
+          )
       ).rejects.toThrow(new Error(`Invalid unit value: ${value}`));
     }
   );
