@@ -39,6 +39,7 @@ export type UserInfoEvent = {
     ];
   };
   nino: string;
+  govJourneyId: string;
 };
 
 export const mockUserInfoEventItem = {

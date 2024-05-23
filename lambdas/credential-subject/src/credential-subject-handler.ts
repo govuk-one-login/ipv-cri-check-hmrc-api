@@ -15,6 +15,9 @@ export class CredentialSubjectHandler implements LambdaInterface {
     event: UserInfoEvent,
     _context: unknown
   ): Promise<CredentialSubject> {
+    logger.info(
+      `Lambda invoked with government journey id: ${event.govJourneyId}`
+    );
     try {
       return credentialSubjectBuilder
         .setPersonalNumber(event?.nino)
@@ -27,7 +30,10 @@ export class CredentialSubjectHandler implements LambdaInterface {
         .build();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.error(`Error in CredentialSubjectHandler: ${message}`);
+      logger.error({
+        message: `Error in CredentialSubjectHandler: ${message}`,
+        govJourneyId: event.govJourneyId,
+      });
       throw error;
     }
   }
