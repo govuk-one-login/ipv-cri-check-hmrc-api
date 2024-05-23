@@ -104,13 +104,16 @@ export const authorizationEndpoint = async (
   return authResponse;
 };
 
-export const abandonEndpoint = async (sessionId: string): Promise<Response> => {
+export const abandonEndpoint = async (headers: {
+  "session-id": string;
+  "txma-audit-encoded"?: string;
+}): Promise<Response> => {
   const abandonUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/abandon`;
   const abandonResponse = await fetch(abandonUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "session-id": sessionId,
+      ...headers,
     },
     body: JSON.stringify({}),
   });

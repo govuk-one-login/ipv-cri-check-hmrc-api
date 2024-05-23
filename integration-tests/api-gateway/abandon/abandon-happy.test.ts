@@ -65,8 +65,24 @@ describe("Given the session is valid and expecting to abandon the journey", () =
     await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
   });
 
-  it("Should receive a 200 response when /abandon endpoint is called", async () => {
-    const abandonResponse = await abandonEndpoint(sessionId);
+  it("Should receive a 200 response when /abandon endpoint is called without optional headers", async () => {
+    const abandonResponse = await abandonEndpoint({ "session-id": sessionId });
+    expect(abandonResponse.status).toEqual(200);
+
+    const sessionRecord = await getItemByKey(sessionTableName, {
+      sessionId: sessionId,
+    });
+
+    //Checking DynamoDB to ensure authCode is displayed
+    expect(sessionRecord.Item?.authorizationCode).toBeUndefined();
+    expect(sessionRecord.Item?.authorizationCodeExpiryDate).toBe(0);
+  });
+
+  it("Should receive a 200 response when /abandon endpoint is called with optional headers", async () => {
+    const abandonResponse = await abandonEndpoint({
+      "session-id": sessionId,
+      "txma-audit-encoded": "test encoded header",
+    });
     expect(abandonResponse.status).toEqual(200);
 
     const sessionRecord = await getItemByKey(sessionTableName, {
