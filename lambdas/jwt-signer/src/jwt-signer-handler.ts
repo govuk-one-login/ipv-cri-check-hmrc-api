@@ -11,6 +11,9 @@ import {
   SignCommand,
   SigningAlgorithmSpec,
 } from "@aws-sdk/client-kms";
+import { Logger } from "@aws-lambda-powertools/logger";
+
+const logger = new Logger();
 
 export class JwtSignerHandler implements LambdaInterface {
   constructor(private kmsClient: KMSClient) {}
@@ -19,6 +22,9 @@ export class JwtSignerHandler implements LambdaInterface {
     event: SignerPayLoad,
     _context: unknown
   ): Promise<string> {
+    logger.info(
+      `Lambda invoked with government journey id: ${event.govJourneyId}`
+    );
     const header = base64url.encode(event.header);
     const payload = base64url.encode(event.claimsSet);
 
