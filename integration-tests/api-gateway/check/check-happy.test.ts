@@ -40,11 +40,23 @@ describe("Given the session and NINO is valid", () => {
     await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
   });
 
-  it("Should receive a 200 response when /check endpoint is called", async () => {
+  it("Should receive a 200 response when /check endpoint is called without optional headers", async () => {
     const session = await createSession();
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
-    const check = await checkEndpoint(sessionId, NINO);
+    const check = await checkEndpoint({ "session-id": sessionId }, NINO);
+    const checkData = check.status;
+    expect(checkData).toEqual(200);
+  });
+
+  it("Should receive a 200 response when /check endpoint is called with optional headers", async () => {
+    const session = await createSession();
+    const sessionData = await session.json();
+    sessionId = sessionData.session_id;
+    const check = await checkEndpoint(
+      { "session-id": sessionId, "txma-audit-encoded": "test encoded header" },
+      NINO
+    );
     const checkData = check.status;
     expect(checkData).toEqual(200);
   });

@@ -34,7 +34,7 @@ describe("Given the session is valid and expecting to abandon the journey", () =
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
     state = sessionData.state;
-    await checkEndpoint(sessionId, NINO);
+    await checkEndpoint({ "session-id": sessionId }, NINO);
     await authorizationEndpoint(
       sessionId,
       CLIENT_ID,

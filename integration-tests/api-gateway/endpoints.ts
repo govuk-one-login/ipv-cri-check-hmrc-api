@@ -60,7 +60,7 @@ export const createSession = async (): Promise<Response> => {
 };
 
 export const checkEndpoint = async (
-  sessionId: string,
+  headers: { "session-id": string; "txma-audit-encoded"?: string },
   nino: string
 ): Promise<Response> => {
   const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
@@ -69,7 +69,7 @@ export const checkEndpoint = async (
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "session-id": sessionId,
+      ...headers,
     },
     body: jsonData,
   });
