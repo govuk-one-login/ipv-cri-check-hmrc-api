@@ -1623,28 +1623,6 @@ Resources:
             - auditEventQueueName: !ImportValue "AuditEventQueueName"
           Id: AuditEventQueue
           InputPath: "$.detail"
-  EventBridgeToSqsPolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      PolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: events.amazonaws.com
-            Action: SQS:SendMessage
-            Resource: !Sub
-              - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
-              - auditEventQueueName: !ImportValue "AuditEventQueueName"
-          - Effect: Allow
-            Principal:
-              Service: events.amazonaws.com
-            Action:
-              - "kms:Decrypt"
-              - "kms:GenerateDataKey"
-            Resource:
-              - !ImportValue AuditEventQueueEncryptionKeyArn
-      Queues:
-        - !ImportValue "AuditEventQueueName"
 
   EventBridgeStateMachineExecutionRole:
     Type: AWS::IAM::Role
