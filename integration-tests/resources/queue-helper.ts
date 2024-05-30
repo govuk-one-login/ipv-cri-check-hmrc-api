@@ -90,11 +90,7 @@ export const addQueuePolicy = async (
   });
 };
 export const getQueueMessages = async (
-  queueUrl: string,
-  retryConfig: RetryConfig = {
-    intervalInMs: 0,
-    maxRetries: 5,
-  }
+  queueUrl: string
 ): Promise<Message[]> => {
   try {
     let allMessages: Message[] = [];
