@@ -149,6 +149,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
       checkHmrcEventBus
     );
   });
+
   afterEach(async () => {
     await clearItemsFromTables(
       {
@@ -164,23 +165,33 @@ describe("Nino Check Hmrc Issue Credential", () => {
         items: { sessionId: "issue-credential-happy-publish" },
       }
     );
+
     await clearAttemptsTable(
       "issue-credential-happy-publish",
       output.UserAttemptsTable
     );
-    await Promise.all([
-      removeTargetFromRule(targetId, checkHmrcEventBus, vcIssuedRuleName),
-      removeTargetFromRule(targetId, checkHmrcEventBus, endEventRuleName),
-      removeTargetFromRule(targetId, checkHmrcEventBus, txMaAuditEventRuleName),
-    ]);
+
+    await removeTargetFromRule(targetId, checkHmrcEventBus, vcIssuedRuleName);
+    await removeTargetFromRule(targetId, checkHmrcEventBus, endEventRuleName);
+    await removeTargetFromRule(
+      targetId,
+      checkHmrcEventBus,
+      txMaAuditEventRuleName
+    );
+
     await retry(async () => {
-      await Promise.all([
-        deleteQueue(vcIssuedEventTestQueue.QueueUrl),
-        deleteQueue(endEventTestQueue.QueueUrl),
-        deleteQueue(txMaAuditEventTestQueue.QueueUrl),
-      ]);
-      await pause(60);
+      await deleteQueue(vcIssuedEventTestQueue.QueueUrl);
     });
+
+    await retry(async () => {
+      await deleteQueue(endEventTestQueue.QueueUrl);
+    });
+
+    await retry(async () => {
+      await deleteQueue(txMaAuditEventTestQueue.QueueUrl);
+    });
+
+    await pause(30);
   });
 
   it("should publish END event to CheckHmrc EventBridge Bus successfully", async () => {

@@ -90,11 +90,7 @@ export const addQueuePolicy = async (
   });
 };
 export const getQueueMessages = async (
-  queueUrl: string,
-  retryConfig: RetryConfig = {
-    intervalInMs: 0,
-    maxRetries: 5,
-  }
+  queueUrl: string
 ): Promise<Message[]> => {
   try {
     let allMessages: Message[] = [];
@@ -119,9 +115,7 @@ export const getQueueMessages = async (
 
     return allMessages;
   } catch (error) {
-    return retry(() => {
-      return getQueueMessages(queueUrl, retryConfig);
-    }, retryConfig);
+    throw new Error("No messages received: " + error);
   }
 };
 export const setUpQueueAndAttachToRule = async (

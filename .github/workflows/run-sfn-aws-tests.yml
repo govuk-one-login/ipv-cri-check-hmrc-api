@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       stack-name: { required: true, type: string }
-      aws-region: { required: false, type: string }
+      aws-region: { required: true, type: string }
 
 permissions:
   id-token: write
