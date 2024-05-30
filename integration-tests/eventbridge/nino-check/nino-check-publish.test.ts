@@ -124,62 +124,77 @@ describe("Nino Hmrc Check Step Function", () => {
   });
 
   afterEach(async () => {
-    Promise.all([
-      clearItemsFromTables(
-        {
-          tableName: sessionTableName,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: personIdentityTableName,
-          items: { sessionId: input.sessionId },
-        },
-        {
-          tableName: output.NinoUsersTable as string,
-          items: { sessionId: input.sessionId },
-        }
-      ),
-      clearAttemptsTable(input.sessionId, output.UserAttemptsTable),
-      clearItemsFromTables(
-        {
-          tableName: sessionTableName,
-          items: { sessionId: "check-happy-publish" },
-        },
-        {
-          tableName: personIdentityTableName,
-          items: { sessionId: "check-happy-publish" },
-        },
-        {
-          tableName: output.NinoUsersTable as string,
-          items: { sessionId: "check-happy-publish" },
-        }
-      ),
-      clearAttemptsTable("check-happy-publish", output.UserAttemptsTable),
-    ]);
+    await clearItemsFromTables(
+      {
+        tableName: sessionTableName,
+        items: { sessionId: input.sessionId },
+      },
+      {
+        tableName: personIdentityTableName,
+        items: { sessionId: input.sessionId },
+      },
+      {
+        tableName: output.NinoUsersTable as string,
+        items: { sessionId: input.sessionId },
+      }
+    );
+
+    await clearAttemptsTable(input.sessionId, output.UserAttemptsTable);
+
+    await clearItemsFromTables(
+      {
+        tableName: sessionTableName,
+        items: { sessionId: "check-happy-publish" },
+      },
+      {
+        tableName: personIdentityTableName,
+        items: { sessionId: "check-happy-publish" },
+      },
+      {
+        tableName: output.NinoUsersTable as string,
+        items: { sessionId: "check-happy-publish" },
+      }
+    );
+
+    await clearAttemptsTable("check-happy-publish", output.UserAttemptsTable);
 
     await retry(async () => {
-      await Promise.all([
-        removeTargetFromRule(targetId, checkHmrcEventBus, requestSentRuleName),
-        removeTargetFromRule(
-          targetId,
-          checkHmrcEventBus,
-          responseReceivedRuleName
-        ),
-        removeTargetFromRule(
-          targetId,
-          checkHmrcEventBus,
-          txMaAuditEventRuleName
-        ),
-      ]);
+      await removeTargetFromRule(
+        targetId,
+        checkHmrcEventBus,
+        requestSentRuleName
+      );
     });
+
     await retry(async () => {
-      await Promise.all([
-        deleteQueue(requestSentEventTestQueue.QueueUrl),
-        deleteQueue(responseReceivedEventTestQueue.QueueUrl),
-        deleteQueue(txMaAuditEventTestQueue.QueueUrl),
-      ]);
-      await pause(60);
+      await removeTargetFromRule(
+        targetId,
+        checkHmrcEventBus,
+        responseReceivedRuleName
+      );
     });
+
+    await retry(async () => {
+      await removeTargetFromRule(
+        targetId,
+        checkHmrcEventBus,
+        txMaAuditEventRuleName
+      );
+    });
+
+    await retry(async () => {
+      await deleteQueue(requestSentEventTestQueue.QueueUrl);
+    });
+
+    await retry(async () => {
+      await deleteQueue(responseReceivedEventTestQueue.QueueUrl);
+    });
+
+    await retry(async () => {
+      await deleteQueue(txMaAuditEventTestQueue.QueueUrl);
+    });
+
+    await pause(30);
   });
 
   it("should publish REQUEST_SENT event to CheckHmrc EventBridge Bus successfully", async () => {

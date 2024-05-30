@@ -69,32 +69,45 @@ describe("Abandon Step Function", () => {
       checkHmrcEventBus
     );
   });
+
   afterEach(async () => {
-    await retry(async () => {
-      await Promise.all([
-        clearItems(sessionTableName, {
-          sessionId: input.sessionId,
-        }),
-        removeTargetFromRule(
-          targetId,
-          checkHmrcEventBus,
-          txMaAuditEventRuleName
-        ),
-        removeTargetFromRule(
-          targetId,
-          checkHmrcEventBus,
-          auditEventAbandonedRule
-        ),
-      ]);
+    // Clear items from the session table
+    await clearItems(sessionTableName, {
+      sessionId: input.sessionId,
     });
+
+    // Retry removing the first target from the txMaAuditEventRuleName
     await retry(async () => {
-      await Promise.all([
-        deleteQueue(abandonedEventTestQueue.QueueUrl),
-        deleteQueue(txMaAuditEventTestQueue.QueueUrl),
-      ]);
-      await pause(60);
+      await removeTargetFromRule(
+        targetId,
+        checkHmrcEventBus,
+        txMaAuditEventRuleName
+      );
     });
+
+    // Retry removing the second target from the auditEventAbandonedRule
+    await retry(async () => {
+      await removeTargetFromRule(
+        targetId,
+        checkHmrcEventBus,
+        auditEventAbandonedRule
+      );
+    });
+
+    // Retry deleting the abandonedEventTestQueue SQS queue
+    await retry(async () => {
+      await deleteQueue(abandonedEventTestQueue.QueueUrl);
+    });
+
+    // Retry deleting the txMaAuditEventTestQueue SQS queue
+    await retry(async () => {
+      await deleteQueue(txMaAuditEventTestQueue.QueueUrl);
+    });
+
+    // Pause to ensure the queues are fully deleted
+    await pause(30);
   });
+
   it("should publish ABANDONED event to a queue with an abandoned rule set", async () => {
     const startExecutionResult = await executeStepFunction(
       output.AbandonStateMachineArn as string,
