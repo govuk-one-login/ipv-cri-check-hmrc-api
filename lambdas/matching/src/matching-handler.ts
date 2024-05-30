@@ -28,7 +28,7 @@ export class MatchingHandler implements LambdaInterface {
         }),
       });
       const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
+      if (contentType?.includes("application/json")) {
         return {
           status: response.status.toString(),
           body: await response.json(),
