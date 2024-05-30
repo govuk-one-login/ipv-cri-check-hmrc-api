@@ -119,9 +119,7 @@ export const getQueueMessages = async (
 
     return allMessages;
   } catch (error) {
-    return retry(() => {
-      return getQueueMessages(queueUrl, retryConfig);
-    }, retryConfig);
+    throw new Error("No messages received: " + error);
   }
 };
 export const setUpQueueAndAttachToRule = async (
