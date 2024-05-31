@@ -8,6 +8,9 @@ export class OTGApiHandler implements LambdaInterface {
     event: { apiURL: string; govJourneyId: string },
     _context: unknown
   ): Promise<{ token: string; expiry: number }> {
+    logger.appendKeys({
+      govuk_signin_journey_id: event.govJourneyId,
+    });
     logger.info(
       `Lambda invoked with government journey id: ${event.govJourneyId}`
     );

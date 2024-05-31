@@ -9,6 +9,9 @@ export class MatchingHandler implements LambdaInterface {
     event: MatchEvent,
     _context: unknown
   ): Promise<{ status: string; body: string }> {
+    logger.appendKeys({
+      govuk_signin_journey_id: event.user.govuk_signin_journey_id,
+    });
     logger.info(
       `Lambda invoked with government journey id: ${event.user.govuk_signin_journey_id}`
     );

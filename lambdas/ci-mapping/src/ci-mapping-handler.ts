@@ -14,6 +14,9 @@ export class CiMappingHandler implements LambdaInterface {
     event: CiMappingEvent,
     _context: unknown
   ): Promise<Array<ContraIndicator>> {
+    logger.appendKeys({
+      govuk_signin_journey_id: event.govJourneyId,
+    });
     logger.info(
       `Lambda invoked with government journey id: ${event.govJourneyId}`
     );

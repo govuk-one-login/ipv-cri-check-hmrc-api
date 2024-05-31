@@ -13,6 +13,9 @@ export class SsmParametersHandler implements LambdaInterface {
     event: { parameters: string[]; govJourneyId: string },
     _context: unknown
   ): Promise<Parameter[]> {
+    logger.appendKeys({
+      govuk_signin_journey_id: event.govJourneyId,
+    });
     logger.info(
       `Lambda invoked with government journey id: ${event.govJourneyId}`
     );

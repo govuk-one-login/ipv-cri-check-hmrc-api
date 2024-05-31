@@ -7,6 +7,9 @@ const logger = new Logger();
 
 export class TimeHandler implements LambdaInterface {
   public async handler(event: TimeEvent, _context: unknown) {
+    logger.appendKeys({
+      govuk_signin_journey_id: event.govJourneyId,
+    });
     logger.info(
       `Lambda invoked with government journey id: ${event.govJourneyId}`
     );

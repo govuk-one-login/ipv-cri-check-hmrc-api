@@ -22,6 +22,9 @@ export class JwtSignerHandler implements LambdaInterface {
     event: SignerPayLoad,
     _context: unknown
   ): Promise<string> {
+    logger.appendKeys({
+      govuk_signin_journey_id: event.govJourneyId,
+    });
     logger.info(
       `Lambda invoked with government journey id: ${event.govJourneyId}`
     );

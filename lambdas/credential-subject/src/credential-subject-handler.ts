@@ -15,6 +15,9 @@ export class CredentialSubjectHandler implements LambdaInterface {
     event: UserInfoEvent,
     _context: unknown
   ): Promise<CredentialSubject> {
+    logger.appendKeys({
+      govuk_signin_journey_id: event.govJourneyId,
+    });
     logger.info(
       `Lambda invoked with government journey id: ${event.govJourneyId}`
     );

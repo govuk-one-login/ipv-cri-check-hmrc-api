@@ -9,6 +9,9 @@ export class CreateAuthCodeHandler implements LambdaInterface {
     event: { govuk_signin_journey_id: string },
     _context: unknown
   ): Promise<{ authCodeExpiry: number }> {
+    logger.appendKeys({
+      govuk_signin_journey_id: event.govuk_signin_journey_id,
+    });
     logger.info(
       `Lambda invoked with government journey id: ${event.govuk_signin_journey_id}`
     );
