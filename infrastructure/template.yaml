@@ -1520,6 +1520,8 @@ Resources:
     Type: AWS::Events::EventBus
     Properties:
       Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
+      KmsKeyIdentifier: !ImportValue txma-infrastructure-AuditEventQueueEncryptionKeyArn
+
   ##################################################################
   #                                                                  #
   # Nino Check Audit Event Consumer                                  #
