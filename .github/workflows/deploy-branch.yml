@@ -24,6 +24,9 @@ jobs:
       cache-key: ${{ steps.build.outputs.cache-key }}
       cache-restore-keys: ${{ steps.build.outputs.cache-restore-keys }}
     steps:
+      - name: Install latest SAM
+        uses: aws-actions/setup-sam@v2
+
       - name: Build SAM application
         uses: govuk-one-login/github-actions/sam/build-application@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
         id: build
