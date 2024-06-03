@@ -1,7 +1,7 @@
 import { CiMappingHandler } from "../src/ci-mapping-handler";
 import { Context } from "aws-lambda";
-import { CiMappingEvent } from "../src/ci-mapping-event-validator";
 import { ContraIndicator } from "../src/utils/ci-mapping-util";
+import { CiMappingEvent } from "../src/ci-mapping-event";
 type TestCase = {
   inputHmrcErrors: string[];
   expectedCIs: ContraIndicator[];

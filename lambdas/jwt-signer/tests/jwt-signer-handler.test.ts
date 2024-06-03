@@ -12,6 +12,7 @@ import {
   largeClaimsSet,
   publicVerifyingJwk,
 } from "./test-data";
+import { Context } from "aws-lambda";
 
 const kmsClient = jest.mocked(KMSClient).prototype;
 const jwtSignerHandler = new JwtSignerHandler(kmsClient);
@@ -34,7 +35,7 @@ describe("Successfully signs a JWT", () => {
         })
       );
 
-      const signedJwt = await jwtSignerHandler.handler(event, {});
+      const signedJwt = await jwtSignerHandler.handler(event, {} as Context);
 
       const { payload } = await jwtVerify(
         signedJwt,
@@ -75,7 +76,7 @@ describe("Successfully signs a JWT", () => {
         })
       );
 
-      const signedJwt = await jwtSignerHandler.handler(event, {});
+      const signedJwt = await jwtSignerHandler.handler(event, {} as Context);
 
       const { payload } = await jwtVerify(
         signedJwt,
@@ -115,7 +116,9 @@ describe("Fails to sign a JWT", () => {
       })
     );
 
-    await expect(jwtSignerHandler.handler(event, {})).rejects.toThrow(
+    await expect(
+      jwtSignerHandler.handler(event, {} as Context)
+    ).rejects.toThrow(
       "KMS signing error: Error: KMS response does not contain a valid Signature."
     );
   });
@@ -136,7 +139,7 @@ describe("Fails to sign a JWT", () => {
     );
 
     await expect(
-      jwtSignerHandler.handler(event as SignerPayLoad, {})
+      jwtSignerHandler.handler(event as SignerPayLoad, {} as Context)
     ).rejects.toThrow(
       "KMS signing error: Error: ValidationException: 1 validation error detected: Value null at 'keyId' failed to satisfy constraint: Member must not be null"
     );
@@ -154,7 +157,7 @@ describe("Fails to sign a JWT", () => {
     );
 
     await expect(
-      jwtSignerHandler.handler(event as SignerPayLoad, {})
+      jwtSignerHandler.handler(event as SignerPayLoad, {} as Context)
     ).rejects.toThrow(
       "KMS response is not in JSON format. SyntaxError: Unknown error"
     );
@@ -172,7 +175,7 @@ describe("Fails to sign a JWT", () => {
     );
 
     await expect(
-      jwtSignerHandler.handler(event as SignerPayLoad, {})
+      jwtSignerHandler.handler(event as SignerPayLoad, {} as Context)
     ).rejects.toThrow(
       "An unknown error occurred while signing with KMS: [object Object]"
     );

@@ -1,5 +1,6 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
-import { Logger } from "@aws-lambda-powertools/logger";
+import { LogHelper } from "../../logging/log-helper";
+import { Context } from "aws-lambda";
 
 export type TimeUnit = "seconds" | "milliseconds";
 
@@ -9,19 +10,14 @@ interface EpochTimeEvent {
   unit?: TimeUnit;
 }
 
-const logger = new Logger();
+const logHelper = new LogHelper();
 
 export class EpochTimeHandler implements LambdaInterface {
   public async handler(
     event: EpochTimeEvent,
-    _context: unknown
+    context: Context
   ): Promise<number> {
-    logger.appendKeys({
-      govuk_signin_journey_id: event.govJourneyId,
-    });
-    logger.info(
-      `Lambda invoked with government journey id: ${event.govJourneyId}`
-    );
+    logHelper.logEntry(context.functionName, event.govJourneyId);
     if (!event.dateTime) {
       throw new Error("Invalid event object: missing dateTime");
     }
@@ -29,10 +25,22 @@ export class EpochTimeHandler implements LambdaInterface {
     const timestamp = new Date(event.dateTime).getTime();
 
     if (isNaN(timestamp)) {
-      throw new Error("Invalid date format");
+      const errorMessage = "Invalid date format";
+      logHelper.logError(
+        context.functionName,
+        event.govJourneyId,
+        errorMessage
+      );
+      throw new Error(errorMessage);
     }
     if (!["seconds", "milliseconds"].includes(unit)) {
-      throw new Error(`Invalid unit value: ${unit}`);
+      const errorMessage = `Invalid unit value: ${unit}`;
+      logHelper.logError(
+        context.functionName,
+        event.govJourneyId,
+        errorMessage
+      );
+      throw new Error(errorMessage);
     }
 
     return unit === "milliseconds" ? timestamp : Math.floor(timestamp / 1000);

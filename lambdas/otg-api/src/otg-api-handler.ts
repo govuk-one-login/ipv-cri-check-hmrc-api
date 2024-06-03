@@ -1,19 +1,15 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
-import { Logger } from "@aws-lambda-powertools/logger";
+import { LogHelper } from "../../logging/log-helper";
+import { Context } from "aws-lambda";
 
-const logger = new Logger();
+const logHelper = new LogHelper();
 
 export class OTGApiHandler implements LambdaInterface {
   public async handler(
     event: { apiURL: string; govJourneyId: string },
-    _context: unknown
+    context: Context
   ): Promise<{ token: string; expiry: number }> {
-    logger.appendKeys({
-      govuk_signin_journey_id: event.govJourneyId,
-    });
-    logger.info(
-      `Lambda invoked with government journey id: ${event.govJourneyId}`
-    );
+    logHelper.logEntry(context.functionName, event.govJourneyId);
 
     try {
       const response = await fetch(event.apiURL, {
@@ -35,10 +31,7 @@ export class OTGApiHandler implements LambdaInterface {
       );
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.error({
-        message: "Error in OTGApiHandler: " + message,
-        govJourneyId: event.govJourneyId,
-      });
+      logHelper.logError(context.functionName, event.govJourneyId, message);
       throw error;
     }
   }

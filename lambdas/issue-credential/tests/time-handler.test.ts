@@ -1,5 +1,6 @@
 import { TimeHandler } from "../src/time-handler";
 import { TimeUnits } from "../src/utils/time-units";
+import { Context } from "aws-lambda";
 
 const monday31st2021InMilliseconds = 1622502000000;
 const monday31st2021InSeconds = 1622502000;
@@ -24,7 +25,7 @@ describe("time-handler", () => {
           ttlUnit,
           govJourneyId,
         },
-        {}
+        {} as Context
       );
 
       expect(result).toEqual({
@@ -43,7 +44,7 @@ describe("time-handler", () => {
           ttlUnit: TimeUnits.Seconds,
           govJourneyId,
         },
-        {}
+        {} as Context
       );
 
       expect(result).toEqual({
@@ -63,7 +64,7 @@ describe("time-handler", () => {
             ttlUnit: ttlUnit as string,
             govJourneyId,
           },
-          {}
+          {} as Context
         )
       ).rejects.toThrow(`Time unit must be valid: ${ttlUnit}`);
     }
@@ -73,7 +74,7 @@ describe("time-handler", () => {
     expect(
       timeHandler.handler(
         { ttlValue: -1, ttlUnit: TimeUnits.Seconds, govJourneyId },
-        {}
+        {} as Context
       )
     ).rejects.toThrow(/must be positive/));
 });

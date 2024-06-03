@@ -8,8 +8,7 @@
       "Parameters": {
         "prefix.$": "$$.Execution.Input.detail.auditPrefix",
         "type.$": "$$.Execution.Input.detail-type",
-        "deviceInformation.$": "States.ArrayContains(States.StringSplit(States.JsonToString($$.Execution.Input.detail), ':\"'), 'deviceInformation')",
-        "govJourneyId.$": "$$.Execution.Input.detail.user.govuk_signin_journey_id"
+        "deviceInformation.$": "States.ArrayContains(States.StringSplit(States.JsonToString($$.Execution.Input.detail), ':\"'), 'deviceInformation')"
       },
       "Next": "Parallel"
     },

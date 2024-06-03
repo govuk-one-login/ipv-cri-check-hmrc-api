@@ -1,18 +1,14 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
-import { Logger } from "@aws-lambda-powertools/logger";
 import { TimeEvent } from "./time-event";
 import { toEpochSecondsFromNow } from "./utils/date-time";
+import { LogHelper } from "../../logging/log-helper";
+import { Context } from "aws-lambda";
 
-const logger = new Logger();
+const logHelper = new LogHelper();
 
 export class TimeHandler implements LambdaInterface {
-  public async handler(event: TimeEvent, _context: unknown) {
-    logger.appendKeys({
-      govuk_signin_journey_id: event.govJourneyId,
-    });
-    logger.info(
-      `Lambda invoked with government journey id: ${event.govJourneyId}`
-    );
+  public async handler(event: TimeEvent, context: Context) {
+    logHelper.logEntry(context.functionName, event.govJourneyId);
 
     if (event.ttlValue < 0) {
       throw new Error(`ttlValue must be positive (provided ${event.ttlValue})`);
@@ -27,10 +23,7 @@ export class TimeHandler implements LambdaInterface {
       };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.error({
-        message: `Error in TimeHandler: ${message}`,
-        govJourneyId: event.govJourneyId,
-      });
+      logHelper.logError(context.functionName, event.govJourneyId, message);
       throw error;
     }
   }

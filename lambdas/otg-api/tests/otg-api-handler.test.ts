@@ -49,7 +49,9 @@ describe("otg-api-handler", () => {
       govJourneyId: mockGovJourneyId,
     };
 
-    await expect(() => otgApiHandler.handler(event, {})).rejects.toThrow(
+    await expect(() =>
+      otgApiHandler.handler(event, {} as Context)
+    ).rejects.toThrow(
       new Error("Error response received from OTG 400 Forbidden")
     );
   });
@@ -74,8 +76,8 @@ describe("otg-api-handler", () => {
       govJourneyId: mockGovJourneyId,
     };
 
-    await expect(() => otgApiHandler.handler(event, {})).rejects.toThrow(
-      new Error("OTG returned an expired Bearer Token")
-    );
+    await expect(() =>
+      otgApiHandler.handler(event, {} as Context)
+    ).rejects.toThrow(new Error("OTG returned an expired Bearer Token"));
   });
 });

@@ -11,23 +11,19 @@ import {
   SignCommand,
   SigningAlgorithmSpec,
 } from "@aws-sdk/client-kms";
-import { Logger } from "@aws-lambda-powertools/logger";
+import { LogHelper } from "../../logging/log-helper";
+import { Context } from "aws-lambda";
 
-const logger = new Logger();
+const logHelper = new LogHelper();
 
 export class JwtSignerHandler implements LambdaInterface {
   constructor(private kmsClient: KMSClient) {}
 
   public async handler(
     event: SignerPayLoad,
-    _context: unknown
+    context: Context
   ): Promise<string> {
-    logger.appendKeys({
-      govuk_signin_journey_id: event.govJourneyId,
-    });
-    logger.info(
-      `Lambda invoked with government journey id: ${event.govJourneyId}`
-    );
+    logHelper.logEntry(context.functionName, event.govJourneyId);
     const header = base64url.encode(event.header);
     const payload = base64url.encode(event.claimsSet);
 

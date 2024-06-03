@@ -4,6 +4,7 @@ import {
   mockUserInfoEventItem,
   mockUserInfoEventItemWithBirthDates,
 } from "../src/user-info-event";
+import { Context } from "aws-lambda";
 
 describe("credential-subject-handler.ts", () => {
   const expectedCredentialSubject = {
@@ -32,7 +33,7 @@ describe("credential-subject-handler.ts", () => {
     const handler = new CredentialSubjectHandler();
     const credentialSubject = await handler.handler(
       mockUserInfoEventItem as UserInfoEvent,
-      {} as unknown
+      {} as Context
     );
     expect(credentialSubject).toEqual(expectedCredentialSubject);
   });
@@ -45,10 +46,21 @@ describe("credential-subject-handler.ts", () => {
     const handler = new CredentialSubjectHandler();
     const credentialSubject = await handler.handler(
       mockUserInfoEventItemWithBirthDates as UserInfoEvent,
-      {} as unknown
+      {} as Context
     );
 
     expect(credentialSubject).toEqual(expectedCredentialSubjectWithBirthDates);
+  });
+
+  it("should return {} when passed %s", async () => {
+    const handler = new CredentialSubjectHandler();
+
+    const credentialSubject = await handler.handler(
+      {} as UserInfoEvent,
+      {} as Context
+    );
+
+    await expect(credentialSubject).toEqual({});
   });
 
   it.each([{ govJourneyId: mockUserInfoEventItem }])(
@@ -58,7 +70,7 @@ describe("credential-subject-handler.ts", () => {
 
       const credentialSubject = await handler.handler(
         payload as unknown as UserInfoEvent,
-        {} as unknown
+        {} as Context
       );
 
       expect(credentialSubject).toEqual({});

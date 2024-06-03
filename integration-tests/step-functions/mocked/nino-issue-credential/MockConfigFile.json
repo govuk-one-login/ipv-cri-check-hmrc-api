@@ -55,10 +55,6 @@
         "Return": {
           "Payload": [
             {
-              "Name": "/common-cri-api/SessionTableName",
-              "Value": "dummy-value"
-            },
-            {
               "Name": "/check-hmrc-cri-api-cache/MaxJwtTtl",
               "Value": "dummy-value"
             },

@@ -1,25 +1,23 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import {
-  CiMappingEvent,
   HMRC_ERRORS_ABSENT,
   getContraIndicatorWithReason,
   validateInputs,
 } from "./ci-mapping-event-validator";
-import { Logger } from "@aws-lambda-powertools/logger";
-import { getHmrcErrsCiRecord, ContraIndicator } from "./utils/ci-mapping-util";
 
-const logger = new Logger();
+import { Context } from "aws-lambda";
+import { getHmrcErrsCiRecord, ContraIndicator } from "./utils/ci-mapping-util";
+import { CiMappingEvent } from "./ci-mapping-event";
+import { LogHelper } from "../../logging/log-helper";
+
+const logHelper = new LogHelper();
+
 export class CiMappingHandler implements LambdaInterface {
   public async handler(
     event: CiMappingEvent,
-    _context: unknown
+    context: Context
   ): Promise<Array<ContraIndicator>> {
-    logger.appendKeys({
-      govuk_signin_journey_id: event.govJourneyId,
-    });
-    logger.info(
-      `Lambda invoked with government journey id: ${event.govJourneyId}`
-    );
+    logHelper.logEntry(context.functionName, event.govJourneyId);
     try {
       return getCIsForHmrcErrors(event);
     } catch (error: unknown) {
@@ -27,10 +25,7 @@ export class CiMappingHandler implements LambdaInterface {
       if (message === HMRC_ERRORS_ABSENT) {
         return [];
       }
-      logger.error({
-        message: `Error in CiMappingHandler: ${message}`,
-        govJourneyId: event.govJourneyId,
-      });
+      logHelper.logError(context.functionName, event.govJourneyId, message);
       throw error;
     }
   }

@@ -5,6 +5,7 @@ import {
   getHmrcErrsCiRecord,
   isCiHmrcErrorsMappingValid,
 } from "./utils/ci-mapping-util";
+import { CiMappingEvent } from "./ci-mapping-event";
 
 const CONTRAINDICATION_MAPPINGS_ABSENT_ERROR =
   "ContraIndicationMapping cannot be undefined in CiMappingEvent";
@@ -12,12 +13,6 @@ const CONTRAINDICATOR_REASONS_MAPPINGS_ABSENT_ERROR =
   "ContraIndicatorReasonsMapping cannot be undefined in CiMappingEvent";
 
 export const HMRC_ERRORS_ABSENT = "Hmrc errors absent in CiMappingEvent";
-export interface CiMappingEvent {
-  contraIndicationMapping: string[];
-  hmrcErrors: string[];
-  contraIndicatorReasonsMapping: Array<CiReasonsMapping>;
-  govJourneyId: string;
-}
 
 export interface CiReasonsMapping {
   ci: string;

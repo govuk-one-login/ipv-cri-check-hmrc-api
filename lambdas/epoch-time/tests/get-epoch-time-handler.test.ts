@@ -1,4 +1,5 @@
 import { TimeUnit, lambdaHandler } from "../src/get-epoch-time-handler";
+import { Context } from "aws-lambda";
 
 const mockGovJourneyId = "test-government-journey-id";
 describe("lambdaHandler", () => {
@@ -9,7 +10,7 @@ describe("lambdaHandler", () => {
     };
     const expectedSeconds = 1708948800;
 
-    const result = await lambdaHandler(event, {});
+    const result = await lambdaHandler(event, {} as Context);
 
     expect(result).toBe(expectedSeconds);
   });
@@ -22,7 +23,7 @@ describe("lambdaHandler", () => {
     };
     const expectedMilliseconds = 1708948800000;
 
-    const result = await lambdaHandler(event, {});
+    const result = await lambdaHandler(event, {} as Context);
 
     expect(result).toBe(expectedMilliseconds);
   });
@@ -34,9 +35,9 @@ describe("lambdaHandler", () => {
       govJourneyId: mockGovJourneyId,
     };
 
-    expect(async () => await lambdaHandler(event, {})).rejects.toThrow(
-      new Error("Invalid date format")
-    );
+    expect(
+      async () => await lambdaHandler(event, {} as Context)
+    ).rejects.toThrow(new Error("Invalid date format"));
   });
 
   it.each([undefined, null])(
@@ -50,7 +51,7 @@ describe("lambdaHandler", () => {
               unit: "milliseconds" as TimeUnit,
               govJourneyId: mockGovJourneyId,
             },
-            {}
+            {} as Context
           )
       ).rejects.toThrow(new Error("Invalid event object: missing dateTime"));
     }
@@ -67,7 +68,7 @@ describe("lambdaHandler", () => {
               unit: value as TimeUnit,
               govJourneyId: mockGovJourneyId,
             },
-            {}
+            {} as Context
           )
       ).rejects.toThrow(new Error(`Invalid unit value: ${value}`));
     }
