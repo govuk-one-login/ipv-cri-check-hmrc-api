@@ -1520,7 +1520,10 @@ Resources:
     Type: AWS::Events::EventBus
     Properties:
       Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
-      KmsKeyIdentifier: !ImportValue txma-infrastructure-AuditEventQueueEncryptionKeyArn
+      KmsKeyIdentifier: !If
+          - IsDevEnvironment
+          - !Ref AWS::NoValue
+          - !ImportValue txma-infrastructure-AuditEventQueueEncryptionKeyArn
 
   ##################################################################
   #                                                                  #
