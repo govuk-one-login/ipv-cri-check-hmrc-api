@@ -16,7 +16,6 @@ describe("ci-mapping-event-validator", () => {
       { ci: "ci_2", reason: "ci_2 reason" },
       { ci: "ci_3", reason: "ci_3 reason" },
     ];
-    const govJourneyId = "test-government-journey-id";
     it("should return successfully when CiMappingEvent is valid", () => {
       expect(
         validateInputs({
@@ -80,8 +79,7 @@ describe("ci-mapping-event-validator", () => {
               contraIndicationMapping,
               hmrcErrors: actual as unknown as string[],
               contraIndicatorReasonsMapping,
-              govJourneyId,
-            })
+            } as CiMappingEvent)
           ).toThrow("Hmrc errors absent in CiMappingEvent");
         }
       );
@@ -96,8 +94,7 @@ describe("ci-mapping-event-validator", () => {
               contraIndicatorReasonsMapping: [
                 { ci: "aaaa", reason: undefined as unknown as string },
               ],
-              govJourneyId,
-            })
+            } as CiMappingEvent)
           ).toThrow(
             "ContraIndicationMapping cannot be undefined in CiMappingEvent"
           );
