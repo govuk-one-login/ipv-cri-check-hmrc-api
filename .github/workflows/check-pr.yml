@@ -59,6 +59,9 @@ jobs:
     name: Run tests
     needs: deploy
     uses: ./.github/workflows/run-evn-abn-tests.yml
+    concurrency:
+      group: evn-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: false
     permissions:
       id-token: write
       contents: read
@@ -70,6 +73,9 @@ jobs:
     name: Run tests
     needs: deploy
     uses: ./.github/workflows/run-evn-nino-tests.yml
+    concurrency:
+      group: evn-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: false
     permissions:
       id-token: write
       contents: read
@@ -81,6 +87,9 @@ jobs:
     name: Run tests
     needs: deploy
     uses: ./.github/workflows/run-evn-cred-tests.yml
+    concurrency:
+      group: evn-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: false
     permissions:
       id-token: write
       contents: read
