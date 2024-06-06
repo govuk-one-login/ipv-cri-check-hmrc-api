@@ -36,6 +36,7 @@ describe("matching-handler", () => {
       apiURL:
         "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match",
       oAuthToken: "123",
+      user: { govuk_signin_journey_id: "test-government-journey-id" },
     } as MatchEvent;
     const result = await matchingHandler.handler(event, {} as Context);
     expect(result.status).toBe("200");
@@ -69,6 +70,7 @@ describe("matching-handler", () => {
       apiURL:
         "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match",
       oAuthToken: "123",
+      user: { govuk_signin_journey_id: "test-government-journey-id" },
     } as MatchEvent;
     const result = await matchingHandler.handler(event, {} as Context);
     expect(result.status).toBe("200");
@@ -97,6 +99,7 @@ describe("matching-handler", () => {
       apiURL:
         "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match",
       oAuthToken: "123",
+      user: { govuk_signin_journey_id: "test-government-journey-id" },
     } as MatchEvent;
 
     await expect(

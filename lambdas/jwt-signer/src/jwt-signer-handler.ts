@@ -11,14 +11,19 @@ import {
   SignCommand,
   SigningAlgorithmSpec,
 } from "@aws-sdk/client-kms";
+import { LogHelper } from "../../logging/log-helper";
+import { Context } from "aws-lambda";
+
+const logHelper = new LogHelper();
 
 export class JwtSignerHandler implements LambdaInterface {
   constructor(private kmsClient: KMSClient) {}
 
   public async handler(
     event: SignerPayLoad,
-    _context: unknown
+    context: Context
   ): Promise<string> {
+    logHelper.logEntry(context.functionName, event.govJourneyId);
     const header = base64url.encode(event.header);
     const payload = base64url.encode(event.claimsSet);
 

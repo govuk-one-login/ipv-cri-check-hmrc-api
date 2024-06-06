@@ -1,14 +1,19 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
-import { Logger } from "@aws-lambda-powertools/logger";
 import { MatchEvent } from "./match-event";
+import { LogHelper } from "../../logging/log-helper";
+import { Context } from "aws-lambda";
 
-const logger = new Logger();
+const logHelper = new LogHelper();
 
 export class MatchingHandler implements LambdaInterface {
   public async handler(
     event: MatchEvent,
-    _context: unknown
+    context: Context
   ): Promise<{ status: string; body: string }> {
+    logHelper.logEntry(
+      context.functionName,
+      event.user.govuk_signin_journey_id
+    );
     try {
       const response = await fetch(event.apiURL, {
         method: "POST",
@@ -25,7 +30,7 @@ export class MatchingHandler implements LambdaInterface {
         }),
       });
       const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
+      if (contentType?.includes("application/json")) {
         return {
           status: response.status.toString(),
           body: await response.json(),
@@ -40,7 +45,11 @@ export class MatchingHandler implements LambdaInterface {
       let message;
       if (error instanceof Error) message = error.message;
       else message = String(error);
-      logger.error("Error in MatchingHandler: " + message);
+      logHelper.logError(
+        context.functionName,
+        event.user.govuk_signin_journey_id,
+        message
+      );
       throw error;
     }
   }

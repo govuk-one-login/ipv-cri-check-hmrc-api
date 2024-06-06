@@ -12,7 +12,10 @@ describe("create-auth-code-handler", () => {
     jest.spyOn(Date, "now").mockReturnValue(mayThirtyOne2021);
 
     const handler = new CreateAuthCodeHandler();
-    const result = await handler.handler({} as unknown, {} as Context);
+    const result = await handler.handler(
+      { govuk_signin_journey_id: "test-government-journey-id" },
+      {} as Context
+    );
     const mayThirtyOne2021Plus10MinsInSeconds = 1622502600;
 
     expect(result).toEqual({

@@ -1,14 +1,16 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
-import { Logger } from "@aws-lambda-powertools/logger";
+import { LogHelper } from "../../logging/log-helper";
+import { Context } from "aws-lambda";
 
-const logger = new Logger();
+const logHelper = new LogHelper();
 const DEFAULT_AUTHORIZATION_CODE_TTL_IN_MILLIS = 600 * 1000;
 
 export class CreateAuthCodeHandler implements LambdaInterface {
   public async handler(
-    _event: unknown,
-    _context: unknown
+    event: { govuk_signin_journey_id: string },
+    context: Context
   ): Promise<{ authCodeExpiry: number }> {
+    logHelper.logEntry(context.functionName, event.govuk_signin_journey_id);
     try {
       return {
         authCodeExpiry: Math.floor(
@@ -19,7 +21,11 @@ export class CreateAuthCodeHandler implements LambdaInterface {
       let message;
       if (error instanceof Error) message = error.message;
       else message = String(error);
-      logger.error("Error in CreateAuthCodeHandler: " + message);
+      logHelper.logError(
+        context.functionName,
+        event.govuk_signin_journey_id,
+        message
+      );
       throw error;
     }
   }

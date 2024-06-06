@@ -57,7 +57,8 @@
               "Parameters": {
                 "Payload": {
                   "dateTime.$": "$$.State.EnteredTime",
-                  "unit": "seconds"
+                  "unit": "seconds",
+                  "govJourneyId.$": "$$.Execution.Input.detail.user.govuk_signin_journey_id"
                 },
                 "FunctionName": "${EpochTimeArn}"
               },

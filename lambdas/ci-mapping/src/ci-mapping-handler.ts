@@ -1,19 +1,23 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import {
-  CiMappingEvent,
   HMRC_ERRORS_ABSENT,
   getContraIndicatorWithReason,
   validateInputs,
 } from "./ci-mapping-event-validator";
-import { Logger } from "@aws-lambda-powertools/logger";
-import { getHmrcErrsCiRecord, ContraIndicator } from "./utils/ci-mapping-util";
 
-const logger = new Logger();
+import { Context } from "aws-lambda";
+import { getHmrcErrsCiRecord, ContraIndicator } from "./utils/ci-mapping-util";
+import { CiMappingEvent } from "./ci-mapping-event";
+import { LogHelper } from "../../logging/log-helper";
+
+const logHelper = new LogHelper();
+
 export class CiMappingHandler implements LambdaInterface {
   public async handler(
     event: CiMappingEvent,
-    _context: unknown
+    context: Context
   ): Promise<Array<ContraIndicator>> {
+    logHelper.logEntry(context.functionName, event.govJourneyId);
     try {
       return getCIsForHmrcErrors(event);
     } catch (error: unknown) {
@@ -21,8 +25,7 @@ export class CiMappingHandler implements LambdaInterface {
       if (message === HMRC_ERRORS_ABSENT) {
         return [];
       }
-      logger.error(`Error in CiMappingHandler: ${message}`);
-
+      logHelper.logError(context.functionName, event.govJourneyId, message);
       throw error;
     }
   }

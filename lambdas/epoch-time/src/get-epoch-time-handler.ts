@@ -1,23 +1,51 @@
+import { LambdaInterface } from "@aws-lambda-powertools/commons";
+import { LogHelper } from "../../logging/log-helper";
+import { Context } from "aws-lambda";
+
 export type TimeUnit = "seconds" | "milliseconds";
-export const lambdaHandler = async ({
-  dateTime,
-  unit = "seconds",
-}: {
+
+interface EpochTimeEvent {
   dateTime: string;
+  govJourneyId: string;
   unit?: TimeUnit;
-}): Promise<number> => {
-  if (!dateTime) {
-    throw new Error("Invalid event object: missing dateTime");
-  }
+}
 
-  const timestamp = new Date(dateTime).getTime();
+const logHelper = new LogHelper();
 
-  if (isNaN(timestamp)) {
-    throw new Error("Invalid date format");
-  }
-  if (!["seconds", "milliseconds"].includes(unit)) {
-    throw new Error(`Invalid unit value: ${unit}`);
-  }
+export class EpochTimeHandler implements LambdaInterface {
+  public async handler(
+    event: EpochTimeEvent,
+    context: Context
+  ): Promise<number> {
+    logHelper.logEntry(context.functionName, event.govJourneyId);
+    if (!event.dateTime) {
+      throw new Error("Invalid event object: missing dateTime");
+    }
+    const unit = event.unit ?? "seconds";
+    const timestamp = new Date(event.dateTime).getTime();
 
-  return unit === "milliseconds" ? timestamp : Math.floor(timestamp / 1000);
-};
+    if (isNaN(timestamp)) {
+      const errorMessage = "Invalid date format";
+      logHelper.logError(
+        context.functionName,
+        event.govJourneyId,
+        errorMessage
+      );
+      throw new Error(errorMessage);
+    }
+    if (!["seconds", "milliseconds"].includes(unit)) {
+      const errorMessage = `Invalid unit value: ${unit}`;
+      logHelper.logError(
+        context.functionName,
+        event.govJourneyId,
+        errorMessage
+      );
+      throw new Error(errorMessage);
+    }
+
+    return unit === "milliseconds" ? timestamp : Math.floor(timestamp / 1000);
+  }
+}
+
+const handlerClass = new EpochTimeHandler();
+export const lambdaHandler = handlerClass.handler.bind(handlerClass);

@@ -108,9 +108,41 @@ describe("Audit events", () => {
       expect(auditUserContext.stateExitedEventDetails?.name).toBe(
         "Add User Context"
       );
-      expect(objectToPublish.executionSucceededEventDetails?.output).toBe(
-        '[{"auditEvent":{"component_id":"https://review-hc.dev.account.gov.uk","event_timestamp_ms":1716162264134,"event_name":"AUDIT_EVENT_PREFIX_EVENT_NAME","user":{"govuk_signin_journey_id":"252561a2-c6ef-47e7-87ab-93891a2a6a41","user_id":"test","persistent_session_id":"156714ef-f9df-48c2-ada8-540e7bce44f7","session_id":"issue-credential-happy-publish","ip_address":"00.100.8.20"},"timestamp":1716162264}},{"deviceInformation":false,"prefix":"AUDIT_EVENT_PREFIX","type":"EVENT_NAME","epochSeconds":{"value":1716162264}},{"deviceInformation":false,"prefix":"AUDIT_EVENT_PREFIX","type":"EVENT_NAME","epochMilliseconds":{"value":1716162264134}}]'
-      );
+      expect(
+        JSON.parse(objectToPublish.executionSucceededEventDetails?.output || "")
+      ).toEqual([
+        {
+          auditEvent: {
+            component_id: "https://review-hc.dev.account.gov.uk",
+            event_timestamp_ms: 1716162264134,
+            event_name: "AUDIT_EVENT_PREFIX_EVENT_NAME",
+            user: {
+              govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+              user_id: "test",
+              persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+              session_id: "issue-credential-happy-publish",
+              ip_address: "00.100.8.20",
+            },
+            timestamp: 1716162264,
+          },
+        },
+        {
+          deviceInformation: false,
+          prefix: "AUDIT_EVENT_PREFIX",
+          type: "EVENT_NAME",
+          epochSeconds: {
+            value: 1716162264,
+          },
+        },
+        {
+          deviceInformation: false,
+          prefix: "AUDIT_EVENT_PREFIX",
+          type: "EVENT_NAME",
+          epochMilliseconds: {
+            value: 1716162264134,
+          },
+        },
+      ]);
     });
     it("should include extension with evidence supplied", async () => {
       const input = JSON.stringify({

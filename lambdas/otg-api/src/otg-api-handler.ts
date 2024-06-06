@@ -1,33 +1,37 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
-import { Logger } from "@aws-lambda-powertools/logger";
+import { LogHelper } from "../../logging/log-helper";
+import { Context } from "aws-lambda";
 
-const logger = new Logger();
+const logHelper = new LogHelper();
 
 export class OTGApiHandler implements LambdaInterface {
   public async handler(
-    event: { apiURL: string },
-    _context: unknown
-  ): Promise<{ token: string, expiry: number }> {
+    event: { apiURL: string; govJourneyId: string },
+    context: Context
+  ): Promise<{ token: string; expiry: number }> {
+    logHelper.logEntry(context.functionName, event.govJourneyId);
+
     try {
       const response = await fetch(event.apiURL, {
         method: "GET",
       });
 
-      if(response.ok) {
+      if (response.ok) {
         const body = await response.json();
         const expiry = body.expiry;
         const now = Date.now();
-        if(now > expiry) {
-          throw new Error("OTG returned an expired Bearer Token")
+        if (now > expiry) {
+          throw new Error("OTG returned an expired Bearer Token");
         }
         return body;
       }
 
       throw new Error(
-        `Error response received from OTG ${response.status} ${response.statusText}`)
+        `Error response received from OTG ${response.status} ${response.statusText}`
+      );
     } catch (error: unknown) {
-      const message = (error instanceof Error) ? error.message : String(error);
-      logger.error("Error in OTGApiHandler: " + message);
+      const message = error instanceof Error ? error.message : String(error);
+      logHelper.logError(context.functionName, event.govJourneyId, message);
       throw error;
     }
   }

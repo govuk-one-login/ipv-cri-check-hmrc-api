@@ -1,5 +1,4 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
-import { Logger } from "@aws-lambda-powertools/logger";
 import { UserInfoEvent } from "./user-info-event";
 import {
   BirthDate,
@@ -7,15 +6,19 @@ import {
   CredentialSubjectBuilder,
   NamePart,
 } from "./credential-subject-builder";
+import { LogHelper } from "../../logging/log-helper";
+import { Context } from "aws-lambda";
 
-const logger = new Logger();
+const logHelper = new LogHelper();
 const credentialSubjectBuilder = new CredentialSubjectBuilder();
+
 export class CredentialSubjectHandler implements LambdaInterface {
   public async handler(
     event: UserInfoEvent,
-    _context: unknown
+    context: Context
   ): Promise<CredentialSubject> {
     try {
+      logHelper.logEntry(context.functionName, event.govJourneyId);
       return credentialSubjectBuilder
         .setPersonalNumber(event?.nino)
         .addNames(this.convertToCredentialSubjectNames(event))
@@ -27,7 +30,7 @@ export class CredentialSubjectHandler implements LambdaInterface {
         .build();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.error(`Error in CredentialSubjectHandler: ${message}`);
+      logHelper.logError(context.functionName, event.govJourneyId, message);
       throw error;
     }
   }

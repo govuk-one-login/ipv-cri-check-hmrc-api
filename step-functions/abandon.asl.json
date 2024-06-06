@@ -32,7 +32,8 @@
       "Parameters": {
         "FunctionName": "${SsmParametersFunction}",
         "Payload": {
-          "parameters.$": "States.Array('/${CommonStackName}/SessionTableName', '/${CommonStackName}/verifiable-credential/issuer')"
+          "parameters.$": "States.Array('/${CommonStackName}/SessionTableName', '/${CommonStackName}/verifiable-credential/issuer')",
+          "govJourneyId.$": "$.sessionCheck.userAuditInfo.govuk_signin_journey_id"
         }
       },
       "Retry": [
