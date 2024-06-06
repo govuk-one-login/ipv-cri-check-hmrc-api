@@ -1521,7 +1521,7 @@ Resources:
     Properties:
       Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
       KmsKeyIdentifier: !If
-          - IsDevEnvironment
+          - IsDevLikeEnvironment
           - !Ref AWS::NoValue
           - !ImportValue txma-infrastructure-AuditEventQueueEncryptionKeyArn
 
