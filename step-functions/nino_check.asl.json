@@ -275,6 +275,26 @@
           }
         ]
       },
+      "Next": "Store txn",
+      "ResultPath": null
+    },
+    "Store txn": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName.$": "$.parameters.SessionTableName",
+        "Key": {
+          "sessionId": {
+            "S.$": "$$.Execution.Input.sessionId"
+          }
+        },
+        "UpdateExpression": "SET txn = :txn",
+        "ExpressionAttributeValues": {
+          ":txn": {
+            "S.$": "$.hmrc_response.payload.txn"
+          }
+        }
+      },
       "Next": "Successful match?",
       "ResultPath": null
     },

@@ -9,7 +9,7 @@ export class MatchingHandler implements LambdaInterface {
   public async handler(
     event: MatchEvent,
     context: Context
-  ): Promise<{ status: string; body: string }> {
+  ): Promise<{ status: string; body: string;  txn: string | null  }> {
     logHelper.logEntry(
       context.functionName,
       event.user.govuk_signin_journey_id
@@ -29,16 +29,20 @@ export class MatchingHandler implements LambdaInterface {
           nino: event.nino,
         }),
       });
+      const txn = response.headers.get("x-amz-cf-id");
+      logHelper.logEntry("Response header x-amz-cf-id: " + txn, event.user.govuk_signin_journey_id)
       const contentType = response.headers.get("content-type");
       if (contentType?.includes("application/json")) {
         return {
           status: response.status.toString(),
           body: await response.json(),
+          txn: txn,
         };
       } else {
         return {
           status: response.status.toString(),
           body: await response.text(),
+          txn: txn,
         };
       }
     } catch (error: unknown) {
