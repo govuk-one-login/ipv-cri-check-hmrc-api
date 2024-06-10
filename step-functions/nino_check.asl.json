@@ -234,7 +234,7 @@
           "userInfo.$": "$.userInfo"
         }
       },
-      "Next": "Audit Event Response Received",
+      "Next": "Txn Recieved?",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -257,26 +257,26 @@
     "Err: Matching Lambda Exception": {
       "Type": "Fail"
     },
-    "Audit Event Response Received": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::events:putEvents",
-      "Parameters": {
-        "Entries": [
-          {
-            "Detail": {
-              "auditPrefix": "${AuditEventPrefix}",
-              "user.$": "$.sessionCheck.userAuditInfo",
-              "deviceInformation.$": "$.sessionCheck.txmaAuditHeader",
-              "issuer.$": "$.parameters.Issuer"
+    "Txn Recieved?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "And": [
+            {
+              "Variable": "$.hmrc_response.payload.txn",
+              "IsPresent": true
             },
-            "DetailType": "${AuditEventNameResponseReceived}",
-            "EventBusName": "${CheckHmrcEventBus}",
-            "Source": "${CheckHmrcEventBusSource}"
-          }
-        ]
-      },
-      "Next": "Store txn",
-      "ResultPath": null
+            {
+              "Not": {
+                "Variable": "$.hmrc_response.payload.txn",
+                "IsNull": true
+              }
+            }
+          ],
+          "Next": "Store txn"
+        }
+      ],
+      "Default": "Audit Event Response Received without txn"
     },
     "Store txn": {
       "Type": "Task",
@@ -294,6 +294,55 @@
             "S.$": "$.hmrc_response.payload.txn"
           }
         }
+      },
+      "Next": "Add txn to audit event",
+      "ResultPath": null
+    },
+    "Add txn to audit event": {
+      "Type": "Pass",
+      "Next": "Audit Event Response Received with txn",
+      "InputPath": "$.hmrc_response.payload.txn",
+      "ResultPath": "$.audit.evidence.txn"
+    },
+    "Audit Event Response Received with txn": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "auditPrefix": "${AuditEventPrefix}",
+              "user.$": "$.sessionCheck.userAuditInfo",
+              "deviceInformation.$": "$.sessionCheck.txmaAuditHeader",
+              "issuer.$": "$.parameters.Issuer",
+              "evidence.$": "States.Array($.audit.evidence)"
+            },
+            "DetailType": "${AuditEventNameResponseReceived}",
+            "EventBusName": "${CheckHmrcEventBus}",
+            "Source": "${CheckHmrcEventBusSource}"
+          }
+        ]
+      },
+      "Next": "Successful match?",
+      "ResultPath": null
+    },
+    "Audit Event Response Received without txn": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "auditPrefix": "${AuditEventPrefix}",
+              "user.$": "$.sessionCheck.userAuditInfo",
+              "deviceInformation.$": "$.sessionCheck.txmaAuditHeader",
+              "issuer.$": "$.parameters.Issuer"
+            },
+            "DetailType": "${AuditEventNameResponseReceived}",
+            "EventBusName": "${CheckHmrcEventBus}",
+            "Source": "${CheckHmrcEventBusSource}"
+          }
+        ]
       },
       "Next": "Successful match?",
       "ResultPath": null
