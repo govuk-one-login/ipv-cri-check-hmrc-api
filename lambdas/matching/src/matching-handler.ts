@@ -25,8 +25,7 @@ export class MatchingHandler implements LambdaInterface {
           nino: event.nino,
         }),
       });
-      const txnHeader = response.headers.get("x-amz-cf-id");
-      const txn = txnHeader ? txnHeader : "";
+      const txn = response.headers.get("x-amz-cf-id") ?? "";
       addLogEntry(event, txn, context);
       const contentType = response.headers.get("content-type");
       if (contentType?.includes("application/json")) {

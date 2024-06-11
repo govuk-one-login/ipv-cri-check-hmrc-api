@@ -291,6 +291,11 @@ describe("Nino Hmrc Check Step Function", () => {
         session_id: "check-happy-publish",
         user_id: "test",
       },
+      extensions: {
+        evidence: [{
+          txn: "mock_txn_header"
+        }]
+      },
     };
 
     expect(txMaPayload).toContainEqual(requestSentEvent);
