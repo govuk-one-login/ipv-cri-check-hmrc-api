@@ -265,7 +265,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
             failedCheckDetails: [
               { checkMethod: "data", dataCheck: "record_check" },
             ],
-            txn: expect.any(String),
+            txn: "mock-txn",
             type: "IdentityCheck",
           },
         ],

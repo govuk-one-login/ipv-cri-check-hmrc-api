@@ -13,7 +13,7 @@ describe("matching-handler", () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       headers: {
         get: jest.fn()
-          .mockReturnValueOnce("2bba5d6e-dc56-4291-b1ed-4f54d263ea63")
+          .mockReturnValueOnce("mock-txn")
           .mockReturnValueOnce("application/json"),
       },
       json: jest.fn().mockResolvedValueOnce({
@@ -48,14 +48,14 @@ describe("matching-handler", () => {
       dateOfBirth: "1948-04-23",
       nino: "AA000003D",
     });
-    expect(result.txn).toStrictEqual("2bba5d6e-dc56-4291-b1ed-4f54d263ea63")
+    expect(result.txn).toStrictEqual("mock-txn")
   });
   it("should return text when content type is not json", async () => {
     global.fetch = jest.fn();
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       headers: {
         get: jest.fn()
-          .mockReturnValueOnce("2bba5d6e-dc56-4291-b1ed-4f54d263ea63")
+          .mockReturnValueOnce("mock-txn")
           .mockReturnValueOnce(""),
       },
       text: jest.fn().mockResolvedValueOnce("Test Text"),
@@ -80,7 +80,7 @@ describe("matching-handler", () => {
     const result = await matchingHandler.handler(event, {} as Context);
     expect(result.status).toBe("200");
     expect(result.body).toStrictEqual("Test Text");
-    expect(result.txn).toStrictEqual("2bba5d6e-dc56-4291-b1ed-4f54d263ea63")
+    expect(result.txn).toStrictEqual("mock-txn")
   });
 
   it("should return an error message when has no content-type and has no body", async () => {
@@ -88,7 +88,7 @@ describe("matching-handler", () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       headers: {
         get: jest.fn()
-          .mockReturnValueOnce("2bba5d6e-dc56-4291-b1ed-4f54d263ea63")
+          .mockReturnValueOnce("mock-txn")
           .mockReturnValueOnce(""),
       },
       status: 200,

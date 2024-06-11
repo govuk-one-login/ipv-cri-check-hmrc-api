@@ -169,7 +169,7 @@
               "dateOfBirth": "1948-04-23",
               "nino": "AA000003D"
             },
-            "txn": "mock-txn-value"
+            "txn": "mock-txn"
           }
         }
       }
@@ -519,7 +519,7 @@
               "dateOfBirth": "1948-04-23",
               "nino": "AA000003D"
             },
-            "txn": "mock-txn-value"
+            "txn": "mock-txn"
           }
         }
       }
@@ -549,7 +549,7 @@
           "Payload": {
             "audit": {
               "evidence": {
-                "txn": "mock-txn-value"
+                "txn": "mock-txn"
               }
             }
           }
