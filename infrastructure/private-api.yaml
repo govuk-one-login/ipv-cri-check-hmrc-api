@@ -150,7 +150,7 @@ paths:
                 #end
               #end
               {
-                "input":"{\"nino\":\"$nino\",\"sessionId\":\"$input.params('session-id').trim()\",#set($headerKeys = $headers.keySet())#set($headerCount = $headerKeys.size())#foreach($headerKey in $headerKeys)#if($headerKey != 'session-id')\"$headerKey\": \"$headers.get($headerKey)\"#if($foreach.hasNext && $foreach.index != $headerCount - 1),#end#end#end}",
+                "input":"{\"nino\":\"$nino\",\"sessionId\":\"$input.params('session-id').trim()\",#set($headerKeys = $headers.keySet())#set($headerCount = $headerKeys.size())#foreach($headerKey in $headerKeys)\"$headerKey\": \"$headers.get($headerKey)\"#if($foreach.hasNext && $foreach.index != $headerCount - 1),#end#end}",
                 "stateMachineArn": "${NinoCheckStateMachine.Arn}"
               }
         responses:
