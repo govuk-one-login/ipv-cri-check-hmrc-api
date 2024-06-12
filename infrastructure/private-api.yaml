@@ -144,13 +144,13 @@ paths:
               #set($headers = {})
               #foreach($header in $input.params().header.keySet())
                 #set($headerName = $util.escapeJavaScript($header))
-                #set($headerValue = $input.params().header.get($header))
+                #set($headerValue = $util.escapeJavaScript($input.params().header.get($header)))
                 #if($headerName.trim() && $headerValue.trim())
                   $util.qr($headers.put($headerName, $headerValue))
                 #end
               #end
               {
-                "input":"{\"nino\":\"$nino\",\"sessionId\":\"$input.params('session-id').trim()\",#set($headerKeys = $headers.keySet())#set($headerCount = $headerKeys.size())#foreach($headerKey in $headerKeys)\"$headerKey\": \"$headers.get($headerKey)\"#if($foreach.hasNext),#end#end}",
+                "input":"{\"nino\":\"$nino\",\"sessionId\":\"$util.escapeJavaScript($input.params('session-id').trim())\",#set($headerKeys = $headers.keySet())#set($headerCount = $headerKeys.size())#foreach($headerKey in $headerKeys)\"$headerKey\": \"$util.escapeJavaScript($headers.get($headerKey))\"#if($foreach.hasNext),#end#end}",
                 "stateMachineArn": "${NinoCheckStateMachine.Arn}"
               }
         responses:
@@ -198,7 +198,7 @@ paths:
           application/json:
             Fn::Sub: |-
               {
-                "input": "{\"sessionId\": \"$input.params('session-id').trim()\"}",
+                "input": "{\"sessionId\": \"$util.escapeJavaScript($input.params('session-id').trim())\"}",
                 "stateMachineArn": "${AbandonStateMachine.Arn}"
               }
         responses:
