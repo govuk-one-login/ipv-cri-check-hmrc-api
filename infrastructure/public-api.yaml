@@ -155,7 +155,7 @@ paths:
           application/json:
             Fn::Sub: |-
               {
-                "input": "{\"bearerToken\": \"$input.params('Authorization').trim()\"}",
+                "input": "{\"bearerToken\": \"$util.escapeJavaScript($input.params('Authorization').trim())\"}",
                 "stateMachineArn": "${NinoIssueCredentialStateMachine.Arn}"
               }
         responses:
