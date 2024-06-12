@@ -234,7 +234,7 @@
           "userInfo.$": "$.userInfo"
         }
       },
-      "Next": "Audit Event Response Received",
+      "Next": "Store txn",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -257,6 +257,32 @@
     "Err: Matching Lambda Exception": {
       "Type": "Fail"
     },
+    "Store txn": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName.$": "$.parameters.SessionTableName",
+        "Key": {
+          "sessionId": {
+            "S.$": "$$.Execution.Input.sessionId"
+          }
+        },
+        "UpdateExpression": "SET txn = :txn",
+        "ExpressionAttributeValues": {
+          ":txn": {
+            "S.$": "$.hmrc_response.payload.txn"
+          }
+        }
+      },
+      "Next": "Format txn for audit event",
+      "ResultPath": null
+    },
+    "Format txn for audit event": {
+      "Type": "Pass",
+      "Next": "Audit Event Response Received",
+      "InputPath": "$.hmrc_response.payload.txn",
+      "ResultPath": "$.audit.evidence.txn"
+    },
     "Audit Event Response Received": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
@@ -267,7 +293,8 @@
               "auditPrefix": "${AuditEventPrefix}",
               "user.$": "$.sessionCheck.userAuditInfo",
               "deviceInformation.$": "$.sessionCheck.txmaAuditHeader",
-              "issuer.$": "$.parameters.Issuer"
+              "issuer.$": "$.parameters.Issuer",
+              "evidence.$": "States.Array($.audit.evidence)"
             },
             "DetailType": "${AuditEventNameResponseReceived}",
             "EventBusName": "${CheckHmrcEventBus}",

@@ -1,19 +1,15 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import { MatchEvent } from "./match-event";
-import { LogHelper } from "../../logging/log-helper";
 import { Context } from "aws-lambda";
+import { Logger } from "@aws-lambda-powertools/logger";
 
-const logHelper = new LogHelper();
+const logger = new Logger();
 
 export class MatchingHandler implements LambdaInterface {
   public async handler(
     event: MatchEvent,
     context: Context
-  ): Promise<{ status: string; body: string }> {
-    logHelper.logEntry(
-      context.functionName,
-      event.user.govuk_signin_journey_id
-    );
+  ): Promise<{ status: string; body: string;  txn: string }> {
     try {
       const response = await fetch(event.apiURL, {
         method: "POST",
@@ -29,27 +25,28 @@ export class MatchingHandler implements LambdaInterface {
           nino: event.nino,
         }),
       });
+      const txn = response.headers.get("x-amz-cf-id") ?? "";
+      addLogEntry(event, txn, context);
       const contentType = response.headers.get("content-type");
       if (contentType?.includes("application/json")) {
         return {
           status: response.status.toString(),
           body: await response.json(),
+          txn: txn,
         };
       } else {
         return {
           status: response.status.toString(),
           body: await response.text(),
+          txn: txn,
         };
       }
     } catch (error: unknown) {
-      let message;
-      if (error instanceof Error) message = error.message;
-      else message = String(error);
-      logHelper.logError(
-        context.functionName,
-        event.user.govuk_signin_journey_id,
-        message
-      );
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error({
+        message: `Error in ${context.functionName}: ${message}`,
+        govuk_signin_journey_id: event.user.govuk_signin_journey_id,
+      });
       throw error;
     }
   }
@@ -57,3 +54,13 @@ export class MatchingHandler implements LambdaInterface {
 
 const handlerClass = new MatchingHandler();
 export const lambdaHandler = handlerClass.handler.bind(handlerClass);
+
+function addLogEntry(event: MatchEvent, txn: string | null, context: Context) {
+  logger.appendKeys({
+    govuk_signin_journey_id: event.user.govuk_signin_journey_id,
+    txn: txn
+  });
+  logger.info(
+    `${context.functionName} invoked with government journey id: ${event.user.govuk_signin_journey_id}`
+  );
+}

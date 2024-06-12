@@ -192,6 +192,144 @@ describe("Audit events", () => {
       );
     });
 
+    it("should include extension with evidence when txn has a value", async () => {
+      const input = JSON.stringify({
+        "detail-type": "EVENT_NAME",
+        source: "review-hc.localdev.account.gov.uk",
+        detail: {
+          auditPrefix: "AUDIT_EVENT_PREFIX",
+          user,
+          issuer: "https://review-hc.dev.account.gov.uk",
+          evidence: [{ txn: "mock-txn" }],
+        },
+      });
+      const responseStepFunction =
+        await sfnContainer.startStepFunctionExecution("Happy", input);
+      const [_, noRestrictedInfo, auditUserContext, objectToPublish] =
+        await sfnContainer.waitFor(
+          (event: HistoryEvent) =>
+            event.type === "PassStateExited" ||
+            event?.type == "ExecutionSucceeded",
+          responseStepFunction
+        );
+
+      expect(noRestrictedInfo.stateExitedEventDetails?.name).toBe(
+        "AuditEvent Without Restricted Info"
+      );
+      expect(auditUserContext.stateExitedEventDetails?.name).toBe(
+        "Audit Event With Evidence & Restricted Info"
+      );
+      const result = JSON.parse(
+        objectToPublish.executionSucceededEventDetails?.output as string
+      );
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            auditEvent: {
+              event_name: "AUDIT_EVENT_PREFIX_EVENT_NAME",
+              component_id: "https://review-hc.dev.account.gov.uk",
+              extensions: {
+                evidence: [{ txn: "mock-txn" }],
+              },
+              user,
+              event_timestamp_ms: 1716162264134,
+              timestamp: 1716162264,
+            },
+          }),
+        ])
+      );
+    });
+
+    it("should not include extension with evidence when evidence only contains a txn with blank value", async () => {
+      const input = JSON.stringify({
+        "detail-type": "EVENT_NAME",
+        source: "review-hc.localdev.account.gov.uk",
+        detail: {
+          auditPrefix: "AUDIT_EVENT_PREFIX",
+          user,
+          issuer: "https://review-hc.dev.account.gov.uk",
+          evidence: [{ txn: "" }],
+        },
+      });
+      const responseStepFunction =
+        await sfnContainer.startStepFunctionExecution("Happy", input);
+      const [_, noRestrictedInfo, auditUserContext, objectToPublish] =
+        await sfnContainer.waitFor(
+          (event: HistoryEvent) =>
+            event.type === "PassStateExited" ||
+            event?.type == "ExecutionSucceeded",
+          responseStepFunction
+        );
+
+      expect(noRestrictedInfo.stateExitedEventDetails?.name).toBe(
+        "AuditEvent Without Restricted Info"
+      );
+      expect(auditUserContext.stateExitedEventDetails?.name).toBe(
+        "Add User Context"
+      );
+      const result = JSON.parse(
+        objectToPublish.executionSucceededEventDetails?.output as string
+      );
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            auditEvent: {
+              event_name: "AUDIT_EVENT_PREFIX_EVENT_NAME",
+              component_id: "https://review-hc.dev.account.gov.uk",
+              user,
+              event_timestamp_ms: 1716162264134,
+              timestamp: 1716162264,
+            },
+          }),
+        ])
+      );
+    });
+
+    it("should not include extension with evidence when evidence contains a txn with blank value", async () => {
+      const input = JSON.stringify({
+        "detail-type": "EVENT_NAME",
+        source: "review-hc.localdev.account.gov.uk",
+        detail: {
+          auditPrefix: "AUDIT_EVENT_PREFIX",
+          user,
+          issuer: "https://review-hc.dev.account.gov.uk",
+          evidence: [{ txn: "", ci: "some ci", ciReasons: "some reason for ci" }],
+        },
+      });
+      const responseStepFunction =
+        await sfnContainer.startStepFunctionExecution("Happy", input);
+      const [_, noRestrictedInfo, auditUserContext, objectToPublish] =
+        await sfnContainer.waitFor(
+          (event: HistoryEvent) =>
+            event.type === "PassStateExited" ||
+            event?.type == "ExecutionSucceeded",
+          responseStepFunction
+        );
+
+      expect(noRestrictedInfo.stateExitedEventDetails?.name).toBe(
+        "AuditEvent Without Restricted Info"
+      );
+      expect(auditUserContext.stateExitedEventDetails?.name).toBe(
+        "Add User Context"
+      );
+      const result = JSON.parse(
+        objectToPublish.executionSucceededEventDetails?.output as string
+      );
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            auditEvent: {
+              event_name: "AUDIT_EVENT_PREFIX_EVENT_NAME",
+              component_id: "https://review-hc.dev.account.gov.uk",
+              user,
+              event_timestamp_ms: 1716162264134,
+              timestamp: 1716162264,
+            },
+          }),
+        ])
+      );
+    });
+
     it("should include extension encoded section when header field with a value is present", async () => {
       const input = JSON.stringify({
         "detail-type": "EVENT_NAME",

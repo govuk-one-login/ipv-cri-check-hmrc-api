@@ -211,8 +211,28 @@
       "Comment": "This check if the input Details has an evidence to add to the audit structure",
       "Choices": [
         {
-          "Variable": "$$.Execution.Input.detail.evidence",
-          "IsPresent": true,
+          "And": [
+            {
+              "Variable": "$$.Execution.Input.detail.evidence",
+              "IsPresent": true
+            },
+            {
+              "Or": [
+                {
+                  "Not": {
+                    "Variable": "$$.Execution.Input.detail.evidence[0].txn",
+                    "IsPresent": true
+                  }
+                },
+                {
+                  "Not": {
+                    "Variable": "$$.Execution.Input.detail.evidence[0].txn",
+                    "StringEquals": ""
+                  }
+                }
+              ]
+            }
+          ],
           "Next": "Audit Event With Evidence & Restricted Info"
         }
       ],

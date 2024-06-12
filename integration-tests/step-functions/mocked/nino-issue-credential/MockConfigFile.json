@@ -118,6 +118,9 @@
               },
               "persistentSessionId": {
                 "S": "156714ef-f9df-48c2-ada8-540e7bce44f7"
+              },
+              "txn": {
+                "S": "mock-txn"
               }
             }
           ],
@@ -154,6 +157,9 @@
               },
               "clientSessionId": {
                 "S": "252561a2-c6ef-47e7-87ab-93891a2a6a41"
+              },
+              "txn": {
+                "S": "mock-txn"
               }
             }
           ],

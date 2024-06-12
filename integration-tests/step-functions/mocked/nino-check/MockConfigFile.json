@@ -10,6 +10,8 @@
           "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingDeceasedAPIFail",
+          "Store txn": "DynamoDbQueryNoResult",
+          "Format txn for audit event": "FormatWithTxn",
           "Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Deceased Attempt": "DynamoDbQueryNoResult",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
@@ -25,6 +27,8 @@
           "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIRetryThenSuccess",
+          "Store txn": "DynamoDbQueryNoResult",
+          "Format txn for audit event": "FormatWithTxn",
           "Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
@@ -50,6 +54,8 @@
           "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingDeceasedAPIFail",
+          "Store txn": "DynamoDbQueryNoResult",
+          "Format txn for audit event": "FormatWithoutTxn",
           "Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Deceased Attempt": "DynamoDbQueryNoResult"
         },
@@ -62,6 +68,8 @@
           "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPISuccess",
+          "Store txn": "DynamoDbQueryNoResult",
+          "Format txn for audit event": "FormatWithTxn",
           "Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
@@ -77,6 +85,8 @@
           "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPISuccess",
+          "Store txn": "DynamoDbQueryNoResult",
+          "Format txn for audit event": "FormatWithTxn",
           "Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Successful Attempt": "UpdateStatusToPassSuccess",
           "Fetch Auth Code Expiry": "FetchAuthCodeExpirySuccess",
@@ -107,6 +117,8 @@
           "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIFailAuth",
+          "Store txn": "DynamoDbQueryNoResult",
+          "Format txn for audit event": "FormatWithoutTxn",
           "Audit Event Response Received": "PublishAuditEventResponseReceived"
         },
         "MatchingLambdaException": {
@@ -118,6 +130,8 @@
           "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIInvalidURL",
+          "Store txn": "DynamoDbQueryNoResult",
+          "Format txn for audit event": "FormatWithoutTxn",
           "Audit Event Response Received": "PublishAuditEventResponseReceived"
         },
         "HMRCError": {
@@ -129,6 +143,8 @@
           "Call OTG API": "OTGFunctionSuccess",
           "Audit Event Request Sent": "PublishAuditEventRequestSent",
           "Call Matching API": "CallMatchingAPIFailNoRecords",
+          "Store txn": "DynamoDbQueryNoResult",
+          "Format txn for audit event": "FormatWithoutTxn",
           "Audit Event Response Received": "PublishAuditEventResponseReceived",
           "Store Failed Match Attempt": "DynamoDbQueryNoResult"
         }
@@ -152,7 +168,8 @@
               "lastName": "Ferguson",
               "dateOfBirth": "1948-04-23",
               "nino": "AA000003D"
-            }
+            },
+            "txn": "mock-txn"
           }
         }
       }
@@ -219,7 +236,8 @@
             "body": {
               "code": "INVALID_CREDENTIALS",
               "message": "Invalid Authentication information provided"
-            }
+            },
+            "txn": ""
           }
         }
       }
@@ -231,7 +249,8 @@
             "status": "401",
             "body": {
               "errors": "CID returned no record"
-            }
+            },
+            "txn": ""
           }
         }
       }
@@ -499,7 +518,8 @@
               "lastName": "Ferguson",
               "dateOfBirth": "1948-04-23",
               "nino": "AA000003D"
-            }
+            },
+            "txn": "mock-txn"
           }
         }
       }
@@ -509,7 +529,8 @@
         "Return": {
           "Payload": {
             "status": "424",
-            "body": "Request to create account for a deceased user"
+            "body": "Request to create account for a deceased user",
+            "txn": ""
           }
         }
       }
@@ -519,6 +540,32 @@
         "Return": {
           "Error": "TypeError",
           "Cause": "{\"errorType\":\"TypeError\",\"errorMessage\":\"Failed to parse URL from bad-url\",\"trace\":[\"TypeError: Failed to parse URL from bad-url\",\"    at Object.fetch (node:internal/deps/undici/undici:11576:11)\",\"    at le.handler (/private/var/folders/kr/xcxbzv7d5nbfvrzcsdwf81j00000gp/T/tmpaetgolsq/src/matching-handler.ts:10:24)\"]}"
+        }
+      }
+    },
+    "FormatWithTxn": {
+      "0": {
+        "Return": {
+          "Payload": {
+            "audit": {
+              "evidence": {
+                "txn": "mock-txn"
+              }
+            }
+          }
+        }
+      }
+    },
+    "FormatWithoutTxn": {
+      "0": {
+        "Return": {
+          "Payload": {
+            "audit": {
+              "evidence": {
+                "txn": ""
+              }
+            }
+          }
         }
       }
     }
