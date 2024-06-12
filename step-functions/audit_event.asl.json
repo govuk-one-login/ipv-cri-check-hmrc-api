@@ -219,16 +219,10 @@
             {
               "Or": [
                 {
-                  "Variable": "$$.Execution.Input.detail.evidence[0].type",
-                  "IsPresent": true
-                },
-                {
-                  "Variable": "$$.Execution.Input.detail.evidence[0].ci",
-                  "IsPresent": true
-                },
-                {
-                  "Variable": "$$.Execution.Input.detail.evidence[0].ciReasons",
-                  "IsPresent": true
+                  "Not": {
+                    "Variable": "$$.Execution.Input.detail.evidence[0].txn",
+                    "IsPresent": true
+                  }
                 },
                 {
                   "Not": {
