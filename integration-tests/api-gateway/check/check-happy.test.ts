@@ -60,4 +60,30 @@ describe("Given the session and NINO is valid", () => {
     const checkData = check.status;
     expect(checkData).toEqual(200);
   });
+
+  it("should 500 when provided with JS in the session header", async () => {
+    const maliciousSessionId = `<script>alert('Attack!');</script>`;
+    const check = await checkEndpoint(
+      {
+        "session-id": maliciousSessionId,
+        "txma-audit-encoded": "test encoded header",
+      },
+      NINO
+    );
+    expect(check.status).toEqual(500);
+  });
+
+  it("should 500 when provided with JS as a nino", async () => {
+    const session = await createSession();
+    const sessionData = await session.json();
+    const maliciousNino = `<script>alert('Attack!');</script>`;
+    const check = await checkEndpoint(
+      {
+        "session-id": sessionData.session_id,
+        "txma-audit-encoded": "test encoded header",
+      },
+      maliciousNino
+    );
+    expect(check.status).toEqual(500);
+  });
 });
