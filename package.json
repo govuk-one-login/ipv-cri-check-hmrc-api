@@ -16,15 +16,18 @@
     "deploy": "./deploy.sh"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudformation": "^3.405.0",
     "@aws-lambda-powertools/commons": "1.14.2",
     "@aws-lambda-powertools/logger": "1.14.2",
     "@aws-lambda-powertools/metrics": "1.14.2",
     "@aws-lambda-powertools/parameters": "1.17.0",
     "@aws-lambda-powertools/tracer": "1.14.2",
-    "@aws-sdk/client-ssm": "3.363.0",
     "@aws-sdk/client-cloudwatch-logs": "3.574.0",
+    "@aws-sdk/client-kms": "^3.596.0",
+    "@aws-sdk/client-ssm": "3.363.0",
     "esbuild": "0.19.5",
-    "jose": "^5.2.2"
+    "jose": "^5.4.0",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.126",

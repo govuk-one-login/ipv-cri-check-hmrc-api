@@ -156,6 +156,35 @@ Globals:
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
 
 Resources:
+  SessionGeneratorFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/session-request-generator/src/session-request-generator.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/SessionGeneratorFunction
+      CodeSigningConfigArn:
+        !If [ EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue ]
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins: [ "*" ]
+      Environment:
+        Variables:
+          apiStackName: !Sub ${AWS::StackName}
+          environment: !Ref Environment
+          frontendStackName: check-hmrc-cri-front
+          frontendEndpoint: /check/national-insurance-number
+
+  SessionGeneratorFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/SessionGeneratorFunction
+      RetentionInDays: 30
+
   EpochTimeFunction:
     Type: AWS::Serverless::Function
     Metadata:
