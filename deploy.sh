@@ -4,6 +4,7 @@ set -eu
 
 stack_name="${1:-}"
 common_stack_name="${2:-}"
+common_infra_stack_name="${3:-}"
 
 if ! [[ "$stack_name" ]]; then
   [[ $(aws sts get-caller-identity --query Arn --output text) =~ \/([^\/\.]+)\. ]] && user="${BASH_REMATCH[1]}" || exit
@@ -29,5 +30,5 @@ sam deploy --stack-name "$stack_name" \
   cri:application=Orange \
   cri:deployment-source=manual \
   --parameter-overrides \
-  ${common_stack_name:+CommonStackName=$common_stack_name} \
+  ${common_infra_stack_name:+CommonInfrastructureStackName=$common_infra_stack_name} \
   Environment=localdev
