@@ -30,5 +30,6 @@ sam deploy --stack-name "$stack_name" \
   cri:application=Orange \
   cri:deployment-source=manual \
   --parameter-overrides \
+  ${common_stack_name:+CommonStackName=$common_stack_name} \
   ${common_infra_stack_name:+CommonInfrastructureStackName=$common_infra_stack_name} \
   Environment=localdev

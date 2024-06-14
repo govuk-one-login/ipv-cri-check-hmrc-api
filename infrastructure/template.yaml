@@ -1628,11 +1628,11 @@ Resources:
             - auditEventQueueName: !ImportValue "AuditEventQueueName"
           Id: AuditEventQueue
           InputPath: "$.detail"
-          DeadLetterConfig:
-            Arn: !If
+          DeadLetterConfig: !If
               - IsDevLikeEnvironment
               - !Ref AWS::NoValue
-              - Fn::ImportValue: !Sub "${CommonInfrastructureStackName}-AuditEventDLQArn"
+              - Arn: !ImportValue
+                  Fn::Sub: "${CommonInfrastructureStackName}-AuditEventDLQArn"
 
   EventBridgeStateMachineExecutionRole:
     Type: AWS::IAM::Role
