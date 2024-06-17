@@ -1625,7 +1625,8 @@ Resources:
       Targets:
         - Arn: !Sub
             - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
-            - auditEventQueueName: !ImportValue "AuditEventQueueName"
+            - auditEventQueueName:
+                Fn::ImportValue: !Sub  "${TxmaStackName}-AuditEventQueueName"
           Id: AuditEventQueue
           InputPath: "$.detail"
           DeadLetterConfig: !If
