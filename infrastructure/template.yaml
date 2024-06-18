@@ -22,6 +22,10 @@ Parameters:
     Type: String
     Default: common-cri-api
     Description: The name of the stack containing the common CRI lambdas/infra
+  TxmaStackName:
+    Type: String
+    Default: txma-infrastructure
+    Description: The name of the stack containing the common TxMA infrastructure
   CodeSigningConfigArn:
     Type: String
     Default: ""
@@ -1521,9 +1525,9 @@ Resources:
     Properties:
       Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
       KmsKeyIdentifier: !If
-          - IsDevLikeEnvironment
-          - !Ref AWS::NoValue
-          - !ImportValue txma-infrastructure-AuditEventQueueEncryptionKeyArn
+        - IsDevLikeEnvironment
+        - !Ref AWS::NoValue
+        - Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
 
   ##################################################################
   #                                                                  #
@@ -1621,9 +1625,15 @@ Resources:
       Targets:
         - Arn: !Sub
             - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
-            - auditEventQueueName: !ImportValue "AuditEventQueueName"
+            - auditEventQueueName:
+                Fn::ImportValue: !Sub  "${TxmaStackName}-AuditEventQueueName"
           Id: AuditEventQueue
           InputPath: "$.detail"
+          DeadLetterConfig: !If
+              - IsDevLikeEnvironment
+              - !Ref AWS::NoValue
+              - Arn:
+                  Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventDLQArn
 
   EventBridgeStateMachineExecutionRole:
     Type: AWS::IAM::Role
