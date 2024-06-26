@@ -168,6 +168,9 @@ Resources:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-EpochTime"
 
   EpochTimeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -227,6 +230,9 @@ Resources:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-CiMapping"
 
   CiMappingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -288,6 +294,9 @@ Resources:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-CreateAuthCode"
 
   CreateAuthCodeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -349,6 +358,9 @@ Resources:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-CredentialSubject"
 
   CredentialSubjectFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -410,6 +422,9 @@ Resources:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-CurrentTime"
 
   CurrentTimeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -476,6 +491,9 @@ Resources:
             Effect: Allow
             Action: kms:Sign
             Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-JwtSigner"
 
   JwtSignerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -537,6 +555,9 @@ Resources:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-OTG"
 
   OTGFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -658,6 +679,9 @@ Resources:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Matching"
 
   MatchingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -722,6 +746,9 @@ Resources:
       Policies:
         - SSMParameterReadPolicy:
             ParameterName: "*"
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-SsmParameters"
 
   SsmParametersFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -783,6 +810,9 @@ Resources:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
       CodeSigningConfigArn:
         !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Time"
 
   TimeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2155,6 +2185,9 @@ Resources:
             Effect: Allow
             Action: lambda:*
             Resource: "*"
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-PIIRedact"
 
   PIIRedactFunctionLogGroup:
     Type: AWS::Logs::LogGroup
