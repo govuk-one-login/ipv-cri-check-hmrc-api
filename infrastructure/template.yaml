@@ -42,7 +42,7 @@ Parameters:
     Default: "/common-cri-parameters/CriIdentifier"
   SupportManualURL:
     Type: String
-    Default: "https://govukverify.atlassian.net/wiki/spaces/OJ/pages/4090790413/NINO+Check+Credential+Issuer+support+runbook"
+    Default: "https://team-manual.account.gov.uk/teams/CRI-Orange-team/supporting-cri-orange/hmrc-nino-runbook/#backend-api-alarms"
     Description: The support manual URL to be provided in alarm messages.
 
 Conditions:
