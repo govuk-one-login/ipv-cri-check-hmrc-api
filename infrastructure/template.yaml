@@ -1867,6 +1867,61 @@ Resources:
       Threshold: 0
       TreatMissingData: missing
 
+  AuditEventExceededAgeLimitAlarm:
+    Condition: "DeployAlarms"
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "${AuditEventResponseReceivedRule} has a queue item that is over 24 hours old in requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventExceededAgeLimitAlarm"
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: "AWS/Events"
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Maximum
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 10
+      Period: 300
+      Threshold: 86400
+      TreatMissingData: missing
+      Dimensions:
+        - Name: RuleName
+          Value: !Select [ 1, !Split [ "|", !Ref TxMaAuditEventRule ] ]
+        - Name: EventBusName
+          Value: !Ref CheckHmrcEventBus
+
+  AuditEventDeadLetterQueueAlarm:
+    Condition: "DeployAlarms"
+    "Type": AWS::CloudWatch::Alarm
+    "Properties":
+      "AlarmName": !Sub "${AWS::StackName}-${Environment}-AuditEventDeadLetterQueueAlarm:"
+      "AlarmDescription": !Sub "${AuditEventResponseReceivedRule} has a request get through to the dead letter queue request in the last hour. ${SupportManualURL}"
+      "ActionsEnabled": true
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      "InsufficientDataActions": [ ]
+      "MetricName": NumberOfMessagesReceived
+      "Namespace": "AWS/SQS"
+      "Statistic": Sum
+      "Dimensions":
+       - Name: RuleName
+         Value: !Select [ 1, !Split [ "|", !Ref TxMaAuditEventRule ] ]
+       - Name: EventBusName
+         Value: !Ref CheckHmrcEventBus
+      "Period": 300
+      "EvaluationPeriods": 1
+      "DatapointsToAlarm": 1
+      "Threshold": 0
+      "ComparisonOperator": "GreaterThanThreshold"
+      "TreatMissingData": "missing"
+
+
+
+
   ###############################################################################
 
   AuditEventStateMachine:
