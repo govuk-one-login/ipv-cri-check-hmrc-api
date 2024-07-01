@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: evn-isc-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
+  group: evn-tests-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   run-tests:
