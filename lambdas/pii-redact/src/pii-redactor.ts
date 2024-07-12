@@ -199,16 +199,16 @@ const otherPatterns = [
   },
 ];
 
-export const redactPII = (message: string) => {
-  const allPatterns = [
-    ...personalNumberPatterns,
-    ...ipAddressPatterns,
-    ...namePatterns,
-    ...dobPatterns,
-    ...addressPatterns,
-    ...otherPatterns,
-  ];
+export const allPatterns = [
+  ...personalNumberPatterns,
+  ...ipAddressPatterns,
+  ...namePatterns,
+  ...dobPatterns,
+  ...addressPatterns,
+  ...otherPatterns,
+];
 
+export const redactPII = (message: string) => {
   return allPatterns.reduce((redactedMessage, pattern) => {
     return redactedMessage.replaceAll(pattern.regex, pattern.replacement);
   }, message);
