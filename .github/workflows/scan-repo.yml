@@ -4,8 +4,8 @@ on:
   pull_request:
   push:
     branches:
-    - main
-    - IPS-479
+      - main
+      - IPS-479
   schedule:
     # Every Monday at 9am
     - cron: "0 9 * * 1"
@@ -31,10 +31,23 @@ jobs:
     if: ${{ success() || needs.coverage.result == 'skipped' }}
     steps:
       - name: Run SonarCloud scan
-        uses: govuk-one-login/github-actions/code-quality/sonarcloud@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
+        uses: govuk-one-login/github-actions/code-quality/sonarcloud@cd7d35dde348251237efbbaee5345e95adef0321
         with:
+          coverage-artifact: ${{ needs.coverage.outputs.coverage-artifact || 'coverage' }}
+          coverage-location: coverage
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+
+      # - name: Run SonarCloud scan
+      #   uses: govuk-one-login/github-actions/code-quality/sonarcloud@cd7d35dde348251237efbbaee5345e95adef0321
+      #   with:
+      #     projectBaseDir: lambdas/get-addresses
+      #     coverage-location: lambdas/get-addresses/coverage
+      #     coverage-artifact: ${{ needs.unit-tests-ts.outputs.coverage-artifact }}
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     sonar-token: ${{ secrets.SONAR_TOKEN_TS }}
+
 
   codeql:
     name: CodeQL
