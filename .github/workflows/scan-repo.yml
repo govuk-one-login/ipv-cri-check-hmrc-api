@@ -6,15 +6,6 @@ on:
     branches: 
     - main
     - IPS-479
-  schedule:
-    # Every Monday at 9am
-    - cron: "0 9 * * 1"
-
-concurrency:
-  group: scan-repo-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
-
-permissions: {}
 
 jobs:
   run-tests:
@@ -65,14 +56,3 @@ jobs:
       #     sonar-token: ${{ secrets.SONAR_TOKEN }}
       #     github-token: ${{ secrets.GITHUB_TOKEN }}
       #     coverage-artifact: ${{ needs.coverage.outputs.coverage-artifact || 'coverage' }}
-
-  codeql:
-    name: CodeQL
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-    steps:
-      - name: Run CodeQL scan
-        uses: govuk-one-login/github-actions/code-quality/codeql@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
-        with:
-          languages: javascript-typescript
