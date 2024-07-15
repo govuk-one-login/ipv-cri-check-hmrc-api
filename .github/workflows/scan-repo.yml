@@ -35,8 +35,6 @@ jobs:
         with:
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          coverage-artifact: coverage
-          coverage-location: coverage/lcov.info
 
   codeql:
     name: CodeQL
