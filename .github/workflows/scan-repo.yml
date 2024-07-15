@@ -6,46 +6,37 @@ on:
     branches: 
     - main
     - IPS-479
+  schedule:
+    # Every Monday at 9am
+    - cron: "0 9 * * 1"
+
+concurrency:
+  group: scan-repo-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions: {}
 
 jobs:
-  run-tests:
-    name: Unit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Pull repository
-        uses: actions/checkout@v4
-
-      - name: Install Node
-        uses: actions/setup-node@v4
-        with:
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        uses: govuk-one-login/github-actions/node/run-script@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
-        with:
-          script: npm run test:coverage -- --config .github/jest.config.ci.ts
-
-      - name: Archive coverage results
-        if: ${{ inputs.coverage-report }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          retention-days: 3
-          path: coverage/lcov.info
+  coverage:
+    name: Collect coverage
+    if: ${{ github.event_name != 'pull_request' }}
+    uses: ./.github/workflows/run-unit-tests.yml
+    with:
+      coverage-report: true
 
   sonarcloud:
     name: SonarCloud
-    needs: run-tests
+    needs: coverage
     runs-on: ubuntu-latest
     steps:
+      - name: Echo stuff
+        run: echo ${{ outputs.coverage-artifact }}
+      - name: Echo stuff 2
+        run: echo ${{ coverage.outputs.coverage-artifact }}
       - name: Get coverage results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
-          name: coverage
-          path: coverage/lcov.info 
+          name: ${{ needs.coverage.outputs.coverage-artifact }}   
       - name: List downloaded files
         run: ls
 
@@ -56,3 +47,14 @@ jobs:
       #     sonar-token: ${{ secrets.SONAR_TOKEN }}
       #     github-token: ${{ secrets.GITHUB_TOKEN }}
       #     coverage-artifact: ${{ needs.coverage.outputs.coverage-artifact || 'coverage' }}
+
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Run CodeQL scan
+        uses: govuk-one-login/github-actions/code-quality/codeql@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
+        with:
+          languages: javascript-typescript
