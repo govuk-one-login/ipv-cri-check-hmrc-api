@@ -3,7 +3,9 @@ name: Scan repository
 on:
   pull_request:
   push:
-    branches: [main]
+    branches:
+    - main
+    - IPS-479
   schedule:
     # Every Monday at 9am
     - cron: "0 9 * * 1"
