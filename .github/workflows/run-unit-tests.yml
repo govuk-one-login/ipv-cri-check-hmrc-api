@@ -40,7 +40,6 @@ jobs:
         if: ${{ inputs.coverage-report }}
         uses: actions/upload-artifact@v4
         with:
-          echo: ${{ inputs.coverage-artifact }}
           name: ${{ inputs.coverage-artifact }}
           retention-days: 3
           path: coverage/lcov.info
