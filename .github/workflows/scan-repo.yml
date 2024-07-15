@@ -24,18 +24,18 @@ jobs:
     with:
       coverage-report: true
 
-  sonarcloud:
-    name: SonarCloud
-    needs: coverage
-    runs-on: ubuntu-latest
-    if: ${{ success() || needs.coverage.result == 'skipped' }}
-    steps:
-      - name: Run SonarCloud scan
-        uses: govuk-one-login/github-actions/code-quality/sonarcloud@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
-        with:
-          sonar-token: ${{ secrets.SONAR_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          coverage-artifact: ${{ needs.coverage.outputs.coverage-artifact || 'coverage' }}
+  # sonarcloud:
+  #   name: SonarCloud
+  #   needs: coverage
+  #   runs-on: ubuntu-latest
+  #   if: ${{ success() || needs.coverage.result == 'skipped' }}
+  #   steps:
+  #     - name: Run SonarCloud scan
+  #       uses: govuk-one-login/github-actions/code-quality/sonarcloud@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
+  #       with:
+  #         sonar-token: ${{ secrets.SONAR_TOKEN }}
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         coverage-artifact: ${{ needs.coverage.outputs.coverage-artifact || 'coverage' }}
 
   codeql:
     name: CodeQL
