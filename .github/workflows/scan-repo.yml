@@ -32,7 +32,7 @@ jobs:
       - name: Get coverage results
         uses: actions/download-artifact@v3
         with:
-          name: ${{ coverage.outputs.coverage-artifact }}
+          name: ${{ needs.coverage.outputs.coverage-artifact }}
       - name: List downloaded files
         run: ls
 
