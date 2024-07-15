@@ -32,9 +32,9 @@ jobs:
       - name: Get coverage results
         uses: actions/download-artifact@v3
         with:
-          name: ${{ needs.coverage.outputs.coverage-artifact }}   
+          name: coverage 
       - name: List downloaded files
-        run: lsg
+        run: ls
 
 
       # - name: Run SonarCloud scan
