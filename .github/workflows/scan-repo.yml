@@ -29,13 +29,10 @@ jobs:
     needs: coverage
     runs-on: ubuntu-latest
     steps:
-      - name: Echo stuff
-        run: echo ${{ outputs.coverage-artifact }}
-      - name: Echo stuff 2
-        run: echo ${{ coverage.outputs.coverage-artifact }}
       - name: Get coverage results
         uses: actions/download-artifact@v3
         with:
+          run: echo ${{ outputs.coverage-artifact }}
           name: ${{ needs.coverage.outputs.coverage-artifact }}   
       - name: List downloaded files
         run: ls
