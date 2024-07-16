@@ -39,7 +39,8 @@ jobs:
         with:
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # coverage-artifact: ${{ needs.coverage.outputs.coverage-artifact || 'coverage' }}
+          projectBaseDir: govuk-one-login/ipv-cri-check-hmrc-api
+          coverage-artifact: ${{ needs.coverage.outputs.coverage-artifact || 'coverage' }}
 
   codeql:
     name: CodeQL
