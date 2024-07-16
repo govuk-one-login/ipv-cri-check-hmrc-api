@@ -35,11 +35,13 @@ jobs:
         with:
           name: ${{ needs.coverage.outputs.coverage-artifact || 'coverage' }}
       - name: Run SonarCloud scan
-        uses: govuk-one-login/github-actions/code-quality/sonarcloud@7e9f6ee1a1f7b30ca9cba4d3893d3ee6313decef
+        uses: govuk-one-login/github-actions/code-quality/sonarcloud@cd7d35dde348251237efbbaee5345e95adef0321
         with:
+          projectBaseDir: ./
+          coverage-artifact: ${{ needs.coverage.outputs.coverage-artifact || 'coverage' }}
+          coverage-location: coverage/lcov.info
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          coverage-artifact: ${{ needs.coverage.outputs.coverage-artifact || 'coverage' }}
 
   codeql:
     name: CodeQL
