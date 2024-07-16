@@ -35,11 +35,10 @@ jobs:
         with:
           name: ${{ needs.coverage.outputs.coverage-artifact || 'coverage' }}
       - name: Run SonarCloud scan
-        uses: govuk-one-login/github-actions/code-quality/sonarcloud@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
+        uses: govuk-one-login/github-actions/code-quality/sonarcloud@f31d8d78a76b89c62c80e2587c687af9fee4e478
         with:
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          projectBaseDir: govuk-one-login/ipv-cri-check-hmrc-api
           coverage-artifact: ${{ needs.coverage.outputs.coverage-artifact || 'coverage' }}
 
   codeql:
