@@ -145,35 +145,12 @@ paths:
       x-amazon-apigateway-request-validator: "Validate both"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        passthroughBehavior: "when_no_templates"
-        type: "aws"
+        passThroughBehavior: "when_no_templates"
+        type: "aws_proxy"
         credentials:
-          Fn::Sub: ${ExecuteStateMachineRole.Arn}
+          Fn::Sub: ${ExecuteLambdaRole.Arn}
         uri:
-          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:states:action/StartSyncExecution
-        requestTemplates:
-          application/json:
-            Fn::Sub: |-
-              {
-                "input": "{\"bearerToken\": \"$util.escapeJavaScript($input.params('Authorization').trim())\"}",
-                "stateMachineArn": "${NinoIssueCredentialStateMachine.Arn}"
-              }
-        responses:
-          default:
-            statusCode: 500
-            responseTemplates:
-              application/jwt: |
-                #set($response = $util.parseJson($input.body))
-                #set($output = $util.parseJson($response.output))
-                #if($response.status == "FAILED")
-                #set($context.responseOverride.status = 500)
-                #elseif($output.httpStatus)
-                #set($context.responseOverride.status = $output.httpStatus)
-                #else
-                #set($context.responseOverride.status = 200)
-                #end
-                #set($context.responseOverride.header.Content-Type = "application/jwt")
-                $output.jwt
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${APIGatewayProxyFunction.Arn}/invocations
 
 components:
   schemas:

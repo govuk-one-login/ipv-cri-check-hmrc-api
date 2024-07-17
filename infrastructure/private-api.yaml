@@ -131,42 +131,13 @@ paths:
           description: Internal Server Error
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        passthroughBehavior: "when_no_templates"
-        type: "aws"
+        passThroughBehavior: "when_no_templates"
+        type: "aws_proxy"
         credentials:
-          Fn::Sub: ${ExecuteStateMachineRole.Arn}
+          Fn::Sub: ${ExecuteLambdaRole.Arn}
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:states:action/StartSyncExecution
-        requestTemplates:
-          application/json:
-            Fn::Sub: |-
-              #set($nino = $util.parseJson($input.json('$.nino').trim()))
-              #set($headers = {})
-              #foreach($header in $input.params().header.keySet())
-                #set($headerName = $util.escapeJavaScript($header))
-                #set($headerValue = $util.escapeJavaScript($input.params().header.get($header)))
-                #if($headerName.trim() && $headerValue.trim())
-                  $util.qr($headers.put($headerName, $headerValue))
-                #end
-              #end
-              {
-                "input":"{\"nino\":\"$nino\",\"sessionId\":\"$util.escapeJavaScript($input.params('session-id').trim())\",#set($headerKeys = $headers.keySet())#set($headerCount = $headerKeys.size())#foreach($headerKey in $headerKeys)\"$headerKey\": \"$util.escapeJavaScript($headers.get($headerKey))\"#if($foreach.hasNext),#end#end}",
-                "stateMachineArn": "${NinoCheckStateMachine.Arn}"
-              }
-        responses:
-          default:
-            statusCode: 500
-            responseTemplates:
-              application/json: |
-                #set($response = $util.parseJson($input.body))
-                #set($output = $util.parseJson($response.output))
-                #if($response.status == "FAILED")
-                #set($context.responseOverride.status = 500)
-                #elseif($output.httpStatus)
-                #set($context.responseOverride.status = $output.httpStatus)
-                #else
-                #set($context.responseOverride.status = 200)
-                #end
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${APIGatewayProxyFunction.Arn}/invocations
+
   /abandon:
     post:
       summary: "IP address of the client."
@@ -188,33 +159,12 @@ paths:
           description: Internal Server Error
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        passthroughBehavior: "when_no_templates"
-        type: "aws"
+        passThroughBehavior: "when_no_templates"
+        type: "aws_proxy"
         credentials:
-          Fn::Sub: ${ExecuteStateMachineRole.Arn}
+          Fn::Sub: ${ExecuteLambdaRole.Arn}
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:states:action/StartSyncExecution
-        requestTemplates:
-          application/json:
-            Fn::Sub: |-
-              {
-                "input": "{\"sessionId\": \"$util.escapeJavaScript($input.params('session-id').trim())\"}",
-                "stateMachineArn": "${AbandonStateMachine.Arn}"
-              }
-        responses:
-          default:
-            statusCode: 500
-            responseTemplates:
-              application/json: |
-                #set($response = $util.parseJson($input.body))
-                #set($output = $util.parseJson($response.output))
-                #if($response.status == "FAILED")
-                #set($context.responseOverride.status = 500)
-                #elseif($output.httpStatus)
-                #set($context.responseOverride.status = $output.httpStatus)
-                #else
-                #set($context.responseOverride.status = 200)
-                #end
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${APIGatewayProxyFunction.Arn}/invocations
 
 components:
   parameters:
