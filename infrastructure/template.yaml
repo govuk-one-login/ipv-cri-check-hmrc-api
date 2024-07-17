@@ -139,6 +139,7 @@ Globals:
         NODE_OPTIONS: --enable-source-maps
         AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
         DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: true
+        POWERTOOLS_METRICS_NAMESPACE: !Ref CriIdentifier
         DT_CONNECTION_AUTH_TOKEN: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
@@ -1294,7 +1295,7 @@ Resources:
       FilterPattern: '{$.type = "ExecutionFailed"}'
       MetricTransformations:
         - MetricValue: "1"
-          MetricName: "NinoCheckStateMachine}-Error"
+          MetricName: "NinoCheckStateMachine-Error"
           MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
 
   NinoCheckStateMachineAlarm:
