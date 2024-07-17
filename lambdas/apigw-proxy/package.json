@@ -1,0 +1,11 @@
+{
+  "name": "apigw-proxy",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "jest --silent --select-projects integration-tests/step-functions --runInBand",
+    "deploy": "../deploy.sh",
+    "compile": "tsc"
+  },
+  "devDependencies": {}
+}
