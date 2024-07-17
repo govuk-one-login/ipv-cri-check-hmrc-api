@@ -7,12 +7,12 @@
       "Next": "Is Session Valid?",
       "Parameters": {
         "StateMachineArn": "${CheckSessionStateMachineArn}",
-        "Input.$": "States.JsonToString($)"
+        "Input.$": "States.JsonToString($.headers)"
       },
       "Resource": "arn:aws:states:::aws-sdk:sfn:startSyncExecution",
       "ResultSelector": {
-        "sessionId.$": "$$.Execution.Input.sessionId",
-        "nino.$": "$$.Execution.Input.nino",
+        "sessionId.$": "$$.Execution.Input.headers.session-id",
+        "nino.$": "$$.Execution.Input.body.nino",
         "sessionCheck.$": "States.StringToJson($.Output)"
       }
     },
@@ -76,7 +76,7 @@
         "KeyConditionExpression": "sessionId = :value",
         "ExpressionAttributeValues": {
           ":value": {
-            "S.$": "$.sessionId"
+            "S.$": "$$.Execution.Input.headers.session-id"
           }
         }
       },
@@ -120,7 +120,7 @@
         "KeyConditionExpression": "sessionId = :value",
         "ExpressionAttributeValues": {
           ":value": {
-            "S.$": "$.sessionId"
+            "S.$": "$$.Execution.Input.headers.session-id"
           }
         }
       },
@@ -220,7 +220,7 @@
       "Parameters": {
         "FunctionName": "${MatchingFunctionArn}",
         "Payload": {
-          "sessionId.$": "$.sessionId",
+          "sessionId.$": "$$.Execution.Input.headers.session-id",
           "nino.$": "$.nino",
           "userDetails": {
             "firstName.$": "$.userInfo.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
@@ -264,7 +264,7 @@
         "TableName.$": "$.parameters.SessionTableName",
         "Key": {
           "sessionId": {
-            "S.$": "$$.Execution.Input.sessionId"
+            "S.$": "$$.Execution.Input.headers.session-id"
           }
         },
         "UpdateExpression": "SET txn = :txn",
@@ -323,7 +323,7 @@
         "TableName": "${UserAttemptsTable}",
         "Item": {
           "sessionId": {
-            "S.$": "$$.Execution.Input.sessionId"
+            "S.$": "$$.Execution.Input.headers.session-id"
           },
           "timestamp": {
             "S.$": "$$.State.EnteredTime"
@@ -375,7 +375,7 @@
         "TableName": "${UserAttemptsTable}",
         "Item": {
           "sessionId": {
-            "S.$": "$$.Execution.Input.sessionId"
+            "S.$": "$$.Execution.Input.headers.session-id"
           },
           "timestamp": {
             "S.$": "$$.State.EnteredTime"
@@ -432,7 +432,7 @@
         "TableName.$": "$.parameters.SessionTableName",
         "Key": {
           "sessionId": {
-            "S.$": "$$.Execution.Input.sessionId"
+            "S.$": "$$.Execution.Input.headers.session-id"
           }
         },
         "UpdateExpression": "SET authorizationCode = :authCode, authorizationCodeExpiryDate = :expiry",
@@ -455,10 +455,10 @@
         "TableName": "${NinoUsersTable}",
         "Item": {
           "sessionId": {
-            "S.$": "$$.Execution.Input.sessionId"
+            "S.$": "$$.Execution.Input.headers.session-id"
           },
           "nino": {
-            "S.$": "$$.Execution.Input.nino"
+            "S.$": "$$.Execution.Input.body.nino"
           }
         }
       },
@@ -488,7 +488,7 @@
         "TableName": "${UserAttemptsTable}",
         "Item": {
           "sessionId": {
-            "S.$": "$$.Execution.Input.sessionId"
+            "S.$": "$$.Execution.Input.headers.session-id"
           },
           "timestamp": {
             "S.$": "$$.State.EnteredTime"
