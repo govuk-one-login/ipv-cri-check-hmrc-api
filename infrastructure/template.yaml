@@ -156,6 +156,17 @@ Globals:
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
 
 Resources:
+  RoutesParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/Routes"
+      Type: String
+      Value:
+        Fn::ToJsonString:
+          "/check": !Ref NinoCheckStateMachine
+          "/abandon": !Ref AbandonStateMachine
+          "/credential/issue": !Ref NinoIssueCredentialStateMachine
+
   EpochTimeFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -2355,6 +2366,70 @@ Resources:
       DestinationArn: !GetAtt PIIRedactFunction.Arn
       FilterPattern: ""
       LogGroupName: !Ref AuditEventStateMachineLogGroup
+
+
+  ##############################
+  # POC                        #
+  ##############################
+  APIGatewayProxyFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/apigw-proxy/src/apigw-proxy-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/APIGatewayProxyFunction
+      Environment:
+        Variables:
+          ssmParameterName: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/Routes"
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action:
+              - states:ListStateMachines
+              - states:StartExecution
+              - states:StartSyncExecution
+              - states:ListTagsForResource
+            Resource: "*"
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameters
+              - ssm:GetParameter
+            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/Routes"
+        - Statement:
+            Effect: Allow
+            Action: logs:*
+            Resource: "*"
+
+  APIGatewayProxyFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/APIGatewayProxyFunction
+      RetentionInDays: 7
+
+  ExecuteLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Role to allow API Gateway to invoke a Lambda function
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: apigateway.amazonaws.com
+      Policies:
+        - PolicyName: AllowLambdaInvoke
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Resource: "*"
+                Action:
+                  - lambda:InvokeFunction
 
 ##################################################################
 #                                                                  #
