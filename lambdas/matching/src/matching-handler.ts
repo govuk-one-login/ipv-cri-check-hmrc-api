@@ -32,6 +32,7 @@ export class MatchingHandler implements LambdaInterface {
       const latency = captureResponseLatency(requestStartTime);
       logger.info({
         message: "API response received",
+        url: event.apiURL,
         status: response.status,
         "latency (ms)": latency,
       });

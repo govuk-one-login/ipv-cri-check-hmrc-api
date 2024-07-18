@@ -112,6 +112,7 @@ describe("matching-handler", () => {
     expect(logger.info).toHaveBeenCalledWith(
       expect.objectContaining({
         message: "API response received",
+        url: testEvent.apiURL,
         status: 200,
         "latency (ms)": expect.anything(),
       })
