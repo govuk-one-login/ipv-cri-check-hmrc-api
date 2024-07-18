@@ -114,7 +114,7 @@ describe("matching-handler", () => {
         message: "API response received",
         url: testEvent.apiURL,
         status: 200,
-        "latency (ms)": expect.anything(),
+        latencyInMs: expect.anything(),
       })
     );
   });

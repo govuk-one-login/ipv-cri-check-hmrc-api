@@ -14,7 +14,7 @@ export class MatchingHandler implements LambdaInterface {
     context: Context
   ): Promise<{ status: string; body: string; txn: string }> {
     try {
-      const requestStartTime = Date.now();
+      const requestStartTime = Math.floor(performance.now());
       const response = await fetch(event.apiURL, {
         method: "POST",
         headers: {
@@ -34,7 +34,7 @@ export class MatchingHandler implements LambdaInterface {
         message: "API response received",
         url: event.apiURL,
         status: response.status,
-        "latency (ms)": latency,
+        latencyInMs: latency,
       });
 
       const txn = response.headers.get("x-amz-cf-id") ?? "";
@@ -78,7 +78,7 @@ function addLogEntry(event: MatchEvent, txn: string | null, context: Context) {
 }
 
 function captureResponseLatency(start: number): number {
-  const latency = Date.now() - start;
+  const latency = Math.floor(performance.now()) - start;
 
   const singleMetric = metrics.singleMetric();
   singleMetric.addDimension(MetricDimensions.HTTP, "MatchingHandler");
