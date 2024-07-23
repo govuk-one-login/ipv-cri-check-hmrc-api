@@ -1708,10 +1708,10 @@ Resources:
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
-      Period: 300
-      Threshold: 0
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
       TreatMissingData: missing
       Dimensions:
         - Name: RuleName
@@ -1733,10 +1733,10 @@ Resources:
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
-      Period: 300
-      Threshold: 0
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
       TreatMissingData: missing
       Dimensions:
         - Name: RuleName
@@ -1758,10 +1758,10 @@ Resources:
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
-      Period: 300
-      Threshold: 0
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
       TreatMissingData: missing
       Dimensions:
         - Name: RuleName
@@ -1783,10 +1783,10 @@ Resources:
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
-      Period: 300
-      Threshold: 0
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
       TreatMissingData: missing
       Dimensions:
         - Name: RuleName
@@ -1808,10 +1808,10 @@ Resources:
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
-      Period: 300
-      Threshold: 0
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
       TreatMissingData: missing
       Dimensions:
         - Name: RuleName
@@ -1833,10 +1833,10 @@ Resources:
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
-      Period: 300
-      Threshold: 0
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
       TreatMissingData: missing
       Dimensions:
         - Name: RuleName
@@ -1844,7 +1844,7 @@ Resources:
         - Name: EventBusName
           Value: !Ref CheckHmrcEventBus
 
-  CheckHmrcEventBusPutEventAlarm:
+  CheckHmrcPutEventAlarm:
     Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -1853,19 +1853,16 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
-      AlarmDescription: !Sub "${CheckHmrcEventBus} PutEvents (PutEvents Failed) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub "${AWS::StackName}-${Environment} PutEvents (PutEvents Failed) 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckHmrcEventBus-PutEventsApproximateFailedCount-alarm"
       MetricName: PutEventsApproximateFailedCount
       ComparisonOperator: GreaterThanThreshold
       Namespace: "AWS/Events"
       Statistic: Sum
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
-      Dimensions:
-        - Name: EventBusName
-          Value: !Ref CheckHmrcEventBus
-      Period: 300
-      Threshold: 0
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
       TreatMissingData: missing
 
   ###############################################################################
