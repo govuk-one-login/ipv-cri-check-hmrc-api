@@ -1712,7 +1712,7 @@ Resources:
       EvaluationPeriods: 1
       Period: 3600
       Threshold: 3
-      TreatMissingData: missing
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: RuleName
           Value: !Select [1, !Split ["|", !Ref TxMaAuditEventRule]]
@@ -1737,7 +1737,7 @@ Resources:
       EvaluationPeriods: 1
       Period: 3600
       Threshold: 3
-      TreatMissingData: missing
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: RuleName
           Value: !Select [1, !Split ["|", !Ref AuditEventRequestSentRule]]
@@ -1762,7 +1762,7 @@ Resources:
       EvaluationPeriods: 1
       Period: 3600
       Threshold: 3
-      TreatMissingData: missing
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: RuleName
           Value: !Select [1, !Split ["|", !Ref AuditEventResponseReceivedRule]]
@@ -1787,7 +1787,7 @@ Resources:
       EvaluationPeriods: 1
       Period: 3600
       Threshold: 3
-      TreatMissingData: missing
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: RuleName
           Value: !Select [1, !Split ["|", !Ref AuditEventVcIssuedRule]]
@@ -1812,7 +1812,7 @@ Resources:
       EvaluationPeriods: 1
       Period: 3600
       Threshold: 3
-      TreatMissingData: missing
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: RuleName
           Value: !Select [1, !Split ["|", !Ref AuditEventEndRule]]
@@ -1837,7 +1837,7 @@ Resources:
       EvaluationPeriods: 1
       Period: 3600
       Threshold: 3
-      TreatMissingData: missing
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: RuleName
           Value: !Select [1, !Split ["|", !Ref AuditEventAbandonedRule]]
@@ -1863,7 +1863,7 @@ Resources:
       EvaluationPeriods: 1
       Period: 3600
       Threshold: 3
-      TreatMissingData: missing
+      TreatMissingData: notBreaching
 
   ###############################################################################
 
