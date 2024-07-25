@@ -1844,6 +1844,27 @@ Resources:
         - Name: EventBusName
           Value: !Ref CheckHmrcEventBus
 
+  CheckHmrcPutEventAlarm:
+    Condition: "DeployAlarms"
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      InsufficientDataActions: []
+      AlarmDescription: !Sub "${AWS::StackName}-${Environment} PutEvents (PutEvents Failed) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckHmrcEventBus-PutEventsApproximateFailedCount-alarm"
+      MetricName: PutEventsApproximateFailedCount
+      ComparisonOperator: GreaterThanThreshold
+      Namespace: "AWS/Events"
+      Statistic: Sum
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
+      TreatMissingData: notBreaching
+
   ###############################################################################
 
   AuditEventStateMachine:
