@@ -27,9 +27,9 @@ export class JwtSignerHandler implements LambdaInterface {
 
     const parsedHeader = JSON.parse(event.header) as SignerHeader;
 
-    if (event.kid) {
+    if (parsedHeader.kid) {
       parsedHeader.kid = `did:web:${process.env.DNS_SUFFIX}#${this.getHashedKid(
-        event.kid
+        parsedHeader.kid
       )}`;
     }
 
@@ -56,7 +56,7 @@ export class JwtSignerHandler implements LambdaInterface {
   ): Promise<Uint8Array> {
     const payload = Buffer.from(`${jwtHeader}.${jwtPayload}`);
 
-    const signage: SignageType = this.checkSize(payload)
+    const signage: SignageType = this.isLargeSize(payload)
       ? { message: this.hashInput(payload), type: MessageType.DIGEST }
       : { message: payload, type: MessageType.RAW };
 
@@ -96,7 +96,7 @@ export class JwtSignerHandler implements LambdaInterface {
     return Buffer.from(hash).toString("hex");
   };
 
-  private checkSize = (message: Buffer): boolean => message.length >= 4096;
+  private isLargeSize = (message: Buffer): boolean => message.length >= 4096;
 }
 
 const handlerClass = new JwtSignerHandler(

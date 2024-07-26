@@ -6,7 +6,7 @@ export type SignerPayLoad = {
 };
 
 export type SignerHeader = {
-  kid: string;
-  typ: string;
+  kid?: string;
+  type: string;
   alg: string;
 };

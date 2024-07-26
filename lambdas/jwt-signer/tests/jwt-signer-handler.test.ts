@@ -9,6 +9,7 @@ import {
   joseLargeClaimsSetSignature,
   joseSignature,
   kid,
+  jwtHeader,
   largeClaimsSet,
   publicVerifyingJwk,
 } from "./test-data";
@@ -19,6 +20,11 @@ const jwtSignerHandler = new JwtSignerHandler(kmsClient);
 const mockGovJourneyId = "test-government-journey-id";
 
 jest.spyOn(kmsClient, "send");
+jest.mock("jose", () => ({
+  base64url: {
+    encode: jest.fn().mockImplementation((args) => args),
+  },
+}));
 
 describe("Successfully signs a JWT", () => {
   const event: SignerPayLoad = {
@@ -27,6 +33,45 @@ describe("Successfully signs a JWT", () => {
     claimsSet: JSON.stringify(claimsSet),
     govJourneyId: mockGovJourneyId,
   };
+
+  describe("KID header", () => {
+    beforeEach(() => {
+      kmsClient.send.mockImplementationOnce(() =>
+        Promise.resolve({
+          Signature: sigFormatter.joseToDer(joseSignature, "ES256"),
+        })
+      );
+    });
+
+    it("formats KID header if a KID is present", async () => {
+      const signedJwt = await jwtSignerHandler.handler(event, {} as Context);
+
+      expect(signedJwt).toEqual(
+        `${JSON.stringify(jwtHeader)}.${JSON.stringify(
+          claimsSet
+        )}.${joseSignature}`
+      );
+    });
+
+    it("doesn't format KID header if no KID is present", async () => {
+      const jwtHeader = {
+        type: "JWT",
+        alg: "ES256",
+      };
+
+      const signedJwt = await jwtSignerHandler.handler(
+        { ...event, header: JSON.stringify({ ...header, kid: undefined }) },
+        {} as Context
+      );
+
+      expect(signedJwt).toEqual(
+        `${JSON.stringify(jwtHeader)}.${JSON.stringify(
+          claimsSet
+        )}.${joseSignature}`
+      );
+    });
+  });
+
   describe("With RAW signing mode", () => {
     it("Should verify a signed JWT message smaller than 4096", async () => {
       kmsClient.send.mockImplementationOnce(() =>
@@ -37,16 +82,6 @@ describe("Successfully signs a JWT", () => {
 
       const signedJwt = await jwtSignerHandler.handler(event, {} as Context);
 
-      const { payload } = await jwtVerify(
-        signedJwt,
-        await importJWK(publicVerifyingJwk, "ES256"),
-        {
-          algorithms: ["ES256"],
-        }
-      );
-
-      expect(signedJwt).toBeDefined();
-
       expect(kmsClient.send).toHaveBeenCalledWith(
         expect.objectContaining({
           input: expect.objectContaining({
@@ -54,8 +89,11 @@ describe("Successfully signs a JWT", () => {
           }),
         })
       );
-
-      expect(payload).toStrictEqual(JSON.parse(event.claimsSet));
+      expect(signedJwt).toEqual(
+        `${JSON.stringify(jwtHeader)}.${JSON.stringify(
+          claimsSet
+        )}.${joseSignature}`
+      );
     });
   });
 
@@ -78,16 +116,6 @@ describe("Successfully signs a JWT", () => {
 
       const signedJwt = await jwtSignerHandler.handler(event, {} as Context);
 
-      const { payload } = await jwtVerify(
-        signedJwt,
-        await importJWK(publicVerifyingJwk, "ES256"),
-        {
-          algorithms: ["ES256"],
-        }
-      );
-
-      expect(signedJwt).toBeDefined();
-
       expect(kmsClient.send).toHaveBeenCalledWith(
         expect.objectContaining({
           input: expect.objectContaining({
@@ -95,8 +123,11 @@ describe("Successfully signs a JWT", () => {
           }),
         })
       );
-
-      expect(payload).toStrictEqual(JSON.parse(event.claimsSet));
+      expect(signedJwt).toEqual(
+        `${JSON.stringify(jwtHeader)}.${JSON.stringify(
+          largeClaimsSet
+        )}.${joseLargeClaimsSetSignature}`
+      );
     });
   });
 });
