@@ -2,7 +2,7 @@ import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import { createHash } from "crypto";
 import sigFormatter from "ecdsa-sig-formatter";
 import { fromEnv } from "@aws-sdk/credential-providers";
-import { SignerPayLoad } from "./signer-payload";
+import { SignerPayLoad, SignerHeader } from "./signer-payload";
 import { SignageType } from "./signage-type";
 import { base64url } from "jose";
 import {
@@ -24,7 +24,16 @@ export class JwtSignerHandler implements LambdaInterface {
     context: Context
   ): Promise<string> {
     logHelper.logEntry(context.functionName, event.govJourneyId);
-    const header = base64url.encode(event.header);
+
+    const parsedHeader = JSON.parse(event.header) as SignerHeader;
+
+    if (event.kid) {
+      parsedHeader.kid = `did:web:${process.env.DNS_SUFFIX}#${this.getHashedKid(
+        event.kid
+      )}`;
+    }
+
+    const header = base64url.encode(JSON.stringify(parsedHeader));
     const payload = base64url.encode(event.claimsSet);
 
     const response = await this.signWithKms(
@@ -80,6 +89,12 @@ export class JwtSignerHandler implements LambdaInterface {
 
   private hashInput = (input: Buffer): Uint8Array =>
     createHash("sha256").update(input).digest();
+
+  private getHashedKid = (keyId: string): string => {
+    const kidBytes = Buffer.from(keyId, "utf8");
+    const hash = createHash("sha256").update(kidBytes).digest();
+    return Buffer.from(hash).toString("hex");
+  };
 
   private checkSize = (message: Buffer): boolean => message.length >= 4096;
 }

@@ -104,10 +104,6 @@ describe("Nino Check Hmrc Issue Credential", () => {
         "Bearer identity-check passed"
       );
 
-      const currentCredentialKmsSigningKeyId = await getSSMParameter(
-        `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
-      );
-
       const token = JSON.parse(startExecutionResult.output as string);
 
       const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
@@ -117,7 +113,10 @@ describe("Nino Check Hmrc Issue Credential", () => {
       expect(header).toEqual({
         typ: "JWT",
         alg: "ES256",
-        kid: currentCredentialKmsSigningKeyId,
+        // TODO these run in other envs
+        kid: expect.stringContaining(
+          "did:web:review-hc.localdev.account.gov.uk#"
+        ),
       });
 
       const result = await aVcWithCheckDetails();
@@ -177,10 +176,6 @@ describe("Nino Check Hmrc Issue Credential", () => {
         "Bearer identity-check failed"
       );
 
-      const currentCredentialKmsSigningKeyId = await getSSMParameter(
-        `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
-      );
-
       const token = JSON.parse(startExecutionResult.output as string);
 
       const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
@@ -190,7 +185,9 @@ describe("Nino Check Hmrc Issue Credential", () => {
       expect(header).toEqual({
         typ: "JWT",
         alg: "ES256",
-        kid: currentCredentialKmsSigningKeyId,
+        kid: expect.stringContaining(
+          "did:web:review-hc.localdev.account.gov.uk#"
+        ),
       });
 
       const result = await aVcWithFailedCheckDetailsAndCi();
@@ -220,10 +217,6 @@ describe("Nino Check Hmrc Issue Credential", () => {
         "Bearer record-check passed"
       );
 
-      const currentCredentialKmsSigningKeyId = await getSSMParameter(
-        `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
-      );
-
       const token = JSON.parse(startExecutionResult.output as string);
 
       const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
@@ -233,7 +226,9 @@ describe("Nino Check Hmrc Issue Credential", () => {
       expect(header).toEqual({
         typ: "JWT",
         alg: "ES256",
-        kid: currentCredentialKmsSigningKeyId,
+        kid: expect.stringContaining(
+          "did:web:review-hc.localdev.account.gov.uk#"
+        ),
       });
 
       const result = await aVcWithCheckDetailsDataCheck();
@@ -264,10 +259,6 @@ describe("Nino Check Hmrc Issue Credential", () => {
           "Bearer record-check failed"
         );
 
-        const currentCredentialKmsSigningKeyId = await getSSMParameter(
-          `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
-        );
-
         const token = JSON.parse(startExecutionResult.output as string);
 
         const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
@@ -277,7 +268,9 @@ describe("Nino Check Hmrc Issue Credential", () => {
         expect(header).toEqual({
           typ: "JWT",
           alg: "ES256",
-          kid: currentCredentialKmsSigningKeyId,
+          kid: expect.stringContaining(
+            "did:web:review-hc.localdev.account.gov.uk#"
+          ),
         });
 
         const result = await aVcWithFailedCheckDetailsRecordCheck();
@@ -452,7 +445,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
     clientSessionId: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
     persistentSessionId: "156714ef-f9df-48c2-ada8-540e7bce44f7",
     evidenceRequest,
-    txn: "mock-txn"
+    txn: "mock-txn",
   });
 
   const ninoCheckPassedData = async (
