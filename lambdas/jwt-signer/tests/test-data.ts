@@ -7,7 +7,7 @@ interface Address {
   validFrom: string;
 }
 
-const dnsSuffix = process.env.DNS_SUFFIX!;
+const dnsSuffix = process.env.DOMAIN_NAME!;
 
 export const kid = "0976c11e-8ef3-4659-b7f2-ee0b842b85bd";
 

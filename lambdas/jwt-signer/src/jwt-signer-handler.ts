@@ -28,9 +28,9 @@ export class JwtSignerHandler implements LambdaInterface {
     const parsedHeader = JSON.parse(event.header) as SignerHeader;
 
     if (parsedHeader.kid) {
-      parsedHeader.kid = `did:web:${process.env.DNS_SUFFIX}#${this.getHashedKid(
-        parsedHeader.kid
-      )}`;
+      parsedHeader.kid = `did:web:${
+        process.env.DOMAIN_NAME
+      }#${this.getHashedKid(parsedHeader.kid)}`;
     }
 
     const header = base64url.encode(JSON.stringify(parsedHeader));
