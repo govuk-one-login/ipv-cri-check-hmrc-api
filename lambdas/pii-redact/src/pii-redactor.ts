@@ -18,7 +18,8 @@ export function redactPII(message: string): string;
 
 export function redactPII(
   message: string,
-  patterns: { regex: RegExp; replacement: string }[]
+  patterns: { regex: RegExp; replacement: string }[],
+  includeDefault?: boolean
 ): string;
 
 export function redactPII(
@@ -29,7 +30,7 @@ export function redactPII(
   if (!patterns) {
     patterns = defaultPatterns;
   }
-  if (!includeDefault) {
+  if (includeDefault) {
     patterns = patterns.concat(defaultPatterns);
   }
   return patterns.reduce((redactedMessage, pattern) => {

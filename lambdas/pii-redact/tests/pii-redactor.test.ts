@@ -1,6 +1,15 @@
 import { defaultPatterns, redactPII } from "../src/pii-redactor";
 
 describe("pii-redactor", () => {
+  it("should redact without using default list", async () => {
+    const data = '{\\"firstName\\":\\"test\\"}';
+    const patterns: { regex: RegExp; replacement: string }[] = [];
+
+    expect(redactPII(data, patterns, false)).toEqual(
+      '{\\"firstName\\":\\"test\\"}'
+    );
+  });
+
   it("should redact pii using default list", async () => {
     const data = '{\\"firstName\\":\\"test\\"}';
 
