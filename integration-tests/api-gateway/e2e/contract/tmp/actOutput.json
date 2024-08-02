@@ -1,0 +1,56 @@
+{
+    "vc": {
+      "evidence": [
+        {
+          "type": "IdentityCheck",
+          "strengthScore": 2,
+          "validityScore": 2,
+          "checkDetails": [
+            {
+              "checkMethod": "data"
+            }
+          ],
+          "txn": "mock-txn"
+        }
+      ],
+      "credentialSubject": {
+        "socialSecurityRecord": [
+          {
+            "personalNumber": "AA000003D"
+          }
+        ],
+        "birthDate": [
+          {
+            "value": "1948-04-23"
+          }
+        ],
+        "name": [
+          {
+            "nameParts": [
+              {
+                "type": "GivenName",
+                "value": "Jim"
+              },
+              {
+                "type": "FamilyName",
+                "value": "Ferguson"
+              }
+            ]
+          }
+        ]
+      },
+      "type": [
+        "VerifiableCredential",
+        "IdentityCheckCredential"
+      ],
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://vocab.london.cloudapps.digital/contexts/identity-v1.jsonld"
+      ]
+    },
+    "sub": "test",
+    "nbf": 1722516558,
+    "iss": "https://review-hc.dev.account.gov.uk",
+    "exp": 1722523758,
+    "jti": "urn:uuid:6ed3b18a-d966-4a80-b60d-82c6d783a861"
+  }

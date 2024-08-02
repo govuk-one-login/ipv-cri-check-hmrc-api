@@ -22,7 +22,7 @@
         }, {
           "name": "VC evidence strengthScore is 2"
         }, {
-          "name": "VC evidence txn is dummyTxn"
+          "name": "VC evidence txn is mock-txn"
         }, {
           "name": "VC contains a socialSecurityRecord"
         }, {
@@ -34,7 +34,7 @@
         }],
       "request": {
         "headers": {
-          "Authorization": "Bearer dummyAccessToken",
+          "Authorization": "Bearer identity-check passed",
           "x-api-key": "dummyApiKey"
         },
         "method": "POST",
@@ -78,7 +78,7 @@
         }, {
           "name": "VC evidence strengthScore is 2"
         }, {
-          "name": "VC evidence txn is dummyTxn"
+          "name": "VC evidence txn is mock-txn"
         }, {
           "name": "VC contains a socialSecurityRecord"
         }, {
@@ -90,7 +90,7 @@
         }],
       "request": {
         "headers": {
-          "Authorization": "Bearer dummyAccessToken",
+          "Authorization": "Bearer Bearer identity-check passed",
           "x-api-key": "dummyApiKey"
         },
         "method": "POST",
@@ -136,7 +136,7 @@
         }, {
           "name": "VC evidence strengthScore is 2"
         }, {
-          "name": "VC evidence txn is dummyTxn"
+          "name": "VC evidence txn is mock-txn"
         }, {
           "name": "VC contains a socialSecurityRecord"
         }, {
@@ -148,7 +148,7 @@
         }],
       "request": {
         "headers": {
-          "Authorization": "Bearer dummyAccessToken",
+          "Authorization": "Bearer identity-check passed",
           "x-api-key": "dummyApiKey"
         },
         "method": "POST",
@@ -194,7 +194,7 @@
         }, {
           "name": "VC evidence strengthScore is 2"
         }, {
-          "name": "VC evidence txn is dummyTxn"
+          "name": "VC evidence txn is mock-txn"
         }, {
           "name": "VC contains a socialSecurityRecord"
         }, {
@@ -206,7 +206,7 @@
         }],
       "request": {
         "headers": {
-          "Authorization": "Bearer dummyAccessToken",
+          "Authorization": "Bearer identity-check passed",
           "x-api-key": "dummyApiKey"
         },
         "method": "POST",
@@ -251,7 +251,7 @@
         "path": "/credential/issue"
       },
       "response": {
-        "status": 403
+        "status": 400
       }
     }],
   "metadata": {

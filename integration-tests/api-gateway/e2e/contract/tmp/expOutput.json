@@ -1,0 +1,53 @@
+{
+  "vc": {
+    "evidence": [
+      {
+        "activityHistoryScore": 1,
+        "checkDetails": [
+          {
+            "checkMethod": "data"
+          }
+        ],
+        "validityScore": 2,
+        "strengthScore": 2,
+        "type": "IdentityCheck",
+        "txn": "dummyTxn"
+      }
+    ],
+    "credentialSubject": {
+      "socialSecurityRecord": [
+        {
+          "personalNumber": "AA000003D"
+        }
+      ],
+      "birthDate": [
+        {
+          "value": "1965-07-08"
+        }
+      ],
+      "name": [
+        {
+          "nameParts": [
+            {
+              "type": "GivenName",
+              "value": "Kenneth"
+            },
+            {
+              "type": "FamilyName",
+              "value": "Decerqueira"
+            }
+          ]
+        }
+      ]
+    },
+    "type": [
+      "VerifiableCredential",
+      "IdentityCheckCredential"
+    ]
+  },
+  "sub": "test-subject",
+  "iss": "dummyNinoComponentId",
+  "nbf": 4070908800,
+  "exp": 4070909400,
+  "jti": "dummyJti"
+}
