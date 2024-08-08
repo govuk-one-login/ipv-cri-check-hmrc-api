@@ -1,0 +1,57 @@
+name: Unit pact tests
+
+on:
+  workflow_call:
+    inputs:
+      stack-name: { required: true, type: string }
+      aws-region: { required: true, type: string }
+    # secrets:
+    #   pact-broker-host: { required: true }
+    #   pact-broker-username: { required: true }
+    #   pact-broker-password: { required: true }
+
+concurrency:
+  group: pact-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  run-pact-tests:
+    name: Contact Tests
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+    - name: Pull repository
+      uses: actions/checkout@v4
+
+    - name: Install Node
+      uses: actions/setup-node@v4
+      with:
+        cache: npm
+
+    - name: Install dependencies
+      run: npm ci --include-workspace-root
+
+    - name: Assume AWS Role
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ vars.DEPLOYMENT_ROLE_ARN }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Run tests
+      uses: govuk-one-login/github-actions/node/run-script@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
+      env:
+        STACK_NAME: ${{ inputs.stack-name }}
+        # PACT_BROKER_HOST: ${{ secrets.pact-broker-host }}
+        # PACT_BROKER_USERNAME: ${{ secrets.pact-broker-username }}
+        # PACT_BROKER_PASSWORD: ${{ secrets.pact-broker-password }}
+      with:
+        working-directory: integration-tests
+        script: npm run test:contract:ci
