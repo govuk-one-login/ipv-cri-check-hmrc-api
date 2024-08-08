@@ -4,3 +4,9 @@ export type SignerPayLoad = {
   claimsSet: string;
   govJourneyId: string;
 };
+
+export type SignerHeader = {
+  kid?: string;
+  type: string;
+  alg: string;
+};

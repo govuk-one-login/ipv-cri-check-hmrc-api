@@ -7,10 +7,21 @@ interface Address {
   validFrom: string;
 }
 
+const dnsSuffix = process.env.DOMAIN_NAME!;
+
 export const kid = "0976c11e-8ef3-4659-b7f2-ee0b842b85bd";
+
+const hashedKid =
+  "02ba5dbd2a3664670bf5c4689a9f8e014fe2c019209c9e5db7641a2b2a4bc7a8";
 
 export const header = {
   kid,
+  type: "JWT",
+  alg: "ES256",
+};
+
+export const jwtHeader = {
+  kid: `did:web:${dnsSuffix}#${hashedKid}`,
   type: "JWT",
   alg: "ES256",
 };
@@ -56,7 +67,7 @@ export const claimsSet = {
   iat: 1697516406,
 };
 
-const generateFixedString = (length: number = 10) =>
+const generateFixedString = (length: number = 30) =>
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".substring(
     0,
     length
