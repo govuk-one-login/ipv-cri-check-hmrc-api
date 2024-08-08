@@ -26,7 +26,7 @@ describe("Given the session is valid and expecting to abandon the journey", () =
     UserAttemptsTable: string;
   }>;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
     sessionTableName = `session-${output.CommonStackName}`;
 
