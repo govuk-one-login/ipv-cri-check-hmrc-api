@@ -13,7 +13,7 @@ if ! [[ "$stack_name" ]]; then
 fi
 
 sam validate -t infrastructure/template.yaml
-#sam validate -t infrastructure/template.yaml --lint
+sam validate -t infrastructure/template.yaml --lint
 
 sam build -t infrastructure/template.yaml --cached --parallel
 

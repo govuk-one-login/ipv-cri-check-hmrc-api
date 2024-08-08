@@ -33,6 +33,21 @@ jobs:
       id-token: write
       contents: read
 
+  pact-tests:
+    name: Run tests
+    needs: deploy
+    uses: ./.github/workflows/run-pact-tests.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      stack-name: ${{ needs.deploy.outputs.stack-name }}
+      aws-region: ${{ needs.deploy.outputs.aws-region }}
+    # secrets:
+    #   pact-broker-host: ${{ secrets.PACT_BROKER_HOST }}
+    #   pact-broker-username: ${{ secrets.PACT_BROKER_USERNAME }}
+    #   pact-broker-password: ${{ secrets.PACT_BROKER_PASSWORD }}
+
   stepfunction-aws-tests:
     name: Run tests
     needs: deploy

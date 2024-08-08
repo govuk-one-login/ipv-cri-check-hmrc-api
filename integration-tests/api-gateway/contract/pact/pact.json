@@ -1,0 +1,253 @@
+{
+  "consumer": {
+    "name": "IpvCoreBack"
+  },
+  "interactions": [{
+      "_id": "2042106de899ca59fb2bd30d38319fea0550a98b",
+      "description": "Valid credential request for VC",
+      "providerStates": [{
+          "name": "dummyApiKey is a valid api key"
+        }, {
+          "name": "issue-credential-passed is a valid access token"
+        }, {
+          "name": "test is a valid subject"
+        }, {
+          "name": "dummyNinoComponentId is a valid issuer"
+        }, {
+          "name": "VC is for Kenneth Decerqueira"
+        }, {
+          "name": "VC evidence txn is dummyTxn"
+        }, {
+          "name": "VC contains a socialSecurityRecord"
+        }, {
+          "name": "VC personalNumber is AA000003D"
+        }, {
+          "name": "VC jti is dummyJti"
+        }, {
+          "name": "VC birthDate is 1965-07-08"
+        }],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer issue-credential-passed",
+          "x-api-key": "dummyApiKey"
+        },
+        "method": "POST",
+        "path": "/credential/issue"
+      },
+      "response": {
+        "body": "ZXlKMGVYQWlPaUpLVjFRaUxDSmhiR2NpT2lKRlV6STFOaUo5LmV5SnpkV0lpT2lKMFpYTjBJaXdpYm1KbUlqbzBNRGN3T1RBNE9EQXdMQ0pwYzNNaU9pSmtkVzF0ZVU1cGJtOURiMjF3YjI1bGJuUkpaQ0lzSW1WNGNDSTZOREEzTURrd09UUXdNQ3dpZG1NaU9uc2laWFpwWkdWdVkyVWlPbHQ3SW5SNWNHVWlPaUpKWkdWdWRHbDBlVU5vWldOcklpd2lZMmhsWTJ0RVpYUmhhV3h6SWpwYmV5SmphR1ZqYTAxbGRHaHZaQ0k2SW1SaGRHRWlMQ0prWVhSaFEyaGxZMnNpT2lKeVpXTnZjbVJmWTJobFkyc2lmVjBzSW5SNGJpSTZJbVIxYlcxNVZIaHVJbjFkTENKamNtVmtaVzUwYVdGc1UzVmlhbVZqZENJNmV5SnpiMk5wWVd4VFpXTjFjbWwwZVZKbFkyOXlaQ0k2VzNzaWNHVnljMjl1WVd4T2RXMWlaWElpT2lKQlFUQXdNREF3TTBRaWZWMHNJbUpwY25Sb1JHRjBaU0k2VzNzaWRtRnNkV1VpT2lJeE9UWTFMVEEzTFRBNEluMWRMQ0p1WVcxbElqcGJleUp1WVcxbFVHRnlkSE1pT2x0N0luUjVjR1VpT2lKSGFYWmxiazVoYldVaUxDSjJZV3gxWlNJNklrdGxibTVsZEdnaWZTeDdJblI1Y0dVaU9pSkdZVzFwYkhsT1lXMWxJaXdpZG1Gc2RXVWlPaUpFWldObGNuRjFaV2x5WVNKOVhYMWRmU3dpZEhsd1pTSTZXeUpXWlhKcFptbGhZbXhsUTNKbFpHVnVkR2xoYkNJc0lrbGtaVzUwYVhSNVEyaGxZMnREY21Wa1pXNTBhV0ZzSWwwc0lrQmpiMjUwWlhoMElqcGJJbWgwZEhCek9pOHZkM2QzTG5jekxtOXlaeTh5TURFNEwyTnlaV1JsYm5ScFlXeHpMM1l4SWl3aWFIUjBjSE02THk5MmIyTmhZaTVzYjI1a2IyNHVZMnh2ZFdSaGNIQnpMbVJwWjJsMFlXd3ZZMjl1ZEdWNGRITXZhV1JsYm5ScGRIa3RkakV1YW5OdmJteGtJbDE5TENKcWRHa2lPaUprZFcxdGVVcDBhU0o5Lg==",
+        "headers": {
+          "Content-Type": "application/jwt"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [{
+                  "match": "regex",
+                  "regex": "^eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9\\.eyJzdWIiOiJ0ZXN0IiwibmJmIjo0MDcwOTA4ODAwLCJpc3MiOiJkdW1teU5pbm9Db21wb25lbnRJZCIsImV4cCI6NDA3MDkwOTQwMCwidmMiOnsiZXZpZGVuY2UiOlt7InR5cGUiOiJJZGVudGl0eUNoZWNrIiwiY2hlY2tEZXRhaWxzIjpbeyJjaGVja01ldGhvZCI6ImRhdGEiLCJkYXRhQ2hlY2siOiJyZWNvcmRfY2hlY2sifV0sInR4biI6ImR1bW15VHhuIn1dLCJjcmVkZW50aWFsU3ViamVjdCI6eyJzb2NpYWxTZWN1cml0eVJlY29yZCI6W3sicGVyc29uYWxOdW1iZXIiOiJBQTAwMDAwM0QifV0sImJpcnRoRGF0ZSI6W3sidmFsdWUiOiIxOTY1LTA3LTA4In1dLCJuYW1lIjpbeyJuYW1lUGFydHMiOlt7InR5cGUiOiJHaXZlbk5hbWUiLCJ2YWx1ZSI6Iktlbm5ldGgifSx7InR5cGUiOiJGYW1pbHlOYW1lIiwidmFsdWUiOiJEZWNlcnF1ZWlyYSJ9XX1dfSwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIklkZW50aXR5Q2hlY2tDcmVkZW50aWFsIl0sIkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIiwiaHR0cHM6Ly92b2NhYi5sb25kb24uY2xvdWRhcHBzLmRpZ2l0YWwvY29udGV4dHMvaWRlbnRpdHktdjEuanNvbmxkIl19LCJqdGkiOiJkdW1teUp0aSJ9\\..*"
+                }]
+            }
+          }
+        },
+        "status": 200
+      }
+    }, {
+      "_id": "addb6d95ce52329ce52d70d8b391a4cd3e9af8f6",
+      "description": "Valid credential request for identity check VC",
+      "providerStates": [{
+          "name": "dummyApiKey is a valid api key"
+        }, {
+          "name": "issue-credential-identity-passed is a valid access token"
+        }, {
+          "name": "test is a valid subject"
+        }, {
+          "name": "dummyNinoComponentId is a valid issuer"
+        }, {
+          "name": "VC is for Kenneth Decerqueira"
+        }, {
+          "name": "VC evidence validityScore is 2"
+        }, {
+          "name": "VC evidence strengthScore is 2"
+        }, {
+          "name": "VC evidence txn is dummyTxn"
+        }, {
+          "name": "VC contains a socialSecurityRecord"
+        }, {
+          "name": "VC personalNumber is AA000003D"
+        }, {
+          "name": "VC jti is dummyJti"
+        }, {
+          "name": "VC birthDate is 1965-07-08"
+        }],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer issue-credential-identity-passed",
+          "x-api-key": "dummyApiKey"
+        },
+        "method": "POST",
+        "path": "/credential/issue"
+      },
+      "response": {
+        "body": "ZXlKMGVYQWlPaUpLVjFRaUxDSmhiR2NpT2lKRlV6STFOaUo5LmV5SnpkV0lpT2lKMFpYTjBJaXdpYm1KbUlqbzBNRGN3T1RBNE9EQXdMQ0pwYzNNaU9pSmtkVzF0ZVU1cGJtOURiMjF3YjI1bGJuUkpaQ0lzSW1WNGNDSTZOREEzTURrd09UUXdNQ3dpZG1NaU9uc2laWFpwWkdWdVkyVWlPbHQ3SW5SNWNHVWlPaUpKWkdWdWRHbDBlVU5vWldOcklpd2ljM1J5Wlc1bmRHaFRZMjl5WlNJNk1pd2lkbUZzYVdScGRIbFRZMjl5WlNJNk1pd2lZMmhsWTJ0RVpYUmhhV3h6SWpwYmV5SmphR1ZqYTAxbGRHaHZaQ0k2SW1SaGRHRWlmVjBzSW5SNGJpSTZJbVIxYlcxNVZIaHVJbjFkTENKamNtVmtaVzUwYVdGc1UzVmlhbVZqZENJNmV5SnpiMk5wWVd4VFpXTjFjbWwwZVZKbFkyOXlaQ0k2VzNzaWNHVnljMjl1WVd4T2RXMWlaWElpT2lKQlFUQXdNREF3TTBRaWZWMHNJbUpwY25Sb1JHRjBaU0k2VzNzaWRtRnNkV1VpT2lJeE9UWTFMVEEzTFRBNEluMWRMQ0p1WVcxbElqcGJleUp1WVcxbFVHRnlkSE1pT2x0N0luUjVjR1VpT2lKSGFYWmxiazVoYldVaUxDSjJZV3gxWlNJNklrdGxibTVsZEdnaWZTeDdJblI1Y0dVaU9pSkdZVzFwYkhsT1lXMWxJaXdpZG1Gc2RXVWlPaUpFWldObGNuRjFaV2x5WVNKOVhYMWRmU3dpZEhsd1pTSTZXeUpXWlhKcFptbGhZbXhsUTNKbFpHVnVkR2xoYkNJc0lrbGtaVzUwYVhSNVEyaGxZMnREY21Wa1pXNTBhV0ZzSWwwc0lrQmpiMjUwWlhoMElqcGJJbWgwZEhCek9pOHZkM2QzTG5jekxtOXlaeTh5TURFNEwyTnlaV1JsYm5ScFlXeHpMM1l4SWl3aWFIUjBjSE02THk5MmIyTmhZaTVzYjI1a2IyNHVZMnh2ZFdSaGNIQnpMbVJwWjJsMFlXd3ZZMjl1ZEdWNGRITXZhV1JsYm5ScGRIa3RkakV1YW5OdmJteGtJbDE5TENKcWRHa2lPaUprZFcxdGVVcDBhU0o5Lg==",
+        "headers": {
+          "Content-Type": "application/jwt"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [{
+                  "match": "regex",
+                  "regex": "^eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9\\.eyJzdWIiOiJ0ZXN0IiwibmJmIjo0MDcwOTA4ODAwLCJpc3MiOiJkdW1teU5pbm9Db21wb25lbnRJZCIsImV4cCI6NDA3MDkwOTQwMCwidmMiOnsiZXZpZGVuY2UiOlt7InR5cGUiOiJJZGVudGl0eUNoZWNrIiwic3RyZW5ndGhTY29yZSI6MiwidmFsaWRpdHlTY29yZSI6MiwiY2hlY2tEZXRhaWxzIjpbeyJjaGVja01ldGhvZCI6ImRhdGEifV0sInR4biI6ImR1bW15VHhuIn1dLCJjcmVkZW50aWFsU3ViamVjdCI6eyJzb2NpYWxTZWN1cml0eVJlY29yZCI6W3sicGVyc29uYWxOdW1iZXIiOiJBQTAwMDAwM0QifV0sImJpcnRoRGF0ZSI6W3sidmFsdWUiOiIxOTY1LTA3LTA4In1dLCJuYW1lIjpbeyJuYW1lUGFydHMiOlt7InR5cGUiOiJHaXZlbk5hbWUiLCJ2YWx1ZSI6Iktlbm5ldGgifSx7InR5cGUiOiJGYW1pbHlOYW1lIiwidmFsdWUiOiJEZWNlcnF1ZWlyYSJ9XX1dfSwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIklkZW50aXR5Q2hlY2tDcmVkZW50aWFsIl0sIkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIiwiaHR0cHM6Ly92b2NhYi5sb25kb24uY2xvdWRhcHBzLmRpZ2l0YWwvY29udGV4dHMvaWRlbnRpdHktdjEuanNvbmxkIl19LCJqdGkiOiJkdW1teUp0aSJ9\\..*"
+                }]
+            }
+          }
+        },
+        "status": 200
+      }
+    }, {
+      "_id": "a586cd5d0c671045a2776903d905f093e7997680",
+      "description": "Valid credential request for VC with CI",
+      "providerStates": [{
+          "name": "dummyApiKey is a valid api key"
+        }, {
+          "name": "issue-credential-failed is a valid access token"
+        }, {
+          "name": "test is a valid subject"
+        }, {
+          "name": "dummyNinoComponentId is a valid issuer"
+        }, {
+          "name": "VC has failedCheckDetails"
+        }, {
+          "name": "VC is for Kenneth Decerqueira"
+        },  {
+          "name": "VC evidence txn is empty"
+        }, {
+          "name": "VC contains a socialSecurityRecord"
+        }, {
+          "name": "VC personalNumber is AA000003D"
+        }, {
+          "name": "VC jti is dummyJti"
+        }, {
+          "name": "VC birthDate is 1965-07-08"
+        }],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer issue-credential-failed",
+          "x-api-key": "dummyApiKey"
+        },
+        "method": "POST",
+        "path": "/credential/issue"
+      },
+      "response": {
+        "body": "ZXlKMGVYQWlPaUpLVjFRaUxDSmhiR2NpT2lKRlV6STFOaUo5LmV5SnpkV0lpT2lKMFpYTjBJaXdpYm1KbUlqbzBNRGN3T1RBNE9EQXdMQ0pwYzNNaU9pSmtkVzF0ZVU1cGJtOURiMjF3YjI1bGJuUkpaQ0lzSW1WNGNDSTZOREEzTURrd09UUXdNQ3dpZG1NaU9uc2laWFpwWkdWdVkyVWlPbHQ3SW5SNWNHVWlPaUpKWkdWdWRHbDBlVU5vWldOcklpd2ljM1J5Wlc1bmRHaFRZMjl5WlNJNk1pd2lkbUZzYVdScGRIbFRZMjl5WlNJNk1Dd2labUZwYkdWa1EyaGxZMnRFWlhSaGFXeHpJanBiZXlKamFHVmphMDFsZEdodlpDSTZJbVJoZEdFaWZWMHNJbU5wSWpwYklrUXdNaUpkTENKMGVHNGlPaUprZFcxdGVWUjRiaUo5WFN3aVkzSmxaR1Z1ZEdsaGJGTjFZbXBsWTNRaU9uc2ljMjlqYVdGc1UyVmpkWEpwZEhsU1pXTnZjbVFpT2x0N0luQmxjbk52Ym1Gc1RuVnRZbVZ5SWpvaVFVRXdNREF3TURORUluMWRMQ0ppYVhKMGFFUmhkR1VpT2x0N0luWmhiSFZsSWpvaU1UazJOUzB3Tnkwd09DSjlYU3dpYm1GdFpTSTZXM3NpYm1GdFpWQmhjblJ6SWpwYmV5SjBlWEJsSWpvaVIybDJaVzVPWVcxbElpd2lkbUZzZFdVaU9pSkxaVzV1WlhSb0luMHNleUowZVhCbElqb2lSbUZ0YVd4NVRtRnRaU0lzSW5aaGJIVmxJam9pUkdWalpYSnhkV1ZwY21FaWZWMTlYWDBzSW5SNWNHVWlPbHNpVm1WeWFXWnBZV0pzWlVOeVpXUmxiblJwWVd3aUxDSkpaR1Z1ZEdsMGVVTm9aV05yUTNKbFpHVnVkR2xoYkNKZExDSkFZMjl1ZEdWNGRDSTZXeUpvZEhSd2N6b3ZMM2QzZHk1M015NXZjbWN2TWpBeE9DOWpjbVZrWlc1MGFXRnNjeTkyTVNJc0ltaDBkSEJ6T2k4dmRtOWpZV0l1Ykc5dVpHOXVMbU5zYjNWa1lYQndjeTVrYVdkcGRHRnNMMk52Ym5SbGVIUnpMMmxrWlc1MGFYUjVMWFl4TG1wemIyNXNaQ0pkZlN3aWFuUnBJam9pWkhWdGJYbEtkR2tpZlEu",
+        "headers": {
+          "Content-Type": "application/jwt"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [{
+                  "match": "regex",
+                  "regex": "^eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9\\.eyJzdWIiOiJ0ZXN0IiwibmJmIjo0MDcwOTA4ODAwLCJpc3MiOiJkdW1teU5pbm9Db21wb25lbnRJZCIsImV4cCI6NDA3MDkwOTQwMCwidmMiOnsiZXZpZGVuY2UiOlt7InR5cGUiOiJJZGVudGl0eUNoZWNrIiwiZmFpbGVkQ2hlY2tEZXRhaWxzIjpbeyJjaGVja01ldGhvZCI6ImRhdGEiLCJkYXRhQ2hlY2siOiJyZWNvcmRfY2hlY2sifV0sInR4biI6ImR1bW15VHhuIn1dLCJjcmVkZW50aWFsU3ViamVjdCI6eyJzb2NpYWxTZWN1cml0eVJlY29yZCI6W3sicGVyc29uYWxOdW1iZXIiOiJBQTAwMDAwM0QifV0sImJpcnRoRGF0ZSI6W3sidmFsdWUiOiIxOTY1LTA3LTA4In1dLCJuYW1lIjpbeyJuYW1lUGFydHMiOlt7InR5cGUiOiJHaXZlbk5hbWUiLCJ2YWx1ZSI6Iktlbm5ldGgifSx7InR5cGUiOiJGYW1pbHlOYW1lIiwidmFsdWUiOiJEZWNlcnF1ZWlyYSJ9XX1dfSwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIklkZW50aXR5Q2hlY2tDcmVkZW50aWFsIl0sIkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIiwiaHR0cHM6Ly92b2NhYi5sb25kb24uY2xvdWRhcHBzLmRpZ2l0YWwvY29udGV4dHMvaWRlbnRpdHktdjEuanNvbmxkIl19LCJqdGkiOiJkdW1teUp0aSJ9\\..*"
+                }]
+            }
+          }
+        },
+        "status": 200
+      }
+    }, {
+      "_id": "b188d2d6ab1ef160b87e3b0e8cc630b8c23f8274",
+      "description": "Valid credential request for identity check VC with CI",
+      "providerStates": [{
+          "name": "dummyApiKey is a valid api key"
+        }, {
+          "name": "issue-credential-identity-failed is a valid access token"
+        }, {
+          "name": "test is a valid subject"
+        }, {
+          "name": "dummyNinoComponentId is a valid issuer"
+        }, {
+          "name": "VC has a CI of D02"
+        }, {
+          "name": "VC is for Kenneth Decerqueira"
+        }, {
+          "name": "VC evidence validityScore is 0"
+        }, {
+          "name": "VC evidence strengthScore is 2"
+        }, {
+          "name": "VC evidence txn is empty"
+        }, {
+          "name": "VC contains a socialSecurityRecord"
+        }, {
+          "name": "VC personalNumber is AA000003D"
+        }, {
+          "name": "VC jti is dummyJti"
+        }, {
+          "name": "VC birthDate is 1965-07-08"
+        }],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer issue-credential-identity-failed",
+          "x-api-key": "dummyApiKey"
+        },
+        "method": "POST",
+        "path": "/credential/issue"
+      },
+      "response": {
+        "body": "ZXlKMGVYQWlPaUpLVjFRaUxDSmhiR2NpT2lKRlV6STFOaUo5LmV5SnpkV0lpT2lKMFpYTjBJaXdpYm1KbUlqbzBNRGN3T1RBNE9EQXdMQ0pwYzNNaU9pSmtkVzF0ZVU1cGJtOURiMjF3YjI1bGJuUkpaQ0lzSW1WNGNDSTZOREEzTURrd09UUXdNQ3dpZG1NaU9uc2laWFpwWkdWdVkyVWlPbHQ3SW5SNWNHVWlPaUpKWkdWdWRHbDBlVU5vWldOcklpd2labUZwYkdWa1EyaGxZMnRFWlhSaGFXeHpJanBiZXlKamFHVmphMDFsZEdodlpDSTZJbVJoZEdFaUxDSmtZWFJoUTJobFkyc2lPaUp5WldOdmNtUmZZMmhsWTJzaWZWMHNJblI0YmlJNkltUjFiVzE1VkhodUluMWRMQ0pqY21Wa1pXNTBhV0ZzVTNWaWFtVmpkQ0k2ZXlKemIyTnBZV3hUWldOMWNtbDBlVkpsWTI5eVpDSTZXM3NpY0dWeWMyOXVZV3hPZFcxaVpYSWlPaUpCUVRBd01EQXdNMFFpZlYwc0ltSnBjblJvUkdGMFpTSTZXM3NpZG1Gc2RXVWlPaUl4T1RZMUxUQTNMVEE0SW4xZExDSnVZVzFsSWpwYmV5SnVZVzFsVUdGeWRITWlPbHQ3SW5SNWNHVWlPaUpIYVhabGJrNWhiV1VpTENKMllXeDFaU0k2SWt0bGJtNWxkR2dpZlN4N0luUjVjR1VpT2lKR1lXMXBiSGxPWVcxbElpd2lkbUZzZFdVaU9pSkVaV05sY25GMVpXbHlZU0o5WFgxZGZTd2lkSGx3WlNJNld5SldaWEpwWm1saFlteGxRM0psWkdWdWRHbGhiQ0lzSWtsa1pXNTBhWFI1UTJobFkydERjbVZrWlc1MGFXRnNJbDBzSWtCamIyNTBaWGgwSWpwYkltaDBkSEJ6T2k4dmQzZDNMbmN6TG05eVp5OHlNREU0TDJOeVpXUmxiblJwWVd4ekwzWXhJaXdpYUhSMGNITTZMeTkyYjJOaFlpNXNiMjVrYjI0dVkyeHZkV1JoY0hCekxtUnBaMmwwWVd3dlkyOXVkR1Y0ZEhNdmFXUmxiblJwZEhrdGRqRXVhbk52Ym14a0lsMTlMQ0pxZEdraU9pSmtkVzF0ZVVwMGFTSjku",
+        "headers": {
+          "Content-Type": "application/jwt"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [{
+                  "match": "regex",
+                  "regex": "^eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9\\.eyJzdWIiOiJ0ZXN0IiwibmJmIjo0MDcwOTA4ODAwLCJpc3MiOiJkdW1teU5pbm9Db21wb25lbnRJZCIsImV4cCI6NDA3MDkwOTQwMCwidmMiOnsiZXZpZGVuY2UiOlt7InR5cGUiOiJJZGVudGl0eUNoZWNrIiwic3RyZW5ndGhTY29yZSI6MiwidmFsaWRpdHlTY29yZSI6MCwiZmFpbGVkQ2hlY2tEZXRhaWxzIjpbeyJjaGVja01ldGhvZCI6ImRhdGEifV0sImNpIjpbIkQwMiJdLCJ0eG4iOiJkdW1teVR4biJ9XSwiY3JlZGVudGlhbFN1YmplY3QiOnsic29jaWFsU2VjdXJpdHlSZWNvcmQiOlt7InBlcnNvbmFsTnVtYmVyIjoiQUEwMDAwMDNEIn1dLCJiaXJ0aERhdGUiOlt7InZhbHVlIjoiMTk2NS0wNy0wOCJ9XSwibmFtZSI6W3sibmFtZVBhcnRzIjpbeyJ0eXBlIjoiR2l2ZW5OYW1lIiwidmFsdWUiOiJLZW5uZXRoIn0seyJ0eXBlIjoiRmFtaWx5TmFtZSIsInZhbHVlIjoiRGVjZXJxdWVpcmEifV19XX0sInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiLCJJZGVudGl0eUNoZWNrQ3JlZGVudGlhbCJdLCJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vdm9jYWIubG9uZG9uLmNsb3VkYXBwcy5kaWdpdGFsL2NvbnRleHRzL2lkZW50aXR5LXYxLmpzb25sZCJdfSwianRpIjoiZHVtbXlKdGkifQ\\..*"
+                }]
+            }
+          }
+        },
+        "status": 200
+      }
+    }, {
+      "_id": "e36e6a80e0575cac29068292960c7f1cd6434253",
+      "description": "Invalid POST request due to invalid access token",
+      "providerStates": [{
+          "name": "dummyApiKey is a valid api key"
+        }, {
+          "name": "dummyInvalidAccessToken is an invalid access token"
+        }, {
+          "name": "test is a valid subject"
+        }, {
+          "name": "dummyNinoComponentId is a valid issuer"
+        }],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer dummyInvalidAccessToken",
+          "x-api-key": "dummyApiKey"
+        },
+        "method": "POST",
+        "path": "/credential/issue"
+      },
+      "response": {
+        "status": 400
+      }
+    }],
+  "metadata": {
+    "pact-jvm": {
+      "version": "4.6.5"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "NinoCriVcProvider"
+  },
+  "createdAt": "2024-07-31T13:03:43+00:00"
+}
