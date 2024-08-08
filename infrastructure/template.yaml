@@ -112,7 +112,7 @@ Mappings:
   EnvironmentConfiguration:
     localdev:
       DOMAINNAME: review-hc.localdev.account.gov.uk
-    dev: 
+    dev:
       DOMAINNAME: review-hc.dev.account.gov.uk
     build:
       DOMAINNAME: review-hc.build.account.gov.uk
@@ -502,7 +502,7 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-JwtSigner"
-          DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME] 
+          DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
 
   JwtSignerFunctionLogGroup:
     Type: AWS::Logs::LogGroup

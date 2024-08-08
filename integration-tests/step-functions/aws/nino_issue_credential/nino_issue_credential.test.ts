@@ -38,6 +38,17 @@ describe("Nino Check Hmrc Issue Credential", () => {
     firstName: "Jim",
     lastName: "Ferguson",
   };
+  let hash: string;
+
+  beforeAll(async () => {
+    const kmskeyid = await getSSMParameter(
+      "/common-cri-api/verifiableCredentialKmsSigningKeyId"
+    );
+
+    hash = createHash("sha256")
+      .update(kmskeyid || "")
+      .digest("hex");
+  });
 
   beforeEach(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
@@ -112,13 +123,6 @@ describe("Nino Check Hmrc Issue Credential", () => {
       const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
       const header = JSON.parse(base64decode(headerEncoded));
       const payload = JSON.parse(base64decode(payloadEncoded));
-      const kmskeyid = await getSSMParameter(
-        "/common-cri-api/verifiableCredentialKmsSigningKeyId"
-      );
-
-      const hash = createHash("sha256")
-        .update(kmskeyid || "")
-        .digest("hex");
 
       expect(header).toEqual({
         typ: "JWT",
@@ -192,9 +196,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
       expect(header).toEqual({
         typ: "JWT",
         alg: "ES256",
-        kid: expect.stringContaining(
-          "did:web:review-hc.localdev.account.gov.uk#"
-        ),
+        kid: `did:web:review-hc.${environment}.account.gov.uk#${hash}`,
       });
 
       const result = await aVcWithFailedCheckDetailsAndCi();
@@ -233,9 +235,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
       expect(header).toEqual({
         typ: "JWT",
         alg: "ES256",
-        kid: expect.stringContaining(
-          "did:web:review-hc.localdev.account.gov.uk#"
-        ),
+        kid: `did:web:review-hc.${environment}.account.gov.uk#${hash}`,
       });
 
       const result = await aVcWithCheckDetailsDataCheck();
