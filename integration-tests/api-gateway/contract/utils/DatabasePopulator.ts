@@ -29,7 +29,7 @@ export const populateDatabaseForContractTests = async () => {
 
   await ninoCheckPassedData(
     {
-      sessionId: "issue-credential-passed",
+      sessionId: "contract-issue-credential-passed",
       nino: "AA000003D",
     },
     "Bearer issue-credential-passed",
@@ -38,7 +38,7 @@ export const populateDatabaseForContractTests = async () => {
 
   await ninoCheckPassedData(
     {
-      sessionId: "issue-credential-identity-passed",
+      sessionId: "contract-issue-credential-identity-passed",
       nino: "AA000003D",
     },
     "Bearer issue-credential-identity-passed",
@@ -51,7 +51,7 @@ export const populateDatabaseForContractTests = async () => {
 
   await ninoCheckFailedData(
     {
-      sessionId: "issue-credential-failed",
+      sessionId: "contract-issue-credential-failed",
       nino: "AA000003D",
     },
     "Bearer issue-credential-failed",
@@ -60,7 +60,7 @@ export const populateDatabaseForContractTests = async () => {
 
   await ninoCheckFailedData(
     {
-      sessionId: "issue-credential-identity-failed",
+      sessionId: "contract-issue-credential-identity-failed",
       nino: "AA000003D",
     },
     "Bearer issue-credential-identity-failed",
@@ -74,10 +74,10 @@ export const populateDatabaseForContractTests = async () => {
 
 export const clearContractTestsFromDatabase = async () => {
   const stackOutput: StackOutput = await stackOutputs(process.env.STACK_NAME);
-  await clearData("issue-credential-passed", stackOutput);
-  await clearData("issue-credential-identity-passed", stackOutput);
-  await clearData("issue-credential-failed", stackOutput);
-  await clearData("issue-credential-identity-failed", stackOutput);
+  await clearData("contract-issue-credential-passed", stackOutput);
+  await clearData("contract-issue-credential-identity-passed", stackOutput);
+  await clearData("contract-issue-credential-failed", stackOutput);
+  await clearData("contract-issue-credential-identity-failed", stackOutput);
 };
 
 const ninoCheckPassedData = async (
