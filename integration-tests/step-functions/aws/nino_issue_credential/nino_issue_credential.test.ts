@@ -275,9 +275,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
         expect(header).toEqual({
           typ: "JWT",
           alg: "ES256",
-          kid: expect.stringContaining(
-            "did:web:review-hc.localdev.account.gov.uk#"
-          ),
+          kid: `did:web:review-hc.${environment}.account.gov.uk#${hash}`,
         });
 
         const result = await aVcWithFailedCheckDetailsRecordCheck();
