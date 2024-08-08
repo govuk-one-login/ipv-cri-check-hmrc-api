@@ -10,8 +10,11 @@ import {
 
 import { getSSMParameter } from "../../../resources/ssm-param-helper";
 import { getPublicKey } from "../../../resources/kms-helper";
+import { createHash } from "crypto";
 
 jest.setTimeout(30_000);
+
+export const environment = process.env.Environment || "localdev";
 
 type EvidenceRequest = {
   scoringPolicy: string;
@@ -109,14 +112,18 @@ describe("Nino Check Hmrc Issue Credential", () => {
       const [headerEncoded, payloadEncoded, _] = token.jwt.split(".");
       const header = JSON.parse(base64decode(headerEncoded));
       const payload = JSON.parse(base64decode(payloadEncoded));
+      const kmskeyid = await getSSMParameter(
+        "/common-cri-api/verifiableCredentialKmsSigningKeyId"
+      );
+
+      const hash = createHash("sha256")
+        .update(kmskeyid || "")
+        .digest("hex");
 
       expect(header).toEqual({
         typ: "JWT",
         alg: "ES256",
-        // TODO these run in other envs
-        kid: expect.stringContaining(
-          "did:web:review-hc.localdev.account.gov.uk#"
-        ),
+        kid: `did:web:review-hc.${environment}.account.gov.uk#${hash}`,
       });
 
       const result = await aVcWithCheckDetails();
