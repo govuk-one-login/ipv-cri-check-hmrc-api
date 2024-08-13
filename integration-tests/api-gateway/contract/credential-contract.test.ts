@@ -19,14 +19,14 @@ describe("Pact Verification", () => {
     opts = {
       provider: "NinoCriVcProvider",
       providerBaseUrl: `${Constants.LOCAL_HOST}:${Constants.LOCAL_APP_PORT}`,
-      pactBrokerUrl: process.env.PACT_BROKER_URL,
-      pactBrokerUsername: process.env.PACT_BROKER_USER,
+      pactBrokerUrl: "https://" + process.env.PACT_BROKER_HOST,
+      pactBrokerUsername: process.env.PACT_BROKER_USERNAME,
       pactBrokerPassword: process.env.PACT_BROKER_PASSWORD,
       consumerVersionSelectors: [
         { mainBranch: true },
         { deployedOrReleased: true },
       ],
-      // publishVerificationResult: true,
+      publishVerificationResult: true,
       providerVersion: "3.0.0",
       logLevel: "info",
     };
