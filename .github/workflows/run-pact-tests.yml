@@ -5,10 +5,10 @@ on:
     inputs:
       stack-name: { required: true, type: string }
       aws-region: { required: true, type: string }
-    # secrets:
-    #   pact-broker-host: { required: true }
-    #   pact-broker-username: { required: true }
-    #   pact-broker-password: { required: true }
+    secrets:
+      pact-broker-host: { required: true }
+      pact-broker-username: { required: true }
+      pact-broker-password: { required: true }
 
 concurrency:
   group: pact-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
@@ -49,9 +49,9 @@ jobs:
       uses: govuk-one-login/github-actions/node/run-script@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
       env:
         STACK_NAME: ${{ inputs.stack-name }}
-        # PACT_BROKER_HOST: ${{ secrets.pact-broker-host }}
-        # PACT_BROKER_USERNAME: ${{ secrets.pact-broker-username }}
-        # PACT_BROKER_PASSWORD: ${{ secrets.pact-broker-password }}
+        PACT_BROKER_HOST: ${{ secrets.pact-broker-host }}
+        PACT_BROKER_USERNAME: ${{ secrets.pact-broker-username }}
+        PACT_BROKER_PASSWORD: ${{ secrets.pact-broker-password }}
       with:
         working-directory: integration-tests
         script: npm run test:contract:ci
