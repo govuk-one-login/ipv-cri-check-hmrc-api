@@ -1,7 +1,7 @@
 import express from "express";
 import asyncify from "express-asyncify";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { base64url, decodeJwt } from "jose";
+import { base64url, decodeJwt, decodeProtectedHeader } from "jose";
 import { stackOutputs } from "../../../resources/cloudformation-helper";
 import { environment } from "../../env-variables";
 
@@ -49,7 +49,8 @@ const ammendJwt = async (response: Response) => {
   if (response.status !== 200) {
     return "";
   }
-  const decodedVc = decodeJwt(await response.text());
+  const body = await response.text();
+  const decodedVc = decodeJwt(body);
   const stringifyVc = JSON.stringify(decodedVc);
   const parseVc = JSON.parse(stringifyVc);
   parseVc.nbf = 4070908800;
@@ -66,7 +67,7 @@ const ammendJwt = async (response: Response) => {
     context: parseVc["@context"],
     jti: parseVc.jti,
   };
-
-  const jwtHeader = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.";
-  return jwtHeader + base64url.encode(JSON.stringify(reorderedJson)) + ".";
+  const jwtHeader = decodeProtectedHeader(body);
+  const jwtHeaderString = JSON.stringify(jwtHeader)
+  return base64url.encode(jwtHeaderString) + "." + base64url.encode(JSON.stringify(reorderedJson)) + ".";
 };
