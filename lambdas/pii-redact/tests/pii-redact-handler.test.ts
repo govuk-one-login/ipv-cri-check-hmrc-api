@@ -53,7 +53,7 @@ describe("pii-redact-handler", () => {
         {
           id: undefined,
           timestamp: undefined,
-          message: "test",
+          message: "{}",
           extractedFields: undefined,
         },
       ],
@@ -81,7 +81,7 @@ describe("pii-redact-handler", () => {
         {
           id: undefined,
           timestamp: undefined,
-          message: "test",
+          message: "{}",
           extractedFields: undefined,
         },
       ],

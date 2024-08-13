@@ -96,13 +96,6 @@ Mappings:
       VcIssued: VC_ISSUED
       End: END
       Abandoned: ABANDONED
-    Source:
-      dev: review-hc.dev.account.gov.uk
-      localdev: review-hc.localdev.account.gov.uk
-      build: review-hc.build.account.gov.uk
-      staging: review-hc.staging.account.gov.uk
-      integration: review-hc.integration.account.gov.uk
-      production: review-hc.production.account.gov.uk
 
   PlatformConfiguration:
     dev:
@@ -115,6 +108,20 @@ Mappings:
       CSLSEGRESS: arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython-2
     production:
       CSLSEGRESS: arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython-2
+
+  EnvironmentConfiguration:
+    localdev:
+      DOMAINNAME: review-hc.localdev.account.gov.uk
+    dev:
+      DOMAINNAME: review-hc.dev.account.gov.uk
+    build:
+      DOMAINNAME: review-hc.build.account.gov.uk
+    staging:
+      DOMAINNAME: review-hc.staging.account.gov.uk
+    integration:
+      DOMAINNAME: review-hc.integration.account.gov.uk
+    production:
+      DOMAINNAME: review-hc.production.account.gov.uk
 
 Globals:
   Function:
@@ -495,6 +502,7 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-JwtSigner"
+          DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
 
   JwtSignerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1210,7 +1218,7 @@ Resources:
         SsmParametersFunction: !Ref SsmParametersFunction
         OTGFunction: !Ref OTGFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
+        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         AuditEventNameResponseReceived:
           !FindInMap [Audit, EventName, ResponseReceived]
         AuditEventNameRequestSent: !FindInMap [Audit, EventName, RequestSent]
@@ -1332,7 +1340,7 @@ Resources:
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
+        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         AuditEventNameAbandoned: !FindInMap [Audit, EventName, Abandoned]
       Logging:
         Destinations:
@@ -1431,7 +1439,7 @@ Resources:
         JwtSignerFunction: !GetAtt JwtSignerFunction.Arn
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
+        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         AuditEventNameVcIssued: !FindInMap [Audit, EventName, VcIssued]
         AuditEventNameEnd: !FindInMap [Audit, EventName, End]
       Logging:
@@ -1573,7 +1581,7 @@ Resources:
       State: ENABLED
       EventPattern:
         source:
-          - !FindInMap [Audit, Source, !Ref Environment]
+          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         detail-type:
           - !FindInMap [Audit, EventName, ResponseReceived]
       Targets:
@@ -1588,7 +1596,7 @@ Resources:
       State: ENABLED
       EventPattern:
         source:
-          - !FindInMap [Audit, Source, !Ref Environment]
+          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         detail-type:
           - !FindInMap [Audit, EventName, RequestSent]
       Targets:
@@ -1603,7 +1611,7 @@ Resources:
       State: ENABLED
       EventPattern:
         source:
-          - !FindInMap [Audit, Source, !Ref Environment]
+          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         detail-type:
           - !FindInMap [Audit, EventName, VcIssued]
       Targets:
@@ -1618,7 +1626,7 @@ Resources:
       State: ENABLED
       EventPattern:
         source:
-          - !FindInMap [Audit, Source, !Ref Environment]
+          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         detail-type:
           - !FindInMap [Audit, EventName, End]
       Targets:
@@ -1633,7 +1641,7 @@ Resources:
       State: ENABLED
       EventPattern:
         source:
-          - !FindInMap [Audit, Source, !Ref Environment]
+          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         detail-type:
           - !FindInMap [Audit, EventName, Abandoned]
       Targets:
@@ -1649,7 +1657,7 @@ Resources:
       State: ENABLED
       EventPattern:
         source:
-          - !FindInMap [Audit, Source, !Ref Environment]
+          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         detail:
           timestamp: [{ "exists": true }]
           event_timestamp_ms: [{ "exists": true }]
@@ -1876,7 +1884,7 @@ Resources:
         CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
         EpochTimeArn: !GetAtt EpochTimeFunction.Arn
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [Audit, Source, !Ref Environment]
+        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
