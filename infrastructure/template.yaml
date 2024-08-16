@@ -658,7 +658,8 @@ Resources:
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
-      OKActions: []
+      OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
       InsufficientDataActions: []
       AlarmDescription: !Sub "Trigger if the ${OTGFunction} lambda throttles. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-Throttles-alarm"
@@ -724,9 +725,9 @@ Resources:
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${MatchingFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue core-infrastructure-AlarmTopic
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue core-infrastructure-AlarmTopic
       InsufficientDataActions: []
       MetricName: !Sub ${MatchingFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -969,7 +970,8 @@ Resources:
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
-      OKActions: []
+      OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
       InsufficientDataActions: []
       MetricName: PublicNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
@@ -1069,7 +1071,8 @@ Resources:
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
-      OKActions: []
+      OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
       InsufficientDataActions: []
       MetricName: PrivateNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
