@@ -1,9 +1,10 @@
 import express from "express";
 import asyncify from "express-asyncify";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { base64url, decodeJwt, decodeProtectedHeader } from "jose";
 import { stackOutputs } from "../../../resources/cloudformation-helper";
 import { environment } from "../../env-variables";
+import { formatJwtForPactTest } from "../utils/PactJwtFormatter";
+import { IncomingHttpHeaders } from "http";
 
 const logger = new Logger({
   logLevel: "DEBUG",
@@ -16,12 +17,7 @@ export const credentialIssueRouter = asyncify(express.Router());
 credentialIssueRouter.post("/", async (req, res) => {
   logger.debug(`Recieved Request - Type: ${req.method}`);
 
-  const passedThroughHeaders = new Headers();
-  for (const [key, value] of Object.entries(req.headers)) {
-    if (key !== "transfer-encoding") {
-      passedThroughHeaders.append(key, value as string);
-    }
-  }
+  const passedThroughHeaders = convertExpressHeadersToFetchHeaders(req.headers);
 
   if (!publicAPI) {
     const preOutput = await stackOutputs(process.env.STACK_NAME);
@@ -36,38 +32,24 @@ credentialIssueRouter.post("/", async (req, res) => {
     }
   );
 
-  const result: string = await ammendJwt(response);
+  const responseBody = await response.text();
+  const body = (response.status === 200) ? formatJwtForPactTest(responseBody) : responseBody;
 
   for (const [key, value] of response.headers.entries()) {
     res.setHeader(key, value);
   }
   res.status(response.status);
-  res.send(result);
+  res.send(body);
 });
 
-const ammendJwt = async (response: Response) => {
-  if (response.status !== 200) {
-    return "";
+const convertExpressHeadersToFetchHeaders = (
+  incomingHeaders: IncomingHttpHeaders
+) => {
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(incomingHeaders)) {
+    if (key !== "transfer-encoding") {
+      headers.append(key, value as string);
+    }
   }
-  const body = await response.text();
-  const decodedVc = decodeJwt(body);
-  const stringifyVc = JSON.stringify(decodedVc);
-  const parseVc = JSON.parse(stringifyVc);
-  parseVc.nbf = 4070908800;
-  parseVc.iss = "dummyNinoComponentId";
-  parseVc.exp = 4070909400;
-  parseVc.jti = "dummyJti";
-  const reorderedJson = {
-    sub: parseVc.sub,
-    nbf: parseVc.nbf,
-    iss: parseVc.iss,
-    exp: parseVc.exp,
-    vc: parseVc.vc,
-    type: parseVc.type,
-    context: parseVc["@context"],
-    jti: parseVc.jti,
-  };
-  const jwtHeader = decodeProtectedHeader(body);
-  const jwtHeaderString = JSON.stringify(jwtHeader)
-  return base64url.encode(jwtHeaderString) + "." + base64url.encode(JSON.stringify(reorderedJson)) + ".";
+  return headers;
 };
