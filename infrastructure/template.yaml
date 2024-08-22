@@ -1126,6 +1126,9 @@ Resources:
           KeyType: HASH
         - AttributeName: timestamp
           KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
 
   NinoUsersTable:
     Type: AWS::DynamoDB::Table
@@ -1138,6 +1141,9 @@ Resources:
       KeySchema:
         - AttributeName: sessionId
           KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
 
   CheckSessionStateMachine:
     Type: AWS::Serverless::StateMachine

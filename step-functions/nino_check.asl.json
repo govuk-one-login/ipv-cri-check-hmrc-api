@@ -333,6 +333,9 @@
           },
           "attempt": {
             "S": "PASS"
+          },
+          "ttl": {
+            "N.$": "$.sessionCheck.sessionExpiry"
           }
         }
       },
@@ -388,6 +391,9 @@
           },
           "attempt": {
             "S": "FAIL"
+          },
+          "ttl": {
+            "N.$": "$.sessionCheck.sessionExpiry"
           }
         }
       },
@@ -459,6 +465,9 @@
           },
           "nino": {
             "S.$": "$$.Execution.Input.nino"
+          },
+          "ttl": {
+            "N.$": "$.sessionCheck.sessionExpiry"
           }
         }
       },
@@ -501,6 +510,9 @@
           },
           "attempt": {
             "S": "FAIL"
+          },
+          "ttl": {
+            "N.$": "$.sessionCheck.sessionExpiry"
           }
         }
       },
