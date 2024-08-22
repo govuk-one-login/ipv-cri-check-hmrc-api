@@ -165,7 +165,8 @@
 				"status": "SESSION_OK",
 				"clientId.$": "$[0].sessionQuery.items[0].clientId.S",
 				"userAuditInfo.$": "$[0].UserSessionInfo",
-				"txmaAuditHeader.$": "$[1].TxmaAuditHeader.value"
+				"txmaAuditHeader.$": "$[1].TxmaAuditHeader.value",
+        "sessionExpiry.$": "$[0].sessionQuery.items[0].expiryDate.N"
 			}
 		},
 		"Err: No sessionId provided": {
