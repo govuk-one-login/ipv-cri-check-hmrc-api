@@ -1,6 +1,5 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import { Verifier, VerifierOptions } from "@pact-foundation/pact";
-import * as path from "path";
 import { Constants } from "./utils/Constants";
 import {
   clearContractTestsFromDatabase,
