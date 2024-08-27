@@ -124,10 +124,10 @@ describe("nino-check-happy", () => {
         nino: "AA000003C",
       };
       const testNoCidNinoUser = {
-        nino: inputNoCidNinoUser.nino,
+        nino: "EE123456A",
         dob: "1948-04-23",
         firstName: "Error",
-        lastName: "NinoDoesNotMatchCID",
+        lastName: "Error",
       };
 
       await populateTables(
