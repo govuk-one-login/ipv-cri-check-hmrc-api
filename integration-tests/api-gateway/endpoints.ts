@@ -59,6 +59,21 @@ export const createSession = async (): Promise<Response> => {
   return sessionResponse;
 };
 
+export const createInvalidSession = async (): Promise<Response> => {
+  const ipvCoreAuthorizationUrl = await createPayload();
+  const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
+  const sessionResponse = await fetch(sessionApiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Forwarded-For": "localhost",
+    },
+    body: JSON.stringify(null),
+  });
+
+  return sessionResponse;
+};
+
 export const checkEndpoint = async (
   headers: { "session-id": string; "txma-audit-encoded"?: string },
   nino: string
