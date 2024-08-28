@@ -2,7 +2,6 @@ import { stackOutputs } from "../../resources/cloudformation-helper";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
-  getItemByKey,
 } from "../../resources/dynamodb-helper";
 import {
   abandonEndpoint,
@@ -14,7 +13,7 @@ import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
 
 jest.setTimeout(30000);
 
-describe("Given the session is valid and expecting to abandon the journey", () => {
+describe("Given the session is invalid and expecting to abandon the journey", () => {
   let sessionId: string;
   let sessionTableName: string;
   let state: string;
@@ -65,32 +64,15 @@ describe("Given the session is valid and expecting to abandon the journey", () =
     await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
   });
 
-  it("Should receive a 200 response when /abandon endpoint is called without optional headers", async () => {
-    const abandonResponse = await abandonEndpoint({ "session-id": sessionId });
-    expect(abandonResponse.status).toEqual(200);
-
-    const sessionRecord = await getItemByKey(sessionTableName, {
-      sessionId: sessionId,
+    it("Should receive a 400 response when /abandon endpoint is called with invalid session id", async () => {
+      const abandonResponse = await abandonEndpoint({
+          "session-id": "test"
+          });
+      expect(abandonResponse.status).toEqual(400);
     });
 
-    //Checking DynamoDB to ensure authCode is removed
-    expect(sessionRecord.Item?.authorizationCode).toBeUndefined();
-    expect(sessionRecord.Item?.authorizationCodeExpiryDate).toBe(0);
-  });
-
-  it("Should receive a 200 response when /abandon endpoint is called with optional headers", async () => {
-    const abandonResponse = await abandonEndpoint({
-      "session-id": sessionId,
-      "txma-audit-encoded": "test encoded header",
+    it("Should receive a 400 response when /abandon endpoint is called with no session id", async () => {
+      const abandonResponse = await abandonEndpoint({});
+      expect(abandonResponse.status).toEqual(400);
     });
-    expect(abandonResponse.status).toEqual(200);
-
-    const sessionRecord = await getItemByKey(sessionTableName, {
-      sessionId: sessionId,
-    });
-
-    //Checking DynamoDB to ensure authCode is removed
-    expect(sessionRecord.Item?.authorizationCode).toBeUndefined();
-    expect(sessionRecord.Item?.authorizationCodeExpiryDate).toBe(0);
-  });
 });

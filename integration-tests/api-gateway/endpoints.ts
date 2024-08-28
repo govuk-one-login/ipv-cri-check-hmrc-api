@@ -59,8 +59,23 @@ export const createSession = async (): Promise<Response> => {
   return sessionResponse;
 };
 
+export const createInvalidSession = async (): Promise<Response> => {
+  const ipvCoreAuthorizationUrl = await createPayload();
+  const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
+  const sessionResponse = await fetch(sessionApiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Forwarded-For": "localhost",
+    },
+    body: JSON.stringify(null),
+  });
+
+  return sessionResponse;
+};
+
 export const checkEndpoint = async (
-  headers: { "session-id": string; "txma-audit-encoded"?: string },
+  headers: { "session-id"?: string; "txma-audit-encoded"?: string },
   nino: string
 ): Promise<Response> => {
   const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
@@ -105,7 +120,7 @@ export const authorizationEndpoint = async (
 };
 
 export const abandonEndpoint = async (headers: {
-  "session-id": string;
+  "session-id"?: string;
   "txma-audit-encoded"?: string;
 }): Promise<Response> => {
   const abandonUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/abandon`;
