@@ -72,9 +72,7 @@ describe("Given the session is invalid and expecting to abandon the journey", ()
     });
 
     it("Should receive a 400 response when /abandon endpoint is called with no session id", async () => {
-      const abandonResponse = await abandonEndpoint({
-          "session-id": ""
-           });
+      const abandonResponse = await abandonEndpoint({});
       expect(abandonResponse.status).toEqual(400);
     });
 });

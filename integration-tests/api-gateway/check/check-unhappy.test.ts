@@ -44,7 +44,7 @@ describe("Given the session and NINO is invalid", () => {
     const session = await createSession();
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
-    const check = await checkEndpoint({ "session-id": "" }, NINO);
+    const check = await checkEndpoint({}, NINO);
     const checkData = check.status;
     expect(checkData).toEqual(400);
   });

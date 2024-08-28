@@ -58,67 +58,55 @@ describe("Given the session is invalid and expecting it not to be authorized", (
     await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
   });
 
-  it("Should return an 400 response when /authorization endpoint is called when session id is null", async () => {
+  it("Should return an 400 response when /authorization endpoint is called when session id is empty", async () => {
     const authResponse = await authorizationEndpoint(
       "",
       CLIENT_ID,
       `${CLIENT_URL}/callback`,
       state
     );
-    const authData = await authResponse.json();
+    await authResponse.json();
 
     expect(authResponse.status).toEqual(400);
 
-    const sessionRecord = await getItemByKey(sessionTableName, {
-      sessionId: sessionId,
-    });
   });
 
-    it("Should return an 400 response when /authorization endpoint is called when cliend id is null", async () => {
+    it("Should return an 400 response when /authorization endpoint is called when cliend id is empty", async () => {
       const authResponse = await authorizationEndpoint(
         sessionId,
         "",
         `${CLIENT_URL}/callback`,
         state
       );
-      const authData = await authResponse.json();
+      await authResponse.json();
 
       expect(authResponse.status).toEqual(400);
 
-      const sessionRecord = await getItemByKey(sessionTableName, {
-        sessionId: sessionId,
-      });
     });
 
-  it("Should return an 400 response when /authorization endpoint is called when callback is null", async () => {
+  it("Should return an 400 response when /authorization endpoint is called when callback is empty", async () => {
     const authResponse = await authorizationEndpoint(
       sessionId,
       CLIENT_ID,
       "",
       state
     );
-    const authData = await authResponse.json();
+    await authResponse.json();
 
     expect(authResponse.status).toEqual(400);
 
-    const sessionRecord = await getItemByKey(sessionTableName, {
-      sessionId: sessionId,
-    });
   });
 
-    it("Should return an 400 response when /authorization endpoint is called when state is null", async () => {
+    it("Should return an 400 response when /authorization endpoint is called when state is empty", async () => {
       const authResponse = await authorizationEndpoint(
         sessionId,
         CLIENT_ID,
         `${CLIENT_URL}/callback`,
         ""
       );
-      const authData = await authResponse.json();
+      await authResponse.json();
 
       expect(authResponse.status).toEqual(400);
 
-      const sessionRecord = await getItemByKey(sessionTableName, {
-        sessionId: sessionId,
-      });
     });
 });
