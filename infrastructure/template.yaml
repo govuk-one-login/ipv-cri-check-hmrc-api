@@ -1206,6 +1206,74 @@ Resources:
         - Name: StateMachineArn
           Value: !Ref CheckSessionStateMachine
 
+  UserAttributesStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Type: EXPRESS
+      DefinitionUri: ../step-functions/user_attributes.asl.json
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt UserAttributesStateMachineLogGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action: logs:*
+            Resource: "*"
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
+  UserAttributesStateMachineAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Condition: "DeployAlarms"
+    Properties:
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "${UserAttributesStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-UserAttributesStateMachine-alarm"
+      ComparisonOperator: GreaterThanThreshold
+      DatapointsToAlarm: 4
+      EvaluationPeriods: 12
+      MetricName: "ExecutionsFailed"
+      Namespace: AWS/States
+      Period: 300
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: missing
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref UserAttributesStateMachine
+
+  UserAttributesStateMachineFailedMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref UserAttributesStateMachineLogGroup
+      FilterPattern: '{($.type = "ExecutionFailed")}'
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricName: "UserAttributesStateMachine-Error"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
+
+  UserAttributesStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-UserAttributes-State-machine-logs"
+      RetentionInDays: 30
+
+  PIIRedactedUserAttributesStateMachineLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevLikeEnvironment
+    Properties:
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
+      LogGroupName: !Ref PIIRedactedUserAttributesStateMachineLogGroup
   NinoCheckStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -2150,6 +2218,11 @@ Resources:
       LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs-pii-redacted
       RetentionInDays: 30
 
+  PIIRedactedUserAttributesStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-UserAttributes-State-machine-logs-pii-redacted"
+      RetentionInDays: 30
   ####################################################################
   #                                                                  #
   # PIIRedactFunction SubscriptionFilter                             #
@@ -2398,6 +2471,9 @@ Outputs:
   CheckSessionStateMachineArn:
     Description: Session Check state machine ARN
     Value: !Ref CheckSessionStateMachine
+  UserAttributesStateMachineArn:
+    Description: UserAttribute state machine ARN
+    Value: !Ref UserAttributesStateMachine
   NinoIssueCredentialStateMachineArn:
     Description: Nino Issue Credential state machine ARN
     Value: !Ref NinoIssueCredentialStateMachine

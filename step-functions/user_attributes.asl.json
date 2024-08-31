@@ -1,0 +1,163 @@
+{
+  "Comment": "Using a parallel state to execute branches that transform userInfo into required userAttributes",
+  "StartAt": "is user attributes present?",
+  "States": {
+    "is user attributes present?": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "Is Nino Present?",
+          "States": {
+            "Is Nino Present?": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.nino",
+                  "IsPresent": true,
+                  "Next": "add social security record"
+                }
+              ],
+              "Default": "No social security record Added"
+            },
+            "No social security record Added": {
+              "Type": "Pass",
+              "Parameters": {},
+              "ResultPath": "$.ni",
+              "End": true
+            },
+            "add social security record": {
+              "Type": "Pass",
+              "Parameters": {
+                "socialSecurityRecord":[{"personalNumber.$": "$.nino"}]
+              },
+              "ResultPath": "$.ni",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Is BirthDate Info Present?",
+          "States": {
+            "Is BirthDate Info Present?": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.userInfoEvent.Items[0].birthDates.L[0]",
+                  "IsPresent": true,
+                  "Next": "Collect birthDate"
+                }
+              ],
+              "Default": "No birthdate Added"
+            },
+            "No birthdate Added": {
+              "Type": "Pass",
+              "Parameters": {},
+              "ResultPath": "$.dob",
+              "End": true
+            },
+            "Collect birthDate": {
+              "Type": "Map",
+              "ItemsPath": "$.userInfoEvent.Items[0].birthDates.L",
+              "ItemSelector": {
+                "value.$": "$$.Map.Item.Value.M.value.S"
+              },
+              "ItemProcessor": {
+                "ProcessorConfig": {
+                  "Mode": "INLINE"
+                },
+                "StartAt": "birthdate",
+                "States": {
+                  "birthdate": {
+                    "Type": "Pass",
+                    "Parameters": {
+                      "value.$": "$.value"
+                    },
+                    "ResultPath": "$",
+                    "End": true
+                  }
+                }
+              },
+              "ResultPath": "$.birthDate",
+              "Next": "add birthdate"
+            },
+            "add birthdate": {
+              "Type": "Pass",
+              "Parameters": {
+                "birthDate.$": "$.birthDate"
+              },
+              "ResultPath": "$.dob",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Are nameParts present?",
+          "States": {
+            "Are nameParts present?": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.userInfoEvent.Items[0].names.L[0].M.nameParts.L[0]",
+                  "IsPresent": true,
+                  "Next": "Collect nameParts"
+                }
+              ],
+              "Default": "No nameparts Added"
+            },
+            "No nameparts Added": {
+              "Type": "Pass",
+              "Parameters": {},
+              "ResultPath": "$.names",
+              "End": true
+            },
+            "Collect nameParts": {
+              "Type": "Map",
+              "ItemsPath": "$.userInfoEvent.Items[0].names.L[0].M.nameParts.L",
+              "ItemSelector": {
+                "type.$": "$$.Map.Item.Value.M.type.S",
+                "value.$": "$$.Map.Item.Value.M.value.S"
+              },
+              "ItemProcessor": {
+                "ProcessorConfig": {
+                  "Mode": "INLINE"
+                },
+                "StartAt": "nameparts",
+                "States": {
+                  "nameparts": {
+                    "Type": "Pass",
+                    "Parameters": {
+                      "type.$": "$.type",
+                      "value.$": "$.value"
+                    },
+                    "ResultPath": "$",
+                    "End": true
+                  }
+                }
+              },
+              "ResultPath": "$.nameParts",
+              "Next": "add nameparts"
+            },
+            "add nameparts": {
+              "Type": "Pass",
+              "Parameters": {
+                "name":[{"nameParts.$": "$.nameParts"}]
+              },
+              "ResultPath": "$.names",
+              "End": true
+            }
+          }
+        }
+      ],
+      "Next": "merge all user attributes"
+    },
+    "merge all user attributes": {
+      "Type": "Pass",
+      "Parameters": {
+        "attributes.$": "States.JsonMerge(States.JsonMerge($[0].ni, $[1].dob, false), $[2].names, false)"
+      },
+      "ResultPath": "$",
+      "OutputPath":"$.attributes",
+      "End": true
+    }
+  }
+}
