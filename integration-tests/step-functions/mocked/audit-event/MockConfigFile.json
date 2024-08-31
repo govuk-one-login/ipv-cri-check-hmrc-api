@@ -21,39 +21,14 @@
     "getAuditContextWithoutRestrictedInfo": {
       "0": {
         "Return": {
-          "Payload": {}
+          "Output": "{}"
         }
       }
     },
     "getAuditContextWithRestrictedInfo": {
       "0": {
         "Return": {
-          "Payload": {
-            "socialSecurityRecord": [
-              {
-                "personalNumber": "AA000003D"
-              }
-            ],
-            "birthDate": [
-              {
-                "value": "1948-04-23"
-              }
-            ],
-            "name": [
-              {
-                "nameParts": [
-                  {
-                    "type": "GivenName",
-                    "value": "Jim"
-                  },
-                  {
-                    "type": "FamilyName",
-                    "value": "Ferguson"
-                  }
-                ]
-              }
-            ]
-          }
+          "Output": "{\"socialSecurityRecord\":[{\"personalNumber\":\"AA000003D\"}],\"birthDate\":[{\"value\":\"1948-04-23\"}],\"name\":[{\"nameParts\":[{\"type\":\"GivenName\",\"value\":\"Jim\"},{\"type\":\"FamilyName\",\"value\":\"Ferguson\"}]}]}"
         }
       }
     },

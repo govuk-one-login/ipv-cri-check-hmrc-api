@@ -123,6 +123,8 @@ Mappings:
     production:
       DOMAINNAME: review-hc.production.account.gov.uk
 
+
+
 Globals:
   Function:
     Timeout: 30
@@ -1274,6 +1276,7 @@ Resources:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedUserAttributesStateMachineLogGroup
+
   NinoCheckStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -1506,6 +1509,7 @@ Resources:
         TimeFunctionArn: !GetAtt TimeFunction.Arn
         CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
         UserAttemptsTable: !Ref UserAttemptsTable
+        UserAttributesStateMachineArn: !GetAtt UserAttributesStateMachine.Arn
         MaxJwtTtlParameter: !Ref MaxJwtTtlParameter
         JwtTtlUnitParameter: !Ref JwtTtlUnitParameter
         CommonStackName: !Ref CommonStackName
@@ -1543,6 +1547,13 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref CheckHmrcEventBus
+        - Statement:
+            Effect: Allow
+            Action:
+              - states:StartSyncExecution
+              - states:StartExecution
+            Resource:
+              - !Ref UserAttributesStateMachine
         - Statement:
             Effect: Allow
             Action:
@@ -1959,6 +1970,7 @@ Resources:
         EpochTimeArn: !GetAtt EpochTimeFunction.Arn
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+        UserAttributesStateMachineArn: !GetAtt UserAttributesStateMachine.Arn
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -1972,6 +1984,13 @@ Resources:
             FunctionName: !Ref EpochTimeFunction
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref CheckHmrcEventBus
+        - Statement:
+            Effect: Allow
+            Action:
+              - states:StartSyncExecution
+              - states:StartExecution
+            Resource:
+              - !Ref UserAttributesStateMachine
         - Statement:
             Effect: Allow
             Action: logs:*

@@ -260,36 +260,7 @@
     "CreateCredentialSubject": {
       "0": {
         "Return": {
-          "Payload": {
-            "socialSecurityRecord": [
-              {
-                "personalNumber": "AA000003D"
-              }
-            ],
-            "name": [
-              {
-                "nameParts": [
-                  {
-                    "type": "GivenName",
-                    "value": "Jim"
-                  },
-                  {
-                    "type": "FamilyName",
-                    "value": "Ferguson"
-                  }
-                ]
-              }
-            ],
-            "birthDate": [
-              {
-                "value": "1965-07-08"
-              }
-            ]
-          },
-          "SdkHttpMetadata": {
-            "HttpStatusCode": 200
-          },
-          "StatusCode": 200
+          "Output": "{\"socialSecurityRecord\":[{\"personalNumber\":\"AA000003D\"}],\"name\":[{\"nameParts\":[{\"type\":\"GivenName\",\"value\":\"Jim\"},{\"type\":\"FamilyName\",\"value\":\"Ferguson\"}]}],\"birthDate\":[{\"value\":\"1965-07-08\"}]}"
         }
       }
     },
