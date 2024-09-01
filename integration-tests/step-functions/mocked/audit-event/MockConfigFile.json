@@ -4,14 +4,12 @@
       "TestCases": {
         "Happy": {
           "Get AuditContext Restricted Info": "getAuditContextWithoutRestrictedInfo",
-          "EpochTime in Seconds": "epochTimeInSeconds",
-          "EpochTime In Milliseconds": "epochTimeInMilliseconds",
+          "Get EpochTime": "epochTime",
           "publish event to TxMa Queue": "PublishAuditEventToTxMaQueue"
         },
         "HappyPersonalData": {
           "Get AuditContext Restricted Info": "getAuditContextWithRestrictedInfo",
-          "EpochTime in Seconds": "epochTimeInSeconds",
-          "EpochTime In Milliseconds": "epochTimeInMilliseconds",
+          "Get EpochTime": "epochTime",
           "publish event to TxMa Queue": "PublishAuditEventToTxMaQueue"
         }
       }
@@ -32,17 +30,13 @@
         }
       }
     },
-    "epochTimeInSeconds": {
+    "epochTime": {
       "0": {
         "Return": {
-          "Payload": 1716162264
-        }
-      }
-    },
-    "epochTimeInMilliseconds": {
-      "0": {
-        "Return": {
-          "Payload": 1716162264134
+          "Payload": {
+            "seconds": 1716162264,
+            "milliseconds": 1716162264134
+          }
         }
       }
     },
