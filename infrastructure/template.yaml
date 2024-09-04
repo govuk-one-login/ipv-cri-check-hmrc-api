@@ -658,10 +658,10 @@ Resources:
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-topic-critical-alert
+        - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-topic-critical-alert
+        - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       AlarmDescription: !Sub "Trigger if the ${OTGFunction} lambda throttles. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-Throttles-alarm"
@@ -728,10 +728,10 @@ Resources:
       ActionsEnabled: true
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-topic-critical-alert
+        - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-topic-critical-alert
+        - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${MatchingFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -974,10 +974,10 @@ Resources:
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-topic-critical-alert
+        - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-topic-critical-alert
+        - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PublicNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
@@ -1077,10 +1077,10 @@ Resources:
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-topic-critical-alert
+        - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-topic-critical-alert
+        - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PrivateNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
