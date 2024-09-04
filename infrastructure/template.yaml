@@ -657,8 +657,10 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
+        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       AlarmDescription: !Sub "Trigger if the ${OTGFunction} lambda throttles. ${SupportManualURL}"
@@ -725,9 +727,11 @@ Resources:
       AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${MatchingFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${MatchingFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -968,9 +972,11 @@ Resources:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-PublicNinoCheckApi-FatalError-alarm"
       AlarmDescription: !Sub "Trigger an alarm when Fatal ${PublicNinoCheckApi} Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
+      OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PublicNinoCheckApi-Fatalerror
@@ -1069,9 +1075,11 @@ Resources:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-PrivateNinoCheckApi-FatalError-alarm"
       AlarmDescription: !Sub "Trigger an alarm when Fatal ${PrivateNinoCheckApi} Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
+      OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PrivateNinoCheckApi-Fatalerror
