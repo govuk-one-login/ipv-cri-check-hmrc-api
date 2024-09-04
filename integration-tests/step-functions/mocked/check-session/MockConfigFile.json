@@ -24,9 +24,11 @@
   "MockedResponses": {
     "FetchCurrentTimeHappy": {
       "0": {
-        "Return": {
-          "Payload": "1695828259"
-        }
+				"Return": {
+					"Payload": {
+						"seconds": "1695828259"
+					}
+				}
       }
     },
     "FetchSessionHappy": {

@@ -297,6 +297,8 @@
       "0": {
         "Return": {
           "Payload": {
+            "epochMode":"claim",
+            "govJourneyId":"test-government-journey-id",
             "nbf": 1699964956131,
             "expiry": 1699972156131
           },

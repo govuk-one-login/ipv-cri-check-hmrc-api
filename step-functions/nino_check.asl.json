@@ -422,8 +422,13 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
-        "Payload.$": "$",
-        "FunctionName": "${CreateAuthCodeFunctionArn}"
+        "Payload": {
+          "epochMode": "auth",
+          "govJourneyId.$": "$.sessionCheck.userAuditInfo.govuk_signin_journey_id",
+          "ttlValue": 6,
+          "ttlUnint": "seconds"
+        },
+        "FunctionName": "${TimeFunctionArn}"
       },
       "Next": "Set Auth Code for Session",
       "ResultSelector": {
