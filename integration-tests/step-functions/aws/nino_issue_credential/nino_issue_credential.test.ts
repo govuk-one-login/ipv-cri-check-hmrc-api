@@ -567,7 +567,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
           timestamp: Date.now().toString(),
           attempt: "FAIL",
           status: 200,
-          text: "DOB does not match CID, First Name does not match CID",
+          text: "Nino does not match CID",
         },
       }
     );

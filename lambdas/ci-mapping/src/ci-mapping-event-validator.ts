@@ -71,7 +71,7 @@ const getContraIndicationMappingMapping = (
   contraIndicationMapping: string[]
 ): string[] => {
   if (contraIndicationMapping?.length) {
-    return contraIndicationMapping;
+    return contraIndicationMapping.map((ciString) => ciString.toUpperCase());
   }
   throw new Error(CONTRAINDICATION_MAPPINGS_ABSENT_ERROR);
 };
@@ -90,7 +90,7 @@ const getInputHmrcErrors = (hmrcErrors: string[] = []) => {
     throw new Error(HMRC_ERRORS_ABSENT);
   }
   return hmrcErrors.reduce((result, hmrcError) => {
-    return result.concat(convertInputToArray(hmrcError));
+    return result.concat(convertInputToArray(hmrcError.toUpperCase()));
   }, [] as string[]);
 };
 
