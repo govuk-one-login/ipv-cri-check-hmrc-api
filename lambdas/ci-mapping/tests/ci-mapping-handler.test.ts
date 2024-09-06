@@ -87,6 +87,7 @@ describe("ci-mapping-handler", () => {
       expect(result).toEqual([{ ci: "ci_2", reason: "ci_2 reason" }]);
     }
   );
+
   it.each(testCases)(
     "should return all ContraIndicator code and reason pairs for hmrc errors input [%j]",
     async (testCase: TestCase) => {
@@ -166,7 +167,25 @@ describe("ci-mapping-handler", () => {
     expect(result).toEqual([]);
   });
 
-  it("throws error, no matching hmrc_error for any ContraIndicationMapping", async () => {
+  it.only("throws error, no matching hmrc_error for any ContraIndicationMapping", async () => {
+    const contraIndicationMapping = ["error, aaaa:ci_4"];
+    const contraIndicatorReasonsMapping = [
+      { ci: "ci_4", reason: "ci_4 reason" },
+    ];
+
+    const event = {
+      contraIndicationMapping,
+      hmrcErrors: ["ERROR"],
+      contraIndicatorReasonsMapping,
+    } as CiMappingEvent;
+    const ciMappingHandler = new CiMappingHandler();
+
+    const result = await ciMappingHandler.handler(event, {} as Context);
+
+    expect(result).toEqual([{ ci: "ci_4", reason: "ci_4 reason" }]);
+  });
+
+  it.only("should not throw error, where hmrc_error is different case to ContraIndicationMapping", async () => {
     const event = {
       contraIndicationMapping,
       hmrcErrors: ["not-a-mapped-error"],

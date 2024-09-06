@@ -28,8 +28,18 @@ export const validateInputs = (event: CiMappingEvent) => {
     event.contraIndicatorReasonsMapping
   );
 
+  console.log("contraIndicationMapping", contraIndicationMapping);
+
+  console.log(
+    "allMappedHmrcErrors(contraIndicationMapping)",
+    allMappedHmrcErrors(contraIndicationMapping)
+  );
+
   const hmrcErrorIsNotMapped = (hmrcError: string) =>
-    !allMappedHmrcErrors(contraIndicationMapping).includes(hmrcError);
+    // Strict comparison
+    !allMappedHmrcErrors(contraIndicationMapping)
+      .map((mapping) => mapping.toUpperCase())
+      .includes(hmrcError.toUpperCase());
 
   const allHmrcErrorsUnMatched = hmrcErrors.every(hmrcErrorIsNotMapped);
   const someHmrcErrorsUnMatched = hmrcErrors.some(hmrcErrorIsNotMapped);
@@ -65,13 +75,13 @@ export const getContraIndicatorWithReason = (
 };
 
 const areCIsEqual = (reasonCi?: string, contraCi?: string): boolean =>
-  reasonCi?.trim() === contraCi?.trim();
+  reasonCi?.trim().toUpperCase() === contraCi?.trim().toUpperCase();
 
 const getContraIndicationMappingMapping = (
   contraIndicationMapping: string[]
 ): string[] => {
   if (contraIndicationMapping?.length) {
-    return contraIndicationMapping.map((ciString) => ciString.toUpperCase());
+    return contraIndicationMapping;
   }
   throw new Error(CONTRAINDICATION_MAPPINGS_ABSENT_ERROR);
 };
@@ -90,7 +100,7 @@ const getInputHmrcErrors = (hmrcErrors: string[] = []) => {
     throw new Error(HMRC_ERRORS_ABSENT);
   }
   return hmrcErrors.reduce((result, hmrcError) => {
-    return result.concat(convertInputToArray(hmrcError.toUpperCase()));
+    return result.concat(convertInputToArray(hmrcError));
   }, [] as string[]);
 };
 
@@ -104,11 +114,17 @@ const throwUnMatchedCIsAreDetectedError = (
   );
 
   const unMatchedCIsFromReasons = [...reasonsMap].filter(
-    (ci) => !contraMap.has(ci)
+    (reason) =>
+      ![...contraMap].some((ci) => ci.toUpperCase() === reason.toUpperCase())
   );
+
   const unMatchedCIsFromContraIndications = [...contraMap].filter(
-    (ci) => !reasonsMap.has(ci)
+    (ci) =>
+      ![...reasonsMap].some(
+        (reason) => reason.toUpperCase() === ci.toUpperCase()
+      )
   );
+
   const unMatchedCIs = [
     ...unMatchedCIsFromReasons,
     ...unMatchedCIsFromContraIndications,
