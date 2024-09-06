@@ -29,7 +29,9 @@ export const validateInputs = (event: CiMappingEvent) => {
   );
 
   const hmrcErrorIsNotMapped = (hmrcError: string) =>
-    !allMappedHmrcErrors(contraIndicationMapping).includes(hmrcError);
+    !allMappedHmrcErrors(contraIndicationMapping)
+      .toUpperCase()
+      .includes(hmrcError.toUpperCase());
 
   const allHmrcErrorsUnMatched = hmrcErrors.every(hmrcErrorIsNotMapped);
   const someHmrcErrorsUnMatched = hmrcErrors.some(hmrcErrorIsNotMapped);
@@ -65,7 +67,7 @@ export const getContraIndicatorWithReason = (
 };
 
 const areCIsEqual = (reasonCi?: string, contraCi?: string): boolean =>
-  reasonCi?.trim() === contraCi?.trim();
+  reasonCi?.trim().toUpperCase() === contraCi?.trim().toUpperCase();
 
 const getContraIndicationMappingMapping = (
   contraIndicationMapping: string[]
@@ -104,11 +106,17 @@ const throwUnMatchedCIsAreDetectedError = (
   );
 
   const unMatchedCIsFromReasons = [...reasonsMap].filter(
-    (ci) => !contraMap.has(ci)
+    (reason) =>
+      ![...contraMap].some((ci) => ci.toUpperCase() === reason.toUpperCase())
   );
+
   const unMatchedCIsFromContraIndications = [...contraMap].filter(
-    (ci) => !reasonsMap.has(ci)
+    (ci) =>
+      ![...reasonsMap].some(
+        (reason) => reason.toUpperCase() === ci.toUpperCase()
+      )
   );
+
   const unMatchedCIs = [
     ...unMatchedCIsFromReasons,
     ...unMatchedCIsFromContraIndications,
