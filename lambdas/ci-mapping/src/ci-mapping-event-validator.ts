@@ -28,17 +28,9 @@ export const validateInputs = (event: CiMappingEvent) => {
     event.contraIndicatorReasonsMapping
   );
 
-  console.log("contraIndicationMapping", contraIndicationMapping);
-
-  console.log(
-    "allMappedHmrcErrors(contraIndicationMapping)",
-    allMappedHmrcErrors(contraIndicationMapping)
-  );
-
   const hmrcErrorIsNotMapped = (hmrcError: string) =>
-    // Strict comparison
     !allMappedHmrcErrors(contraIndicationMapping)
-      .map((mapping) => mapping.toUpperCase())
+      .toUpperCase()
       .includes(hmrcError.toUpperCase());
 
   const allHmrcErrorsUnMatched = hmrcErrors.every(hmrcErrorIsNotMapped);
