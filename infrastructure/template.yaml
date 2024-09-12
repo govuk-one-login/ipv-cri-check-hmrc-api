@@ -2163,27 +2163,6 @@ Resources:
   # PIIRedactFunction SubscriptionFilter                             #
   #                                                                  #
   ####################################################################
-  InvokeLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      PermissionsBoundary:
-        !If [ UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue ]
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSXrayFullAccess
-        - arn:aws:iam::aws:policy/AmazonS3FullAccess
-        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
-
   PIIRedactFunction:
     Type: AWS::Serverless::Function
     Metadata:
