@@ -205,77 +205,6 @@ Globals:
               - !Ref Environment
 
 Resources:
-  EpochTimeFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/epoch-time/src/get-epoch-time-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-EpochTime
-
-  EpochTimeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction
-      RetentionInDays: 30
-
-  PIIRedactedEpochTimeFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
-      LogGroupName: !Ref PIIRedactedEpochTimeFunctionLogGroup
-
-  EpochTimeFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref EpochTimeFunctionLogGroup
-      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName =
-        ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName
-        = ExecutionsTimedOut)}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${EpochTimeFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  EpochTimeFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
-    Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-EpochTimeFunction-Errors-alarm
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${EpochTimeFunction}
-        errors. ${SupportManualURL}
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${EpochTimeFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   CiMappingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -347,77 +276,6 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  CreateAuthCodeFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/matching/src/create-auth-code-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-CreateAuthCode
-
-  CreateAuthCodeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction
-      RetentionInDays: 30
-
-  PIIRedactedCreateAuthCodeFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
-      LogGroupName: !Ref PIIRedactedCreateAuthCodeFunctionLogGroup
-
-  CreateAuthCodeFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref CreateAuthCodeFunctionLogGroup
-      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName =
-        ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName
-        = ExecutionsTimedOut)}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${CreateAuthCodeFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  CreateAuthCodeFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
-    Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-CreateAuthCodeFunction-Errors-alarm
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the
-        ${CreateAuthCodeFunction} errors. ${SupportManualURL}
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${CreateAuthCodeFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   CredentialSubjectFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -479,77 +337,6 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${CredentialSubjectFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  CurrentTimeFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/matching/src/current-time-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-CurrentTime
-
-  CurrentTimeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction
-      RetentionInDays: 30
-
-  PIIRedactedCurrentTimeFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
-      LogGroupName: !Ref PIIRedactedCurrentTimeFunctionLogGroup
-
-  CurrentTimeFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref CurrentTimeFunctionLogGroup
-      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName =
-        ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName
-        = ExecutionsTimedOut)}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${CurrentTimeFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  CurrentTimeFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
-    Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-CurrentTimeFunction-Errors-alarm
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CurrentTimeFunction}
-        errors. ${SupportManualURL}
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${CurrentTimeFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
       Statistic: Sum
       Dimensions: []
@@ -1346,7 +1133,6 @@ Resources:
       DefinitionSubstitutions:
         AuditEventPrefix: !Ref AuditEventNamePrefix
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
-        CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         TimeFunctionArn: !GetAtt TimeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
         UserAttemptsTable: !Ref UserAttemptsTable
@@ -1380,8 +1166,6 @@ Resources:
             FunctionName: !Ref OTGFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref SsmParametersFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref CreateAuthCodeFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref MatchingFunction
         - LambdaInvokePolicy:
@@ -2291,11 +2075,6 @@ Resources:
   # Log Groups for Slunk (PII Redacted)                              #
   #                                                                  #
   ####################################################################
-  PIIRedactedEpochTimeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction-pii-redacted
-      RetentionInDays: 30
 
   PIIRedactedCiMappingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2303,22 +2082,10 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction-pii-redacted
       RetentionInDays: 30
 
-  PIIRedactedCreateAuthCodeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction-pii-redacted
-      RetentionInDays: 30
-
   PIIRedactedCredentialSubjectFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction-pii-redacted
-      RetentionInDays: 30
-
-  PIIRedactedCurrentTimeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction-pii-redacted
       RetentionInDays: 30
 
   PIIRedactedJwtSignerFunctionLogGroup:
@@ -2466,15 +2233,6 @@ Resources:
           - amazonaws.com
       SourceAccount: !Ref AWS::AccountId
 
-  EpochTimeFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchPermissions
-    Properties:
-      FilterName: PII Redaction
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
-      LogGroupName: !Ref EpochTimeFunctionLogGroup
-
   CiMappingFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
@@ -2484,15 +2242,6 @@ Resources:
       FilterPattern: ''
       LogGroupName: !Ref CiMappingFunctionLogGroup
 
-  CreateAuthCodeFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchPermissions
-    Properties:
-      FilterName: PII Redaction
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
-      LogGroupName: !Ref CreateAuthCodeFunctionLogGroup
-
   CredentialSubjectFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
@@ -2501,15 +2250,6 @@ Resources:
       DestinationArn: !GetAtt PIIRedactFunction.Arn
       FilterPattern: ''
       LogGroupName: !Ref CredentialSubjectFunctionLogGroup
-
-  CurrentTimeFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchPermissions
-    Properties:
-      FilterName: PII Redaction
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
-      LogGroupName: !Ref CurrentTimeFunctionLogGroup
 
   JwtSignerFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
