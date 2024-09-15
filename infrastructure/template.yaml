@@ -1,29 +1,22 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: Digital Identity IPV CRI Pdv-Matching API
-Transform:
-  - AWS::LanguageExtensions
-  - AWS::Serverless-2016-10-31
+Transform: [AWS::LanguageExtensions, AWS::Serverless-2016-10-31]
 
 Parameters:
   AuditEventNamePrefix:
-    Description: The audit event name prefix
+    Description: "The audit event name prefix"
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /common-cri-parameters/AuditEventNamePrefix
+    Default: "/common-cri-parameters/AuditEventNamePrefix"
   BearerTokenName:
     Type: String
     Default: HMRCBearerToken
-    Description: The name of the bearer token parameter. Temporary solution to be
-      changed once cross account behaviour implemented.
+    Description: >-
+      The name of the bearer token parameter.
+      Temporary solution to be changed once cross account behaviour implemented.
   Environment:
     Type: String
     Default: dev
-    AllowedValues:
-      - dev
-      - localdev
-      - build
-      - staging
-      - integration
-      - production
+    AllowedValues: [dev, localdev, build, staging, integration, production]
     ConstraintDescription: must be dev, localdev, build, staging, integration or production
   CommonStackName:
     Type: String
@@ -35,49 +28,36 @@ Parameters:
     Description: The name of the stack containing the common TxMA infrastructure
   CodeSigningConfigArn:
     Type: String
-    Default: ''
+    Default: ""
   PermissionsBoundary:
     Type: String
-    Default: ''
+    Default: ""
   DeployAlarmsInDevEnvironment:
-    Description: Set to the string value `true` to deploy alarms in a DEV environment
+    Description: "Set to the string value `true` to deploy alarms in a DEV environment"
     Type: String
     Default: false
   CriIdentifier:
-    Description: The unique credential issuer identifier
+    Description: "The unique credential issuer identifier"
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /common-cri-parameters/CriIdentifier
+    Default: "/common-cri-parameters/CriIdentifier"
   SupportManualURL:
     Type: String
-    Default: https://team-manual.account.gov.uk/teams/CRI-Orange-team/supporting-cri-orange/hmrc-nino-runbook/#backend-api-alarms
+    Default: "https://team-manual.account.gov.uk/teams/CRI-Orange-team/supporting-cri-orange/hmrc-nino-runbook/#backend-api-alarms"
     Description: The support manual URL to be provided in alarm messages.
 
 Conditions:
-  EnforceCodeSigning: !Not
-    - !Equals
-      - !Ref CodeSigningConfigArn
-      - ''
-  UsePermissionsBoundary: !Not
-    - !Equals
-      - !Ref PermissionsBoundary
-      - ''
-  IsDevEnvironment: !Equals
-    - !Ref Environment
-    - dev
-  IsLocalDevEnvironment: !Equals
-    - !Ref Environment
-    - localdev
-  IsDevLikeEnvironment: !Or
-    - !Condition IsLocalDevEnvironment
-    - !Condition IsDevEnvironment
+  EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
+  UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, ""]]
+  IsDevEnvironment: !Equals [!Ref Environment, dev]
+  IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
+  IsDevLikeEnvironment:
+    !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
 
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
-    - !Equals
-      - !Ref DeployAlarmsInDevEnvironment
-      - 'true'
+    - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
 
 Mappings:
   # Only numeric values should be assigned here
@@ -148,12 +128,9 @@ Globals:
     Timeout: 30
     CodeUri: ..
     Runtime: nodejs18.x
-    Architectures:
-      - arm64
-    PermissionsBoundary: !If
-      - UsePermissionsBoundary
-      - !Ref PermissionsBoundary
-      - !Ref AWS::NoValue
+    Architectures: [arm64]
+    PermissionsBoundary:
+      !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
     VpcConfig:
       SecurityGroupIds:
         - !ImportValue cri-vpc-AWSServicesEndpointSecurityGroupId
@@ -162,120 +139,31 @@ Globals:
         - !ImportValue cri-vpc-ProtectedSubnetIdB
     Layers:
       - !Sub
-        - '{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}'
-        - SecretArn: !FindInMap
-            - Dynatrace
-            - SecretArn
-            - !Ref Environment
+        - "{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}"
+        - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
     Environment:
       Variables:
-        NODE_OPTIONS: '--enable-source-maps'
+        NODE_OPTIONS: --enable-source-maps
         AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
         DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: true
         POWERTOOLS_METRICS_NAMESPACE: !Ref CriIdentifier
         DT_CONNECTION_AUTH_TOKEN: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}'
-          - SecretArn: !FindInMap
-              - Dynatrace
-              - SecretArn
-              - !Ref Environment
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
+          - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
         DT_CONNECTION_BASE_URL: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}'
-          - SecretArn: !FindInMap
-              - Dynatrace
-              - SecretArn
-              - !Ref Environment
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}"
+          - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
         DT_CLUSTER_ID: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}'
-          - SecretArn: !FindInMap
-              - Dynatrace
-              - SecretArn
-              - !Ref Environment
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
+          - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
         DT_LOG_COLLECTION_AUTH_TOKEN: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}'
-          - SecretArn: !FindInMap
-              - Dynatrace
-              - SecretArn
-              - !Ref Environment
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}"
+          - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
         DT_TENANT: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}'
-          - SecretArn: !FindInMap
-              - Dynatrace
-              - SecretArn
-              - !Ref Environment
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
+          - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
 
 Resources:
-  EpochTimeFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/epoch-time/src/get-epoch-time-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-EpochTime
-
-  EpochTimeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction
-      RetentionInDays: 30
-
-  PIIRedactedEpochTimeFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
-      LogGroupName: !Ref PIIRedactedEpochTimeFunctionLogGroup
-
-  EpochTimeFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref EpochTimeFunctionLogGroup
-      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName =
-        ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName
-        = ExecutionsTimedOut)}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${EpochTimeFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  EpochTimeFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
-    Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-EpochTimeFunction-Errors-alarm
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${EpochTimeFunction}
-        errors. ${SupportManualURL}
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${EpochTimeFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   CiMappingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -286,13 +174,11 @@ Resources:
       Handler: lambdas/ci-mapping/src/ci-mapping-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Environment:
         Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-CiMapping
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-CiMapping"
 
   CiMappingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -304,20 +190,16 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedCiMappingFunctionLogGroup
 
   CiMappingFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
       LogGroupName: !Ref CiMappingFunctionLogGroup
-      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName =
-        ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName
-        = ExecutionsTimedOut)}'
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
       MetricTransformations:
         - MetricValue: 1
           MetricName: !Sub ${CiMappingFunction}-Error
@@ -325,11 +207,10 @@ Resources:
 
   CiMappingFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-CiMappingFunction-Errors-alarm
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CiMappingFunction}
-        errors. ${SupportManualURL}
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CiMappingFunction-Errors-alarm"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CiMappingFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
@@ -337,77 +218,6 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${CiMappingFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  CreateAuthCodeFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/matching/src/create-auth-code-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-CreateAuthCode
-
-  CreateAuthCodeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction
-      RetentionInDays: 30
-
-  PIIRedactedCreateAuthCodeFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
-      LogGroupName: !Ref PIIRedactedCreateAuthCodeFunctionLogGroup
-
-  CreateAuthCodeFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref CreateAuthCodeFunctionLogGroup
-      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName =
-        ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName
-        = ExecutionsTimedOut)}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${CreateAuthCodeFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  CreateAuthCodeFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
-    Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-CreateAuthCodeFunction-Errors-alarm
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the
-        ${CreateAuthCodeFunction} errors. ${SupportManualURL}
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${CreateAuthCodeFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
       Statistic: Sum
       Dimensions: []
@@ -428,13 +238,11 @@ Resources:
       Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Environment:
         Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-CredentialSubject
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-CredentialSubject"
 
   CredentialSubjectFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -446,20 +254,16 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedCredentialSubjectFunctionLogGroup
 
   CredentialSubjectFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
       LogGroupName: !Ref CredentialSubjectFunctionLogGroup
-      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName =
-        ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName
-        = ExecutionsTimedOut)}'
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
       MetricTransformations:
         - MetricValue: 1
           MetricName: !Sub ${CredentialSubjectFunction}-Error
@@ -467,11 +271,10 @@ Resources:
 
   CredentialSubjectFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-CredentialSubjectFunction-Errors-alarm
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the
-        ${CredentialSubjectFunction} errors. ${SupportManualURL}
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CredentialSubjectFunction-Errors-alarm"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CredentialSubjectFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
@@ -479,77 +282,6 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${CredentialSubjectFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  CurrentTimeFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/matching/src/current-time-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-CurrentTime
-
-  CurrentTimeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction
-      RetentionInDays: 30
-
-  PIIRedactedCurrentTimeFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
-      LogGroupName: !Ref PIIRedactedCurrentTimeFunctionLogGroup
-
-  CurrentTimeFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref CurrentTimeFunctionLogGroup
-      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName =
-        ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName
-        = ExecutionsTimedOut)}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${CurrentTimeFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  CurrentTimeFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
-    Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-CurrentTimeFunction-Errors-alarm
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${CurrentTimeFunction}
-        errors. ${SupportManualURL}
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${CurrentTimeFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
       Statistic: Sum
       Dimensions: []
@@ -570,10 +302,8 @@ Resources:
       Handler: lambdas/jwt-signer/src/jwt-signer-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Policies:
         - Statement:
             Effect: Allow
@@ -581,11 +311,8 @@ Resources:
             Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
       Environment:
         Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-JwtSigner
-          DOMAIN_NAME: !FindInMap
-            - EnvironmentConfiguration
-            - !Ref Environment
-            - DOMAINNAME
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-JwtSigner"
+          DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
 
   JwtSignerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -597,20 +324,16 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedJwtSignerFunctionLogGroup
 
   JwtSignerFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
       LogGroupName: !Ref JwtSignerFunctionLogGroup
-      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName =
-        ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName
-        = ExecutionsTimedOut)}'
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
       MetricTransformations:
         - MetricValue: 1
           MetricName: !Sub ${JwtSignerFunction}-Error
@@ -618,11 +341,10 @@ Resources:
 
   JwtSignerFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-JwtSignerFunction-Errors-alarm
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${JwtSignerFunction}
-        errors. ${SupportManualURL}
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-JwtSignerFunction-Errors-alarm"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${JwtSignerFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
@@ -650,13 +372,11 @@ Resources:
       Handler: lambdas/otg-api/src/otg-api-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Environment:
         Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-OTG
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-OTG"
 
   OTGFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -668,20 +388,16 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedOTGFunctionLogGroup
 
   OTGFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
       LogGroupName: !Ref OTGFunctionLogGroup
-      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName =
-        ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName
-        = ExecutionsTimedOut)}'
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
       MetricTransformations:
         - MetricValue: 1
           MetricName: !Sub ${MatchingFunction}-Error
@@ -689,11 +405,10 @@ Resources:
 
   OTGFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-OTGFunction-Errors-alarm
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${OTGFunction} errors.
-        ${SupportManualURL}
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-Errors-alarm"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${OTGFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
@@ -717,19 +432,18 @@ Resources:
       LogGroupName: !Ref OTGFunctionLogGroup
       FilterPattern: '{ $.level = "FATAL" || $.message = "Unhandled Exception:*" }'
       MetricTransformations:
-        - MetricValue: '1'
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-          MetricName: OTGFunction-Fatalerror
+        - MetricValue: "1"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
+          MetricName: "OTGFunction-Fatalerror"
 
   OTGFunctionFatalErrorAlarm:
     DependsOn:
-      - OTGFunctionFatalErrorMetricFilter
+      - "OTGFunctionFatalErrorMetricFilter"
     Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-OTGFunction-FatalError-alarm
-      AlarmDescription: !Sub Trigger an alarm when Fatal ${OTGFunction} Error occurs.
-        ${SupportManualURL}
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-FatalError-alarm"
+      AlarmDescription: !Sub "Trigger an alarm when Fatal ${OTGFunction} Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
@@ -737,7 +451,7 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${OTGFunction}-Fatalerror
-      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Namespace: !Sub "${AWS::StackName}/LogMessages"
       Statistic: Sum
       Dimensions: []
       Period: 60
@@ -749,16 +463,18 @@ Resources:
 
   OTGFunctionThrottleAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Properties:
       ActionsEnabled: true
       AlarmActions:
+        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
-      AlarmDescription: !Sub Trigger if the ${OTGFunction} lambda throttles. ${SupportManualURL}
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-OTGFunction-Throttles-alarm
+      AlarmDescription: !Sub "Trigger if the ${OTGFunction} lambda throttles. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-Throttles-alarm"
       MetricName: Throttles
       Namespace: AWS/Lambda
       Statistic: Sum
@@ -782,13 +498,11 @@ Resources:
       Handler: lambdas/matching/src/matching-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Environment:
         Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-Matching
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Matching"
 
   MatchingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -800,20 +514,16 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedMatchingFunctionLogGroup
 
   MatchingFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
       LogGroupName: !Ref MatchingFunctionLogGroup
-      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName =
-        ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName
-        = ExecutionsTimedOut)}'
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
       MetricTransformations:
         - MetricValue: 1
           MetricName: !Sub ${MatchingFunction}-Error
@@ -821,16 +531,17 @@ Resources:
 
   MatchingFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-MatchingFunction-Errors-alarm
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${MatchingFunction}
-        errors. ${SupportManualURL}
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-MatchingFunction-Errors-alarm"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${MatchingFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: !Sub ${MatchingFunction}-Error
       Namespace: !Sub ${AWS::StackName}/LogMessages
@@ -853,16 +564,14 @@ Resources:
       Handler: lambdas/ssm-parameters/src/ssm-parameters-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Policies:
         - SSMParameterReadPolicy:
-            ParameterName: '*'
+            ParameterName: "*"
       Environment:
         Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-SsmParameters
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-SsmParameters"
 
   SsmParametersFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -874,20 +583,16 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedSsmParametersFunctionLogGroup
 
   SsmParametersFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
       LogGroupName: !Ref SsmParametersFunctionLogGroup
-      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName =
-        ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName
-        = ExecutionsTimedOut)}'
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
       MetricTransformations:
         - MetricValue: 1
           MetricName: !Sub ${SsmParametersFunction}-Error
@@ -895,11 +600,10 @@ Resources:
 
   SsmParametersFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-SsmParametersFunction-Errors-alarm
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the
-        ${SsmParametersFunction} errors. ${SupportManualURL}
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-SsmParametersFunction-Errors-alarm"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${SsmParametersFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
@@ -927,13 +631,11 @@ Resources:
       Handler: lambdas/issue-credential/src/time-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Environment:
         Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-Time
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Time"
 
   TimeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -945,20 +647,16 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedTimeFunctionLogGroup
 
   TimeFunctionEventErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
       LogGroupName: !Ref TimeFunctionLogGroup
-      FilterPattern: '{($.eventName = ExecutionsFailed) || ($.eventName =
-        ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName
-        = ExecutionsTimedOut)}'
+      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
       MetricTransformations:
         - MetricValue: 1
           MetricName: !Sub ${TimeFunction}-Error
@@ -966,11 +664,10 @@ Resources:
 
   TimeFunctionEventErrorAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-TimeFunction-Errors-alarm
-      AlarmDescription: !Sub Triggers CloudWatch Alarm when the ${TimeFunction}
-        errors. ${SupportManualURL}
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-TimeFunction-Errors-alarm"
+      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${TimeFunction} errors. ${SupportManualURL}"
       ActionsEnabled: true
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
@@ -1001,10 +698,7 @@ Resources:
     Properties:
       Type: String
       Name: !Sub /${AWS::StackName}/MaxJwtTtl
-      Value: !FindInMap
-        - MaxJwtTtl
-        - Environment
-        - !Ref Environment
+      Value: !FindInMap [MaxJwtTtl, Environment, !Ref Environment]
       Description: Default time to live for an JWT in (seconds)
 
   JwtTtlUnitParameter:
@@ -1012,10 +706,7 @@ Resources:
     Properties:
       Type: String
       Name: !Sub /${AWS::StackName}/JwtTtlUnit
-      Value: !FindInMap
-        - JwtTtlUnit
-        - Environment
-        - !Ref Environment
+      Value: !FindInMap [JwtTtlUnit, Environment, !Ref Environment]
       Description: The unit for the time-to-live for an JWT e.g. (MONTHS)
 
   PublicNinoCheckApi:
@@ -1024,8 +715,8 @@ Resources:
       Description: Public NINO Check CRI API
       MethodSettings:
         - LoggingLevel: INFO
-          ResourcePath: /*
-          HttpMethod: '*'
+          ResourcePath: "/*"
+          HttpMethod: "*"
           DataTraceEnabled: true
           MetricsEnabled: true
           ThrottlingRateLimit: 200
@@ -1060,18 +751,16 @@ Resources:
   PublicNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs
+      LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs"
       RetentionInDays: 30
 
   PIIRedactedPublicNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedPublicNinoCheckApiAccessLogGroup
 
   PublicNinoCheckApiFatalErorMetricFilter:
@@ -1080,27 +769,28 @@ Resources:
       LogGroupName: !Ref PublicNinoCheckApiAccessLogGroup
       FilterPattern: '{ $.level = "FATAL" || $.message = "Unhandled Exception:*" }'
       MetricTransformations:
-        - MetricValue: '1'
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-          MetricName: PublicNinoCheckApi-Fatalerror
+        - MetricValue: "1"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
+          MetricName: "PublicNinoCheckApi-Fatalerror"
 
   PublicNinoCheckApiFatalErrorAlarm:
     DependsOn:
-      - PublicNinoCheckApiFatalErorMetricFilter
+      - "PublicNinoCheckApiFatalErorMetricFilter"
     Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-PublicNinoCheckApi-FatalError-alarm
-      AlarmDescription: !Sub Trigger an alarm when Fatal ${PublicNinoCheckApi} Error
-        occurs. ${SupportManualURL}
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-PublicNinoCheckApi-FatalError-alarm"
+      AlarmDescription: !Sub "Trigger an alarm when Fatal ${PublicNinoCheckApi} Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
+      OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PublicNinoCheckApi-Fatalerror
-      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Namespace: !Sub "${AWS::StackName}/LogMessages"
       Statistic: Sum
       Dimensions: []
       Period: 60
@@ -1116,8 +806,8 @@ Resources:
       Description: Private NINO Check CRI API
       MethodSettings:
         - LoggingLevel: INFO
-          ResourcePath: /*
-          HttpMethod: '*'
+          ResourcePath: "/*"
+          HttpMethod: "*"
           DataTraceEnabled: true
           MetricsEnabled: true
           ThrottlingRateLimit: 200
@@ -1150,10 +840,7 @@ Resources:
             Location: private-api.yaml
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
-        Type: !If
-          - IsLocalDevEnvironment
-          - REGIONAL
-          - PRIVATE
+        Type: !If [IsLocalDevEnvironment, REGIONAL, PRIVATE]
       Auth:
         ResourcePolicy: !If
           - IsLocalDevEnvironment
@@ -1162,23 +849,21 @@ Resources:
               - Effect: Allow
                 Resource: execute-api:/*
                 Action: execute-api:Invoke
-                Principal: '*'
+                Principal: "*"
 
   PrivateNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs
+      LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs"
       RetentionInDays: 30
 
   PIIRedactedPrivateNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedPrivateNinoCheckApiAccessLogGroup
 
   PrivateNinoCheckApiFatalErorMetricFilter:
@@ -1187,27 +872,28 @@ Resources:
       LogGroupName: !Ref PrivateNinoCheckApiAccessLogGroup
       FilterPattern: '{ $.level = "FATAL" || $.message = "Unhandled Exception:*" }'
       MetricTransformations:
-        - MetricValue: '1'
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-          MetricName: PrivateNinoCheckApi-Fatalerror
+        - MetricValue: "1"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
+          MetricName: "PrivateNinoCheckApi-Fatalerror"
 
   PrivateNinoCheckApiFatalErrorAlarm:
     DependsOn:
-      - PrivateNinoCheckApiFatalErorMetricFilter
+      - "PrivateNinoCheckApiFatalErorMetricFilter"
     Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-PrivateNinoCheckApi-FatalError-alarm
-      AlarmDescription: !Sub Trigger an alarm when Fatal ${PrivateNinoCheckApi} Error
-        occurs. ${SupportManualURL}
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-PrivateNinoCheckApi-FatalError-alarm"
+      AlarmDescription: !Sub "Trigger an alarm when Fatal ${PrivateNinoCheckApi} Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
+      OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PrivateNinoCheckApi-Fatalerror
-      Namespace: !Sub ${AWS::StackName}/LogMessages
+      Namespace: !Sub "${AWS::StackName}/LogMessages"
       Statistic: Sum
       Dimensions: []
       Period: 60
@@ -1234,7 +920,7 @@ Resources:
             Version: 2012-10-17
             Statement:
               - Effect: Allow
-                Resource: '*'
+                Resource: "*"
                 Action:
                   - states:StartExecution
                   - states:StartSyncExecution
@@ -1281,6 +967,7 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       Type: EXPRESS
+      DefinitionUri: ../step-functions/check_session.asl.json
       DefinitionSubstitutions:
         TimeFunctionArn: !GetAtt TimeFunction.Arn
         CommonStackName: !Ref CommonStackName
@@ -1288,22 +975,21 @@ Resources:
         Destinations:
           - CloudWatchLogsLogGroup:
               LogGroupArn: !GetAtt CheckSessionStateMachineLogGroup.Arn
-        IncludeExecutionData: true
+        IncludeExecutionData: True
         Level: ALL
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref TimeFunction
         - DynamoDBReadPolicy:
-            TableName: !Sub '{{resolve:ssm:/${CommonStackName}/SessionTableName}}'
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - Statement:
             Effect: Allow
             Action: logs:*
-            Resource: '*'
+            Resource: "*"
       PermissionsBoundary: !If
         - UsePermissionsBoundary
         - !Ref PermissionsBoundary
         - !Ref AWS::NoValue
-      DefinitionUri: ../step-functions/check_session.asl.json
 
   CheckSessionStateMachineFailedMetric:
     Type: AWS::Logs::MetricFilter
@@ -1311,25 +997,24 @@ Resources:
       LogGroupName: !Ref CheckSessionStateMachineLogGroup
       FilterPattern: '{($.type = "ExecutionFailed")}'
       MetricTransformations:
-        - MetricValue: '1'
-          MetricName: CheckSessionStateMachine-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+        - MetricValue: "1"
+          MetricName: "CheckSessionStateMachine-Error"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
 
   CheckSessionStateMachineAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Type: "AWS::CloudWatch::Alarm"
+    Condition: "DeployAlarms"
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub ${CheckSessionStateMachine} failed 4 or more requests in
-        the last hour. ${SupportManualURL}
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-CheckSessionStateMachine-alarm
+      AlarmDescription: !Sub "${CheckSessionStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckSessionStateMachine-alarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
-      MetricName: ExecutionsFailed
+      MetricName: "ExecutionsFailed"
       Namespace: AWS/States
       Period: 300
       Statistic: Sum
@@ -1343,10 +1028,10 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       Type: EXPRESS
+      DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
         AuditEventPrefix: !Ref AuditEventNamePrefix
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
-        CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         TimeFunctionArn: !GetAtt TimeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
         UserAttemptsTable: !Ref UserAttemptsTable
@@ -1357,23 +1042,15 @@ Resources:
         SsmParametersFunction: !Ref SsmParametersFunction
         OTGFunction: !Ref OTGFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap
-          - EnvironmentConfiguration
-          - !Ref Environment
-          - DOMAINNAME
-        AuditEventNameResponseReceived: !FindInMap
-          - Audit
-          - EventName
-          - ResponseReceived
-        AuditEventNameRequestSent: !FindInMap
-          - Audit
-          - EventName
-          - RequestSent
+        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+        AuditEventNameResponseReceived:
+          !FindInMap [Audit, EventName, ResponseReceived]
+        AuditEventNameRequestSent: !FindInMap [Audit, EventName, RequestSent]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
               LogGroupArn: !GetAtt NinoCheckStateMachineLogGroup.Arn
-        IncludeExecutionData: true
+        IncludeExecutionData: True
         Level: ALL
       Policies:
         - LambdaInvokePolicy:
@@ -1381,15 +1058,13 @@ Resources:
         - LambdaInvokePolicy:
             FunctionName: !Ref SsmParametersFunction
         - LambdaInvokePolicy:
-            FunctionName: !Ref CreateAuthCodeFunction
+            FunctionName: !Ref TimeFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref MatchingFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref TimeFunction
         - DynamoDBReadPolicy:
-            TableName: !Sub '{{resolve:ssm:/${CommonStackName}/SessionTableName}}'
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBWritePolicy:
-            TableName: !Sub '{{resolve:ssm:/${CommonStackName}/SessionTableName}}'
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBWritePolicy:
             TableName: !Ref UserAttemptsTable
         - DynamoDBReadPolicy:
@@ -1399,7 +1074,7 @@ Resources:
         - DynamoDBWritePolicy:
             TableName: !Ref NinoUsersTable
         - DynamoDBReadPolicy:
-            TableName: !Sub '{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}'
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${BearerTokenName}-??????
         - EventBridgePutEventsPolicy:
@@ -1417,35 +1092,32 @@ Resources:
               - ssm:GetParameters
               - ssm:GetParameter
             Resource:
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/NinoCheckUrl/*
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${UserAgent}
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/NinoCheckUrl/*"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${UserAgent}"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName"
         - Statement:
             Effect: Allow
             Action: logs:*
-            Resource: '*'
+            Resource: "*"
       PermissionsBoundary: !If
         - UsePermissionsBoundary
         - !Ref PermissionsBoundary
         - !Ref AWS::NoValue
-      DefinitionUri: ../step-functions/nino_check.asl.json
 
   NinoCheckStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs"
       RetentionInDays: 30
 
   PIIRedactedNinoCheckStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedNinoCheckStateMachineLogGroup
 
   NinoCheckStateMachineFailedMetric:
@@ -1454,25 +1126,24 @@ Resources:
       LogGroupName: !Ref NinoCheckStateMachineLogGroup
       FilterPattern: '{$.type = "ExecutionFailed"}'
       MetricTransformations:
-        - MetricValue: '1'
-          MetricName: NinoCheckStateMachine-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+        - MetricValue: "1"
+          MetricName: "NinoCheckStateMachine-Error"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
 
   NinoCheckStateMachineAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Type: "AWS::CloudWatch::Alarm"
+    Condition: "DeployAlarms"
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub ${NinoCheckStateMachine} failed 4 or more requests in the
-        last hour. ${SupportManualURL}
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-NinoCheckStateMachine-ExecutionsFailed-alarm
+      AlarmDescription: !Sub "${NinoCheckStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachine-ExecutionsFailed-alarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
-      MetricName: ExecutionsFailed
+      MetricName: "ExecutionsFailed"
       Namespace: AWS/States
       Period: 300
       Statistic: Sum
@@ -1486,33 +1157,28 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       Type: EXPRESS
+      DefinitionUri: ../step-functions/abandon.asl.json
       DefinitionSubstitutions:
         AuditEventPrefix: !Ref AuditEventNamePrefix
         CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap
-          - EnvironmentConfiguration
-          - !Ref Environment
-          - DOMAINNAME
-        AuditEventNameAbandoned: !FindInMap
-          - Audit
-          - EventName
-          - Abandoned
+        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+        AuditEventNameAbandoned: !FindInMap [Audit, EventName, Abandoned]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
               LogGroupArn: !GetAtt AbandonStateMachineLogGroup.Arn
-        IncludeExecutionData: true
+        IncludeExecutionData: True
         Level: ALL
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref SsmParametersFunction
         - DynamoDBReadPolicy:
-            TableName: !Sub '{{resolve:ssm:/${CommonStackName}/SessionTableName}}'
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBWritePolicy:
-            TableName: !Sub '{{resolve:ssm:/${CommonStackName}/SessionTableName}}'
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref CheckHmrcEventBus
         - Statement:
@@ -1525,28 +1191,25 @@ Resources:
         - Statement:
             Effect: Allow
             Action: logs:*
-            Resource: '*'
+            Resource: "*"
       PermissionsBoundary: !If
         - UsePermissionsBoundary
         - !Ref PermissionsBoundary
         - !Ref AWS::NoValue
-      DefinitionUri: ../step-functions/abandon.asl.json
 
   AbandonStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs"
       RetentionInDays: 30
 
   PIIRedactedAbandonStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedAbandonStateMachineLogGroup
 
   AbandonStateMachineFailedMetric:
@@ -1555,25 +1218,24 @@ Resources:
       LogGroupName: !Ref AbandonStateMachineLogGroup
       FilterPattern: '{$.type = "ExecutionFailed"}'
       MetricTransformations:
-        - MetricValue: '1'
-          MetricName: AbandonStateMachine}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+        - MetricValue: "1"
+          MetricName: "AbandonStateMachine}-Error"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
 
   AbandonStateMachineAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Type: "AWS::CloudWatch::Alarm"
+    Condition: "DeployAlarms"
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub ${AbandonStateMachine} failed 4 or more requests in the
-        last hour. ${SupportManualURL}
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-AbandonStateMachine-ExecutionsFailed-alarm
+      AlarmDescription: !Sub "${AbandonStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AbandonStateMachine-ExecutionsFailed-alarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
-      MetricName: ExecutionsFailed
+      MetricName: "ExecutionsFailed"
       Namespace: AWS/States
       Period: 300
       Statistic: Sum
@@ -1587,6 +1249,7 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       Type: EXPRESS
+      DefinitionUri: ../step-functions/nino_issue_credential.asl.json
       DefinitionSubstitutions:
         AuditEventPrefix: !Ref AuditEventNamePrefix
         CiMappingFunctionArn: !GetAtt CiMappingFunction.Arn
@@ -1600,23 +1263,14 @@ Resources:
         JwtSignerFunction: !GetAtt JwtSignerFunction.Arn
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap
-          - EnvironmentConfiguration
-          - !Ref Environment
-          - DOMAINNAME
-        AuditEventNameVcIssued: !FindInMap
-          - Audit
-          - EventName
-          - VcIssued
-        AuditEventNameEnd: !FindInMap
-          - Audit
-          - EventName
-          - End
+        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+        AuditEventNameVcIssued: !FindInMap [Audit, EventName, VcIssued]
+        AuditEventNameEnd: !FindInMap [Audit, EventName, End]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
               LogGroupArn: !GetAtt NinoIssueCredentialLogGroup.Arn
-        IncludeExecutionData: true
+        IncludeExecutionData: True
         Level: ALL
       Policies:
         - LambdaInvokePolicy:
@@ -1634,9 +1288,9 @@ Resources:
         - DynamoDBReadPolicy:
             TableName: !Ref NinoUsersTable
         - DynamoDBReadPolicy:
-            TableName: !Sub '{{resolve:ssm:/${CommonStackName}/SessionTableName}}'
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBReadPolicy:
-            TableName: !Sub '{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}'
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref CheckHmrcEventBus
         - Statement:
@@ -1645,18 +1299,18 @@ Resources:
               - ssm:GetParameters
               - ssm:GetParameter
             Resource:
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${MaxJwtTtlParameter}
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${JwtTtlUnitParameter}
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/contraindicationMappings
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/contraIndicatorReasonsMapping
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${MaxJwtTtlParameter}"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${JwtTtlUnitParameter}"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/contraindicationMappings"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/contraIndicatorReasonsMapping"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
         - Statement:
             Effect: Allow
             Action: logs:*
-            Resource: '*'
+            Resource: "*"
         - Statement:
             Effect: Allow
             Action: kms:Sign
@@ -1665,23 +1319,20 @@ Resources:
         - UsePermissionsBoundary
         - !Ref PermissionsBoundary
         - !Ref AWS::NoValue
-      DefinitionUri: ../step-functions/nino_issue_credential.asl.json
 
   NinoIssueCredentialLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs"
       RetentionInDays: 30
 
   PIIRedactedNinoIssueCredentialLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedNinoIssueCredentialLogGroup
 
   NinoIssueCredentialStateMachineFailedMetric:
@@ -1690,25 +1341,24 @@ Resources:
       LogGroupName: !Ref NinoIssueCredentialLogGroup
       FilterPattern: '{$.type = "ExecutionFailed"}'
       MetricTransformations:
-        - MetricValue: '1'
-          MetricName: NinoIssueCredentialStateMachine}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
+        - MetricValue: "1"
+          MetricName: "NinoIssueCredentialStateMachine}-Error"
+          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
 
   NinoIssueCredentialStateMachineAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    Type: "AWS::CloudWatch::Alarm"
+    Condition: "DeployAlarms"
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub ${NinoIssueCredentialStateMachine} failed 4 or more
-        requests in the last hour. ${SupportManualURL}
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachine-ExecutionsFailed-alarm
+      AlarmDescription: !Sub "${NinoIssueCredentialStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachine-ExecutionsFailed-alarm"
       ComparisonOperator: GreaterThanThreshold
       DatapointsToAlarm: 4
       EvaluationPeriods: 12
-      MetricName: ExecutionsFailed
+      MetricName: "ExecutionsFailed"
       Namespace: AWS/States
       Period: 300
       Statistic: Sum
@@ -1721,18 +1371,16 @@ Resources:
   CheckSessionStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs"
       RetentionInDays: 30
 
   PIIRedactedCheckSessionStateMachineLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedCheckSessionStateMachineLogGroup
 
   CheckHmrcEventBus:
@@ -1742,8 +1390,7 @@ Resources:
       KmsKeyIdentifier: !If
         - IsDevLikeEnvironment
         - !Ref AWS::NoValue
-        - !ImportValue
-          Fn::Sub: ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
+        - Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
 
   ##################################################################
   #                                                                  #
@@ -1758,15 +1405,9 @@ Resources:
       State: ENABLED
       EventPattern:
         source:
-          - !FindInMap
-            - EnvironmentConfiguration
-            - !Ref Environment
-            - DOMAINNAME
+          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         detail-type:
-          - !FindInMap
-            - Audit
-            - EventName
-            - ResponseReceived
+          - !FindInMap [Audit, EventName, ResponseReceived]
       Targets:
         - Arn: !Ref AuditEventStateMachine
           Id: AuditEventStateMachineResponseReceivedTarget
@@ -1779,15 +1420,9 @@ Resources:
       State: ENABLED
       EventPattern:
         source:
-          - !FindInMap
-            - EnvironmentConfiguration
-            - !Ref Environment
-            - DOMAINNAME
+          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         detail-type:
-          - !FindInMap
-            - Audit
-            - EventName
-            - RequestSent
+          - !FindInMap [Audit, EventName, RequestSent]
       Targets:
         - Arn: !Ref AuditEventStateMachine
           Id: AuditEventStateMachineRequestSentTarget
@@ -1800,15 +1435,9 @@ Resources:
       State: ENABLED
       EventPattern:
         source:
-          - !FindInMap
-            - EnvironmentConfiguration
-            - !Ref Environment
-            - DOMAINNAME
+          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         detail-type:
-          - !FindInMap
-            - Audit
-            - EventName
-            - VcIssued
+          - !FindInMap [Audit, EventName, VcIssued]
       Targets:
         - Arn: !Ref AuditEventStateMachine
           Id: AuditEventStateMachineVcIssuedTarget
@@ -1821,15 +1450,9 @@ Resources:
       State: ENABLED
       EventPattern:
         source:
-          - !FindInMap
-            - EnvironmentConfiguration
-            - !Ref Environment
-            - DOMAINNAME
+          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         detail-type:
-          - !FindInMap
-            - Audit
-            - EventName
-            - End
+          - !FindInMap [Audit, EventName, End]
       Targets:
         - Arn: !Ref AuditEventStateMachine
           Id: AuditEventStateMachineEndTarget
@@ -1842,15 +1465,9 @@ Resources:
       State: ENABLED
       EventPattern:
         source:
-          - !FindInMap
-            - EnvironmentConfiguration
-            - !Ref Environment
-            - DOMAINNAME
+          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         detail-type:
-          - !FindInMap
-            - Audit
-            - EventName
-            - Abandoned
+          - !FindInMap [Audit, EventName, Abandoned]
       Targets:
         - Arn: !Ref AuditEventStateMachine
           Id: AuditEventStateMachineAbandonedTarget
@@ -1860,32 +1477,26 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CheckHmrcEventBus
-      Description: Publish all formatted events from AuditEvent Step Function to TxMA
-        audit Queue
+      Description: Publish all formatted events from AuditEvent Step Function to TxMA audit Queue
       State: ENABLED
       EventPattern:
         source:
-          - !FindInMap
-            - EnvironmentConfiguration
-            - !Ref Environment
-            - DOMAINNAME
+          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         detail:
-          timestamp:
-            - exists: true
-          event_timestamp_ms:
-            - exists: true
+          timestamp: [{ "exists": true }]
+          event_timestamp_ms: [{ "exists": true }]
       Targets:
         - Arn: !Sub
-            - arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}
-            - auditEventQueueName: !ImportValue
-                Fn::Sub: ${TxmaStackName}-AuditEventQueueName
+            - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
+            - auditEventQueueName:
+                Fn::ImportValue: !Sub  "${TxmaStackName}-AuditEventQueueName"
           Id: AuditEventQueue
-          InputPath: $.detail
+          InputPath: "$.detail"
           DeadLetterConfig: !If
-            - IsDevLikeEnvironment
-            - !Ref AWS::NoValue
-            - Arn: !ImportValue
-                Fn::Sub: ${TxmaStackName}-AuditEventDLQArn
+              - IsDevLikeEnvironment
+              - !Ref AWS::NoValue
+              - Arn:
+                  Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventDLQArn
 
   EventBridgeStateMachineExecutionRole:
     Type: AWS::IAM::Role
@@ -1916,18 +1527,17 @@ Resources:
   #                                                                  #
   ####################################################################
   TxMaAuditEventRuleAlarm:
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub ${TxMaAuditEventRule} (Failed Invocations) 4 or more
-        requests in the last hour. ${SupportManualURL}
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-TxMaAuditEventRule-FailedInvocations-alarm
-      MetricName: FailedInvocations
-      Namespace: AWS/Events
+      AlarmDescription: !Sub "${TxMaAuditEventRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-TxMaAuditEventRule-FailedInvocations-alarm"
+      MetricName: "FailedInvocations"
+      Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
       DatapointsToAlarm: 1
@@ -1937,27 +1547,22 @@ Resources:
       TreatMissingData: notBreaching
       Dimensions:
         - Name: RuleName
-          Value: !Select
-            - 1
-            - !Split
-              - '|'
-              - !Ref TxMaAuditEventRule
+          Value: !Select [1, !Split ["|", !Ref TxMaAuditEventRule]]
         - Name: EventBusName
           Value: !Ref CheckHmrcEventBus
 
   AuditEventRequestSentRuleAlarm:
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub ${AuditEventRequestSentRule} (Failed Invocations) 4 or
-        more requests in the last hour. ${SupportManualURL}
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-AuditEventRequestSentRule-FailedInvocations-alarm
-      MetricName: FailedInvocations
-      Namespace: AWS/Events
+      AlarmDescription: !Sub "${AuditEventRequestSentRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventRequestSentRule-FailedInvocations-alarm"
+      MetricName: "FailedInvocations"
+      Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
       DatapointsToAlarm: 1
@@ -1967,27 +1572,22 @@ Resources:
       TreatMissingData: notBreaching
       Dimensions:
         - Name: RuleName
-          Value: !Select
-            - 1
-            - !Split
-              - '|'
-              - !Ref AuditEventRequestSentRule
+          Value: !Select [1, !Split ["|", !Ref AuditEventRequestSentRule]]
         - Name: EventBusName
           Value: !Ref CheckHmrcEventBus
 
   AuditEventResponseReceivedRuleAlarm:
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub ${AuditEventResponseReceivedRule} (Failed Invocations) 4
-        or more requests in the last hour. ${SupportManualURL}
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-AuditEventResponseReceivedRule-FailedInvocations-alarm
-      MetricName: FailedInvocations
-      Namespace: AWS/Events
+      AlarmDescription: !Sub "${AuditEventResponseReceivedRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventResponseReceivedRule-FailedInvocations-alarm"
+      MetricName: "FailedInvocations"
+      Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
       DatapointsToAlarm: 1
@@ -1997,27 +1597,22 @@ Resources:
       TreatMissingData: notBreaching
       Dimensions:
         - Name: RuleName
-          Value: !Select
-            - 1
-            - !Split
-              - '|'
-              - !Ref AuditEventResponseReceivedRule
+          Value: !Select [1, !Split ["|", !Ref AuditEventResponseReceivedRule]]
         - Name: EventBusName
           Value: !Ref CheckHmrcEventBus
 
   AuditEventVcIssuedRuleAlarm:
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub ${AuditEventVcIssuedRule} (Failed Invocations) 4 or more
-        requests in the last hour. ${SupportManualURL}
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-AuditEventVcIssuedRule-FailedInvocations-alarm
-      MetricName: FailedInvocations
-      Namespace: AWS/Events
+      AlarmDescription: !Sub "${AuditEventVcIssuedRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventVcIssuedRule-FailedInvocations-alarm"
+      MetricName: "FailedInvocations"
+      Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
       DatapointsToAlarm: 1
@@ -2027,27 +1622,22 @@ Resources:
       TreatMissingData: notBreaching
       Dimensions:
         - Name: RuleName
-          Value: !Select
-            - 1
-            - !Split
-              - '|'
-              - !Ref AuditEventVcIssuedRule
+          Value: !Select [1, !Split ["|", !Ref AuditEventVcIssuedRule]]
         - Name: EventBusName
           Value: !Ref CheckHmrcEventBus
 
   AuditEventEndRuleAlarm:
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub ${AuditEventEndRule} (Failed Invocations) 4 or more
-        requests in the last hour. ${SupportManualURL}
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-AuditEventEndRule-FailedInvocations-alarm
-      MetricName: FailedInvocations
-      Namespace: AWS/Events
+      AlarmDescription: !Sub "${AuditEventEndRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventEndRule-FailedInvocations-alarm"
+      MetricName: "FailedInvocations"
+      Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
       DatapointsToAlarm: 1
@@ -2057,27 +1647,22 @@ Resources:
       TreatMissingData: notBreaching
       Dimensions:
         - Name: RuleName
-          Value: !Select
-            - 1
-            - !Split
-              - '|'
-              - !Ref AuditEventEndRule
+          Value: !Select [1, !Split ["|", !Ref AuditEventEndRule]]
         - Name: EventBusName
           Value: !Ref CheckHmrcEventBus
 
   AuditEventAbandonedRuleAlarm:
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub ${AuditEventAbandonedRule} (Failed Invocations) 4 or more
-        requests in the last hour. ${SupportManualURL}
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-AuditEventAbandonedRule-FailedInvocations-alarm
-      MetricName: FailedInvocations
-      Namespace: AWS/Events
+      AlarmDescription: !Sub "${AuditEventAbandonedRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventAbandonedRule-FailedInvocations-alarm"
+      MetricName: "FailedInvocations"
+      Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
       DatapointsToAlarm: 1
@@ -2087,16 +1672,12 @@ Resources:
       TreatMissingData: notBreaching
       Dimensions:
         - Name: RuleName
-          Value: !Select
-            - 1
-            - !Split
-              - '|'
-              - !Ref AuditEventAbandonedRule
+          Value: !Select [1, !Split ["|", !Ref AuditEventAbandonedRule]]
         - Name: EventBusName
           Value: !Ref CheckHmrcEventBus
 
   CheckHmrcPutEventAlarm:
-    Condition: DeployAlarms
+    Condition: "DeployAlarms"
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
@@ -2104,12 +1685,11 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
-      AlarmDescription: !Sub ${AWS::StackName}-${Environment} PutEvents (PutEvents
-        Failed) 4 or more requests in the last hour. ${SupportManualURL}
-      AlarmName: !Sub ${AWS::StackName}-${Environment}-CheckHmrcEventBus-PutEventsApproximateFailedCount-alarm
+      AlarmDescription: !Sub "${AWS::StackName}-${Environment} PutEvents (PutEvents Failed) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckHmrcEventBus-PutEventsApproximateFailedCount-alarm"
       MetricName: PutEventsApproximateFailedCount
       ComparisonOperator: GreaterThanThreshold
-      Namespace: AWS/Events
+      Namespace: "AWS/Events"
       Statistic: Sum
       DatapointsToAlarm: 1
       EvaluationPeriods: 1
@@ -2123,19 +1703,17 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       Type: EXPRESS
+      DefinitionUri: ../step-functions/audit_event.asl.json
       DefinitionSubstitutions:
         CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
         TimeFunctionArn: !GetAtt TimeFunction.Arn
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap
-          - EnvironmentConfiguration
-          - !Ref Environment
-          - DOMAINNAME
+        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
               LogGroupArn: !GetAtt AuditEventStateMachineLogGroup.Arn
-        IncludeExecutionData: true
+        IncludeExecutionData: True
         Level: ALL
       Policies:
         - LambdaInvokePolicy:
@@ -2147,12 +1725,11 @@ Resources:
         - Statement:
             Effect: Allow
             Action: logs:*
-            Resource: '*'
+            Resource: "*"
       PermissionsBoundary: !If
         - UsePermissionsBoundary
         - !Ref PermissionsBoundary
         - !Ref AWS::NoValue
-      DefinitionUri: ../step-functions/audit_event.asl.json
 
   AuditEventStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2164,11 +1741,9 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn: !FindInMap
-        - PlatformConfiguration
-        - !Ref Environment
-        - CSLSEGRESS
-      FilterPattern: ''
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
       LogGroupName: !Ref PIIRedactedAuditEventStateMachineLogGroup
 
   ####################################################################
@@ -2291,11 +1866,6 @@ Resources:
   # Log Groups for Slunk (PII Redacted)                              #
   #                                                                  #
   ####################################################################
-  PIIRedactedEpochTimeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/EpochTimeFunction-pii-redacted
-      RetentionInDays: 30
 
   PIIRedactedCiMappingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2303,22 +1873,10 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction-pii-redacted
       RetentionInDays: 30
 
-  PIIRedactedCreateAuthCodeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CreateAuthCodeFunction-pii-redacted
-      RetentionInDays: 30
-
   PIIRedactedCredentialSubjectFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction-pii-redacted
-      RetentionInDays: 30
-
-  PIIRedactedCurrentTimeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CurrentTimeFunction-pii-redacted
       RetentionInDays: 30
 
   PIIRedactedJwtSignerFunctionLogGroup:
@@ -2354,37 +1912,37 @@ Resources:
   PIIRedactedPublicNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs-pii-redacted
+      LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs-pii-redacted"
       RetentionInDays: 30
 
   PIIRedactedPrivateNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs-pii-redacted
+      LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs-pii-redacted"
       RetentionInDays: 30
 
   PIIRedactedNinoCheckStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs-pii-redacted
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs-pii-redacted"
       RetentionInDays: 30
 
   PIIRedactedAbandonStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs-pii-redacted
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs-pii-redacted"
       RetentionInDays: 30
 
   PIIRedactedNinoIssueCredentialLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs-pii-redacted
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs-pii-redacted"
       RetentionInDays: 30
 
   PIIRedactedCheckSessionStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs-pii-redacted
+      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs-pii-redacted"
       RetentionInDays: 30
 
   PIIRedactedAuditEventStateMachineLogGroup:
@@ -2398,29 +1956,6 @@ Resources:
   # PIIRedactFunction SubscriptionFilter                             #
   #                                                                  #
   ####################################################################
-  InvokeLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSXrayFullAccess
-        - arn:aws:iam::aws:policy/AmazonS3FullAccess
-        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
-
   PIIRedactFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -2431,22 +1966,20 @@ Resources:
       Handler: lambdas/pii-redact/src/pii-redact-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/PIIRedactFunction
-      CodeSigningConfigArn: !If
-        - EnforceCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
+      CodeSigningConfigArn:
+        !If [ EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue ]
       Policies:
         - Statement:
             Effect: Allow
             Action: logs:*
-            Resource: '*'
+            Resource: "*"
         - Statement:
             Effect: Allow
             Action: lambda:*
-            Resource: '*'
+            Resource: "*"
       Environment:
         Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-PIIRedact
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-PIIRedact"
 
   PIIRedactFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2459,164 +1992,133 @@ Resources:
     Properties:
       FunctionName: !GetAtt PIIRedactFunction.Arn
       Action: lambda:InvokeFunction
-      Principal: !Join
-        - .
-        - - logs
-          - !Ref AWS::Region
-          - amazonaws.com
+      Principal: !Join [ ".", [ "logs", !Ref "AWS::Region", "amazonaws.com" ] ]
       SourceAccount: !Ref AWS::AccountId
-
-  EpochTimeFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchPermissions
-    Properties:
-      FilterName: PII Redaction
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
-      LogGroupName: !Ref EpochTimeFunctionLogGroup
 
   CiMappingFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref CiMappingFunctionLogGroup
-
-  CreateAuthCodeFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchPermissions
-    Properties:
-      FilterName: PII Redaction
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
-      LogGroupName: !Ref CreateAuthCodeFunctionLogGroup
 
   CredentialSubjectFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref CredentialSubjectFunctionLogGroup
-
-  CurrentTimeFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchPermissions
-    Properties:
-      FilterName: PII Redaction
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
-      LogGroupName: !Ref CurrentTimeFunctionLogGroup
 
   JwtSignerFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref JwtSignerFunctionLogGroup
 
   OTGFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref OTGFunctionLogGroup
 
   MatchingFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref MatchingFunctionLogGroup
 
   SsmParametersFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref SsmParametersFunctionLogGroup
 
   TimeFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref TimeFunctionLogGroup
 
   PublicNinoCheckApiLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref PublicNinoCheckApiAccessLogGroup
 
   PrivateNinoCheckApiLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref PrivateNinoCheckApiAccessLogGroup
 
   NinoCheckStateMachineLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref NinoCheckStateMachineLogGroup
 
   AbandonStateMachineLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref AbandonStateMachineLogGroup
 
   NinoIssueCredentialLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref NinoIssueCredentialLogGroup
 
   CheckSessionStateMachineLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref CheckSessionStateMachineLogGroup
 
   AuditEventStateMachineLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
-      FilterName: PII Redaction
+      FilterName: "PII Redaction"
       DestinationArn: !GetAtt PIIRedactFunction.Arn
-      FilterPattern: ''
+      FilterPattern: ""
       LogGroupName: !Ref AuditEventStateMachineLogGroup
 
 ##################################################################
