@@ -2,17 +2,15 @@ import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import { TimeEvent } from "./time-event";
 import { LogHelper } from "../../logging/log-helper";
 import { Context } from "aws-lambda";
-import { getEpochFunctions } from "./epoch-categories";
-
-const logHelper = new LogHelper();
-type EpochFunction = Record<string, (event: TimeEvent) => object>;
+import { EpochFunctionMap, getEpochFunctionMap } from "./epoch-factory";
 
 export class TimeHandler implements LambdaInterface {
   constructor(
-    private readonly epochFunctions: EpochFunction = getEpochFunctions()
+    private readonly logger: LogHelper = new LogHelper(),
+    private readonly epochFunctions: EpochFunctionMap = getEpochFunctionMap()
   ) {}
   public async handler(event: TimeEvent, context: Context) {
-    logHelper.logEntry(context.functionName, event.govJourneyId);
+    this.logger.logEntry(context.functionName, event.govJourneyId);
 
     if (Number(event.ttlValue) < 0) {
       throw new Error(`ttlValue must be positive (provided ${event.ttlValue})`);
@@ -22,17 +20,17 @@ export class TimeHandler implements LambdaInterface {
       return this.generateEpoch(event);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      logHelper.logError(context.functionName, event.govJourneyId, message);
+      this.logger.logError(context.functionName, event.govJourneyId, message);
 
       throw error;
     }
   }
 
   private generateEpoch(event: TimeEvent) {
-    const epochFunc = this.epochFunctions[event.epochMode];
-    if (!epochFunc) throw new Error(`Invalid mode: ${event.epochMode}`);
+    const selectedEpochFunc = this.epochFunctions[event.epochType];
+    if (!selectedEpochFunc) throw new Error(`Invalid mode: ${event.epochType}`);
 
-    return epochFunc(event);
+    return selectedEpochFunc(event);
   }
 }
 

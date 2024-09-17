@@ -1,8 +1,8 @@
 import {
-  claimEpochFunction,
-  timeEpochFunction,
-  authEpochFunction,
-} from "../src/epoch-categories";
+  generateClaimEpoch,
+  generateCurrentTimeEpoch,
+  generateAuthCodeEpoch,
+} from "../src/epoch-factory";
 import { TimeEvent } from "../src/time-event";
 import { msToSeconds } from "../src/utils/date-time";
 import { TimeUnits } from "../src/utils/time-units";
@@ -22,7 +22,7 @@ describe("Epoch functions", () => {
         ttlUnit: undefined,
       } as TimeEvent;
 
-      const result = claimEpochFunction(event);
+      const result = generateClaimEpoch(event);
 
       expect(result).toEqual({
         nbf: currentEpochTimeInSeconds,
@@ -35,7 +35,7 @@ describe("Epoch functions", () => {
       const ttlUnit = TimeUnits.Seconds;
       const event: TimeEvent = { ttlValue, ttlUnit } as TimeEvent;
 
-      const result = claimEpochFunction(event);
+      const result = generateClaimEpoch(event);
 
       const tenSeconds = ttlValue * 1;
       const expectedExpiry = currentEpochTimeInSeconds + tenSeconds;
@@ -51,7 +51,7 @@ describe("Epoch functions", () => {
         ttlUnit: TimeUnits.Days,
       } as TimeEvent;
 
-      const result = claimEpochFunction(event);
+      const result = generateClaimEpoch(event);
 
       const fiveDays = 5 * 60 * 60 * 24;
       const expectedExpiry = currentEpochTimeInSeconds + fiveDays;
@@ -67,7 +67,7 @@ describe("Epoch functions", () => {
         ttlUnit: null,
       } as unknown as TimeEvent;
 
-      expect(() => claimEpochFunction(event)).toThrow(
+      expect(() => generateClaimEpoch(event)).toThrow(
         "Time unit must be valid: null"
       );
     });
@@ -75,7 +75,7 @@ describe("Epoch functions", () => {
 
   describe("timeEpochFunction", () => {
     it("returns the current time in seconds, string, and milliseconds", () => {
-      const result = timeEpochFunction();
+      const result = generateCurrentTimeEpoch();
 
       expect(result).toEqual({
         seconds: currentEpochTimeInSeconds,
@@ -90,7 +90,7 @@ describe("Epoch functions", () => {
       const ttlUnit = TimeUnits.Minutes;
       const event: TimeEvent = { ttlValue, ttlUnit } as TimeEvent;
 
-      const result = authEpochFunction(event);
+      const result = generateAuthCodeEpoch(event);
 
       const fiveMinutes = ttlValue * 60;
       const expectedAuthCodeExpiry = currentEpochTimeInSeconds + fiveMinutes;
@@ -105,7 +105,7 @@ describe("Epoch functions", () => {
         ttlUnit: undefined,
       } as TimeEvent;
 
-      const result = authEpochFunction(event);
+      const result = generateAuthCodeEpoch(event);
 
       expect(result).toEqual({
         authCodeExpiry: currentEpochTimeInSeconds,

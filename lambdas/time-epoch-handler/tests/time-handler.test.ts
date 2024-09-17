@@ -15,7 +15,7 @@ describe("time-handler", () => {
     it("should return an expiry that is the same as nbf", async () => {
       const result = await timeHandler.handler(
         {
-          epochMode,
+          epochType: epochMode,
           govJourneyId,
         },
         {} as Context
@@ -37,7 +37,7 @@ describe("time-handler", () => {
       async (ttlValue, ttlUnit, expectedExpiryInEpochSeconds) => {
         const result = await timeHandler.handler(
           {
-            epochMode,
+            epochType: epochMode,
             govJourneyId,
             ttlValue,
             ttlUnit,
@@ -57,7 +57,7 @@ describe("time-handler", () => {
       async (ttlValue) => {
         const result = await timeHandler.handler(
           {
-            epochMode,
+            epochType: epochMode,
             govJourneyId,
             ttlValue: ttlValue as number,
             ttlUnit: TimeUnits.Seconds,
@@ -77,7 +77,7 @@ describe("time-handler", () => {
     it("should return an expiry that is the same as the current epoch second", async () => {
       const result = await timeHandler.handler(
         {
-          epochMode,
+          epochType: epochMode,
           govJourneyId,
         },
         {} as Context
@@ -98,7 +98,7 @@ describe("time-handler", () => {
       async (ttlValue, ttlUnit, expectedExpiryInEpochSeconds) => {
         const result = await timeHandler.handler(
           {
-            epochMode,
+            epochType: epochMode,
             govJourneyId,
             ttlValue,
             ttlUnit,
@@ -117,7 +117,7 @@ describe("time-handler", () => {
       async (ttlValue) => {
         const result = await timeHandler.handler(
           {
-            epochMode,
+            epochType: epochMode,
             govJourneyId,
             ttlValue: ttlValue as number,
             ttlUnit: TimeUnits.Seconds,
@@ -136,7 +136,7 @@ describe("time-handler", () => {
     it("should return time in epoch milliseconds and seconds", async () => {
       const result = await timeHandler.handler(
         {
-          epochMode,
+          epochType: epochMode,
           govJourneyId,
         },
         {} as Context
@@ -152,7 +152,7 @@ describe("time-handler", () => {
       async (ttlValue) => {
         const result = await timeHandler.handler(
           {
-            epochMode,
+            epochType: epochMode,
             govJourneyId,
             ttlValue: ttlValue as number,
             ttlUnit: TimeUnits.Seconds,
@@ -180,7 +180,7 @@ describe("time-handler", () => {
       async (ttlUnit) => {
         const result = await timeHandler.handler(
           {
-            epochMode,
+            epochType: epochMode,
             govJourneyId,
             ttlValue: 0,
             ttlUnit: ttlUnit as string,
@@ -201,7 +201,7 @@ describe("time-handler", () => {
         await expect(
           timeHandler.handler(
             {
-              epochMode,
+              epochType: epochMode,
               govJourneyId,
               ttlValue: 0,
               ttlUnit: ttlUnit as string,
@@ -215,7 +215,12 @@ describe("time-handler", () => {
     it("should throw when ttl value is negative for epochMode %s", async () => {
       await expect(
         timeHandler.handler(
-          { epochMode, govJourneyId, ttlValue: -1, ttlUnit: TimeUnits.Seconds },
+          {
+            epochType: epochMode,
+            govJourneyId,
+            ttlValue: -1,
+            ttlUnit: TimeUnits.Seconds,
+          },
           {} as Context
         )
       ).rejects.toThrow(/must be positive/);
@@ -225,7 +230,7 @@ describe("time-handler", () => {
       expect(
         timeHandler.handler(
           {
-            epochMode: "invalid",
+            epochType: "invalid",
             govJourneyId,
             ttlValue: 0,
             ttlUnit: TimeUnits.Seconds,
