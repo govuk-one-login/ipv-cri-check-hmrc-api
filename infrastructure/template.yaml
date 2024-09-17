@@ -711,7 +711,7 @@ Resources:
       BuildProperties:
         Sourcemap: true
     Properties:
-      Handler: lambdas/issue-credential/src/time-handler.lambdaHandler
+      Handler: lambdas/time-epoch-handler/src/time-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
       CodeSigningConfigArn: !If

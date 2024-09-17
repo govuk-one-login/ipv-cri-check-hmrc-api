@@ -1,5 +1,5 @@
 export interface TimeEvent {
-  epochMode: string;
+  epochType: string;
   govJourneyId: string;
   ttlValue?: number;
   ttlUnit?: string;
