@@ -44,6 +44,23 @@ Parameters:
     Type: String
     Default: "https://team-manual.account.gov.uk/teams/CRI-Orange-team/supporting-cri-orange/hmrc-nino-runbook/#backend-api-alarms"
     Description: The support manual URL to be provided in alarm messages.
+  LambdaDeploymentPreference:
+    Description: "Specifies the configuration to enable gradual Lambda deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'AllAtOnce'"
+    Type: String
+    Default: "Canary10Percent10Minutes"
+    AllowedValues:
+      - AllAtOnce
+      - Canary10Percent5Minutes
+      - Canary10Percent10Minutes
+      - Canary10Percent15Minutes
+      - Canary10Percent30Minutes
+  StepFunctionsDeploymentPreference:
+    Description: "Specifies the configuration to enable gradual StepFunction deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'ALL_AT_ONCE'"
+    Type: String
+    Default: "CANARY"
+    AllowedValues:
+      - ALL_AT_ONCE
+      - CANARY
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
