@@ -417,12 +417,16 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
-        "Payload.$": "$",
-        "FunctionName": "${CreateAuthCodeFunctionArn}"
+        "Payload": {
+          "govJourneyId.$": "$.sessionCheck.userAuditInfo.govuk_signin_journey_id",
+          "ttlValue": 10,
+          "ttlUnint": "minutes"
+        },
+        "FunctionName": "${TimeFunctionArn}"
       },
       "Next": "Set Auth Code for Session",
       "ResultSelector": {
-        "payload.$": "$.Payload"
+        "payload.$": "$.Payload.expiry"
       },
       "ResultPath": "$.expiry"
     },
@@ -442,7 +446,7 @@
             "S.$": "States.UUID()"
           },
           ":expiry": {
-            "N.$": "States.Format('{}',$.expiry.payload.authCodeExpiry)"
+            "N.$": "States.Format('{}',$.expiry.payload)"
           }
         }
       },
