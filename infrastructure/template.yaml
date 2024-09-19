@@ -54,13 +54,13 @@ Parameters:
       - Canary10Percent10Minutes
       - Canary10Percent15Minutes
       - Canary10Percent30Minutes
-  # StepFunctionsDeploymentPreference:
-  #   Description: "Specifies the configuration to enable gradual StepFunction deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'ALL_AT_ONCE'"
-  #   Type: String
-  #   Default: "CANARY"
-  #   AllowedValues:
-  #     - ALL_AT_ONCE
-  #     - CANARY
+  StepFunctionsDeploymentPreference:
+    Description: "Specifies the configuration to enable gradual StepFunction deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'ALL_AT_ONCE'"
+    Type: String
+    Default: "CANARY"
+    AllowedValues:
+      - ALL_AT_ONCE
+      - CANARY
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
@@ -180,10 +180,6 @@ Globals:
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
     AutoPublishAlias: live
-    DeploymentPreference:
-      Enabled: true
-      Type: !Ref LambdaDeploymentPreference
-      Role: !GetAtt CodeDeployServiceRole.Arn
 
 Resources:
   EpochTimeFunction:
@@ -1178,6 +1174,12 @@ Resources:
   CheckSessionStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: !Ref StepFunctionsDeploymentPreference
+        Alarms:
+          - !Ref CurrentTimeFunctionCanaryErrors
+          - !Ref CheckSessionStateMachineFailedCanary
       Type: EXPRESS
       DefinitionUri: ../step-functions/check_session.asl.json
       DefinitionSubstitutions:
@@ -1239,6 +1241,15 @@ Resources:
   NinoCheckStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: !Ref StepFunctionsDeploymentPreference
+        Alarms:
+          - !Ref OTGFunctionCanaryErrors
+          - !Ref CreateAuthCodeFunctionCanaryErrors
+          - !Ref MatchingFunctionCanaryErrors
+          - !Ref SsmParametersFunctionCanaryErrors
+          - !Ref NinoCheckStateMachineFailedCanary
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
@@ -1368,6 +1379,12 @@ Resources:
   AbandonStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: !Ref StepFunctionsDeploymentPreference
+        Alarms:
+          - !Ref SsmParametersFunctionCanaryErrors
+          - !Ref AbandonStateMachineFailedCanary
       Type: EXPRESS
       DefinitionUri: ../step-functions/abandon.asl.json
       DefinitionSubstitutions:
@@ -1460,6 +1477,16 @@ Resources:
   NinoIssueCredentialStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: !Ref StepFunctionsDeploymentPreference
+        Alarms:
+          - !Ref CiMappingFunctionCanaryErrors
+          - !Ref TimeFunctionCanaryErrors
+          - !Ref CredentialSubjectFunctionCanaryErrors
+          - !Ref JwtSignerFunctionCanaryErrors
+          - !Ref SsmParametersFunctionCanaryErrors
+          - !Ref NinoIssueCredentialStateMachineFailedCanary
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_issue_credential.asl.json
       DefinitionSubstitutions:
@@ -2329,6 +2356,13 @@ Resources:
   AuditEventStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: !Ref StepFunctionsDeploymentPreference
+        Alarms:
+          - !Ref CredentialSubjectFunctionCanaryErrors
+          - !Ref EpochTimeFunctionCanaryErrors
+          - !Ref AuditEventStateMachineFailedCanary
       Type: EXPRESS
       DefinitionUri: ../step-functions/audit_event.asl.json
       DefinitionSubstitutions:
@@ -2607,6 +2641,11 @@ Resources:
       BuildProperties:
         Sourcemap: true
     Properties:
+      DeploymentPreference:
+        Type: !Ref LambdaDeploymentPreference
+        Alarms:
+          - !Ref PIIRedactFunctionCanaryErrors
+        Role: !GetAtt CodeDeployServiceRole.Arn
       Handler: lambdas/pii-redact/src/pii-redact-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/PIIRedactFunction
