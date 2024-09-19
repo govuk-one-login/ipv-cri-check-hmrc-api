@@ -1914,7 +1914,129 @@ Resources:
   # Canary Alarms                                                    #
   #                                                                  #
   ####################################################################
+  #Step function alarms
 
+  CheckSessionStateMachineFailedCanary:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the CheckSessionStateMachine"
+      MetricName: ExecutionsFailed
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${CheckSessionStateMachine}"
+        - Name: Alias
+          Value: 'live'
+      Namespace: AWS/States
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  AbandonStateMachineFailedCanary:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the AbandonStateMachine"
+      MetricName: ExecutionsFailed
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AbandonStateMachine}"
+        - Name: Alias
+          Value: 'live'
+      Namespace: AWS/States
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  NinoCheckStateMachineFailedCanary:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the NinoCheckStateMachine"
+      MetricName: ExecutionsFailed
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoCheckStateMachine}"
+        - Name: Alias
+          Value: 'live'
+      Namespace: AWS/States
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  NinoIssueCredentialStateMachineFailedCanary:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the NinoIssueCredentialStateMachine"
+      MetricName: ExecutionsFailed
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoIssueCredentialStateMachine"
+        - Name: Alias
+          Value: 'live'
+      Namespace: AWS/States
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  AuditEventStateMachineFailedCanary:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the AuditEventStateMachine"
+      MetricName: ExecutionsFailed
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AuditEventStateMachine}"
+        - Name: Alias
+          Value: 'live'
+      Namespace: AWS/States
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  #Lambda alarms
   CurrentTimeFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
