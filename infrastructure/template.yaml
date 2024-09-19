@@ -61,6 +61,7 @@ Parameters:
     AllowedValues:
       - ALL_AT_ONCE
       - CANARY
+      - LINEAR
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
@@ -1180,6 +1181,7 @@ Resources:
         Alarms:
           - !Ref CurrentTimeFunctionCanaryErrors
           - !Ref CheckSessionStateMachineFailedCanary
+        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${CheckSessionStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/check_session.asl.json
       DefinitionSubstitutions:
@@ -1250,6 +1252,7 @@ Resources:
           - !Ref MatchingFunctionCanaryErrors
           - !Ref SsmParametersFunctionCanaryErrors
           - !Ref NinoCheckStateMachineFailedCanary
+        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoCheckStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
@@ -1385,6 +1388,7 @@ Resources:
         Alarms:
           - !Ref SsmParametersFunctionCanaryErrors
           - !Ref AbandonStateMachineFailedCanary
+        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AbandonStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/abandon.asl.json
       DefinitionSubstitutions:
@@ -1487,6 +1491,7 @@ Resources:
           - !Ref JwtSignerFunctionCanaryErrors
           - !Ref SsmParametersFunctionCanaryErrors
           - !Ref NinoIssueCredentialStateMachineFailedCanary
+        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoIssueCredentialStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_issue_credential.asl.json
       DefinitionSubstitutions:
@@ -2363,6 +2368,7 @@ Resources:
           - !Ref CredentialSubjectFunctionCanaryErrors
           - !Ref EpochTimeFunctionCanaryErrors
           - !Ref AuditEventStateMachineFailedCanary
+        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AuditEventStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/audit_event.asl.json
       DefinitionSubstitutions:
