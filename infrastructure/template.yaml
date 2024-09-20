@@ -1178,6 +1178,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
+        Interval: 1
+        Percentage: 20
         Alarms:
           - !Ref CurrentTimeFunctionCanaryErrors
           - !Ref CheckSessionStateMachineFailedCanary
@@ -1246,6 +1248,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
+        Interval: 1
+        Percentage: 20
         Alarms:
           - !Ref OTGFunctionCanaryErrors
           - !Ref CreateAuthCodeFunctionCanaryErrors
@@ -1385,6 +1389,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
+        Interval: 1
+        Percentage: 20
         Alarms:
           - !Ref SsmParametersFunctionCanaryErrors
           - !Ref AbandonStateMachineFailedCanary
@@ -1484,6 +1490,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
+        Interval: 1
+        Percentage: 20
         Alarms:
           - !Ref CiMappingFunctionCanaryErrors
           - !Ref TimeFunctionCanaryErrors
@@ -2364,6 +2372,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
+        Interval: 1
+        Percentage: 20
         Alarms:
           - !Ref CredentialSubjectFunctionCanaryErrors
           - !Ref EpochTimeFunctionCanaryErrors
