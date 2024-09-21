@@ -7,6 +7,24 @@ describe("check-session", () => {
     sessionId: "session-test",
   };
 
+  const sessionItem: {
+    sessionId: string;
+    expiryDate: number;
+    clientId?: string;
+    subject: string;
+    clientIpAddress?: string;
+    clientSessionId?: string;
+    persistentSessionId?: string;
+  } = {
+    sessionId: input.sessionId,
+    expiryDate: 9999999999,
+    clientId: "exampleClientId",
+    subject: "test",
+    clientIpAddress: "00.100.8.20",
+    clientSessionId: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+    persistentSessionId: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+  };
+
   let output: Partial<{
     CommonStackName: string;
     CheckSessionStateMachineArn: string;
@@ -26,15 +44,7 @@ describe("check-session", () => {
   });
 
   it("should return SESSION_OK when session has not expired", async () => {
-    await populateTable(sessionTableName, {
-      sessionId: input.sessionId,
-      expiryDate: 9999999999,
-      clientId: "exampleClientId",
-      subject: "test",
-      clientIpAddress: "00.100.8.20",
-      clientSessionId: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
-      persistentSessionId: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-    });
+    await populateTable(sessionTableName, sessionItem);
 
     const startExecutionResult = await executeStepFunction(
       output.CheckSessionStateMachineArn as string,
@@ -47,10 +57,8 @@ describe("check-session", () => {
   });
 
   it("should throw an error when there is no clientId present within the session table", async () => {
-    await populateTable(sessionTableName, {
-      sessionId: input.sessionId,
-      expiryDate: 9999999999,
-    });
+    delete sessionItem.clientId;
+    await populateTable(sessionTableName, sessionItem);
 
     const startExecutionResult = await executeStepFunction(
       output.CheckSessionStateMachineArn as string,
@@ -70,10 +78,8 @@ describe("check-session", () => {
   });
 
   it("should return SESSION_EXPIRED when session has expired", async () => {
-    await populateTable(sessionTableName, {
-      sessionId: input.sessionId,
-      expiryDate: 0,
-    });
+    sessionItem.expiryDate = 0;
+    await populateTable(sessionTableName, sessionItem);
 
     const startExecutionResult = await executeStepFunction(
       output.CheckSessionStateMachineArn as string,
