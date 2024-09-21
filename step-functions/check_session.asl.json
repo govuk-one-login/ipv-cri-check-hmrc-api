@@ -48,8 +48,9 @@
 			"Resource": "arn:aws:states:::lambda:invoke",
 			"Parameters": {
 				"Payload": {
-					"epochType": "time"
-				},
+					"epochType": "time",
+          "govJourneyId.$":"$.sessionQuery.items[0].clientSessionId.S"
+        },
 				"FunctionName": "${TimeFunctionArn}"
 			},
 			"Next": "Check Session Has Not Expired",

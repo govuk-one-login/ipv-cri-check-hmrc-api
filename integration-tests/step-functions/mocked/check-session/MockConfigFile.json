@@ -106,6 +106,9 @@
             {
               "expiryDate": {
                 "N": "0"
+              },
+              "clientSessionId": {
+                "S": "252561a2-c6ef-47e7-87ab-93891a2a6a41"
               }
             }
           ]
