@@ -17,7 +17,7 @@ describe("check-session", () => {
   });
 
   describe("happy path tests", () => {
-    it("it should pass when session exists and is not expired", async () => {
+    it("should pass when session exists and is not expired", async () => {
       const input = JSON.stringify({
         sessionId: "12345",
       });
@@ -33,7 +33,7 @@ describe("check-session", () => {
         '{"status":"SESSION_OK","txmaAuditHeader":"{}","sessionExpiry":"2695828259","clientId":"exampleClientId","userAuditInfo":{"govuk_signin_journey_id":"252561a2-c6ef-47e7-87ab-93891a2a6a41","user_id":"urn:fdc:gov.uk:2022:da580c9d-cdf9-4961-afde-233249db04d2","persistent_session_id":"156714ef-f9df-48c2-ada8-540e7bce44f7","session_id":"12345","ip_address":"51.149.8.29"}}'
       );
     });
-    it("it should pass when a valid session exists and persistent_session_id is absent", async () => {
+    it("should pass when a valid session exists and persistent_session_id is absent", async () => {
       const input = JSON.stringify({
         sessionId: "12345",
       });
@@ -55,7 +55,7 @@ describe("check-session", () => {
   });
 
   describe("unhappy path tests", () => {
-    it("it should fail when session does not exist", async () => {
+    it("should fail when session does not exist", async () => {
       const input = JSON.stringify({
         sessionId: "12345",
       });
@@ -71,7 +71,7 @@ describe("check-session", () => {
         '{"status":"SESSION_NOT_FOUND"}'
       );
     });
-    it("it should fail when the session has expired", async () => {
+    it("fails when the session has expired", async () => {
       const input = JSON.stringify({
         sessionId: "12345",
       });
@@ -87,7 +87,7 @@ describe("check-session", () => {
         '{"status":"SESSION_EXPIRED"}'
       );
     });
-    it("it should fail when no sessionId was provided", async () => {
+    it("fails when no sessionId was provided", async () => {
       const input = JSON.stringify({});
       const responseStepFunction =
         await sfnContainer.startStepFunctionExecution("SessionExpired", input);
