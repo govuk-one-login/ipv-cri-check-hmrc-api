@@ -47,7 +47,7 @@ Parameters:
   LambdaDeploymentPreference:
     Description: "Specifies the configuration to enable gradual Lambda deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'AllAtOnce'"
     Type: String
-    Default: "Canary10Percent10Minutes"
+    Default: "AllAtOnce"
     AllowedValues:
       - AllAtOnce
       - Canary10Percent5Minutes
@@ -57,7 +57,7 @@ Parameters:
   StepFunctionsDeploymentPreference:
     Description: "Specifies the configuration to enable gradual StepFunction deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'ALL_AT_ONCE'"
     Type: String
-    Default: "CANARY"
+    Default: "ALL_AT_ONCE"
     AllowedValues:
       - ALL_AT_ONCE
       - CANARY
@@ -72,7 +72,7 @@ Conditions:
     !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
-
+  IsProdEnvironment: !Equals [!Ref Environment, prod]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
@@ -1971,9 +1971,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue] #Only alert to Slack if deployed to Prod, this is the only env in which canaries are enabled
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the CheckSessionStateMachine"
       MetricName: ExecutionsFailed
       Dimensions:
@@ -1995,9 +1995,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the AbandonStateMachine"
       MetricName: ExecutionsFailed
       Dimensions:
@@ -2019,9 +2019,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the NinoCheckStateMachine"
       MetricName: ExecutionsFailed
       Dimensions:
@@ -2043,9 +2043,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the NinoIssueCredentialStateMachine"
       MetricName: ExecutionsFailed
       Dimensions:
@@ -2067,9 +2067,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the AuditEventStateMachine"
       MetricName: ExecutionsFailed
       Dimensions:
@@ -2092,9 +2092,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the CurrentTimeFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2118,9 +2118,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the OTGFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2144,9 +2144,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the CreateAuthCodeFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2171,9 +2171,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the MatchingFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2197,9 +2197,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the SsmParametersFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2223,9 +2223,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the CiMappingFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2249,9 +2249,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the TimeFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2275,9 +2275,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the CredentialSubjectFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2301,9 +2301,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the JwtSignerFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2327,9 +2327,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the EpochTimeFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2353,9 +2353,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       AlarmDescription: !Sub "Errors returned from the PIIRedactFunction Lambda."
       MetricName: Errors
       Dimensions:
