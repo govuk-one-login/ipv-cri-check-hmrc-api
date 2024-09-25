@@ -76,7 +76,9 @@ Conditions:
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
-
+  UseDeploymentAlarms: !Or
+    - !Not [ !Equals [ !Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE ]]
+    - !Not [ !Equals [ !Ref LambdaDeploymentPreference, AllAtOnce ]]
 Mappings:
   # Only numeric values should be assigned here
   MaxJwtTtl:
@@ -1180,9 +1182,11 @@ Resources:
         Type: !Ref StepFunctionsDeploymentPreference
         Interval: 1
         Percentage: 20
-        Alarms:
-          - !Ref CurrentTimeFunctionCanaryErrors
-          - !Ref CheckSessionStateMachineFailedCanary
+        Alarms: !If
+          - UseDeploymentAlarms
+          - - !Ref CurrentTimeFunctionCanaryErrors
+            - !Ref CheckSessionStateMachineFailedCanary
+          - !Ref AWS::NoValue
         StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${CheckSessionStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/check_session.asl.json
@@ -1250,12 +1254,14 @@ Resources:
         Type: !Ref StepFunctionsDeploymentPreference
         Interval: 1
         Percentage: 20
-        Alarms:
-          - !Ref OTGFunctionCanaryErrors
-          - !Ref CreateAuthCodeFunctionCanaryErrors
-          - !Ref MatchingFunctionCanaryErrors
-          - !Ref SsmParametersFunctionCanaryErrors
-          - !Ref NinoCheckStateMachineFailedCanary
+        Alarms: !If
+          - UseDeploymentAlarms
+          - - !Ref OTGFunctionCanaryErrors
+            - !Ref CreateAuthCodeFunctionCanaryErrors
+            - !Ref MatchingFunctionCanaryErrors
+            - !Ref SsmParametersFunctionCanaryErrors
+            - !Ref NinoCheckStateMachineFailedCanary
+          - !Ref AWS::NoValue
         StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoCheckStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_check.asl.json
@@ -1391,9 +1397,11 @@ Resources:
         Type: !Ref StepFunctionsDeploymentPreference
         Interval: 1
         Percentage: 20
-        Alarms:
-          - !Ref SsmParametersFunctionCanaryErrors
-          - !Ref AbandonStateMachineFailedCanary
+        Alarms: !If
+          - UseDeploymentAlarms
+          - - !Ref SsmParametersFunctionCanaryErrors
+            - !Ref AbandonStateMachineFailedCanary
+          - !Ref AWS::NoValue
         StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AbandonStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/abandon.asl.json
@@ -1492,13 +1500,15 @@ Resources:
         Type: !Ref StepFunctionsDeploymentPreference
         Interval: 1
         Percentage: 20
-        Alarms:
-          - !Ref CiMappingFunctionCanaryErrors
-          - !Ref TimeFunctionCanaryErrors
-          - !Ref CredentialSubjectFunctionCanaryErrors
-          - !Ref JwtSignerFunctionCanaryErrors
-          - !Ref SsmParametersFunctionCanaryErrors
-          - !Ref NinoIssueCredentialStateMachineFailedCanary
+        Alarms: !If
+          - UseDeploymentAlarms
+          - - !Ref CiMappingFunctionCanaryErrors
+            - !Ref TimeFunctionCanaryErrors
+            - !Ref CredentialSubjectFunctionCanaryErrors
+            - !Ref JwtSignerFunctionCanaryErrors
+            - !Ref SsmParametersFunctionCanaryErrors
+            - !Ref NinoIssueCredentialStateMachineFailedCanary
+          - !Ref AWS::NoValue
         StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoIssueCredentialStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_issue_credential.asl.json
@@ -2002,7 +2012,7 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
+      TreatMissingData: breaching
 
   NinoCheckStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
@@ -2374,10 +2384,12 @@ Resources:
         Type: !Ref StepFunctionsDeploymentPreference
         Interval: 1
         Percentage: 20
-        Alarms:
-          - !Ref CredentialSubjectFunctionCanaryErrors
-          - !Ref EpochTimeFunctionCanaryErrors
-          - !Ref AuditEventStateMachineFailedCanary
+        Alarms: !If
+          - UseDeploymentAlarms
+          - - !Ref CredentialSubjectFunctionCanaryErrors
+            - !Ref EpochTimeFunctionCanaryErrors
+            - !Ref AuditEventStateMachineFailedCanary
+          - !Ref AWS::NoValue
         StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AuditEventStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/audit_event.asl.json
@@ -2659,8 +2671,10 @@ Resources:
     Properties:
       DeploymentPreference:
         Type: !Ref LambdaDeploymentPreference
-        Alarms:
-          - !Ref PIIRedactFunctionCanaryErrors
+        Alarms: !If
+          - UseDeploymentAlarms
+          - [!Ref PIIRedactFunctionCanaryErrors]
+          - [!Ref AWS::NoValue]
         Role: !GetAtt CodeDeployServiceRole.Arn
       Handler: lambdas/pii-redact/src/pii-redact-handler.lambdaHandler
       LoggingConfig:
