@@ -72,7 +72,7 @@ Conditions:
     !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
-  IsProdEnvironment: !Equals [!Ref Environment, prod]
+  IsProdEnvironment: !Equals [!Ref Environment, production]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
@@ -1180,8 +1180,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 1
-        Percentage: 20
+        Interval: 15
+        Percentage: 10
         Alarms: !If
           - UseDeploymentAlarms
           - - !Ref CurrentTimeFunctionCanaryErrors
@@ -1252,8 +1252,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 1
-        Percentage: 20
+        Interval: 15
+        Percentage: 10
         Alarms: !If
           - UseDeploymentAlarms
           - - !Ref OTGFunctionCanaryErrors
@@ -1395,8 +1395,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 1
-        Percentage: 20
+        Interval: 15
+        Percentage: 10
         Alarms: !If
           - UseDeploymentAlarms
           - - !Ref SsmParametersFunctionCanaryErrors
@@ -1498,8 +1498,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 1
-        Percentage: 20
+        Interval: 15
+        Percentage: 10
         Alarms: !If
           - UseDeploymentAlarms
           - - !Ref CiMappingFunctionCanaryErrors
@@ -1969,7 +1969,7 @@ Resources:
   CheckSessionStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue] #Only alert to Slack if deployed to Prod, this is the only env in which canaries are enabled
       OKActions:
@@ -1993,7 +1993,7 @@ Resources:
   AbandonStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2012,12 +2012,12 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: breaching
+      TreatMissingData: notBreaching
 
   NinoCheckStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2041,7 +2041,7 @@ Resources:
   NinoIssueCredentialStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2065,7 +2065,7 @@ Resources:
   AuditEventStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2090,7 +2090,7 @@ Resources:
   CurrentTimeFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2116,7 +2116,7 @@ Resources:
   OTGFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2142,7 +2142,7 @@ Resources:
   CreateAuthCodeFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2169,7 +2169,7 @@ Resources:
   MatchingFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2195,7 +2195,7 @@ Resources:
   SsmParametersFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2221,7 +2221,7 @@ Resources:
   CiMappingFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2247,7 +2247,7 @@ Resources:
   TimeFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2273,7 +2273,7 @@ Resources:
   CredentialSubjectFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2299,7 +2299,7 @@ Resources:
   JwtSignerFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2325,7 +2325,7 @@ Resources:
   EpochTimeFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2351,7 +2351,7 @@ Resources:
   PIIRedactFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
+      ActionsEnabled: false
       AlarmActions:
         - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
       OKActions:
@@ -2382,8 +2382,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 1
-        Percentage: 20
+        Interval: 15
+        Percentage: 10
         Alarms: !If
           - UseDeploymentAlarms
           - - !Ref CredentialSubjectFunctionCanaryErrors
