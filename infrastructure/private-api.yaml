@@ -151,7 +151,7 @@ paths:
               #end
               {
                 "input":"{\"nino\":\"$nino\",\"sessionId\":\"$util.escapeJavaScript($input.params('session-id').trim())\",#set($headerKeys = $headers.keySet())#set($headerCount = $headerKeys.size())#foreach($headerKey in $headerKeys)\"$headerKey\": \"$util.escapeJavaScript($headers.get($headerKey))\"#if($foreach.hasNext),#end#end}",
-                "stateMachineArn": "${NinoCheckStateMachine.Arn}"
+                "stateMachineArn": "${NinoCheckStateMachine.Arn}:live"
               }
         responses:
           default:
@@ -199,7 +199,7 @@ paths:
             Fn::Sub: |-
               {
                 "input": "{\"sessionId\": \"$util.escapeJavaScript($input.params('session-id').trim())\"}",
-                "stateMachineArn": "${AbandonStateMachine.Arn}"
+                "stateMachineArn": "${AbandonStateMachine.Arn}:live"
               }
         responses:
           default:

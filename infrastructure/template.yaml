@@ -1267,7 +1267,7 @@ Resources:
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
         AuditEventPrefix: !Ref AuditEventNamePrefix
-        CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
+        CheckSessionStateMachineArn: !Sub ${CheckSessionStateMachine}:live
         CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
         MatchingFunctionArn: !GetAtt MatchingFunction.Arn
         UserAttemptsTable: !Ref UserAttemptsTable
@@ -1407,7 +1407,7 @@ Resources:
       DefinitionUri: ../step-functions/abandon.asl.json
       DefinitionSubstitutions:
         AuditEventPrefix: !Ref AuditEventNamePrefix
-        CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
+        CheckSessionStateMachineArn: !Sub ${CheckSessionStateMachine}:live
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
@@ -1671,7 +1671,7 @@ Resources:
         detail-type:
           - !FindInMap [Audit, EventName, ResponseReceived]
       Targets:
-        - Arn: !Ref AuditEventStateMachine
+        - Arn: !Sub ${AuditEventStateMachine}:live
           Id: AuditEventStateMachineResponseReceivedTarget
           RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventRequestSentRule:
@@ -1686,7 +1686,7 @@ Resources:
         detail-type:
           - !FindInMap [Audit, EventName, RequestSent]
       Targets:
-        - Arn: !Ref AuditEventStateMachine
+        - Arn: !Sub ${AuditEventStateMachine}:live
           Id: AuditEventStateMachineRequestSentTarget
           RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventVcIssuedRule:
@@ -1701,7 +1701,7 @@ Resources:
         detail-type:
           - !FindInMap [Audit, EventName, VcIssued]
       Targets:
-        - Arn: !Ref AuditEventStateMachine
+        - Arn: !Sub ${AuditEventStateMachine}:live
           Id: AuditEventStateMachineVcIssuedTarget
           RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventEndRule:
@@ -1716,7 +1716,7 @@ Resources:
         detail-type:
           - !FindInMap [Audit, EventName, End]
       Targets:
-        - Arn: !Ref AuditEventStateMachine
+        - Arn: !Sub ${AuditEventStateMachine}:live
           Id: AuditEventStateMachineEndTarget
           RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventAbandonedRule:
@@ -1731,7 +1731,7 @@ Resources:
         detail-type:
           - !FindInMap [Audit, EventName, Abandoned]
       Targets:
-        - Arn: !Ref AuditEventStateMachine
+        - Arn: !Sub ${AuditEventStateMachine}:live
           Id: AuditEventStateMachineAbandonedTarget
           RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
 
