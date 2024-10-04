@@ -1191,7 +1191,7 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/check_session.asl.json
       DefinitionSubstitutions:
-        CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
+        CurrentTimeFunctionArn: !Ref CurrentTimeFunction.Version
         CommonStackName: !Ref CommonStackName
       Logging:
         Destinations:
@@ -1268,15 +1268,15 @@ Resources:
       DefinitionSubstitutions:
         AuditEventPrefix: !Ref AuditEventNamePrefix
         CheckSessionStateMachineArn: !Sub ${CheckSessionStateMachine}:live
-        CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
-        MatchingFunctionArn: !GetAtt MatchingFunction.Arn
+        CreateAuthCodeFunctionArn: !Ref CreateAuthCodeFunction.Version
+        MatchingFunctionArn: !Ref MatchingFunction.Version
         UserAttemptsTable: !Ref UserAttemptsTable
         NinoUsersTable: !Ref NinoUsersTable
         UserAgent: !Ref UserAgent
         BearerTokenName: !Ref BearerTokenName
         CommonStackName: !Ref CommonStackName
-        SsmParametersFunction: !Ref SsmParametersFunction
-        OTGFunction: !Ref OTGFunction
+        SsmParametersFunction: !Ref SsmParametersFunction.Version
+        OTGFunction: !Ref OTGFunction.Version
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         AuditEventNameResponseReceived:
@@ -1409,7 +1409,7 @@ Resources:
         AuditEventPrefix: !Ref AuditEventNamePrefix
         CheckSessionStateMachineArn: !Sub ${CheckSessionStateMachine}:live
         CommonStackName: !Ref CommonStackName
-        SsmParametersFunction: !Ref SsmParametersFunction
+        SsmParametersFunction: !Ref SsmParametersFunction.Version
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         AuditEventNameAbandoned: !FindInMap [Audit, EventName, Abandoned]
@@ -1514,16 +1514,16 @@ Resources:
       DefinitionUri: ../step-functions/nino_issue_credential.asl.json
       DefinitionSubstitutions:
         AuditEventPrefix: !Ref AuditEventNamePrefix
-        CiMappingFunctionArn: !GetAtt CiMappingFunction.Arn
-        TimeFunctionArn: !GetAtt TimeFunction.Arn
-        CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
+        CiMappingFunctionArn: !Ref CiMappingFunction.Version
+        TimeFunctionArn: !Ref TimeFunction.Version
+        CredentialSubjectFunctionArn: !Ref CredentialSubjectFunction.Version
         UserAttemptsTable: !Ref UserAttemptsTable
         MaxJwtTtlParameter: !Ref MaxJwtTtlParameter
         JwtTtlUnitParameter: !Ref JwtTtlUnitParameter
         CommonStackName: !Ref CommonStackName
         NinoUsersTable: !Ref NinoUsersTable
-        JwtSignerFunction: !GetAtt JwtSignerFunction.Arn
-        SsmParametersFunction: !Ref SsmParametersFunction
+        JwtSignerFunction: !Ref JwtSignerFunction.Version
+        SsmParametersFunction: !Ref SsmParametersFunction.Version
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         AuditEventNameVcIssued: !FindInMap [Audit, EventName, VcIssued]
@@ -2394,8 +2394,8 @@ Resources:
       Type: EXPRESS
       DefinitionUri: ../step-functions/audit_event.asl.json
       DefinitionSubstitutions:
-        CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
-        EpochTimeArn: !GetAtt EpochTimeFunction.Arn
+        CredentialSubjectFunctionArn: !Ref CredentialSubjectFunction.Version
+        EpochTimeArn: !Ref EpochTimeFunction.Version
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
       Logging:
