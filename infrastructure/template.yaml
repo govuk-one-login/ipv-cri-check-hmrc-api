@@ -72,13 +72,12 @@ Conditions:
     !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
-  IsProdEnvironment: !Equals [!Ref Environment, production]
+  UseCanaryDeploymentAlarms: !Or
+    - !Not [ !Equals [ !Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE ]]
+    - !Not [ !Equals [ !Ref LambdaDeploymentPreference, AllAtOnce ]]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
-  UseDeploymentAlarms: !Or
-    - !Not [ !Equals [ !Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE ]]
-    - !Not [ !Equals [ !Ref LambdaDeploymentPreference, AllAtOnce ]]
 Mappings:
   # Only numeric values should be assigned here
   MaxJwtTtl:
@@ -1183,7 +1182,7 @@ Resources:
         Interval: 15
         Percentage: 10
         Alarms: !If
-          - UseDeploymentAlarms
+          - UseCanaryDeploymentAlarms
           - - !Ref CurrentTimeFunctionCanaryErrors
             - !Ref CheckSessionStateMachineFailedCanary
           - !Ref AWS::NoValue
@@ -1255,7 +1254,7 @@ Resources:
         Interval: 15
         Percentage: 10
         Alarms: !If
-          - UseDeploymentAlarms
+          - UseCanaryDeploymentAlarms
           - - !Ref OTGFunctionCanaryErrors
             - !Ref CreateAuthCodeFunctionCanaryErrors
             - !Ref MatchingFunctionCanaryErrors
@@ -1398,7 +1397,7 @@ Resources:
         Interval: 15
         Percentage: 10
         Alarms: !If
-          - UseDeploymentAlarms
+          - UseCanaryDeploymentAlarms
           - - !Ref SsmParametersFunctionCanaryErrors
             - !Ref AbandonStateMachineFailedCanary
           - !Ref AWS::NoValue
@@ -1501,7 +1500,7 @@ Resources:
         Interval: 15
         Percentage: 10
         Alarms: !If
-          - UseDeploymentAlarms
+          - UseCanaryDeploymentAlarms
           - - !Ref CiMappingFunctionCanaryErrors
             - !Ref TimeFunctionCanaryErrors
             - !Ref CredentialSubjectFunctionCanaryErrors
@@ -1968,12 +1967,13 @@ Resources:
 
   CheckSessionStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue] #Only alert to Slack if deployed to Prod, this is the only env in which canaries are enabled
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the CheckSessionStateMachine"
       MetricName: ExecutionsFailed
       Dimensions:
@@ -1992,12 +1992,13 @@ Resources:
 
   AbandonStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the AbandonStateMachine"
       MetricName: ExecutionsFailed
       Dimensions:
@@ -2016,12 +2017,13 @@ Resources:
 
   NinoCheckStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the NinoCheckStateMachine"
       MetricName: ExecutionsFailed
       Dimensions:
@@ -2040,12 +2042,13 @@ Resources:
 
   NinoIssueCredentialStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the NinoIssueCredentialStateMachine"
       MetricName: ExecutionsFailed
       Dimensions:
@@ -2064,12 +2067,13 @@ Resources:
 
   AuditEventStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the AuditEventStateMachine"
       MetricName: ExecutionsFailed
       Dimensions:
@@ -2089,12 +2093,13 @@ Resources:
   #Lambda alarms
   CurrentTimeFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the CurrentTimeFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2115,12 +2120,13 @@ Resources:
 
   OTGFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the OTGFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2141,12 +2147,13 @@ Resources:
 
   CreateAuthCodeFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the CreateAuthCodeFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2168,12 +2175,13 @@ Resources:
 
   MatchingFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the MatchingFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2194,12 +2202,13 @@ Resources:
 
   SsmParametersFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the SsmParametersFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2220,12 +2229,13 @@ Resources:
 
   CiMappingFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the CiMappingFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2246,12 +2256,13 @@ Resources:
 
   TimeFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the TimeFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2272,12 +2283,13 @@ Resources:
 
   CredentialSubjectFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the CredentialSubjectFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2298,12 +2310,13 @@ Resources:
 
   JwtSignerFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the JwtSignerFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2324,12 +2337,13 @@ Resources:
 
   EpochTimeFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the EpochTimeFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2350,12 +2364,13 @@ Resources:
 
   PIIRedactFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: false
       AlarmActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !If [IsProdEnvironment, !ImportValue platform-alarm-warning-alert-topic, !Ref AWS::NoValue]
+        - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "Errors returned from the PIIRedactFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -2385,7 +2400,7 @@ Resources:
         Interval: 15
         Percentage: 10
         Alarms: !If
-          - UseDeploymentAlarms
+          - UseCanaryDeploymentAlarms
           - - !Ref CredentialSubjectFunctionCanaryErrors
             - !Ref EpochTimeFunctionCanaryErrors
             - !Ref AuditEventStateMachineFailedCanary
@@ -2672,7 +2687,7 @@ Resources:
       DeploymentPreference:
         Type: !Ref LambdaDeploymentPreference
         Alarms: !If
-          - UseDeploymentAlarms
+          - UseCanaryDeploymentAlarms
           - [!Ref PIIRedactFunctionCanaryErrors]
           - [!Ref AWS::NoValue]
         Role: !GetAtt CodeDeployServiceRole.Arn
