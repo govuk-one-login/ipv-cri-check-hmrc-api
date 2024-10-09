@@ -40,10 +40,21 @@ export class MatchingHandler implements LambdaInterface {
       const txn = response.headers.get("x-amz-cf-id") ?? "";
       addLogEntry(event, txn, context);
       const contentType = response.headers.get("content-type");
+
       if (contentType?.includes("application/json")) {
+        let responseBody = await response.text();
+
+        try {
+          responseBody = JSON.parse(responseBody);
+        } catch (error) {
+          logger.info(
+            "Received a non-json body for the application/json content-type"
+          );
+        }
+
         return {
           status: response.status.toString(),
-          body: await response.json(),
+          body: responseBody,
           txn: txn,
         };
       } else {

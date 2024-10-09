@@ -45,7 +45,7 @@ describe("matching-handler", () => {
           .mockReturnValueOnce("mock-txn")
           .mockReturnValueOnce("application/json"),
       },
-      json: jest.fn().mockResolvedValueOnce({
+      text: jest.fn().mockResolvedValueOnce({
         firstName: "Jim",
         lastName: "Ferguson",
         dateOfBirth: "1948-04-23",
@@ -65,6 +65,29 @@ describe("matching-handler", () => {
       nino: "AA000003D",
     });
     expect(result.txn).toStrictEqual("mock-txn");
+  });
+
+  it("should return a valid response when the content-type is application/json and the body is not valid JSON", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      headers: {
+        get: jest
+          .fn()
+          .mockReturnValueOnce("content-type")
+          .mockReturnValueOnce("application/json"),
+      },
+      text: jest
+        .fn()
+        .mockResolvedValueOnce("Request to create account for a deceased user"),
+      status: 422,
+    });
+
+    const matchingHandler = new MatchingHandler();
+    const result = await matchingHandler.handler(testEvent, {} as Context);
+
+    expect(result.status).toBe("422");
+    expect(result.body).toStrictEqual(
+      "Request to create account for a deceased user"
+    );
   });
 
   it("should return text when content type is not json", async () => {

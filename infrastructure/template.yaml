@@ -215,37 +215,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedEpochTimeFunctionLogGroup
 
-  EpochTimeFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref EpochTimeFunctionLogGroup
-      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${EpochTimeFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  EpochTimeFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
-    Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-EpochTimeFunction-Errors-alarm"
-      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${EpochTimeFunction} errors. ${SupportManualURL}"
-      ActionsEnabled: true
-      OKActions: [!ImportValue platform-alarm-warning-alert-topic]
-      AlarmActions: [!ImportValue platform-alarm-warning-alert-topic]
-      InsufficientDataActions: []
-      MetricName: !Sub ${EpochTimeFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   CiMappingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -276,39 +245,6 @@ Resources:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedCiMappingFunctionLogGroup
-
-  CiMappingFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref CiMappingFunctionLogGroup
-      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${CiMappingFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  CiMappingFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
-    Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-CiMappingFunction-Errors-alarm"
-      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CiMappingFunction} errors. ${SupportManualURL}"
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${CiMappingFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
 
   CreateAuthCodeFunction:
     Type: AWS::Serverless::Function
@@ -341,39 +277,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedCreateAuthCodeFunctionLogGroup
 
-  CreateAuthCodeFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref CreateAuthCodeFunctionLogGroup
-      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${CreateAuthCodeFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  CreateAuthCodeFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
-    Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-CreateAuthCodeFunction-Errors-alarm"
-      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CreateAuthCodeFunction} errors. ${SupportManualURL}"
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${CreateAuthCodeFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   CredentialSubjectFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -405,39 +308,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedCredentialSubjectFunctionLogGroup
 
-  CredentialSubjectFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref CredentialSubjectFunctionLogGroup
-      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${CredentialSubjectFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  CredentialSubjectFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
-    Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-CredentialSubjectFunction-Errors-alarm"
-      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CredentialSubjectFunction} errors. ${SupportManualURL}"
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${CredentialSubjectFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   CurrentTimeFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -468,39 +338,6 @@ Resources:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedCurrentTimeFunctionLogGroup
-
-  CurrentTimeFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref CurrentTimeFunctionLogGroup
-      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${CurrentTimeFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  CurrentTimeFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
-    Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-CurrentTimeFunction-Errors-alarm"
-      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${CurrentTimeFunction} errors. ${SupportManualURL}"
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${CurrentTimeFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
 
   JwtSignerFunction:
     Type: AWS::Serverless::Function
@@ -539,39 +376,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedJwtSignerFunctionLogGroup
 
-  JwtSignerFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref JwtSignerFunctionLogGroup
-      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${JwtSignerFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  JwtSignerFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
-    Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-JwtSignerFunction-Errors-alarm"
-      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${JwtSignerFunction} errors. ${SupportManualURL}"
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${JwtSignerFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   OTGFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -603,39 +407,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedOTGFunctionLogGroup
 
-  OTGFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref OTGFunctionLogGroup
-      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${MatchingFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  OTGFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
-    Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-Errors-alarm"
-      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${OTGFunction} errors. ${SupportManualURL}"
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${OTGFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   OTGFunctionFatalErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
@@ -646,57 +417,47 @@ Resources:
           MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
           MetricName: "OTGFunction-Fatalerror"
 
-  OTGFunctionFatalErrorAlarm:
-    DependsOn:
-      - "OTGFunctionFatalErrorMetricFilter"
+  CheckHmrcLambdaErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-FatalError-alarm"
-      AlarmDescription: !Sub "Trigger an alarm when Fatal ${OTGFunction} Error occurs. ${SupportManualURL}"
+      AlarmName: !Sub ${AWS::StackName}-CheckHmrcLambdaErrors-alarm
+      AlarmDescription: !Sub Check HMRC ${Environment} lambda errors"
       ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue core-infrastructure-AlarmTopic
+      OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
       InsufficientDataActions: []
-      MetricName: !Sub ${OTGFunction}-Fatalerror
-      Namespace: !Sub "${AWS::StackName}/LogMessages"
+      MetricName: Errors
+      Namespace: AWS/Lambda
       Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
+      Period: 300
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  OTGFunctionThrottleAlarm:
+  CheckHmrcLambdaThrottle:
     Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
     Properties:
+      AlarmName: !Sub ${AWS::StackName}-CheckHmrcLambdaThrottle-alarm
+      AlarmDescription: !Sub Check HMRC ${Environment} lambda throttle"
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
-      AlarmDescription: !Sub "Trigger if the ${OTGFunction} lambda throttles. ${SupportManualURL}"
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-OTGFunction-Throttles-alarm"
       MetricName: Throttles
       Namespace: AWS/Lambda
       Statistic: Sum
-      Dimensions:
-        - Name: FunctionName
-          Value: !Ref OTGFunction
-      TreatMissingData: notBreaching
-      Period: 60 # This is the minimum value for the AWS Namespace
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
+      Period: 300
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
 
   MatchingFunction:
     Type: AWS::Serverless::Function
@@ -728,41 +489,6 @@ Resources:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedMatchingFunctionLogGroup
-
-  MatchingFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref MatchingFunctionLogGroup
-      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${MatchingFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  MatchingFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
-    Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-MatchingFunction-Errors-alarm"
-      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${MatchingFunction} errors. ${SupportManualURL}"
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-critical-alert-topic
-      AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-critical-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${MatchingFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
 
   SsmParametersFunction:
     Type: AWS::Serverless::Function
@@ -798,39 +524,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedSsmParametersFunctionLogGroup
 
-  SsmParametersFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref SsmParametersFunctionLogGroup
-      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${SsmParametersFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  SsmParametersFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
-    Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-SsmParametersFunction-Errors-alarm"
-      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${SsmParametersFunction} errors. ${SupportManualURL}"
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${SsmParametersFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   TimeFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -861,39 +554,6 @@ Resources:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedTimeFunctionLogGroup
-
-  TimeFunctionEventErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref TimeFunctionLogGroup
-      FilterPattern: "{($.eventName = ExecutionsFailed) || ($.eventName = ExecutionThrottled) || ($.eventName = ExecutionsAborted) || ($.eventName = ExecutionsTimedOut)}"
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: !Sub ${TimeFunction}-Error
-          MetricNamespace: !Sub ${AWS::StackName}/LogMessages
-
-  TimeFunctionEventErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
-    Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-TimeFunction-Errors-alarm"
-      AlarmDescription: !Sub "Triggers CloudWatch Alarm when the ${TimeFunction} errors. ${SupportManualURL}"
-      ActionsEnabled: true
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      MetricName: !Sub ${TimeFunction}-Error
-      Namespace: !Sub ${AWS::StackName}/LogMessages
-      Statistic: Sum
-      Dimensions: []
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
 
   UserAgent:
     Type: AWS::SSM::Parameter
@@ -973,7 +633,7 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedPublicNinoCheckApiAccessLogGroup
 
-  PublicNinoCheckApiFatalErorMetricFilter:
+  PublicNinoCheckApiFatalErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
       LogGroupName: !Ref PublicNinoCheckApiAccessLogGroup
@@ -985,7 +645,7 @@ Resources:
 
   PublicNinoCheckApiFatalErrorAlarm:
     DependsOn:
-      - "PublicNinoCheckApiFatalErorMetricFilter"
+      - "PublicNinoCheckApiFatalErrorMetricFilter"
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
@@ -1076,7 +736,7 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedPrivateNinoCheckApiAccessLogGroup
 
-  PrivateNinoCheckApiFatalErorMetricFilter:
+  PrivateNinoCheckApiFatalErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
       LogGroupName: !Ref PrivateNinoCheckApiAccessLogGroup
@@ -1088,7 +748,7 @@ Resources:
 
   PrivateNinoCheckApiFatalErrorAlarm:
     DependsOn:
-      - "PrivateNinoCheckApiFatalErorMetricFilter"
+      - "PrivateNinoCheckApiFatalErrorMetricFilter"
     Type: AWS::CloudWatch::Alarm
     Condition: "DeployAlarms"
     Properties:
@@ -1227,9 +887,11 @@ Resources:
     Condition: "DeployAlarms"
     Properties:
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
       AlarmDescription: !Sub "${CheckSessionStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckSessionStateMachine-alarm"
       ComparisonOperator: GreaterThanThreshold
@@ -1370,9 +1032,11 @@ Resources:
     Condition: "DeployAlarms"
     Properties:
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
       AlarmDescription: !Sub "${NinoCheckStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachine-ExecutionsFailed-alarm"
       ComparisonOperator: GreaterThanThreshold
@@ -1611,9 +1275,11 @@ Resources:
     Condition: "DeployAlarms"
     Properties:
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
       AlarmDescription: !Sub "${NinoIssueCredentialStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachine-ExecutionsFailed-alarm"
       ComparisonOperator: GreaterThanThreshold
