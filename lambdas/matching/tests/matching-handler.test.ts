@@ -45,7 +45,7 @@ describe("matching-handler", () => {
           .mockReturnValueOnce("mock-txn")
           .mockReturnValueOnce("application/json"),
       },
-      json: jest.fn().mockResolvedValueOnce({
+      text: jest.fn().mockResolvedValueOnce({
         firstName: "Jim",
         lastName: "Ferguson",
         dateOfBirth: "1948-04-23",
@@ -75,9 +75,6 @@ describe("matching-handler", () => {
           .mockReturnValueOnce("content-type")
           .mockReturnValueOnce("application/json"),
       },
-      json: jest.fn().mockImplementation(() => {
-        throw new Error("Type error");
-      }),
       text: jest
         .fn()
         .mockResolvedValueOnce("Request to create account for a deceased user"),
@@ -88,9 +85,9 @@ describe("matching-handler", () => {
     const result = await matchingHandler.handler(testEvent, {} as Context);
 
     expect(result.status).toBe("422");
-    expect(result.body).toStrictEqual({
-      message: "Request to create account for a deceased user",
-    });
+    expect(result.body).toStrictEqual(
+      "Request to create account for a deceased user"
+    );
   });
 
   it("should return text when content type is not json", async () => {

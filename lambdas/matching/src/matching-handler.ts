@@ -42,13 +42,14 @@ export class MatchingHandler implements LambdaInterface {
       const contentType = response.headers.get("content-type");
 
       if (contentType?.includes("application/json")) {
-        let responseBody;
+        let responseBody = await response.text();
+
         try {
-          responseBody = await response.json();
+          responseBody = JSON.parse(responseBody);
         } catch (error) {
-          responseBody = {
-            message: await response.text(),
-          };
+          logger.info(
+            "Received a non-json body for the application/json content-type"
+          );
         }
 
         return {
