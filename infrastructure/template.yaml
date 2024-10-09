@@ -44,6 +44,24 @@ Parameters:
     Type: String
     Default: "https://team-manual.account.gov.uk/teams/CRI-Orange-team/supporting-cri-orange/hmrc-nino-runbook/#backend-api-alarms"
     Description: The support manual URL to be provided in alarm messages.
+  LambdaDeploymentPreference:
+    Description: "Specifies the configuration to enable gradual Lambda deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'AllAtOnce'"
+    Type: String
+    Default: "AllAtOnce"
+    AllowedValues:
+      - AllAtOnce
+      - Canary10Percent5Minutes
+      - Canary10Percent10Minutes
+      - Canary10Percent15Minutes
+      - Canary10Percent30Minutes
+  StepFunctionsDeploymentPreference:
+    Description: "Specifies the configuration to enable gradual StepFunction deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'ALL_AT_ONCE'"
+    Type: String
+    Default: "ALL_AT_ONCE"
+    AllowedValues:
+      - ALL_AT_ONCE
+      - CANARY
+      - LINEAR
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
@@ -54,11 +72,12 @@ Conditions:
     !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
-
+  UseCanaryDeploymentAlarms: !Or
+    - !Not [ !Equals [ !Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE ]]
+    - !Not [ !Equals [ !Ref LambdaDeploymentPreference, AllAtOnce ]]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
-
 Mappings:
   # Only numeric values should be assigned here
   MaxJwtTtl:
@@ -162,6 +181,7 @@ Globals:
         DT_TENANT: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
+    AutoPublishAlias: live
 
 Resources:
   EpochTimeFunction:
@@ -816,10 +836,21 @@ Resources:
   CheckSessionStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: !Ref StepFunctionsDeploymentPreference
+        Interval: 15
+        Percentage: 10
+        Alarms: !If
+          - UseCanaryDeploymentAlarms
+          - - !Ref CurrentTimeFunctionCanaryErrors
+            - !Ref CheckSessionStateMachineFailedCanary
+          - !Ref AWS::NoValue
+        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${CheckSessionStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/check_session.asl.json
       DefinitionSubstitutions:
-        CurrentTimeFunctionArn: !GetAtt CurrentTimeFunction.Arn
+        CurrentTimeFunctionArn: !Ref CurrentTimeFunction.Version
         CommonStackName: !Ref CommonStackName
       Logging:
         Destinations:
@@ -879,20 +910,34 @@ Resources:
   NinoCheckStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: !Ref StepFunctionsDeploymentPreference
+        Interval: 15
+        Percentage: 10
+        Alarms: !If
+          - UseCanaryDeploymentAlarms
+          - - !Ref OTGFunctionCanaryErrors
+            - !Ref CreateAuthCodeFunctionCanaryErrors
+            - !Ref MatchingFunctionCanaryErrors
+            - !Ref SsmParametersFunctionCanaryErrors
+            - !Ref NinoCheckStateMachineFailedCanary
+          - !Ref AWS::NoValue
+        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoCheckStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_check.asl.json
       DefinitionSubstitutions:
         AuditEventPrefix: !Ref AuditEventNamePrefix
-        CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
-        CreateAuthCodeFunctionArn: !GetAtt CreateAuthCodeFunction.Arn
-        MatchingFunctionArn: !GetAtt MatchingFunction.Arn
+        CheckSessionStateMachineArn: !Sub ${CheckSessionStateMachine}:live
+        CreateAuthCodeFunctionArn: !Ref CreateAuthCodeFunction.Version
+        MatchingFunctionArn: !Ref MatchingFunction.Version
         UserAttemptsTable: !Ref UserAttemptsTable
         NinoUsersTable: !Ref NinoUsersTable
         UserAgent: !Ref UserAgent
         BearerTokenName: !Ref BearerTokenName
         CommonStackName: !Ref CommonStackName
-        SsmParametersFunction: !Ref SsmParametersFunction
-        OTGFunction: !Ref OTGFunction
+        SsmParametersFunction: !Ref SsmParametersFunction.Version
+        OTGFunction: !Ref OTGFunction.Version
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         AuditEventNameResponseReceived:
@@ -1010,13 +1055,24 @@ Resources:
   AbandonStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: !Ref StepFunctionsDeploymentPreference
+        Interval: 15
+        Percentage: 10
+        Alarms: !If
+          - UseCanaryDeploymentAlarms
+          - - !Ref SsmParametersFunctionCanaryErrors
+            - !Ref AbandonStateMachineFailedCanary
+          - !Ref AWS::NoValue
+        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AbandonStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/abandon.asl.json
       DefinitionSubstitutions:
         AuditEventPrefix: !Ref AuditEventNamePrefix
-        CheckSessionStateMachineArn: !Ref CheckSessionStateMachine
+        CheckSessionStateMachineArn: !Sub ${CheckSessionStateMachine}:live
         CommonStackName: !Ref CommonStackName
-        SsmParametersFunction: !Ref SsmParametersFunction
+        SsmParametersFunction: !Ref SsmParametersFunction.Version
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         AuditEventNameAbandoned: !FindInMap [Audit, EventName, Abandoned]
@@ -1102,20 +1158,35 @@ Resources:
   NinoIssueCredentialStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: !Ref StepFunctionsDeploymentPreference
+        Interval: 15
+        Percentage: 10
+        Alarms: !If
+          - UseCanaryDeploymentAlarms
+          - - !Ref CiMappingFunctionCanaryErrors
+            - !Ref TimeFunctionCanaryErrors
+            - !Ref CredentialSubjectFunctionCanaryErrors
+            - !Ref JwtSignerFunctionCanaryErrors
+            - !Ref SsmParametersFunctionCanaryErrors
+            - !Ref NinoIssueCredentialStateMachineFailedCanary
+          - !Ref AWS::NoValue
+        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoIssueCredentialStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/nino_issue_credential.asl.json
       DefinitionSubstitutions:
         AuditEventPrefix: !Ref AuditEventNamePrefix
-        CiMappingFunctionArn: !GetAtt CiMappingFunction.Arn
-        TimeFunctionArn: !GetAtt TimeFunction.Arn
-        CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
+        CiMappingFunctionArn: !Ref CiMappingFunction.Version
+        TimeFunctionArn: !Ref TimeFunction.Version
+        CredentialSubjectFunctionArn: !Ref CredentialSubjectFunction.Version
         UserAttemptsTable: !Ref UserAttemptsTable
         MaxJwtTtlParameter: !Ref MaxJwtTtlParameter
         JwtTtlUnitParameter: !Ref JwtTtlUnitParameter
         CommonStackName: !Ref CommonStackName
         NinoUsersTable: !Ref NinoUsersTable
-        JwtSignerFunction: !GetAtt JwtSignerFunction.Arn
-        SsmParametersFunction: !Ref SsmParametersFunction
+        JwtSignerFunction: !Ref JwtSignerFunction.Version
+        SsmParametersFunction: !Ref SsmParametersFunction.Version
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         AuditEventNameVcIssued: !FindInMap [Audit, EventName, VcIssued]
@@ -1265,7 +1336,7 @@ Resources:
         detail-type:
           - !FindInMap [Audit, EventName, ResponseReceived]
       Targets:
-        - Arn: !Ref AuditEventStateMachine
+        - Arn: !Sub ${AuditEventStateMachine}:live
           Id: AuditEventStateMachineResponseReceivedTarget
           RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventRequestSentRule:
@@ -1280,7 +1351,7 @@ Resources:
         detail-type:
           - !FindInMap [Audit, EventName, RequestSent]
       Targets:
-        - Arn: !Ref AuditEventStateMachine
+        - Arn: !Sub ${AuditEventStateMachine}:live
           Id: AuditEventStateMachineRequestSentTarget
           RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventVcIssuedRule:
@@ -1295,7 +1366,7 @@ Resources:
         detail-type:
           - !FindInMap [Audit, EventName, VcIssued]
       Targets:
-        - Arn: !Ref AuditEventStateMachine
+        - Arn: !Sub ${AuditEventStateMachine}:live
           Id: AuditEventStateMachineVcIssuedTarget
           RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventEndRule:
@@ -1310,7 +1381,7 @@ Resources:
         detail-type:
           - !FindInMap [Audit, EventName, End]
       Targets:
-        - Arn: !Ref AuditEventStateMachine
+        - Arn: !Sub ${AuditEventStateMachine}:live
           Id: AuditEventStateMachineEndTarget
           RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
   AuditEventAbandonedRule:
@@ -1325,7 +1396,7 @@ Resources:
         detail-type:
           - !FindInMap [Audit, EventName, Abandoned]
       Targets:
-        - Arn: !Ref AuditEventStateMachine
+        - Arn: !Sub ${AuditEventStateMachine}:live
           Id: AuditEventStateMachineAbandonedTarget
           RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
 
@@ -1553,16 +1624,459 @@ Resources:
       Threshold: 3
       TreatMissingData: notBreaching
 
+  ##################################################################
+  #                                                                  #
+  # Canary Alarms                                                    #
+  #                                                                  #
+  ####################################################################
+  #Step function alarms
+
+  CheckSessionStateMachineFailedCanary:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the CheckSessionStateMachine"
+      MetricName: ExecutionsFailed
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${CheckSessionStateMachine}"
+        - Name: Alias
+          Value: 'live'
+      Namespace: AWS/States
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  AbandonStateMachineFailedCanary:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the AbandonStateMachine"
+      MetricName: ExecutionsFailed
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AbandonStateMachine}"
+        - Name: Alias
+          Value: 'live'
+      Namespace: AWS/States
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  NinoCheckStateMachineFailedCanary:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the NinoCheckStateMachine"
+      MetricName: ExecutionsFailed
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoCheckStateMachine}"
+        - Name: Alias
+          Value: 'live'
+      Namespace: AWS/States
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  NinoIssueCredentialStateMachineFailedCanary:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the NinoIssueCredentialStateMachine"
+      MetricName: ExecutionsFailed
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoIssueCredentialStateMachine"
+        - Name: Alias
+          Value: 'live'
+      Namespace: AWS/States
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  AuditEventStateMachineFailedCanary:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the AuditEventStateMachine"
+      MetricName: ExecutionsFailed
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AuditEventStateMachine}"
+        - Name: Alias
+          Value: 'live'
+      Namespace: AWS/States
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  #Lambda alarms
+  CurrentTimeFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the CurrentTimeFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-CurrentTimeLookupFunction:live"
+        - Name: FunctionName
+          Value: !Ref CurrentTimeFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt CurrentTimeFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  OTGFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the OTGFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-OTGLookupFunction:live"
+        - Name: FunctionName
+          Value: !Ref OTGFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt OTGFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  CreateAuthCodeFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the CreateAuthCodeFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-CreateAuthCodeLookupFunction:live"
+        - Name: FunctionName
+          Value: !Ref CreateAuthCodeFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt CreateAuthCodeFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+
+  MatchingFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the MatchingFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-MatchingLookupFunction:live"
+        - Name: FunctionName
+          Value: !Ref MatchingFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt MatchingFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  SsmParametersFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the SsmParametersFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-SsmParametersLookupFunction:live"
+        - Name: FunctionName
+          Value: !Ref SsmParametersFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt SsmParametersFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  CiMappingFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the CiMappingFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-CiMappingLookupFunction:live"
+        - Name: FunctionName
+          Value: !Ref CiMappingFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt CiMappingFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  TimeFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the TimeFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-TimeLookupFunction:live"
+        - Name: FunctionName
+          Value: !Ref TimeFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt TimeFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  CredentialSubjectFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the CredentialSubjectFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-CredentialSubjectLookupFunction:live"
+        - Name: FunctionName
+          Value: !Ref CredentialSubjectFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt CredentialSubjectFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  JwtSignerFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the JwtSignerFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-JwtSignerLookupFunction:live"
+        - Name: FunctionName
+          Value: !Ref JwtSignerFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt JwtSignerFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  EpochTimeFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the EpochTimeFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-EpochTimeLookupFunction:live"
+        - Name: FunctionName
+          Value: !Ref EpochTimeFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt EpochTimeFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  PIIRedactFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the PIIRedactFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-PIIRedactLookupFunction:live"
+        - Name: FunctionName
+          Value: !Ref PIIRedactFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt PIIRedactFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
   ###############################################################################
 
   AuditEventStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: !Ref StepFunctionsDeploymentPreference
+        Interval: 15
+        Percentage: 10
+        Alarms: !If
+          - UseCanaryDeploymentAlarms
+          - - !Ref CredentialSubjectFunctionCanaryErrors
+            - !Ref EpochTimeFunctionCanaryErrors
+            - !Ref AuditEventStateMachineFailedCanary
+          - !Ref AWS::NoValue
+        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AuditEventStateMachine}:live"
       Type: EXPRESS
       DefinitionUri: ../step-functions/audit_event.asl.json
       DefinitionSubstitutions:
-        CredentialSubjectFunctionArn: !GetAtt CredentialSubjectFunction.Arn
-        EpochTimeArn: !GetAtt EpochTimeFunction.Arn
+        CredentialSubjectFunctionArn: !Ref CredentialSubjectFunction.Version
+        EpochTimeArn: !Ref EpochTimeFunction.Version
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
       Logging:
@@ -1836,6 +2350,13 @@ Resources:
       BuildProperties:
         Sourcemap: true
     Properties:
+      DeploymentPreference:
+        Type: !Ref LambdaDeploymentPreference
+        Alarms: !If
+          - UseCanaryDeploymentAlarms
+          - [!Ref PIIRedactFunctionCanaryErrors]
+          - [!Ref AWS::NoValue]
+        Role: !GetAtt CodeDeployServiceRole.Arn
       Handler: lambdas/pii-redact/src/pii-redact-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/PIIRedactFunction
@@ -2020,6 +2541,28 @@ Resources:
       DestinationArn: !GetAtt PIIRedactFunction.Arn
       FilterPattern: ""
       LogGroupName: !Ref AuditEventStateMachineLogGroup
+
+  ####################################################################
+  #                                                                  #
+  # Code Deploy Service Role                                       #
+  #                                                                  #
+  ####################################################################
+
+  CodeDeployServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - codedeploy.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
+      PermissionsBoundary: !If [ UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue ]
 
 ##################################################################
 #                                                                  #
