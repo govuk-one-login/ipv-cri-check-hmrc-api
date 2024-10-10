@@ -19,6 +19,6 @@ interface Person {
   };
 }
 
-interface Names {
+export interface Names {
   L: Person[];
 }

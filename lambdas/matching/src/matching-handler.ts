@@ -4,6 +4,7 @@ import { Metrics, MetricUnits } from "@aws-lambda-powertools/metrics";
 import { Context } from "aws-lambda";
 import { MatchEvent } from "./match-event";
 import { MetricDimensions, MetricNames } from "./metric-types";
+import { Names } from "./name-part";
 
 export const logger = new Logger();
 const metrics = new Metrics();
@@ -24,7 +25,7 @@ export class MatchingHandler implements LambdaInterface {
         },
         body: JSON.stringify({
           firstName: event.userDetails.firstName,
-          lastName: event.userDetails.lastName,
+          lastName: extractSurname(event.userDetails.lastName),
           dateOfBirth: event.userDetails.dob,
           nino: event.nino,
         }),
@@ -100,4 +101,18 @@ function captureResponseLatency(start: number): number {
   );
 
   return latency;
+}
+
+export function extractSurname(name: Names): string {
+  let surname = "";
+  for (const person of name.L) {
+    for (const namePart of person.M.nameParts.L) {
+      const type = namePart.M.type.S;
+      const value = namePart.M.value.S;
+      if (type === "FamilyName") {
+        surname = surname + " " + value;
+      }
+    }
+  }
+  return surname.trim();
 }
