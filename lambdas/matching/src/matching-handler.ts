@@ -4,6 +4,7 @@ import { Metrics, MetricUnits } from "@aws-lambda-powertools/metrics";
 import { Context } from "aws-lambda";
 import { MatchEvent } from "./match-event";
 import { MetricDimensions, MetricNames } from "./metric-types";
+import { Names } from "./name-part";
 
 export const logger = new Logger();
 const metrics = new Metrics();
@@ -14,6 +15,8 @@ export class MatchingHandler implements LambdaInterface {
     context: Context
   ): Promise<{ status: string; body: string; txn: string }> {
     try {
+      const namePart = extractName(event.userDetails.names);
+
       const requestStartTime = Math.floor(performance.now());
       const response = await fetch(event.apiURL, {
         method: "POST",
@@ -23,8 +26,8 @@ export class MatchingHandler implements LambdaInterface {
           Authorization: "Bearer " + event.oAuthToken,
         },
         body: JSON.stringify({
-          firstName: event.userDetails.firstName,
-          lastName: event.userDetails.lastName,
+          firstName: namePart.firstName,
+          lastName: namePart.lastName,
           dateOfBirth: event.userDetails.dob,
           nino: event.nino,
         }),
@@ -100,4 +103,24 @@ function captureResponseLatency(start: number): number {
   );
 
   return latency;
+}
+
+function extractName(name: Names): { firstName: string; lastName: string } {
+  let firstName = "";
+  let surname = "";
+  for (const person of name.L) {
+    for (const namePart of person.M.nameParts.L) {
+      const type = namePart.M.type.S;
+      const value = namePart.M.value.S;
+      if (type === "FamilyName") {
+        surname = surname + " " + value;
+      } else if (type === "GivenName" && firstName === "") {
+        firstName = firstName + " " + value;
+      }
+    }
+  }
+  return {
+    firstName: firstName.trim(),
+    lastName: surname.trim(),
+  };
 }

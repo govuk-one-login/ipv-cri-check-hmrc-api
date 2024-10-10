@@ -1,9 +1,10 @@
+import { Names } from "./name-part";
+
 export interface MatchEvent {
   sessionId: string;
   nino: string;
   userDetails: {
-    firstName: string;
-    lastName: string;
+    names: Names;
     dob: string;
     nino: string;
   };

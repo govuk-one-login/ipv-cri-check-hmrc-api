@@ -1,6 +1,7 @@
 import { MatchingHandler, logger } from "../src/matching-handler";
 import { MatchEvent } from "../src/match-event";
 import { Context } from "aws-lambda";
+import { Names } from "../src/name-part";
 
 jest.mock("@aws-lambda-powertools/logger", () => ({
   Logger: jest.fn().mockImplementation(() => ({
@@ -19,8 +20,38 @@ describe("matching-handler", () => {
       sessionId: "12346",
       nino: "AA000003D",
       userDetails: {
-        firstName: "Jim",
-        lastName: "Ferguson",
+        names: {
+          L: [
+            {
+              M: {
+                nameParts: {
+                  L: [
+                    {
+                      M: {
+                        type: {
+                          S: "GivenName",
+                        },
+                        value: {
+                          S: "Jim",
+                        },
+                      },
+                    },
+                    {
+                      M: {
+                        type: {
+                          S: "FamilyName",
+                        },
+                        value: {
+                          S: "Ferguson",
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        } as Names,
         dob: "1948-04-23",
         nino: "AA000003D",
       },
@@ -140,5 +171,233 @@ describe("matching-handler", () => {
         latencyInMs: expect.anything(),
       })
     );
+  });
+
+  it("should concat all provided FamilyName", async () => {
+    const firstName = "John";
+    const lastName = "Alice Eve";
+    const dob = "1948-04-23";
+    const nino = "AA000003D";
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      headers: {
+        get: jest
+          .fn()
+          .mockReturnValueOnce("mock-txn")
+          .mockReturnValueOnce("application/json"),
+      },
+      text: jest.fn().mockResolvedValueOnce({
+        firstName: firstName,
+        lastName: lastName,
+        dateOfBirth: dob,
+        nino: nino,
+      }),
+      status: 200,
+    });
+
+    const names = {
+      L: [
+        {
+          M: {
+            nameParts: {
+              L: [
+                {
+                  M: {
+                    type: {
+                      S: "GivenName",
+                    },
+                    value: {
+                      S: firstName,
+                    },
+                  },
+                },
+                {
+                  M: {
+                    type: {
+                      S: "GivenName",
+                    },
+                    value: {
+                      S: "John",
+                    },
+                  },
+                },
+                {
+                  M: {
+                    type: {
+                      S: "FamilyName",
+                    },
+                    value: {
+                      S: "Alice",
+                    },
+                  },
+                },
+                {
+                  M: {
+                    type: {
+                      S: "FamilyName",
+                    },
+                    value: {
+                      S: "Eve",
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    } as Names;
+
+    const handler = new MatchingHandler();
+    const result = await handler.handler(
+      {
+        sessionId: "abc",
+        nino: nino,
+        userDetails: {
+          names: names,
+          dob: dob,
+          nino: nino,
+        },
+        userAgent: "dummy",
+        apiURL: "dummy",
+        oAuthToken: "dummy",
+        user: {
+          govuk_signin_journey_id: "dummy",
+        },
+      },
+      {} as Context
+    );
+
+    expect(result.status).toBe("200");
+    expect(result.body).toStrictEqual({
+      dateOfBirth: dob,
+      firstName: firstName,
+      lastName: lastName,
+      nino: nino,
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith("dummy", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "dummy",
+        Authorization: "Bearer dummy",
+      },
+      body: JSON.stringify({
+        firstName: firstName,
+        lastName: lastName,
+        dateOfBirth: dob,
+        nino: nino,
+      }),
+    });
+  });
+
+  it("should select only the first GivenName", async () => {
+    const firstName = "TestFirstName";
+    const lastName = "TestLastName";
+    const dob = "1948-04-23";
+    const nino = "AA000003D";
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      headers: {
+        get: jest
+          .fn()
+          .mockReturnValueOnce("mock-txn")
+          .mockReturnValueOnce("application/json"),
+      },
+      text: jest.fn().mockResolvedValueOnce({
+        firstName: firstName,
+        lastName: lastName,
+        dateOfBirth: dob,
+        nino: nino,
+      }),
+      status: 200,
+    });
+
+    const names = {
+      L: [
+        {
+          M: {
+            nameParts: {
+              L: [
+                {
+                  M: {
+                    type: {
+                      S: "GivenName",
+                    },
+                    value: {
+                      S: firstName,
+                    },
+                  },
+                },
+                {
+                  M: {
+                    type: {
+                      S: "GivenName",
+                    },
+                    value: {
+                      S: "Bob",
+                    },
+                  },
+                },
+                {
+                  M: {
+                    type: {
+                      S: "FamilyName",
+                    },
+                    value: {
+                      S: lastName,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    } as Names;
+
+    const handler = new MatchingHandler();
+    const result = await handler.handler(
+      {
+        sessionId: "abc",
+        nino: nino,
+        userDetails: {
+          names: names,
+          dob: dob,
+          nino: nino,
+        },
+        userAgent: "dummy",
+        apiURL: "dummy",
+        oAuthToken: "dummy",
+        user: {
+          govuk_signin_journey_id: "dummy",
+        },
+      },
+      {} as Context
+    );
+
+    expect(result.status).toBe("200");
+    expect(result.body).toStrictEqual({
+      dateOfBirth: dob,
+      firstName: firstName,
+      lastName: lastName,
+      nino: nino,
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith("dummy", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "dummy",
+        Authorization: "Bearer dummy",
+      },
+      body: JSON.stringify({
+        firstName: firstName,
+        lastName: lastName,
+        dateOfBirth: dob,
+        nino: nino,
+      }),
+    });
   });
 });
