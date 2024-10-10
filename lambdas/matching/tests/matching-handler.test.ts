@@ -1,6 +1,11 @@
-import { MatchingHandler, logger } from "../src/matching-handler";
+import {
+  MatchingHandler,
+  logger,
+  extractSurname,
+} from "../src/matching-handler";
 import { MatchEvent } from "../src/match-event";
 import { Context } from "aws-lambda";
+import { Names } from "../src/name-part";
 
 jest.mock("@aws-lambda-powertools/logger", () => ({
   Logger: jest.fn().mockImplementation(() => ({
@@ -20,7 +25,38 @@ describe("matching-handler", () => {
       nino: "AA000003D",
       userDetails: {
         firstName: "Jim",
-        lastName: "Ferguson",
+        lastName: {
+          L: [
+            {
+              M: {
+                nameParts: {
+                  L: [
+                    {
+                      M: {
+                        type: {
+                          S: "GivenName",
+                        },
+                        value: {
+                          S: "Jim",
+                        },
+                      },
+                    },
+                    {
+                      M: {
+                        type: {
+                          S: "FamilyName",
+                        },
+                        value: {
+                          S: "Ferguson",
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        } as Names,
         dob: "1948-04-23",
         nino: "AA000003D",
       },
@@ -140,5 +176,83 @@ describe("matching-handler", () => {
         latencyInMs: expect.anything(),
       })
     );
+  });
+
+  it("should concat all provided FamilyName", async () => {
+    const names = {
+      L: [
+        {
+          M: {
+            nameParts: {
+              L: [
+                {
+                  M: {
+                    type: {
+                      S: "GivenName",
+                    },
+                    value: {
+                      S: "John",
+                    },
+                  },
+                },
+                {
+                  M: {
+                    type: {
+                      S: "FamilyName",
+                    },
+                    value: {
+                      S: "Bob",
+                    },
+                  },
+                },
+                {
+                  M: {
+                    type: {
+                      S: "GivenName",
+                    },
+                    value: {
+                      S: "John",
+                    },
+                  },
+                },
+                {
+                  M: {
+                    type: {
+                      S: "FamilyName",
+                    },
+                    value: {
+                      S: "Alice",
+                    },
+                  },
+                },
+                {
+                  M: {
+                    type: {
+                      S: "GivenName",
+                    },
+                    value: {
+                      S: "John",
+                    },
+                  },
+                },
+                {
+                  M: {
+                    type: {
+                      S: "FamilyName",
+                    },
+                    value: {
+                      S: "Eve",
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    } as Names;
+
+    const result = extractSurname(names);
+    expect(result).toStrictEqual("Bob Alice Eve");
   });
 });

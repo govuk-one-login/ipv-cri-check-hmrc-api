@@ -3,7 +3,7 @@ export interface MatchEvent {
   nino: string;
   userDetails: {
     firstName: string;
-    lastName: string;
+    lastName: Names;
     dob: string;
     nino: string;
   };
