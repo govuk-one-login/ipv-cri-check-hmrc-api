@@ -417,6 +417,27 @@ Resources:
           MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
           MetricName: "OTGFunction-Fatalerror"
 
+  CheckHmrcLambdaConcurrency80Alarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-CheckHmrcLambdaConcurrency80-alarm
+      AlarmDescription: !Sub Check HMRC ${Environment} lambdas alarm if over 80% of concurrent executions is used ${SupportManualURL}"
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      InsufficientDataActions: []
+      MetricName: ConcurrentExecutions
+      Namespace: AWS/Lambda
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 780
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
   CheckHmrcLambdaErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
