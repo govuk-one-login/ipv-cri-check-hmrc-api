@@ -1,7 +1,10 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
-    directory: "/"
+    directories:
+      - "/"
+      - "/integration-tests"
+      - "/lambdas/*"
     schedule:
       interval: daily
       time: "03:00"
