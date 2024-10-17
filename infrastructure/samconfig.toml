@@ -1,6 +1,6 @@
 version = 0.1
 [default.deploy.parameters]
-stack_name = "check-hmrc-cri-api"
+stack_name = "<your_name>-check-hmrc-cri-api"
 resolve_s3 = true
 s3_prefix = "check-hmrc-cri-api"
 region = "eu-west-2"

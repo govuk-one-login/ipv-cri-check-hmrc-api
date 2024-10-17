@@ -223,8 +223,7 @@
           "sessionId.$": "$.sessionId",
           "nino.$": "$.nino",
           "userDetails": {
-            "firstName.$": "$.userInfo.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
-            "lastName.$": "$.userInfo.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
+            "names.$": "$.userInfo.Items[0].names",
             "dob.$": "$.userInfo.Items[0].birthDates.L[0].M.value.S"
           },
           "userAgent.$": "$.parameters.UserAgent",
