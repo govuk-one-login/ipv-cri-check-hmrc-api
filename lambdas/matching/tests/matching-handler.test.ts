@@ -400,4 +400,184 @@ describe("matching-handler", () => {
       }),
     });
   });
+
+  it("should throw when firstName is blank", async () => {
+    const firstName = "";
+    const lastName = "TestLastName";
+    const dob = "1948-04-23";
+    const nino = "AA000003D";
+    const names = {
+      L: [
+        {
+          M: {
+            nameParts: {
+              L: [
+                {
+                  M: {
+                    type: {
+                      S: "GivenName",
+                    },
+                    value: {
+                      S: firstName,
+                    },
+                  },
+                },
+                {
+                  M: {
+                    type: {
+                      S: "FamilyName",
+                    },
+                    value: {
+                      S: lastName,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    } as Names;
+
+    const handler = new MatchingHandler();
+    await expect(async () =>
+      handler.handler(
+        {
+          sessionId: "abc",
+          nino: nino,
+          userDetails: {
+            names: names,
+            dob: dob,
+            nino: nino,
+          },
+          userAgent: "dummy",
+          apiURL: "dummy",
+          oAuthToken: "dummy",
+          user: {
+            govuk_signin_journey_id: "dummy",
+          },
+        },
+        {} as Context
+      )
+    ).rejects.toThrow(new Error("First Name is blank"));
+  });
+
+  it("should throw when lastName is blank", async () => {
+    const firstName = "TestFirstName";
+    const lastName = "";
+    const dob = "1948-04-23";
+    const nino = "AA000003D";
+    const names = {
+      L: [
+        {
+          M: {
+            nameParts: {
+              L: [
+                {
+                  M: {
+                    type: {
+                      S: "GivenName",
+                    },
+                    value: {
+                      S: firstName,
+                    },
+                  },
+                },
+                {
+                  M: {
+                    type: {
+                      S: "FamilyName",
+                    },
+                    value: {
+                      S: lastName,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    } as Names;
+
+    const handler = new MatchingHandler();
+    await expect(async () =>
+      handler.handler(
+        {
+          sessionId: "abc",
+          nino: nino,
+          userDetails: {
+            names: names,
+            dob: dob,
+            nino: nino,
+          },
+          userAgent: "dummy",
+          apiURL: "dummy",
+          oAuthToken: "dummy",
+          user: {
+            govuk_signin_journey_id: "dummy",
+          },
+        },
+        {} as Context
+      )
+    ).rejects.toThrow(new Error("Last Name is blank"));
+  });
+
+  it("should throw when no value for name part is provided", async () => {
+    const lastName = "test";
+    const dob = "1948-04-23";
+    const nino = "AA000003D";
+
+    const names = {
+      L: [
+        {
+          M: {
+            nameParts: {
+              L: [
+                {
+                  M: {
+                    type: {
+                      S: "GivenName",
+                    },
+                  },
+                },
+                {
+                  M: {
+                    type: {
+                      S: "FamilyName",
+                    },
+                    value: {
+                      S: lastName,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    } as Names;
+
+    const handler = new MatchingHandler();
+    await expect(async () =>
+      handler.handler(
+        {
+          sessionId: "abc",
+          nino: nino,
+          userDetails: {
+            names: names,
+            dob: dob,
+            nino: nino,
+          },
+          userAgent: "dummy",
+          apiURL: "dummy",
+          oAuthToken: "dummy",
+          user: {
+            govuk_signin_journey_id: "dummy",
+          },
+        },
+        {} as Context
+      )
+    ).rejects.toThrow(new Error("First Name is blank"));
+  });
 });

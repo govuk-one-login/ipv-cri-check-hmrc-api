@@ -117,11 +117,11 @@ function extractName(name: Names): { firstName: string; lastName: string } {
   let surname = "";
   for (const person of name.L) {
     for (const namePart of person.M.nameParts.L) {
-      const type = namePart.M.type.S;
-      const value = namePart.M.value.S;
+      const type = namePart.M.type?.S;
+      const value = namePart.M.value?.S;
       if (type === "FamilyName") {
         surname = (surname + " " + value).trim();
-      } else if (type === "GivenName" && firstName === "") {
+      } else if (type === "GivenName" && firstName === "" && value) {
         firstName = value.trim();
       }
     }
