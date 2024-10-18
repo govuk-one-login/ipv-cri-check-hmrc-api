@@ -17,6 +17,13 @@ export class MatchingHandler implements LambdaInterface {
     try {
       const namePart = extractName(event.userDetails.names);
 
+      if (!namePart.firstName) {
+        throw new Error("First Name is blank");
+      }
+      if (!namePart.lastName) {
+        throw new Error("Last Name is blank");
+      }
+
       const requestStartTime = Math.floor(performance.now());
       const response = await fetch(event.apiURL, {
         method: "POST",
@@ -113,9 +120,9 @@ function extractName(name: Names): { firstName: string; lastName: string } {
       const type = namePart.M.type.S;
       const value = namePart.M.value.S;
       if (type === "FamilyName") {
-        surname = surname + " " + value;
+        surname = (surname + " " + value).trim();
       } else if (type === "GivenName" && firstName === "") {
-        firstName = firstName + " " + value;
+        firstName = value.trim();
       }
     }
   }
