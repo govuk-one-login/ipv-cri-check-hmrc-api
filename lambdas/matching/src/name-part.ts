@@ -1,10 +1,10 @@
 interface NamePart {
   M: {
-    type: {
-      S: string;
+    type?: {
+      S?: string;
     };
-    value: {
-      S: string;
+    value?: {
+      S?: string;
     };
   };
 }

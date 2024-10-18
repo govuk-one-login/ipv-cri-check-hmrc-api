@@ -139,11 +139,7 @@
             {
               "And": [
                 {
-                  "Variable": "$.userInfo.Items[0].names.L[0].M.nameParts.L[0].M.value.S",
-                  "IsPresent": true
-                },
-                {
-                  "Variable": "$.userInfo.Items[0].names.L[0].M.nameParts.L[1].M.value.S",
+                  "Variable": "$.userInfo.Items[0].names",
                   "IsPresent": true
                 },
                 {
