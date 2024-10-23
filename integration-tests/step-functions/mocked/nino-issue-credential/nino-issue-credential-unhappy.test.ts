@@ -55,7 +55,7 @@ describe("nino-issue-credential-unhappy", () => {
     expect(sfnContainer.getContainer()).toBeDefined();
   });
 
-  it("should return 400 when Bearer token is Invalid", async () => {
+  it("should return 400 when Access token is Invalid", async () => {
     const input = JSON.stringify({
       bearerToken: "Bearer",
     });
@@ -67,12 +67,12 @@ describe("nino-issue-credential-unhappy", () => {
     const results = await sfnContainer.waitFor(
       (event: HistoryEvent) =>
         event?.type === "PassStateExited" &&
-        event?.stateExitedEventDetails?.name === "Err: Invalid Bearer Token",
+        event?.stateExitedEventDetails?.name === "Err: Invalid AccessToken",
       responseStepFunction
     );
 
     expect(results[0].stateExitedEventDetails?.output).toBe(
-      '{"error":"Invalid Bearer Token","httpStatus":400}'
+      '{"error":"Invalid AccessToken","httpStatus":400}'
     );
   });
 

@@ -3,6 +3,7 @@
     "nino_issue_credential": {
       "TestCases": {
         "HappyPath": {
+          "Fetch Session ID for AccessToken": "QuerySessionItem",
           "Query Session Item": "QuerySessionItem",
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Fetch details from person identity": "FetchDetailsFromPersonIdentity",
@@ -14,6 +15,7 @@
           "Audit Event VC Issued Sent": "PublishAuditEventVcIssued"
         },
         "HappyPathWithoutPersistentSessionId": {
+          "Fetch Session ID for AccessToken": "QuerySessionItem",
           "Query Session Item": "QuerySessionItemWithoutPersistentSessionId",
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Fetch details from person identity": "FetchDetailsFromPersonIdentity",
@@ -25,6 +27,7 @@
           "Audit Event VC Issued Sent": "PublishAuditEventVcIssued"
         },
         "UnHappyPath": {
+          "Fetch Session ID for AccessToken": "QuerySessionItem",
           "Query Session Item": "QuerySessionItem",
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
           "Fetch details from person identity": "FetchDetailsFromPersonIdentity",
@@ -37,9 +40,10 @@
           "Audit Event VC Issued Sent": "PublishAuditEventVcIssued"
         },
         "UnHappyPathBearerTokenInvalid": {
+          "Fetch Session ID for AccessToken": "QuerySessionItem",
           "Query Session Item": "QuerySessionItemHasNoItem",
           "Fetch SSM Parameters": "FetchSSMParamsSuccess",
-          "Err: Invalid Bearer Token": "InvalidBearerToken"
+          "Err: Invalid AccessToken": "InvalidBearerToken"
         }
       }
     }
@@ -413,7 +417,7 @@
     "InvalidBearerToken": {
       "0": {
         "Return": {
-          "error": "Invalid Bearer Token",
+          "error": "Invalid AccessToken",
           "httpStatus": 400
         }
       }
