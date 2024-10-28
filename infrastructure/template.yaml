@@ -184,6 +184,34 @@ Globals:
     AutoPublishAlias: live
 
 Resources:
+  #################
+  # START OJ-2798 #
+  #################
+  SleepFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/sleep-function/src/sleep-function.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/SleepFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-SleepFunction
+
+  SleepFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/SleepFunction
+      RetentionInDays: 30
+  ###############
+  # END OJ-2798 #
+  ###############
+
   EpochTimeFunction:
     Type: AWS::Serverless::Function
     Metadata:
