@@ -76,6 +76,9 @@
               "Key": {
                 "sessionId": {
                   "S.$": "$.sessionId.S"
+                },
+                "timestamp": {
+                  "S.$": "$.timestamp.S"
                 }
               }
             },

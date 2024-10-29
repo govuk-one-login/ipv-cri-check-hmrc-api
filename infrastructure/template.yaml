@@ -195,7 +195,7 @@ Resources:
       DefinitionUri: ../step-functions/delete-person-identity-records.asl.json
       DefinitionSubstitutions:
         TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
-        StateMachineArn: !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-PersonDeleteRecordsStateMachineLog
+        StateMachineArn: !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-PersonDeleteRecordsStateMachine
         SleepFunction: !Ref SleepFunction
       Logging:
         Destinations:
@@ -213,7 +213,7 @@ Resources:
             Action:
               - states:StartExecution
               - states:StartSyncExecution
-            Resource: !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-PersonDeleteRecordsStateMachineLog
+            Resource: !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-PersonDeleteRecordsStateMachine
         - Statement:
             Effect: Allow
             Action: logs:*
@@ -225,7 +225,7 @@ Resources:
   PersonDeleteRecordsStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-PersonDeleteRecordsStateMachineLog
+      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-PersonDeleteRecordsStateMachine
       RetentionInDays: 30
 
   AttemptTblDelRecordsStateMachine:
@@ -233,7 +233,7 @@ Resources:
     Properties:
       Name: !Sub ${AWS::StackName}-AttemptTblDelRecordsStateMachine
       Type: EXPRESS
-      DefinitionUri: ../step-functions/delete-records.asl.json
+      DefinitionUri: ../step-functions/delete-attempts-records.asl.json
       DefinitionSubstitutions:
         TableName: !Ref UserAttemptsTable
         StateMachineArn: !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-AttemptTblDelRecordsStateMachine
