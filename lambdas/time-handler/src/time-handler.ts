@@ -9,10 +9,6 @@ export class TimeHandler implements LambdaInterface {
   public async handler(event: TimeEvent, context: Context) {
     this.logger.logEntry(context.functionName, event.govJourneyId);
 
-    if (Number(event.ttlValue) < 0) {
-      throw new Error(`ttlValue must be positive (provided ${event.ttlValue})`);
-    }
-
     try {
       return {
         seconds: toEpochSecondsFromNow(),
