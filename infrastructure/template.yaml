@@ -277,7 +277,7 @@ Resources:
       DefinitionUri: ../step-functions/delete-records.asl.json
       DefinitionSubstitutions:
         TableName: !Ref NinoUsersTable
-        StateMachineArn: !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-UserTableDeleteRecordsStateMachine
+        StateMachineArn: !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-UserTblDelRecordsStateMachine
         SleepFunction: !Ref SleepFunction
       Logging:
         Destinations:
