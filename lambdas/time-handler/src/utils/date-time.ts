@@ -16,7 +16,7 @@ const timeUnitMultipliers: TimeUnitMultiplier = {
 export const toEpochSecondsFromNow = (
   duration = 0,
   unit = TimeUnits.Seconds.toString()
-): number => msToSeconds(Date.now()) + duration * multiplier(unit);
-
+): number => msToSeconds(milliseconds()) + duration * multiplier(unit);
+export const milliseconds = () => Date.now();
+export const msToSeconds = (ms: number) => Math.round(ms / 1000);
 const multiplier = (unit: string) => timeUnitMultipliers[timeUnit(unit)];
-const msToSeconds = (ms: number) => Math.round(ms / 1000);

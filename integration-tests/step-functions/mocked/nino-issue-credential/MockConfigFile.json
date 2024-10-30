@@ -301,8 +301,9 @@
       "0": {
         "Return": {
           "Payload": {
-            "nbf": 1699964956131,
-            "expiry": 1699972156131
+            "govJourneyId":"test-government-journey-id",
+            "seconds": 1710396563,
+            "expiry": 1710403763
           },
           "SdkHttpMetadata": {
             "HttpStatusCode": 200
