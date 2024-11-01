@@ -206,14 +206,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction
       RetentionInDays: 30
 
-  PIIRedactedCiMappingFunctionLogsSubscriptionFilterCSLS:
+  CiMappingFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedCiMappingFunctionLogGroup
+      LogGroupName: !Ref CiMappingFunctionLogGroup
 
   CredentialSubjectFunction:
     Type: AWS::Serverless::Function
@@ -237,14 +237,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
       RetentionInDays: 30
 
-  PIIRedactedCredentialSubjectFunctionLogsSubscriptionFilterCSLS:
+  CredentialSubjectFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedCredentialSubjectFunctionLogGroup
+      LogGroupName: !Ref CredentialSubjectFunctionLogGroup
 
   JwtSignerFunction:
     Type: AWS::Serverless::Function
@@ -274,14 +274,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction
       RetentionInDays: 30
 
-  PIIRedactedJwtSignerFunctionLogsSubscriptionFilterCSLS:
+  JwtSignerFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedJwtSignerFunctionLogGroup
+      LogGroupName: !Ref JwtSignerFunctionLogGroup
 
   OTGFunction:
     Type: AWS::Serverless::Function
@@ -305,14 +305,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
       RetentionInDays: 30
 
-  PIIRedactedOTGFunctionLogsSubscriptionFilterCSLS:
+  OTGFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedOTGFunctionLogGroup
+      LogGroupName: !Ref OTGFunctionLogGroup
 
   OTGFunctionFatalErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -409,14 +409,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
       RetentionInDays: 30
 
-  PIIRedactedMatchingFunctionLogsSubscriptionFilterCSLS:
+  MatchingFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedMatchingFunctionLogGroup
+      LogGroupName: !Ref MatchingFunctionLogGroup
 
   SsmParametersFunction:
     Type: AWS::Serverless::Function
@@ -443,14 +443,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction
       RetentionInDays: 30
 
-  PIIRedactedSsmParametersFunctionLogsSubscriptionFilterCSLS:
+  SsmParametersFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedSsmParametersFunctionLogGroup
+      LogGroupName: !Ref SsmParametersFunctionLogGroup
 
   TimeFunction:
     Type: AWS::Serverless::Function
@@ -474,14 +474,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
       RetentionInDays: 30
 
-  PIIRedactedTimeFunctionLogsSubscriptionFilterCSLS:
+  TimeFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedTimeFunctionLogGroup
+      LogGroupName: !Ref TimeFunctionLogGroup
 
   UserAgent:
     Type: AWS::SSM::Parameter
@@ -552,14 +552,14 @@ Resources:
       LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs"
       RetentionInDays: 30
 
-  PIIRedactedPublicNinoCheckApiLogsSubscriptionFilterCSLS:
+  PublicNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedPublicNinoCheckApiAccessLogGroup
+      LogGroupName: !Ref PublicNinoCheckApiAccessLogGroup
 
   PublicNinoCheckApiFatalErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -655,14 +655,14 @@ Resources:
       LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs"
       RetentionInDays: 30
 
-  PIIRedactedPrivateNinoCheckApiLogsSubscriptionFilterCSLS:
+  PrivateNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn:
         !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedPrivateNinoCheckApiAccessLogGroup
+      LogGroupName: !Ref PrivateNinoCheckApiAccessLogGroup
 
   PrivateNinoCheckApiFatalErrorMetricFilter:
     Type: AWS::Logs::MetricFilter
@@ -2081,60 +2081,6 @@ Resources:
   # Log Groups for Slunk (PII Redacted)                              #
   #                                                                  #
   ####################################################################
-
-  PIIRedactedCiMappingFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction-pii-redacted
-      RetentionInDays: 30
-
-  PIIRedactedCredentialSubjectFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction-pii-redacted
-      RetentionInDays: 30
-
-  PIIRedactedJwtSignerFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction-pii-redacted
-      RetentionInDays: 30
-
-  PIIRedactedOTGFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/OTGFunction-pii-redacted
-      RetentionInDays: 30
-
-  PIIRedactedMatchingFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction-pii-redacted
-      RetentionInDays: 30
-
-  PIIRedactedSsmParametersFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction-pii-redacted
-      RetentionInDays: 30
-
-  PIIRedactedTimeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/TimeFunction-pii-redacted
-      RetentionInDays: 30
-
-  PIIRedactedPublicNinoCheckApiAccessLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs-pii-redacted"
-      RetentionInDays: 30
-
-  PIIRedactedPrivateNinoCheckApiAccessLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs-pii-redacted"
-      RetentionInDays: 30
 
   PIIRedactedNinoCheckStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
