@@ -54,6 +54,7 @@ Parameters:
       - Canary10Percent10Minutes
       - Canary10Percent15Minutes
       - Canary10Percent30Minutes
+      - Linear10PercentEvery1Minute
   StepFunctionsDeploymentPreference:
     Description: "Specifies the configuration to enable gradual StepFunction deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'ALL_AT_ONCE'"
     Type: String
