@@ -184,6 +184,21 @@ Globals:
     AutoPublishAlias: live
 
 Resources:
+  RedactionLogStreamTrackingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-redaction-logstream-tracking
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: logStreamName
+          AttributeType: S
+      KeySchema:
+        - AttributeName: logStreamName
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expiryDate
+        Enabled: true
+
   CiMappingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -2137,6 +2152,8 @@ Resources:
       CodeSigningConfigArn:
         !If [ EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue ]
       Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RedactionLogStreamTrackingTable
         - Statement:
             Effect: Allow
             Action: logs:*
@@ -2148,6 +2165,7 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-PIIRedact"
+          RedactionLogStreamTrackingTable: !Ref RedactionLogStreamTrackingTable
 
   PIIRedactFunctionLogGroup:
     Type: AWS::Logs::LogGroup
