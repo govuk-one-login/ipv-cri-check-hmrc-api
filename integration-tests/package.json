@@ -31,7 +31,6 @@
     "@pact-foundation/pact": "13.1.4",
     "@types/express": "^4.17.21",
     "@types/uuid": "^9.0.8",
-    "aws-testing-library": "^4.0.6",
     "express": "4.21.1",
     "express-asyncify": "^2.1.2",
     "jose": "^5.1.3",
