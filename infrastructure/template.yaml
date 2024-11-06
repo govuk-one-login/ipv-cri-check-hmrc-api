@@ -1685,6 +1685,96 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
+  AbandonStateMachineCanary5xxErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: "AbandonStateMachine returning 5xx response."
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${AWS::StackName}-private"
+        - Name: Method
+          Value: POST
+        - Name: Stage
+          Value: !Ref Environment
+        - Name: Resource
+          Value: /abandon
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  NinoCheckStateMachineCanary5xxErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: "NinoCheckStateMachine returning 5xx response."
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${AWS::StackName}-private"
+        - Name: Method
+          Value: POST
+        - Name: Stage
+          Value: !Ref Environment
+        - Name: Resource
+          Value: /check
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  NinoIssueCredentialStateMachineCanary5xxErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: "NinoIssueCredentialStateMachine returning 5xx response."
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${AWS::StackName}-public"
+        - Name: Method
+          Value: POST
+        - Name: Stage
+          Value: !Ref Environment
+        - Name: Resource
+          Value: /credential/issue
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
   OTGFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
