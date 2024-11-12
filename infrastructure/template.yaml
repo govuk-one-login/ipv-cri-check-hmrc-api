@@ -55,6 +55,7 @@ Parameters:
       - Canary10Percent15Minutes
       - Canary10Percent30Minutes
       - Linear10PercentEvery1Minute
+      - LambdaCanary50Percent5Minutes
   StepFunctionsDeploymentPreference:
     Description: "Specifies the configuration to enable gradual StepFunction deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'ALL_AT_ONCE'"
     Type: String
@@ -2248,6 +2249,23 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
       PermissionsBoundary: !If [ UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue ]
+
+  ####################################################################
+  #                                                                  #
+  # Custom Lambda canary deployment strategy                         #
+  #                                                                  #
+  ####################################################################
+
+  LambdaCanary50Percent5Minutes:
+    Type: AWS::CodeDeploy::DeploymentConfig
+    Properties:
+      ComputePlatform: Lambda
+      DeploymentConfigName: LambdaCanary50Percent5Minutes
+      TrafficRoutingConfig:
+        TimeBasedCanary:
+          CanaryPercentage: 50
+          CanaryInterval: 5
+        Type: TimeBasedCanary
 
 ##################################################################
 #                                                                  #
