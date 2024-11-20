@@ -145,7 +145,7 @@ Mappings:
 
 Globals:
   Function:
-    Timeout: 30
+    Timeout: 300
     CodeUri: ..
     Runtime: nodejs18.x
     Architectures: [arm64]
