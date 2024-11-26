@@ -18,7 +18,7 @@ let preOutput: Partial<{
   PrivateApiGatewayId: string;
 }>;
 
-export const createPayload = async (useMultipleNames: boolean = false) => {
+export const createPayload = async (sharedClaimsUpdate?: any) => {
   publicEncryptionKeyBase64 =
     (await getSSMParameter(
       "/check-hmrc-cri-api/test/publicEncryptionKeyBase64"
@@ -29,16 +29,11 @@ export const createPayload = async (useMultipleNames: boolean = false) => {
   preOutput = await stackOutputs(process.env.STACK_NAME);
   privateAPI = `${preOutput.PrivateApiGatewayId}`;
   const correctClaimSet = await getClaimSet();
-
-  if (useMultipleNames = true){
-    const name = correctClaimSet.shared_claims.name[0].nameParts
-    name.push(
-      { type: "GivenName", value: "Peter"},
-      { type: "GivenName", value: "Syed Habib"},
-      { type: "FamilyName", value: "Martin-Joy"}
-    )
+  const updateClaimset = {
+    ...correctClaimSet,
+    ...sharedClaimsUpdate,
+    name: sharedClaimsUpdate?.name || correctClaimSet.shared_claims.name
   }
-
   const audience = correctClaimSet.aud;
   const payload = {
     clientId: CLIENT_ID,
@@ -48,14 +43,14 @@ export const createPayload = async (useMultipleNames: boolean = false) => {
     publicEncryptionKeyBase64: publicEncryptionKeyBase64,
     privateSigningKey: privateSigningKey,
     issuer: CLIENT_URL,
-    claimSet: correctClaimSet,
+    claimSet: updateClaimset
   } as unknown as Payload;
   const ipvCoreAuthorizationUrl = await getJarAuthorizationPayload(payload);
   return ipvCoreAuthorizationUrl;
 };
 
 export const createSession = async (): Promise<Response> => {
-  const ipvCoreAuthorizationUrl = await createPayload(false);
+  const ipvCoreAuthorizationUrl = await createPayload();
   const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
   const sessionResponse = await fetch(sessionApiUrl, {
     method: "POST",
@@ -70,7 +65,7 @@ export const createSession = async (): Promise<Response> => {
 };
 
 export const createInvalidSession = async (): Promise<Response> => {
-  const ipvCoreAuthorizationUrl = await createPayload(false);
+  const ipvCoreAuthorizationUrl = await createPayload();
   const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
   const sessionResponse = await fetch(sessionApiUrl, {
     method: "POST",
@@ -85,7 +80,18 @@ export const createInvalidSession = async (): Promise<Response> => {
 };
 
 export const createMultipleNamesSession = async (): Promise<Response> => {
-  const ipvCoreAuthorizationUrl = await createPayload(true);
+  const ipvCoreAuthorizationUrl = await createPayload({
+    name: [
+       {
+        nameParts: [
+        { type: "GivenName", value: "Peter"},
+        { type: "GivenName", value: "Syed Habib"},
+        { type: "FamilyName", value: "Martin-Joy"}
+        ]
+  }
+]
+});
+
   const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
   const sessionResponse = await fetch(sessionApiUrl, {
     method: "POST",
