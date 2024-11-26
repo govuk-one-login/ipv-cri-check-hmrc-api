@@ -18,7 +18,7 @@ let preOutput: Partial<{
   PrivateApiGatewayId: string;
 }>;
 
-export const createPayload = async () => {
+export const createPayload = async (useMultipleNames: boolean = false) => {
   publicEncryptionKeyBase64 =
     (await getSSMParameter(
       "/check-hmrc-cri-api/test/publicEncryptionKeyBase64"
@@ -29,6 +29,16 @@ export const createPayload = async () => {
   preOutput = await stackOutputs(process.env.STACK_NAME);
   privateAPI = `${preOutput.PrivateApiGatewayId}`;
   const correctClaimSet = await getClaimSet();
+
+  if (useMultipleNames = true){
+    const name = correctClaimSet.shared_claims.name[0].nameParts
+    name.push(
+      { type: "GivenName", value: "Peter"},
+      { type: "GivenName", value: "Syed Habib"},
+      { type: "FamilyName", value: "Martin-Joy"}
+    )
+  }
+
   const audience = correctClaimSet.aud;
   const payload = {
     clientId: CLIENT_ID,
@@ -45,7 +55,7 @@ export const createPayload = async () => {
 };
 
 export const createSession = async (): Promise<Response> => {
-  const ipvCoreAuthorizationUrl = await createPayload();
+  const ipvCoreAuthorizationUrl = await createPayload(false);
   const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
   const sessionResponse = await fetch(sessionApiUrl, {
     method: "POST",
@@ -60,7 +70,7 @@ export const createSession = async (): Promise<Response> => {
 };
 
 export const createInvalidSession = async (): Promise<Response> => {
-  const ipvCoreAuthorizationUrl = await createPayload();
+  const ipvCoreAuthorizationUrl = await createPayload(false);
   const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
   const sessionResponse = await fetch(sessionApiUrl, {
     method: "POST",
@@ -69,6 +79,21 @@ export const createInvalidSession = async (): Promise<Response> => {
       "X-Forwarded-For": "localhost",
     },
     body: JSON.stringify(null),
+  });
+
+  return sessionResponse;
+};
+
+export const createMultipleNamesSession = async (): Promise<Response> => {
+  const ipvCoreAuthorizationUrl = await createPayload(true);
+  const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
+  const sessionResponse = await fetch(sessionApiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Forwarded-For": "localhost",
+    },
+    body: JSON.stringify(ipvCoreAuthorizationUrl),
   });
 
   return sessionResponse;
