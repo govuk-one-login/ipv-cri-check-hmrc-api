@@ -18,7 +18,16 @@ let preOutput: Partial<{
   PrivateApiGatewayId: string;
 }>;
 
-export const createPayload = async (sharedClaimsUpdate?: any) => {
+type Name = {
+  name: {
+    nameParts: {
+      type: string;
+      value: string;
+    }[];
+  }[];
+};
+
+export const createPayload = async (sharedClaimsUpdate?: Name) => {
   publicEncryptionKeyBase64 =
     (await getSSMParameter(
       "/check-hmrc-cri-api/test/publicEncryptionKeyBase64"
@@ -32,8 +41,8 @@ export const createPayload = async (sharedClaimsUpdate?: any) => {
   const updateClaimset = {
     ...correctClaimSet,
     ...sharedClaimsUpdate,
-    name: sharedClaimsUpdate?.name || correctClaimSet.shared_claims.name
-  }
+    name: sharedClaimsUpdate?.name || correctClaimSet.shared_claims.name,
+  };
   const audience = correctClaimSet.aud;
   const payload = {
     clientId: CLIENT_ID,
@@ -43,7 +52,7 @@ export const createPayload = async (sharedClaimsUpdate?: any) => {
     publicEncryptionKeyBase64: publicEncryptionKeyBase64,
     privateSigningKey: privateSigningKey,
     issuer: CLIENT_URL,
-    claimSet: updateClaimset
+    claimSet: updateClaimset,
   } as unknown as Payload;
   const ipvCoreAuthorizationUrl = await getJarAuthorizationPayload(payload);
   return ipvCoreAuthorizationUrl;
@@ -82,15 +91,15 @@ export const createInvalidSession = async (): Promise<Response> => {
 export const createMultipleNamesSession = async (): Promise<Response> => {
   const ipvCoreAuthorizationUrl = await createPayload({
     name: [
-       {
+      {
         nameParts: [
-        { type: "GivenName", value: "Peter"},
-        { type: "GivenName", value: "Syed Habib"},
-        { type: "FamilyName", value: "Martin-Joy"}
-        ]
-  }
-]
-});
+          { type: "GivenName", value: "Peter" },
+          { type: "GivenName", value: "Syed Habib" },
+          { type: "FamilyName", value: "Martin-Joy" },
+        ],
+      },
+    ],
+  });
 
   const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
   const sessionResponse = await fetch(sessionApiUrl, {
