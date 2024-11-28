@@ -1,4 +1,4 @@
-import { checkEndpoint, createSession } from "../endpoints";
+import { checkEndpoint, createMultipleNamesSession, createSession } from "../endpoints";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
@@ -57,6 +57,15 @@ describe("Given the session and NINO is valid", () => {
       { "session-id": sessionId, "txma-audit-encoded": "test encoded header" },
       NINO
     );
+    const checkData = check.status;
+    expect(checkData).toEqual(200);
+  });
+
+  it("Should receive a 200 response when /check endpoint is called using multiple named user", async () => {
+    const session = await createMultipleNamesSession();
+    const sessionData = await session.json();
+    sessionId = sessionData.session_id;
+    const check = await checkEndpoint({ "session-id": sessionId }, NINO);
     const checkData = check.status;
     expect(checkData).toEqual(200);
   });
