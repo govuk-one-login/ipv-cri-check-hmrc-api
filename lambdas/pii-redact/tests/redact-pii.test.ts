@@ -51,6 +51,23 @@ describe("redact-pii", () => {
     });
   });
 
+  describe("NiNO", () => {
+    it("should redact a ci and reason", async () => {
+      const input =
+        '{\\"ci\\":\\"dummy-ci\\", \\"reason\\": \\"dummy-reason\\"}';
+      expect(redactPII(input)).toStrictEqual(
+        '{\\"ci\\": \\"***\\", \\"reason\\": \\"***\\"}'
+      );
+    });
+
+    it("should redact the mapping", async () => {
+      const input = '"\\"contraindicatorReasonMappings\\": \\"dummy\\"';
+      expect(redactPII(input)).toStrictEqual(
+        '"\\"contraindicatorReasonMappings\\": \\"***\\"'
+      );
+    });
+  });
+
   describe("Dates of Birth", () => {
     it("should redact birthDates field", async () => {
       const birthDatesRedacted = '{\\"birthDates\\": \\"***\\"}';
