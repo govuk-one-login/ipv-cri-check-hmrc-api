@@ -838,15 +838,15 @@ Resources:
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmDescription: !Sub "${CheckSessionStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckSessionStateMachine-alarm"
-      ComparisonOperator: GreaterThanThreshold
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
       MetricName: "ExecutionsFailed"
       Namespace: AWS/States
-      Period: 300
+      ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      Threshold: 0
-      TreatMissingData: missing
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn
           Value: !Ref CheckSessionStateMachine
@@ -983,15 +983,15 @@ Resources:
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmDescription: !Sub "${NinoCheckStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachine-ExecutionsFailed-alarm"
-      ComparisonOperator: GreaterThanThreshold
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
       MetricName: "ExecutionsFailed"
       Namespace: AWS/States
-      Period: 300
+      ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      Threshold: 0
-      TreatMissingData: missing
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn
           Value: !Ref NinoCheckStateMachine
@@ -1086,15 +1086,15 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "${AbandonStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-AbandonStateMachine-ExecutionsFailed-alarm"
-      ComparisonOperator: GreaterThanThreshold
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
       MetricName: "ExecutionsFailed"
       Namespace: AWS/States
-      Period: 300
+      ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      Threshold: 0
-      TreatMissingData: missing
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn
           Value: !Ref AbandonStateMachine
@@ -1226,15 +1226,15 @@ Resources:
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmDescription: !Sub "${NinoIssueCredentialStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachine-ExecutionsFailed-alarm"
-      ComparisonOperator: GreaterThanThreshold
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
       MetricName: "ExecutionsFailed"
       Namespace: AWS/States
-      Period: 300
+      ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      Threshold: 0
-      TreatMissingData: missing
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn
           Value: !Ref NinoIssueCredentialStateMachine
