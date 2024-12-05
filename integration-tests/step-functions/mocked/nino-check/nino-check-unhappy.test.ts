@@ -30,7 +30,7 @@ describe("nino-check-unhappy", () => {
       responseStepFunction
     );
     expect(results[0].executionSucceededEventDetails?.output).toBe(
-      '{"httpStatus":200}'
+      '{"httpStatus":200,"body":"{\\"requestRetry\\":false}"}'
     );
   });
 
@@ -66,7 +66,7 @@ describe("nino-check-unhappy", () => {
       responseStepFunction
     );
     expect(results[0].executionSucceededEventDetails?.output).toEqual(
-      '{"httpStatus":422}'
+      '{"httpStatus":200,"body":"{\\"requestRetry\\":true}"}'
     );
   });
 
@@ -85,9 +85,12 @@ describe("nino-check-unhappy", () => {
         event?.stateExitedEventDetails?.name === "Err: Attempts exceeded",
       responseStepFunction
     );
-    expect(results[0].stateExitedEventDetails?.output).toEqual(
-      '{"httpStatus":200}'
-    );
+    expect(
+      JSON.parse(results[0].stateExitedEventDetails?.output || "")
+    ).toStrictEqual({
+      httpStatus: 200,
+      body: '{"requestRetry":false}',
+    });
   });
 
   it("should fail when user cannot be found for the given nino", async () => {
@@ -159,7 +162,7 @@ describe("nino-check-unhappy", () => {
       responseStepFunction
     );
     expect(results[0].executionSucceededEventDetails?.output).toEqual(
-      '{"httpStatus":422}'
+      '{"httpStatus":200,"body":"{\\"requestRetry\\":true}"}'
     );
   });
 
