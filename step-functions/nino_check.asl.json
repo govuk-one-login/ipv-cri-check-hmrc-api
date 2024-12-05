@@ -109,7 +109,8 @@
       "Type": "Pass",
       "End": true,
       "Parameters": {
-        "httpStatus": 200
+        "httpStatus": 200,
+        "body": "{\"requestRetry\":false}"
       }
     },
     "Query Person Identity Table": {
@@ -410,7 +411,8 @@
       "Type": "Pass",
       "End": true,
       "Parameters": {
-        "httpStatus": 422
+        "httpStatus": 200,
+        "body": "{\"requestRetry\":true}"
       }
     },
     "Fetch Auth Code Expiry": {
@@ -477,7 +479,8 @@
       "Type": "Pass",
       "Next": "Nino check completed",
       "Parameters": {
-        "httpStatus": 200
+        "httpStatus": 200,
+        "body": "{\"requestRetry\":false}"
       }
     },
     "Nino check completed": {
