@@ -145,7 +145,11 @@ describe("Retry Scenario Path Tests", () => {
     });
 
     const checkData = checkRetryResponse.status;
-    expect(checkData).toEqual(422);
+    const checkBody = JSON.parse(await checkRetryResponse.text());
+    expect(checkData).toEqual(200);
+    expect(checkBody).toStrictEqual({
+      requestRetry: true,
+    });
 
     const checkResponse = await fetch(checkApiUrl, {
       method: "POST",
@@ -155,7 +159,11 @@ describe("Retry Scenario Path Tests", () => {
       },
       body: jsonData,
     });
+    const checkResponseBody = JSON.parse(await checkResponse.text());
     expect(checkResponse.status).toEqual(200);
+    expect(checkResponseBody).toStrictEqual({
+      requestRetry: false,
+    });
 
     const queryString = new URLSearchParams({
       client_id: CLIENT_ID,

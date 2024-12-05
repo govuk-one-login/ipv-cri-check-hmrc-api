@@ -143,7 +143,11 @@ describe("End to end happy path journey", () => {
     });
 
     const checkData = checkResponse.status;
+    const checkBody = JSON.parse(await checkResponse.text());
     expect(checkData).toEqual(200);
+    expect(checkBody).toStrictEqual({
+      requestRetry: false,
+    });
 
     const queryString = new URLSearchParams({
       client_id: CLIENT_ID,
