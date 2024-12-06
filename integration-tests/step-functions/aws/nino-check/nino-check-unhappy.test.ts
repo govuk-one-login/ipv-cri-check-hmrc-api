@@ -114,7 +114,10 @@ describe("nino-check-unhappy", () => {
       input
     );
 
-    expect(startExecutionResult.output).toBe('{"httpStatus":200}');
+    expect(JSON.parse(startExecutionResult.output || "")).toStrictEqual({
+      httpStatus: 200,
+      body: '{"requestRetry":false}',
+    });
   });
 
   it("should fail when there is no user present for given nino", async () => {
@@ -185,7 +188,10 @@ describe("nino-check-unhappy", () => {
       inputDeceased
     );
 
-    expect(startExecutionResult.output).toBe('{"httpStatus":422}');
+    expect(JSON.parse(startExecutionResult.output || "")).toStrictEqual({
+      httpStatus: 200,
+      body: '{"requestRetry":true}',
+    });
   });
 
   it("should fail when user NINO does not match with HMRC DB", async () => {
@@ -229,7 +235,9 @@ describe("nino-check-unhappy", () => {
       inputNoCidNinoUser
     );
 
-    expect(startExecutionResult.output).toBe('{"httpStatus":422}');
+    expect(startExecutionResult.output).toBe(
+      '{"httpStatus":200,"body":"{\\"requestRetry\\":true}"}'
+    );
   });
 
   describe("NINO check URL is unavailable", () => {

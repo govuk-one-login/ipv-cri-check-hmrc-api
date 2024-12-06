@@ -115,7 +115,10 @@ describe("nino-check-happy", () => {
         input
       );
 
-      expect(startExecutionResult.output).toBe('{"httpStatus":200}');
+      expect(JSON.parse(startExecutionResult.output || "")).toStrictEqual({
+        httpStatus: 200,
+        body: '{"requestRetry":false}',
+      });
     });
 
     it("should return 200 Ok while retrying the 2nd attempt", async () => {
@@ -180,9 +183,15 @@ describe("nino-check-happy", () => {
         input
       );
 
-      expect(firstExecutionResult.output).toBe('{"httpStatus":422}');
+      expect(JSON.parse(firstExecutionResult.output || "")).toStrictEqual({
+        httpStatus: 200,
+        body: '{"requestRetry":true}',
+      });
 
-      expect(secondExecutionResult.output).toBe('{"httpStatus":200}');
+      expect(JSON.parse(secondExecutionResult.output || "")).toStrictEqual({
+        httpStatus: 200,
+        body: '{"requestRetry":false}',
+      });
     });
   });
 });
