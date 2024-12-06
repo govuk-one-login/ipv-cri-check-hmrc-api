@@ -55,6 +55,7 @@ Parameters:
       - Canary10Percent15Minutes
       - Canary10Percent30Minutes
       - Linear10PercentEvery1Minute
+      - LambdaCanary50Percent5Minutes
   StepFunctionsDeploymentPreference:
     Description: "Specifies the configuration to enable gradual StepFunction deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'ALL_AT_ONCE'"
     Type: String
@@ -69,6 +70,7 @@ Conditions:
   UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, ""]]
   IsDevEnvironment: !Equals [!Ref Environment, dev]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
+  IsProdEnvironment: !Equals [!Ref Environment, production]
   IsDevLikeEnvironment:
     !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
   IsNotDevLikeEnvironment: !Not
@@ -783,8 +785,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 15
-        Percentage: 10
+        Interval: !If [IsProdEnvironment, 15, 5]
+        Percentage: !If [IsProdEnvironment, 10, 50]
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - - !Ref TimeFunctionCanaryErrors
@@ -857,8 +859,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 15
-        Percentage: 10
+        Interval: !If [IsProdEnvironment, 15, 5]
+        Percentage: !If [IsProdEnvironment, 10, 50]
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - - !Ref OTGFunctionCanaryErrors
@@ -1002,8 +1004,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 15
-        Percentage: 10
+        Interval: !If [IsProdEnvironment, 15, 5]
+        Percentage: !If [IsProdEnvironment, 10, 50]
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - - !Ref SsmParametersFunctionCanaryErrors
@@ -1105,8 +1107,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 15
-        Percentage: 10
+        Interval: !If [IsProdEnvironment, 15, 5]
+        Percentage: !If [IsProdEnvironment, 10, 50]
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - - !Ref CiMappingFunctionCanaryErrors
@@ -1924,8 +1926,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 15
-        Percentage: 10
+        Interval: !If [IsProdEnvironment, 15, 5]
+        Percentage: !If [IsProdEnvironment, 10, 50]
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - - !Ref CredentialSubjectFunctionCanaryErrors
@@ -2248,6 +2250,23 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
       PermissionsBoundary: !If [ UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue ]
+
+  ####################################################################
+  #                                                                  #
+  # Custom Lambda canary deployment strategy                         #
+  #                                                                  #
+  ####################################################################
+
+  LambdaCanary50Percent5Minutes:
+    Type: AWS::CodeDeploy::DeploymentConfig
+    Properties:
+      ComputePlatform: Lambda
+      DeploymentConfigName: LambdaCanary50Percent5Minutes
+      TrafficRoutingConfig:
+        TimeBasedCanary:
+          CanaryPercentage: 50
+          CanaryInterval: 5
+        Type: TimeBasedCanary
 
 ##################################################################
 #                                                                  #
