@@ -1,4 +1,8 @@
-import { checkEndpoint, createMultipleNamesSession, createSession } from "../endpoints";
+import {
+  checkEndpoint,
+  createMultipleNamesSession,
+  createSession,
+} from "../endpoints";
 import {
   clearAttemptsTable,
   clearItemsFromTables,

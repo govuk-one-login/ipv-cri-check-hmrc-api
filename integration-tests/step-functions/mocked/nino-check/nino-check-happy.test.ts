@@ -31,9 +31,12 @@ describe("nino-check-happy", () => {
         event?.stateExitedEventDetails?.name === "Nino check completed",
       responseStepFunction
     );
-    expect(results[0].stateExitedEventDetails?.output).toEqual(
-      '{"httpStatus":200}'
-    );
+    expect(
+      JSON.parse(results[0].stateExitedEventDetails?.output || "")
+    ).toStrictEqual({
+      httpStatus: 200,
+      body: '{"requestRetry":false}',
+    });
   });
 
   it.each([
@@ -54,8 +57,11 @@ describe("nino-check-happy", () => {
         event?.stateExitedEventDetails?.name === "Nino check completed",
       responseStepFunction
     );
-    expect(results[0].stateExitedEventDetails?.output).toEqual(
-      '{"httpStatus":200}'
-    );
+    expect(
+      JSON.parse(results[0].stateExitedEventDetails?.output || "")
+    ).toStrictEqual({
+      httpStatus: 200,
+      body: '{"requestRetry":false}',
+    });
   });
 });
