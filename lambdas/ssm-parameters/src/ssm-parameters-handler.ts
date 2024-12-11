@@ -7,13 +7,12 @@ import { Context } from "aws-lambda";
 const cacheTtlInSecond =
   Number(process.env.POWERTOOLS_PARAMETERS_MAX_AGE) || 300;
 
-const logHelper = new LogHelper();
-
 export class SsmParametersHandler implements LambdaInterface {
   public async handler(
     event: { parameters: string[]; govJourneyId: string },
     context: Context
   ): Promise<Parameter[]> {
+    const logHelper = new LogHelper(context);
     logHelper.logEntry(context.functionName, event.govJourneyId);
 
     if (!Array.isArray(event.parameters)) {

@@ -1,19 +1,30 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
-import { Metrics, MetricUnits } from "@aws-lambda-powertools/metrics";
 import { Context } from "aws-lambda";
+import { LogHelper } from "../../logging/log-helper";
+import { MetricsHelper } from "../../logging/metrics-helper";
 import { MatchEvent } from "./match-event";
-import { MetricDimensions, MetricNames } from "./metric-types";
 import { Names } from "./name-part";
 
-export const logger = new Logger();
-const metrics = new Metrics();
+const metricsHelper = new MetricsHelper();
 
 export class MatchingHandler implements LambdaInterface {
+  logger: Logger;
+
+  constructor() {
+    this.logger = new Logger();
+  }
+
   public async handler(
     event: MatchEvent,
     context: Context
   ): Promise<{ status: string; body: string; txn: string }> {
+    const logHelper = new LogHelper(context, this.logger);
+    logHelper.logEntry(
+      context.functionName,
+      event.user.govuk_signin_journey_id
+    );
+
     try {
       const namePart = extractName(event.userDetails.names);
 
@@ -39,16 +50,19 @@ export class MatchingHandler implements LambdaInterface {
           nino: event.nino,
         }),
       });
-      const latency = captureResponseLatency(requestStartTime);
-      logger.info({
-        message: "API response received",
+
+      const latency = metricsHelper.captureResponseLatency(
+        requestStartTime,
+        "MatchingHandler"
+      );
+      this.logger.info({
+        message: "HMRC API response received",
         url: event.apiURL,
         status: response.status,
         latencyInMs: latency,
       });
 
       const txn = response.headers.get("x-amz-cf-id") ?? "";
-      addLogEntry(event, txn, context);
       const contentType = response.headers.get("content-type");
 
       if (contentType?.includes("application/json")) {
@@ -57,7 +71,7 @@ export class MatchingHandler implements LambdaInterface {
         try {
           responseBody = JSON.parse(responseBody);
         } catch (error) {
-          logger.info(
+          this.logger.info(
             "Received a non-json body for the application/json content-type"
           );
         }
@@ -76,7 +90,7 @@ export class MatchingHandler implements LambdaInterface {
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.error({
+      this.logger.error({
         message: `Error in ${context.functionName}: ${message}`,
         govuk_signin_journey_id: event.user.govuk_signin_journey_id,
       });
@@ -87,30 +101,6 @@ export class MatchingHandler implements LambdaInterface {
 
 const handlerClass = new MatchingHandler();
 export const lambdaHandler = handlerClass.handler.bind(handlerClass);
-
-function addLogEntry(event: MatchEvent, txn: string | null, context: Context) {
-  logger.appendKeys({
-    govuk_signin_journey_id: event.user.govuk_signin_journey_id,
-    txn: txn,
-  });
-  logger.info(
-    `${context.functionName} invoked with government journey id: ${event.user.govuk_signin_journey_id}`
-  );
-}
-
-function captureResponseLatency(start: number): number {
-  const latency = Math.floor(performance.now()) - start;
-
-  const singleMetric = metrics.singleMetric();
-  singleMetric.addDimension(MetricDimensions.HTTP, "MatchingHandler");
-  singleMetric.addMetric(
-    MetricNames.ResponseLatency,
-    MetricUnits.Milliseconds,
-    latency
-  );
-
-  return latency;
-}
 
 function extractName(name: Names): { firstName: string; lastName: string } {
   let firstName = "";
