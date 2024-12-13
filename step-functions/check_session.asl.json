@@ -1,182 +1,167 @@
 {
-	"Comment": "A description of my state machine",
-	"StartAt": "Check SessionId is present",
-	"States": {
-		"Check SessionId is present": {
-			"Type": "Choice",
-			"Choices": [
-				{
-					"Variable": "$.sessionId",
-					"IsPresent": true,
-					"Next": "Fetch Session"
-				}
-			],
-			"Default": "Err: No sessionId provided"
-		},
-		"Fetch Session": {
-			"Type": "Task",
-			"Next": "Check Session Exists",
-			"Parameters": {
+  "Comment": "A description of my state machine",
+  "StartAt": "Check SessionId is present",
+  "States": {
+    "Check SessionId is present": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.sessionId",
+          "IsPresent": true,
+          "Next": "Fetch Session"
+        }
+      ],
+      "Default": "Err: No sessionId provided"
+    },
+    "Fetch Session": {
+      "Type": "Task",
+      "Next": "Check Session Exists",
+      "Parameters": {
 				"TableName": "session-${CommonStackName}",
-				"KeyConditionExpression": "sessionId = :value",
-				"ExpressionAttributeValues": {
-					":value": {
-						"S.$": "$.sessionId"
-					}
-				}
-			},
-			"Resource": "arn:aws:states:::aws-sdk:dynamodb:query",
-			"ResultSelector": {
-				"count.$": "$.Count",
-				"items.$": "$.Items"
-			},
-			"ResultPath": "$.sessionQuery"
-		},
-		"Check Session Exists": {
-			"Type": "Choice",
-			"Choices": [
-				{
-					"Variable": "$.sessionQuery.count",
-					"NumericLessThanEquals": 0,
-					"Next": "Err: No session found"
-				}
-			],
-			"Default": "Fetch Current Time"
-		},
-		"Fetch Current Time": {
-			"Type": "Task",
-			"Resource": "arn:aws:states:::lambda:invoke",
-			"Parameters": {
-        "Payload":{
-          "govJourneyId.$":"$.sessionQuery.items[0].clientSessionId.S"
+        "KeyConditionExpression": "sessionId = :value",
+        "ExpressionAttributeValues": {
+          ":value": {
+            "S.$": "$.sessionId"
+          }
+        }
+      },
+      "Resource": "arn:aws:states:::aws-sdk:dynamodb:query",
+      "ResultSelector": {
+        "count.$": "$.Count",
+        "items.$": "$.Items"
+      },
+      "ResultPath": "$.sessionQuery"
+    },
+    "Check Session Exists": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.sessionQuery.count",
+          "NumericLessThanEquals": 0,
+          "Next": "Err: No session found"
+        }
+      ],
+      "Default": "Check Session Has Not Expired"
+    },
+    "Check Session Has Not Expired": {
+      "Type": "Choice",
+      "Default": "add attributes",
+      "Choices": [
+        {
+          "Next": "Err: Session Expired",
+          "Condition": "{% $floor($millis() / 1000) > $number($states.input.sessionQuery.items[0].expiryDate.N) %}"
+        }
+      ],
+      "QueryLanguage": "JSONata"
+    },
+    "add attributes": {
+      "Type": "Parallel",
+      "Next": "Session OK",
+      "Branches": [
+        {
+          "StartAt": "Is Persistent SessionId Present?",
+          "States": {
+            "Is Persistent SessionId Present?": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.sessionQuery.items[0].persistentSessionId",
+                  "IsPresent": true,
+                  "Next": "Get User Session Info"
+                }
+              ],
+              "Default": "Get User Info Without Persistent Session Id"
+            },
+            "Get User Info Without Persistent Session Id": {
+              "Type": "Pass",
+              "Parameters": {
+                "govuk_signin_journey_id.$": "$.sessionQuery.items[0].clientSessionId.S",
+                "ip_address.$": "$.sessionQuery.items[0].clientIpAddress.S",
+                "session_id.$": "$.sessionQuery.items[0].sessionId.S",
+                "user_id.$": "$.sessionQuery.items[0].subject.S"
+              },
+              "ResultPath": "$.UserSessionInfo",
+              "End": true
+            },
+            "Get User Session Info": {
+              "Type": "Pass",
+              "Parameters": {
+                "govuk_signin_journey_id.$": "$.sessionQuery.items[0].clientSessionId.S",
+                "ip_address.$": "$.sessionQuery.items[0].clientIpAddress.S",
+                "persistent_session_id.$": "$.sessionQuery.items[0].persistentSessionId.S",
+                "session_id.$": "$.sessionQuery.items[0].sessionId.S",
+                "user_id.$": "$.sessionQuery.items[0].subject.S"
+              },
+              "ResultPath": "$.UserSessionInfo",
+              "End": true
+            }
+          }
         },
-				"FunctionName": "${TimeFunctionArn}"
-			},
-			"Next": "Check Session Has Not Expired",
-			"ResultSelector": {
-				"seconds.$": "States.Format('{}',$.Payload.seconds)"
-			},
-			"ResultPath": "$.currentTime"
-		},
-		"Check Session Has Not Expired": {
-			"Type": "Choice",
-			"Choices": [
-				{
-					"Variable": "$.currentTime.seconds",
-					"StringGreaterThanPath": "$.sessionQuery.items[0].expiryDate.N",
-					"Next": "Err: Session Expired"
-				}
-			],
-			"Default": "add attributes"
-		},
-		"add attributes": {
-			"Type": "Parallel",
-			"Next": "Session OK",
-			"Branches": [
-				{
-					"StartAt": "Is Persistent SessionId Present?",
-					"States": {
-						"Is Persistent SessionId Present?": {
-							"Type": "Choice",
-							"Choices": [
-								{
-									"Variable": "$.sessionQuery.items[0].persistentSessionId",
-									"IsPresent": true,
-									"Next": "Get User Session Info"
-								}
-							],
-							"Default": "Get User Info Without Persistent Session Id"
-						},
-						"Get User Info Without Persistent Session Id": {
-							"Type": "Pass",
-							"Parameters": {
-								"govuk_signin_journey_id.$": "$.sessionQuery.items[0].clientSessionId.S",
-								"ip_address.$": "$.sessionQuery.items[0].clientIpAddress.S",
-								"session_id.$": "$.sessionQuery.items[0].sessionId.S",
-								"user_id.$": "$.sessionQuery.items[0].subject.S"
-							},
-							"ResultPath": "$.UserSessionInfo",
-							"End": true
-						},
-						"Get User Session Info": {
-							"Type": "Pass",
-							"Parameters": {
-								"govuk_signin_journey_id.$": "$.sessionQuery.items[0].clientSessionId.S",
-								"ip_address.$": "$.sessionQuery.items[0].clientIpAddress.S",
-								"persistent_session_id.$": "$.sessionQuery.items[0].persistentSessionId.S",
-								"session_id.$": "$.sessionQuery.items[0].sessionId.S",
-								"user_id.$": "$.sessionQuery.items[0].subject.S"
-							},
-							"ResultPath": "$.UserSessionInfo",
-							"End": true
-						}
-					}
-				},
-				{
-					"StartAt": "Check for TxMA Audit Device Header",
-					"States": {
-						"Check for TxMA Audit Device Header": {
-							"Type": "Choice",
-							"Choices": [
-								{
-									"Variable": "$$.Execution.Input.txma-audit-encoded",
-									"IsPresent": true,
-									"Next": "Found TxMa Audit Header"
-								}
-							],
-							"Default": "TxMa Audit Header Not Found"
-						},
-						"Found TxMa Audit Header": {
-							"Type": "Pass",
-							"Parameters": {
-								"value.$": "$$.Execution.Input.txma-audit-encoded"
-							},
-							"ResultPath": "$.TxmaAuditHeader",
-							"End": true
-						},
-						"TxMa Audit Header Not Found": {
-							"Type": "Pass",
-							"Parameters": {
-								"value": "{}"
-							},
-							"ResultPath": "$.TxmaAuditHeader",
-							"End": true
-						}
-					}
-				}
-			]
-		},
-		"Err: Session Expired": {
-			"Type": "Pass",
-			"End": true,
-			"Parameters": {
-				"status": "SESSION_EXPIRED"
-			}
-		},
-		"Err: No session found": {
-			"Type": "Pass",
-			"End": true,
-			"Parameters": {
-				"status": "SESSION_NOT_FOUND"
-			}
-		},
-		"Session OK": {
-			"Type": "Pass",
-			"End": true,
-			"Parameters": {
-				"status": "SESSION_OK",
-				"clientId.$": "$[0].sessionQuery.items[0].clientId.S",
-				"userAuditInfo.$": "$[0].UserSessionInfo",
-				"txmaAuditHeader.$": "$[1].TxmaAuditHeader.value",
-				"sessionExpiry.$": "$[0].sessionQuery.items[0].expiryDate.N"
-			}
-		},
-		"Err: No sessionId provided": {
-			"Type": "Pass",
-			"End": true,
-			"Result": {
-				"status": "SESSION_NOT_PROVIDED"
-			}
-		}
-	}
+        {
+          "StartAt": "Check for TxMA Audit Device Header",
+          "States": {
+            "Check for TxMA Audit Device Header": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$$.Execution.Input.txma-audit-encoded",
+                  "IsPresent": true,
+                  "Next": "Found TxMa Audit Header"
+                }
+              ],
+              "Default": "TxMa Audit Header Not Found"
+            },
+            "Found TxMa Audit Header": {
+              "Type": "Pass",
+              "Parameters": {
+                "value.$": "$$.Execution.Input.txma-audit-encoded"
+              },
+              "ResultPath": "$.TxmaAuditHeader",
+              "End": true
+            },
+            "TxMa Audit Header Not Found": {
+              "Type": "Pass",
+              "Parameters": {
+                "value": "{}"
+              },
+              "ResultPath": "$.TxmaAuditHeader",
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "Err: Session Expired": {
+      "Type": "Pass",
+      "End": true,
+      "Parameters": {
+        "status": "SESSION_EXPIRED"
+      }
+    },
+    "Err: No session found": {
+      "Type": "Pass",
+      "End": true,
+      "Parameters": {
+        "status": "SESSION_NOT_FOUND"
+      }
+    },
+    "Session OK": {
+      "Type": "Pass",
+      "End": true,
+      "Parameters": {
+        "status": "SESSION_OK",
+        "clientId.$": "$[0].sessionQuery.items[0].clientId.S",
+        "userAuditInfo.$": "$[0].UserSessionInfo",
+        "txmaAuditHeader.$": "$[1].TxmaAuditHeader.value",
+        "sessionExpiry.$": "$[0].sessionQuery.items[0].expiryDate.N"
+      }
+    },
+    "Err: No sessionId provided": {
+      "Type": "Pass",
+      "End": true,
+      "Result": {
+        "status": "SESSION_NOT_PROVIDED"
+      }
+    }
+  }
 }
