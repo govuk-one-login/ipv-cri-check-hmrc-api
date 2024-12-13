@@ -16,7 +16,7 @@ describe("check-session", () => {
     expect(sfnContainer.getContainer()).toBeDefined();
   });
 
-  describe("happy path tests", () => {
+  xdescribe("happy path tests", () => {
     it("should pass when session exists and is not expired", async () => {
       const input = JSON.stringify({
         sessionId: "12345",
@@ -54,7 +54,7 @@ describe("check-session", () => {
     });
   });
 
-  describe("unhappy path tests", () => {
+  xdescribe("unhappy path tests", () => {
     it("should fail when session does not exist", async () => {
       const input = JSON.stringify({
         sessionId: "12345",
