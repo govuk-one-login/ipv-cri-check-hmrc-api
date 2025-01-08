@@ -48,13 +48,6 @@ Parameters:
     Description: "Specifies the configuration to enable gradual Lambda deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'AllAtOnce'"
     Type: String
     Default: "AllAtOnce"
-    AllowedValues:
-      - AllAtOnce
-      - Canary10Percent5Minutes
-      - Canary10Percent10Minutes
-      - Canary10Percent15Minutes
-      - Canary10Percent30Minutes
-      - Linear10PercentEvery1Minute
   StepFunctionsDeploymentPreference:
     Description: "Specifies the configuration to enable gradual StepFunction deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'ALL_AT_ONCE'"
     Type: String
@@ -69,6 +62,7 @@ Conditions:
   UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, ""]]
   IsDevEnvironment: !Equals [!Ref Environment, dev]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
+  IsProdEnvironment: !Equals [!Ref Environment, production]
   IsDevLikeEnvironment:
     !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
   IsNotDevLikeEnvironment: !Not
@@ -185,6 +179,21 @@ Globals:
     AutoPublishAlias: live
 
 Resources:
+  RedactionLogStreamTrackingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-redaction-logstream-tracking
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: logStreamName
+          AttributeType: S
+      KeySchema:
+        - AttributeName: logStreamName
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expiryDate
+        Enabled: true
+
   CiMappingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -768,8 +777,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 15
-        Percentage: 10
+        Interval: !If [IsProdEnvironment, 15, 5]
+        Percentage: !If [IsProdEnvironment, 10, 50]
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - - !Ref TimeFunctionCanaryErrors
@@ -823,15 +832,15 @@ Resources:
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmDescription: !Sub "${CheckSessionStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckSessionStateMachine-alarm"
-      ComparisonOperator: GreaterThanThreshold
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
       MetricName: "ExecutionsFailed"
       Namespace: AWS/States
-      Period: 300
+      ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      Threshold: 0
-      TreatMissingData: missing
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn
           Value: !Ref CheckSessionStateMachine
@@ -842,8 +851,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 15
-        Percentage: 10
+        Interval: !If [IsProdEnvironment, 15, 5]
+        Percentage: !If [IsProdEnvironment, 10, 50]
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - - !Ref OTGFunctionCanaryErrors
@@ -968,15 +977,15 @@ Resources:
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmDescription: !Sub "${NinoCheckStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachine-ExecutionsFailed-alarm"
-      ComparisonOperator: GreaterThanThreshold
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
       MetricName: "ExecutionsFailed"
       Namespace: AWS/States
-      Period: 300
+      ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      Threshold: 0
-      TreatMissingData: missing
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn
           Value: !Ref NinoCheckStateMachine
@@ -987,8 +996,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 15
-        Percentage: 10
+        Interval: !If [IsProdEnvironment, 15, 5]
+        Percentage: !If [IsProdEnvironment, 10, 50]
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - - !Ref SsmParametersFunctionCanaryErrors
@@ -1071,15 +1080,15 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmDescription: !Sub "${AbandonStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-AbandonStateMachine-ExecutionsFailed-alarm"
-      ComparisonOperator: GreaterThanThreshold
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
       MetricName: "ExecutionsFailed"
       Namespace: AWS/States
-      Period: 300
+      ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      Threshold: 0
-      TreatMissingData: missing
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn
           Value: !Ref AbandonStateMachine
@@ -1090,8 +1099,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 15
-        Percentage: 10
+        Interval: !If [IsProdEnvironment, 15, 5]
+        Percentage: !If [IsProdEnvironment, 10, 50]
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - - !Ref CiMappingFunctionCanaryErrors
@@ -1211,15 +1220,15 @@ Resources:
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmDescription: !Sub "${NinoIssueCredentialStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachine-ExecutionsFailed-alarm"
-      ComparisonOperator: GreaterThanThreshold
-      DatapointsToAlarm: 4
-      EvaluationPeriods: 12
       MetricName: "ExecutionsFailed"
       Namespace: AWS/States
-      Period: 300
+      ComparisonOperator: GreaterThanThreshold
       Statistic: Sum
-      Threshold: 0
-      TreatMissingData: missing
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Period: 3600
+      Threshold: 3
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn
           Value: !Ref NinoIssueCredentialStateMachine
@@ -1999,8 +2008,8 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: !Ref StepFunctionsDeploymentPreference
-        Interval: 15
-        Percentage: 10
+        Interval: !If [IsProdEnvironment, 15, 5]
+        Percentage: !If [IsProdEnvironment, 10, 50]
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - - !Ref CredentialSubjectFunctionCanaryErrors
@@ -2228,6 +2237,8 @@ Resources:
       CodeSigningConfigArn:
         !If [ EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue ]
       Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RedactionLogStreamTrackingTable
         - Statement:
             Effect: Allow
             Action: logs:*
@@ -2239,6 +2250,7 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-PIIRedact"
+          RedactionLogStreamTrackingTable: !Ref RedactionLogStreamTrackingTable
 
   PIIRedactFunctionLogGroup:
     Type: AWS::Logs::LogGroup

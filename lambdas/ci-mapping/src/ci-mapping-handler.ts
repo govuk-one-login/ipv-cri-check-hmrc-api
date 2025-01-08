@@ -10,13 +10,12 @@ import { getHmrcErrsCiRecord, ContraIndicator } from "./utils/ci-mapping-util";
 import { CiMappingEvent } from "./ci-mapping-event";
 import { LogHelper } from "../../logging/log-helper";
 
-const logHelper = new LogHelper();
-
 export class CiMappingHandler implements LambdaInterface {
   public async handler(
     event: CiMappingEvent,
     context: Context
   ): Promise<Array<ContraIndicator>> {
+    const logHelper = new LogHelper(context);
     logHelper.logEntry(context.functionName, event.govJourneyId);
     try {
       return getCIsForHmrcErrors(event);

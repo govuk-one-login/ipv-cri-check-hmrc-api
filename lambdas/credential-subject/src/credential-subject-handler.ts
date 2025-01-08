@@ -9,7 +9,6 @@ import {
 import { LogHelper } from "../../logging/log-helper";
 import { Context } from "aws-lambda";
 
-const logHelper = new LogHelper();
 const credentialSubjectBuilder = new CredentialSubjectBuilder();
 
 export class CredentialSubjectHandler implements LambdaInterface {
@@ -17,8 +16,10 @@ export class CredentialSubjectHandler implements LambdaInterface {
     event: UserInfoEvent,
     context: Context
   ): Promise<CredentialSubject> {
+    const logHelper = new LogHelper(context);
+    logHelper.logEntry(context.functionName, event.govJourneyId);
+
     try {
-      logHelper.logEntry(context.functionName, event.govJourneyId);
       return credentialSubjectBuilder
         .setPersonalNumber(event?.nino)
         .addNames(this.convertToCredentialSubjectNames(event))

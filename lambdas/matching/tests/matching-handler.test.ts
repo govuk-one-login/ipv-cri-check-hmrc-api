@@ -1,4 +1,4 @@
-import { MatchingHandler, logger } from "../src/matching-handler";
+import { MatchingHandler } from "../src/matching-handler";
 import { MatchEvent } from "../src/match-event";
 import { Context } from "aws-lambda";
 import { Names } from "../src/name-part";
@@ -8,6 +8,17 @@ jest.mock("@aws-lambda-powertools/logger", () => ({
     info: jest.fn(),
     error: jest.fn(),
     appendKeys: jest.fn(),
+    addContext: jest.fn(),
+  })),
+}));
+
+jest.mock("@aws-lambda-powertools/metrics", () => ({
+  ...jest.requireActual("@aws-lambda-powertools/metrics"),
+  Metrics: jest.fn(() => ({
+    singleMetric: () => ({
+      addDimension: jest.fn(),
+      addMetric: jest.fn(),
+    }),
   })),
 }));
 
@@ -65,7 +76,6 @@ describe("matching-handler", () => {
 
   afterEach(() => {
     jest.clearAllMocks();
-    jest.resetAllMocks();
   });
 
   it("should return a matching response for a given nino and user", async () => {
@@ -163,9 +173,10 @@ describe("matching-handler", () => {
     const matchingHandler = new MatchingHandler();
     await matchingHandler.handler(testEvent, {} as Context);
 
-    expect(logger.info).toHaveBeenCalledWith(
+    expect(matchingHandler.logger.info).toHaveBeenNthCalledWith(
+      2,
       expect.objectContaining({
-        message: "API response received",
+        message: "HMRC API response received",
         url: testEvent.apiURL,
         status: 200,
         latencyInMs: expect.anything(),

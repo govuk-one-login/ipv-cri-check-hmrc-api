@@ -3,6 +3,7 @@ import { ipAddressPatterns } from "./regex/ip-address";
 import { namePatterns } from "./regex/name-pattern";
 import { dobPatterns } from "./regex/date-of-birth";
 import { addressPatterns } from "./regex/address";
+import { ciPatterns } from "./regex/contra-indicator";
 import { otherPatterns } from "./regex/uncategorised-patterns";
 
 export const defaultPatterns = [
@@ -11,6 +12,7 @@ export const defaultPatterns = [
   ...namePatterns,
   ...dobPatterns,
   ...addressPatterns,
+  ...ciPatterns,
   ...otherPatterns,
 ];
 

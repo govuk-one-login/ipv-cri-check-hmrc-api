@@ -125,8 +125,6 @@ paths:
           description: OK
         "400":
           description: Bad Request
-        "422":
-          description: Unprocessable Content
         "500":
           description: Internal Server Error
       x-amazon-apigateway-integration:
@@ -167,6 +165,7 @@ paths:
                 #else
                 #set($context.responseOverride.status = 200)
                 #end
+                $output.body
   /abandon:
     post:
       summary: "IP address of the client."

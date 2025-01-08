@@ -1,18 +1,37 @@
 import { LogHelper } from "../log-helper";
+import { Context } from "aws-lambda";
 
 jest.mock("@aws-lambda-powertools/logger", () => ({
   Logger: jest.fn(() => ({
     appendKeys: jest.fn(),
+    addContext: jest.fn(),
     info: jest.fn(),
     error: jest.fn(),
   })),
 }));
 
+export const context: Context = {
+  awsRequestId: "",
+  callbackWaitsForEmptyEventLoop: false,
+  functionName: "",
+  functionVersion: "",
+  invokedFunctionArn: "",
+  logGroupName: "",
+  logStreamName: "",
+  memoryLimitInMB: "",
+  done(): void {},
+  fail(): void {},
+  getRemainingTimeInMillis(): number {
+    return 0;
+  },
+  succeed(): void {},
+};
+
 describe("log-helper", () => {
   let logHelper: LogHelper;
 
   beforeEach(() => {
-    logHelper = new LogHelper();
+    logHelper = new LogHelper(context);
   });
 
   afterEach(() => {

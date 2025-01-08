@@ -208,7 +208,9 @@ describe("Nino Hmrc Check Step Function", () => {
     const { "detail-type": requestSentDetailType, source: requestSentSource } =
       JSON.parse(requestSentQueueMessage[0].Body as string);
 
-    expect(startExecutionResult.output).toBe('{"httpStatus":200}');
+    expect(startExecutionResult.output).toBe(
+      '{"httpStatus":200,"body":"{\\"requestRetry\\":false}"}'
+    );
 
     expect(startExecutionResult.output).toBeDefined();
     expect(requestSentQueueMessage).not.toHaveLength(0);
@@ -229,9 +231,12 @@ describe("Nino Hmrc Check Step Function", () => {
       source: responseReceivedSource,
     } = JSON.parse(responseReceivedQueueMessage[0].Body as string);
 
-    expect(startExecutionResult.output).toBe('{"httpStatus":200}');
-
     expect(startExecutionResult.output).toBeDefined();
+    expect(JSON.parse(startExecutionResult.output || "")).toStrictEqual({
+      httpStatus: 200,
+      body: '{"requestRetry":false}',
+    });
+
     expect(responseReceivedQueueMessage).not.toHaveLength(0);
     expect(responseReceivedDetailType).toBe("RESPONSE_RECEIVED");
     expect(responseReceivedSource).toBe("review-hc.localdev.account.gov.uk");
@@ -292,9 +297,11 @@ describe("Nino Hmrc Check Step Function", () => {
         user_id: "test",
       },
       extensions: {
-        evidence: [{
-          txn: "mock_txn_header"
-        }]
+        evidence: [
+          {
+            txn: "mock_txn_header",
+          },
+        ],
       },
     };
 

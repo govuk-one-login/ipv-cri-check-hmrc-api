@@ -14,8 +14,6 @@ import {
 import { LogHelper } from "../../logging/log-helper";
 import { Context } from "aws-lambda";
 
-const logHelper = new LogHelper();
-
 export class JwtSignerHandler implements LambdaInterface {
   constructor(private kmsClient: KMSClient) {}
 
@@ -23,6 +21,7 @@ export class JwtSignerHandler implements LambdaInterface {
     event: SignerPayLoad,
     context: Context
   ): Promise<string> {
+    const logHelper = new LogHelper(context);
     logHelper.logEntry(context.functionName, event.govJourneyId);
 
     const parsedHeader = JSON.parse(event.header) as SignerHeader;
