@@ -2189,7 +2189,7 @@ Resources:
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
       FilterName: "PII Redaction"
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      DestinationArn: !Ref PIIRedactFunction.Alias
       FilterPattern: ""
       LogGroupName: !Ref NinoCheckStateMachineLogGroup
 
@@ -2198,7 +2198,7 @@ Resources:
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
       FilterName: "PII Redaction"
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      DestinationArn: !Ref PIIRedactFunction.Alias
       FilterPattern: ""
       LogGroupName: !Ref AbandonStateMachineLogGroup
 
@@ -2207,7 +2207,7 @@ Resources:
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
       FilterName: "PII Redaction"
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      DestinationArn: !Ref PIIRedactFunction.Alias
       FilterPattern: ""
       LogGroupName: !Ref NinoIssueCredentialLogGroup
 
@@ -2216,7 +2216,7 @@ Resources:
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
       FilterName: "PII Redaction"
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      DestinationArn: !Ref PIIRedactFunction.Alias
       FilterPattern: ""
       LogGroupName: !Ref CheckSessionStateMachineLogGroup
 
@@ -2225,7 +2225,7 @@ Resources:
     DependsOn: PIIRedactFunctionCloudWatchPermissions
     Properties:
       FilterName: "PII Redaction"
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      DestinationArn: !Ref PIIRedactFunction.Alias
       FilterPattern: ""
       LogGroupName: !Ref AuditEventStateMachineLogGroup
 
