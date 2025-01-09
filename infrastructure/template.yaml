@@ -2186,46 +2186,46 @@ Resources:
 
   NinoCheckStateMachineLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
     Properties:
       FilterName: "PII Redaction"
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      DestinationArn: !Ref PIIRedactFunction.Alias
       FilterPattern: ""
       LogGroupName: !Ref NinoCheckStateMachineLogGroup
 
   AbandonStateMachineLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
     Properties:
       FilterName: "PII Redaction"
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      DestinationArn: !Ref PIIRedactFunction.Alias
       FilterPattern: ""
       LogGroupName: !Ref AbandonStateMachineLogGroup
 
   NinoIssueCredentialLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
     Properties:
       FilterName: "PII Redaction"
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      DestinationArn: !Ref PIIRedactFunction.Alias
       FilterPattern: ""
       LogGroupName: !Ref NinoIssueCredentialLogGroup
 
   CheckSessionStateMachineLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
     Properties:
       FilterName: "PII Redaction"
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      DestinationArn: !Ref PIIRedactFunction.Alias
       FilterPattern: ""
       LogGroupName: !Ref CheckSessionStateMachineLogGroup
 
   AuditEventStateMachineLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
     Properties:
       FilterName: "PII Redaction"
-      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      DestinationArn: !Ref PIIRedactFunction.Alias
       FilterPattern: ""
       LogGroupName: !Ref AuditEventStateMachineLogGroup
 
