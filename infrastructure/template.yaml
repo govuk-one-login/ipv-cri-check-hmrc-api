@@ -2176,6 +2176,14 @@ Resources:
       Principal: !Join [ ".", [ "logs", !Ref "AWS::Region", "amazonaws.com" ] ]
       SourceAccount: !Ref AWS::AccountId
 
+  PIIRedactFunctionCloudWatchAliasPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PIIRedactFunction.Alias
+      Action: lambda:InvokeFunction
+      Principal: !Join [ ".", [ "logs", !Ref "AWS::Region", "amazonaws.com" ] ]
+      SourceAccount: !Ref AWS::AccountId
+
   NinoCheckStateMachineLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchPermissions
