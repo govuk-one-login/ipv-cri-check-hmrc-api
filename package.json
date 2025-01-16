@@ -16,14 +16,14 @@
     "deploy": "./deploy.sh"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.682.0",
-    "@aws-lambda-powertools/commons": "1.14.2",
-    "@aws-lambda-powertools/logger": "2.3.0",
-    "@aws-lambda-powertools/metrics": "1.14.2",
-    "@aws-lambda-powertools/parameters": "1.17.0",
-    "@aws-lambda-powertools/tracer": "1.14.2",
-    "@aws-sdk/client-cloudwatch-logs": "3.574.0",
-    "@aws-sdk/client-ssm": "3.363.0",
+    "@aws-sdk/client-dynamodb": "^3.726.1",
+    "@aws-lambda-powertools/commons": "2.13.0",
+    "@aws-lambda-powertools/logger": "2.13.0",
+    "@aws-lambda-powertools/metrics": "2.13.0",
+    "@aws-lambda-powertools/parameters": "2.13.0",
+    "@aws-lambda-powertools/tracer": "2.13.0",
+    "@aws-sdk/client-cloudwatch-logs": "3.726.1",
+    "@aws-sdk/client-ssm": "3.726.1",
     "esbuild": "0.23.0",
     "jose": "^5.2.2"
   },
