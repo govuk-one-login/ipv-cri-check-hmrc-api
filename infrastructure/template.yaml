@@ -153,7 +153,7 @@ Globals:
         - !ImportValue cri-vpc-ProtectedSubnetIdA
         - !ImportValue cri-vpc-ProtectedSubnetIdB
     Layers:
-      - !Sub "arn:aws:lambda:${AWS::Region}:184161586896:layer:opentelemetry-nodejs-0_11_0:1"
+      - !Sub "arn:aws:lambda:${AWS::Region}:901920570463:layer:aws-otel-nodejs-amd64-ver-1-30-1:1"
       - !Sub
         - "{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}"
         - SecretArn: !FindInMap [ Dynatrace, SecretArn, !Ref Environment ]
@@ -166,7 +166,7 @@ Globals:
           - "Authorization=Api-Token {{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
           - SecretArn: !FindInMap  [ Dynatrace, SecretArn, !Ref Environment ]
         OTEL_RESOURCE_ATTRIBUTES: !Sub "service.name=${CriIdentifier}"
-        NODE_OPTIONS: --enable-source-maps --require @aws/aws-distro-opentelemetry-node-autoinstrumentation/register
+        NODE_OPTIONS: --enable-source-maps --import @aws/aws-distro-opentelemetry-node-autoinstrumentation/register --experimental-loader=@opentelemetry/instrumentation/hook.mjs
         AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace #/opt/otel-handler
         DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: true
         POWERTOOLS_METRICS_NAMESPACE: !Ref CriIdentifier
