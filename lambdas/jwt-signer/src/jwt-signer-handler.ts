@@ -13,6 +13,9 @@ import {
 } from "@aws-sdk/client-kms";
 import { LogHelper } from "../../logging/log-helper";
 import { Context } from "aws-lambda";
+import { initOpenTelemetry } from "open-telemetry/src/otel-setup";
+
+initOpenTelemetry();
 
 export class JwtSignerHandler implements LambdaInterface {
   constructor(private kmsClient: KMSClient) {}
@@ -101,4 +104,5 @@ export class JwtSignerHandler implements LambdaInterface {
 const handlerClass = new JwtSignerHandler(
   new KMSClient({ region: "eu-west-2", credentials: fromEnv() })
 );
+
 export const lambdaHandler = handlerClass.handler.bind(handlerClass);

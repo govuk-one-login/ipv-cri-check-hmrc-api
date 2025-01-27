@@ -5,6 +5,9 @@ import { LogHelper } from "../../logging/log-helper";
 import { MetricsHelper } from "../../logging/metrics-helper";
 import { MatchEvent } from "./match-event";
 import { Names } from "./name-part";
+import { initOpenTelemetry } from "open-telemetry/src/otel-setup";
+
+initOpenTelemetry();
 
 const metricsHelper = new MetricsHelper();
 
@@ -99,9 +102,6 @@ export class MatchingHandler implements LambdaInterface {
   }
 }
 
-const handlerClass = new MatchingHandler();
-export const lambdaHandler = handlerClass.handler.bind(handlerClass);
-
 function extractName(name: Names): { firstName: string; lastName: string } {
   let firstName = "";
   let surname = "";
@@ -121,3 +121,6 @@ function extractName(name: Names): { firstName: string; lastName: string } {
     lastName: surname.trim(),
   };
 }
+
+const handlerClass = new MatchingHandler();
+export const lambdaHandler = handlerClass.handler.bind(handlerClass);

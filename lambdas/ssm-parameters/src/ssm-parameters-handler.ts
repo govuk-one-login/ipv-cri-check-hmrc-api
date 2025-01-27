@@ -4,6 +4,11 @@ import { Parameter } from "@aws-sdk/client-ssm";
 import { LogHelper } from "../../logging/log-helper";
 import { Context } from "aws-lambda";
 
+import "open-telemetry/src/otel-setup";
+import { initOpenTelemetry } from "open-telemetry/src/otel-setup";
+
+initOpenTelemetry();
+
 const cacheTtlInSecond =
   Number(process.env.POWERTOOLS_PARAMETERS_MAX_AGE) || 300;
 
@@ -12,6 +17,7 @@ export class SsmParametersHandler implements LambdaInterface {
     event: { parameters: string[]; govJourneyId: string },
     context: Context
   ): Promise<Parameter[]> {
+    //span.setAttribute('suraj_example', "example_value");
     const logHelper = new LogHelper(context);
     logHelper.logEntry(context.functionName, event.govJourneyId);
 

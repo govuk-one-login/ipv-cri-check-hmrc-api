@@ -3,6 +3,9 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { LogHelper } from "../../logging/log-helper";
 import { MetricsHelper } from "../../logging/metrics-helper";
 import { Context } from "aws-lambda";
+import { initOpenTelemetry } from "open-telemetry/src/otel-setup";
+
+initOpenTelemetry();
 
 const metricsHelper = new MetricsHelper();
 

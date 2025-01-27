@@ -8,6 +8,9 @@ import {
 } from "./credential-subject-builder";
 import { LogHelper } from "../../logging/log-helper";
 import { Context } from "aws-lambda";
+import { initOpenTelemetry } from "open-telemetry/src/otel-setup";
+
+initOpenTelemetry();
 
 const credentialSubjectBuilder = new CredentialSubjectBuilder();
 

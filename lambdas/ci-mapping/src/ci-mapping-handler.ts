@@ -9,6 +9,9 @@ import { Context } from "aws-lambda";
 import { getHmrcErrsCiRecord, ContraIndicator } from "./utils/ci-mapping-util";
 import { CiMappingEvent } from "./ci-mapping-event";
 import { LogHelper } from "../../logging/log-helper";
+import { initOpenTelemetry } from "open-telemetry/src/otel-setup";
+
+initOpenTelemetry();
 
 export class CiMappingHandler implements LambdaInterface {
   public async handler(
