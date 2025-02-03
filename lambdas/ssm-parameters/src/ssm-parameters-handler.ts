@@ -4,6 +4,10 @@ import { Parameter } from "@aws-sdk/client-ssm";
 import { LogHelper } from "../../logging/log-helper";
 import { Context } from "aws-lambda";
 
+import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
+
+initOpenTelemetry();
+
 const cacheTtlInSecond =
   Number(process.env.POWERTOOLS_PARAMETERS_MAX_AGE) || 300;
 
