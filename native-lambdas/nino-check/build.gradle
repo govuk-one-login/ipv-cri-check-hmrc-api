@@ -1,0 +1,5 @@
+dependencies {
+    implementation 'io.quarkiverse.amazonservices:quarkus-amazon-dynamodb:3.3.1'
+    implementation 'io.quarkiverse.amazonservices:quarkus-amazon-ssm:3.3.1'
+    implementation 'io.quarkiverse.amazonservices:quarkus-amazon-eventbridge:3.3.1'
+}

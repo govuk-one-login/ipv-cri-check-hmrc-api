@@ -1,0 +1,80 @@
+plugins {
+    id 'java'
+    id 'io.quarkus'
+    id 'com.diffplug.spotless' version '6.22.0'
+}
+
+group = 'org.example'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.quarkus'
+    apply plugin: 'com.diffplug.spotless'
+
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+
+    spotless {
+        java {
+            removeUnusedImports()
+            importOrder()
+            googleJavaFormat()
+                    .aosp()
+                    .reflowLongStrings()
+                    .formatJavadoc(true)
+                    .reorderImports(true)
+                    .groupArtifact('com.google.googlejavaformat:google-java-format')
+            trimTrailingWhitespace()
+            indentWithSpaces()
+            endWithNewline()
+            cleanthat()
+        }
+    }
+
+    dependencies {
+        implementation 'software.amazon.awssdk:url-connection-client:2.13.31'
+        implementation 'software.amazon.lambda:powertools-core:1.19.0'
+        implementation 'software.amazon.lambda:powertools-metrics:1.19.0'
+        implementation 'software.amazon.lambda:powertools-logging:1.19.0'
+        implementation 'software.amazon.lambda:powertools-parameters:1.19.0'
+
+        implementation enforcedPlatform("io.quarkus.platform:quarkus-bom:3.19.3")
+        implementation 'io.quarkus:quarkus-amazon-lambda'
+        implementation 'io.quarkus:quarkus-jackson'
+        implementation 'io.quarkus:quarkus-logging-json'
+        implementation 'org.jboss.logmanager:log4j2-jboss-logmanager'
+
+        configurations.configureEach {
+            exclude group: 'org.apache.logging.log4j', module: 'log4j-core'
+            exclude group: 'commons-logging', module: 'commons-logging'
+        }
+
+        testImplementation 'io.quarkus:quarkus-junit5'
+        testImplementation 'io.rest-assured:rest-assured'
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    compileTestJava {
+        options.encoding = 'UTF-8'
+    }
+}
+
+tasks.register('buildAllLambdas') {
+    description = 'Builds all Quarkus Lambda subprojects'
+    group = 'Build'
+    dependsOn subprojects
+            .findAll { it.name != 'lambdas' && it.plugins.hasPlugin('io.quarkus') }
+            .collect { it.tasks.named('quarkusBuild') }
+}

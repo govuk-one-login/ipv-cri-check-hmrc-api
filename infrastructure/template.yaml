@@ -846,6 +846,84 @@ Resources:
         - Name: StateMachineArn
           Value: !Ref CheckSessionStateMachine
 
+  NinoCheckFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 30
+      Handler: not.used.in.provided.runtime
+      Runtime: provided.al2023
+      MemorySize: 2048
+      CodeUri: ../native-lambdas/nino-check/build/function.zip
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/NinoCheckFunction
+      Environment:
+        Variables:
+          DISABLE_SIGNAL_HANDLERS: true
+          AuditEventPrefix: !Ref AuditEventNamePrefix
+          UserAttemptsTable: !Ref UserAttemptsTable
+          NinoUsersTable: !Ref NinoUsersTable
+          UserAgent: !Ref UserAgent
+          BearerTokenName: !Ref BearerTokenName
+          CommonStackName: !Ref CommonStackName
+          CheckHmrcEventBus: !Ref CheckHmrcEventBus
+          CheckHmrcEventBusSource: !FindInMap [ EnvironmentConfiguration, !Ref Environment, DOMAINNAME ]
+          AuditEventNameResponseReceived:
+            !FindInMap [ Audit, EventName, ResponseReceived ]
+          AuditEventNameRequestSent: !FindInMap [ Audit, EventName, RequestSent ]
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBWritePolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBWritePolicy:
+            TableName: !Ref UserAttemptsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref UserAttemptsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref NinoUsersTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref NinoUsersTable
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${BearerTokenName}-??????
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
+        - Statement:
+            Effect: Allow
+            Action:
+              - states:StartSyncExecution
+              - states:StartExecution
+            Resource:
+              - !Ref CheckSessionStateMachine
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameters
+              - ssm:GetParameter
+            Resource: "*"
+        - Statement:
+            Effect: Allow
+            Action: logs:*
+            Resource: "*"
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
+  NinoCheckFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/NinoCheckFunction
+      RetentionInDays: 30
+
+  NinoCheckFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref NinoCheckFunction
+      Principal: apigateway.amazonaws.com
+
   NinoCheckStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:

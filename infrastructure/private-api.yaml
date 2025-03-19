@@ -107,6 +107,20 @@ paths:
         passthroughBehavior: "when_no_match"
         contentHandling: "CONVERT_TO_TEXT"
         type: "aws_proxy"
+
+  /check/native:
+    post:
+      responses:
+        200:
+          description: "HTTP 200 on success"
+      x-amazon-apigateway-request-validator: "Validate both"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        passThroughBehavior: "when_no_templates"
+        type: "aws_proxy"
+        uri:
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NinoCheckFunction.Arn}/invocations
+
   /check:
     post:
       summary: "IP address of the client."
