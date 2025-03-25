@@ -73,6 +73,9 @@ Conditions:
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
+  AddProvisionedConcurrency:
+    !Not [!Equals [!FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency], 0]]
+
 Mappings:
   # Only numeric values should be assigned here
   MaxJwtTtl:
@@ -125,16 +128,22 @@ Mappings:
 
   EnvironmentConfiguration:
     localdev:
+      provisionedConcurrency: 0
       DOMAINNAME: review-hc.localdev.account.gov.uk
     dev:
+      provisionedConcurrency: 0
       DOMAINNAME: review-hc.dev.account.gov.uk
     build:
+      provisionedConcurrency: 1
       DOMAINNAME: review-hc.build.account.gov.uk
     staging:
+      provisionedConcurrency: 0
       DOMAINNAME: review-hc.staging.account.gov.uk
     integration:
+      provisionedConcurrency: 0
       DOMAINNAME: review-hc.integration.account.gov.uk
     production:
+      provisionedConcurrency: 1
       DOMAINNAME: review-hc.production.account.gov.uk
 
 Globals:
@@ -178,6 +187,11 @@ Globals:
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
     AutoPublishAlias: live
+    ProvisionedConcurrencyConfig:
+      !If
+      - AddProvisionedConcurrency
+      - ProvisionedConcurrentExecutions: !FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency]
+      - !Ref AWS::NoValue
 
 Resources:
   RedactionLogStreamTrackingTable:
