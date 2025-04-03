@@ -1,12 +1,10 @@
 name: Scan repository
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches: [main]
-  schedule:
-    # Every Monday at 9am
-    - cron: "0 9 * * 1"
 
 concurrency:
   group: scan-repo-${{ github.head_ref || github.ref_name }}
@@ -34,6 +32,7 @@ jobs:
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           coverage-artifact: ${{ needs.coverage.outputs.coverage-artifact || 'coverage' }}
+          coverage-run-id: ${{ github.event_name != 'pull_request' && github.run_id || null }}
 
   codeql:
     name: CodeQL
