@@ -7,6 +7,7 @@ import {
 import {
   authorizationEndpoint,
   checkEndpoint,
+  createPayload,
   createSession,
 } from "../endpoints";
 import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
@@ -23,18 +24,20 @@ describe("Given the session is valid and expecting to be authorized", () => {
     StackName: string;
     NinoUsersTable: string;
     UserAttemptsTable: string;
+    PrivateApiGatewayId: string;
   }>;
   let sessionTableName: string;
 
   beforeAll(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
     sessionTableName = `session-${output.CommonStackName}`;
-
-    const session = await createSession();
+    const payload = await createPayload();
+    const privateApi = `${output.PrivateApiGatewayId}`;
+    const session = await createSession(privateApi, payload);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
     state = sessionData.state;
-    await checkEndpoint({ "session-id": sessionId }, NINO);
+    await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
   });
 
   afterEach(async () => {
@@ -59,7 +62,9 @@ describe("Given the session is valid and expecting to be authorized", () => {
   });
 
   it("Should return an authorizationCode when /authorization endpoint is called", async () => {
+    output = await stackOutputs(process.env.STACK_NAME);
     const authResponse = await authorizationEndpoint(
+      `${output.PrivateApiGatewayId}`,
       sessionId,
       CLIENT_ID,
       `${CLIENT_URL}/callback`,

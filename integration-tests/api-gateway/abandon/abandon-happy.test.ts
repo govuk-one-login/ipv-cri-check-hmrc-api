@@ -8,6 +8,7 @@ import {
   abandonEndpoint,
   authorizationEndpoint,
   checkEndpoint,
+  createPayload,
   createSession,
 } from "../endpoints";
 import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
@@ -24,18 +25,21 @@ describe("Given the session is valid and expecting to abandon the journey", () =
     StackName: string;
     NinoUsersTable: string;
     UserAttemptsTable: string;
+    PrivateApiGatewayId: string;
   }>;
 
   beforeEach(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
     sessionTableName = `session-${output.CommonStackName}`;
-
-    const session = await createSession();
+    const payload = await createPayload();
+    const privateApi = `${output.PrivateApiGatewayId}`;
+    const session = await createSession(privateApi, payload);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
     state = sessionData.state;
-    await checkEndpoint({ "session-id": sessionId }, NINO);
+    await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
     await authorizationEndpoint(
+      privateApi,
       sessionId,
       CLIENT_ID,
       `${CLIENT_URL}/callback`,
@@ -66,7 +70,10 @@ describe("Given the session is valid and expecting to abandon the journey", () =
   });
 
   it("Should receive a 200 response when /abandon endpoint is called without optional headers", async () => {
-    const abandonResponse = await abandonEndpoint({ "session-id": sessionId });
+    const privateApi = `${output.PrivateApiGatewayId}`;
+    const abandonResponse = await abandonEndpoint(privateApi, {
+      "session-id": sessionId,
+    });
     expect(abandonResponse.status).toEqual(200);
 
     const sessionRecord = await getItemByKey(sessionTableName, {
@@ -79,7 +86,8 @@ describe("Given the session is valid and expecting to abandon the journey", () =
   });
 
   it("Should receive a 200 response when /abandon endpoint is called with optional headers", async () => {
-    const abandonResponse = await abandonEndpoint({
+    const privateApi = `${output.PrivateApiGatewayId}`;
+    const abandonResponse = await abandonEndpoint(privateApi, {
       "session-id": sessionId,
       "txma-audit-encoded": "test encoded header",
     });

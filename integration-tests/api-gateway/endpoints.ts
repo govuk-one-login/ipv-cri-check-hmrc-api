@@ -10,6 +10,7 @@ import {
   environment,
 } from "./env-variables";
 import { stackOutputs } from "../resources/cloudformation-helper";
+import { signedFetch } from "../resources/fetch";
 
 let publicEncryptionKeyBase64: string;
 let privateSigningKey: any;
@@ -35,8 +36,7 @@ export const createPayload = async (sharedClaimsUpdate?: Name) => {
   privateSigningKey = JSON.parse(
     (await getSSMParameter("/check-hmrc-cri-api/test/privateSigningKey")) || ""
   );
-  preOutput = await stackOutputs(process.env.STACK_NAME);
-  privateAPI = `${preOutput.PrivateApiGatewayId}`;
+
   const correctClaimSet = await getClaimSet();
   const updateClaimset = {
     ...correctClaimSet,
@@ -58,67 +58,62 @@ export const createPayload = async (sharedClaimsUpdate?: Name) => {
   return ipvCoreAuthorizationUrl;
 };
 
-export const createSession = async (): Promise<Response> => {
-  const ipvCoreAuthorizationUrl = await createPayload();
-  const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
+export const getJarAuthorization = async (
+  clientId: string,
+  aud: string,
+  iss: string
+) => {
+  const { TestHarnessExecuteUrl: testHarnessExecuteUrl } =
+    await stackOutputs("test-resources");
+
+  return await signedFetch(`${testHarnessExecuteUrl}start`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ aud, client_id: clientId, iss }),
+  });
+};
+export const createSession = async (
+  privateApi: string,
+  payload: unknown
+): Promise<Response> => {
+  const sessionApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
   const sessionResponse = await fetch(sessionApiUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "X-Forwarded-For": "localhost",
     },
-    body: JSON.stringify(ipvCoreAuthorizationUrl),
+    body: JSON.stringify(payload),
   });
 
   return sessionResponse;
 };
 
-export const createInvalidSession = async (): Promise<Response> => {
-  const ipvCoreAuthorizationUrl = await createPayload();
-  const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
+export const createMultipleNamesSession = async (
+  privateApi: string,
+  payload: unknown
+): Promise<Response> => {
+  const sessionApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
   const sessionResponse = await fetch(sessionApiUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "X-Forwarded-For": "localhost",
     },
-    body: JSON.stringify(null),
-  });
-
-  return sessionResponse;
-};
-
-export const createMultipleNamesSession = async (): Promise<Response> => {
-  const ipvCoreAuthorizationUrl = await createPayload({
-    name: [
-      {
-        nameParts: [
-          { type: "GivenName", value: "Peter" },
-          { type: "GivenName", value: "Syed Habib" },
-          { type: "FamilyName", value: "Martin-Joy" },
-        ],
-      },
-    ],
-  });
-
-  const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
-  const sessionResponse = await fetch(sessionApiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Forwarded-For": "localhost",
-    },
-    body: JSON.stringify(ipvCoreAuthorizationUrl),
+    body: JSON.stringify(payload),
   });
 
   return sessionResponse;
 };
 
 export const checkEndpoint = async (
+  privateApi: string,
   headers: { "session-id"?: string; "txma-audit-encoded"?: string },
   nino: string
 ): Promise<Response> => {
-  const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
+  const checkApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
   const jsonData = JSON.stringify({ nino: nino });
   const checkResponse = await fetch(checkApiUrl, {
     method: "POST",
@@ -133,6 +128,7 @@ export const checkEndpoint = async (
 };
 
 export const authorizationEndpoint = async (
+  privateApi: string,
   sessionId: string,
   client_id: string,
   redirect_uri: string,
@@ -147,7 +143,7 @@ export const authorizationEndpoint = async (
   };
   const queryString = new URLSearchParams(queryParams);
 
-  const authApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/authorization?${queryString}`;
+  const authApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/authorization?${queryString}`;
   const authResponse = await fetch(authApiUrl, {
     method: "GET",
     headers: {
@@ -159,11 +155,14 @@ export const authorizationEndpoint = async (
   return authResponse;
 };
 
-export const abandonEndpoint = async (headers: {
-  "session-id"?: string;
-  "txma-audit-encoded"?: string;
-}): Promise<Response> => {
-  const abandonUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/abandon`;
+export const abandonEndpoint = async (
+  privateApi: string,
+  headers: {
+    "session-id"?: string;
+    "txma-audit-encoded"?: string;
+  }
+): Promise<Response> => {
+  const abandonUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/abandon`;
   const abandonResponse = await fetch(abandonUrl, {
     method: "POST",
     headers: {

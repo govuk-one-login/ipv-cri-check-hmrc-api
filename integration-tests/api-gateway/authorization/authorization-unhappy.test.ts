@@ -7,6 +7,7 @@ import {
 import {
   authorizationEndpoint,
   checkEndpoint,
+  createPayload,
   createSession,
 } from "../endpoints";
 import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
@@ -23,18 +24,20 @@ describe("Given the session is invalid and expecting it not to be authorized", (
     StackName: string;
     NinoUsersTable: string;
     UserAttemptsTable: string;
+    PrivateApiGatewayId: string;
   }>;
   let sessionTableName: string;
 
   beforeAll(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
     sessionTableName = `session-${output.CommonStackName}`;
-
-    const session = await createSession();
+    const payload = await createPayload();
+    const privateApi = `${output.PrivateApiGatewayId}`;
+    const session = await createSession(privateApi, payload);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
     state = sessionData.state;
-    await checkEndpoint({ "session-id": sessionId }, NINO);
+    await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
   });
 
   afterEach(async () => {
@@ -60,6 +63,7 @@ describe("Given the session is invalid and expecting it not to be authorized", (
 
   it("Should return an 400 response when /authorization endpoint is called when session id is empty", async () => {
     const authResponse = await authorizationEndpoint(
+      `${output.PrivateApiGatewayId}`,
       "",
       CLIENT_ID,
       `${CLIENT_URL}/callback`,
@@ -68,24 +72,24 @@ describe("Given the session is invalid and expecting it not to be authorized", (
     await authResponse.json();
 
     expect(authResponse.status).toEqual(400);
-
   });
 
-    it("Should return an 400 response when /authorization endpoint is called when cliend id is empty", async () => {
-      const authResponse = await authorizationEndpoint(
-        sessionId,
-        "",
-        `${CLIENT_URL}/callback`,
-        state
-      );
-      await authResponse.json();
+  it("Should return an 400 response when /authorization endpoint is called when client id is empty", async () => {
+    const authResponse = await authorizationEndpoint(
+      `${output.PrivateApiGatewayId}`,
+      sessionId,
+      "",
+      `${CLIENT_URL}/callback`,
+      state
+    );
+    await authResponse.json();
 
-      expect(authResponse.status).toEqual(400);
-
-    });
+    expect(authResponse.status).toEqual(400);
+  });
 
   it("Should return an 400 response when /authorization endpoint is called when callback is empty", async () => {
     const authResponse = await authorizationEndpoint(
+      `${output.PrivateApiGatewayId}`,
       sessionId,
       CLIENT_ID,
       "",
@@ -94,19 +98,18 @@ describe("Given the session is invalid and expecting it not to be authorized", (
     await authResponse.json();
 
     expect(authResponse.status).toEqual(400);
-
   });
 
-    it("Should return an 400 response when /authorization endpoint is called when state is empty", async () => {
-      const authResponse = await authorizationEndpoint(
-        sessionId,
-        CLIENT_ID,
-        `${CLIENT_URL}/callback`,
-        ""
-      );
-      await authResponse.json();
+  it("Should return an 400 response when /authorization endpoint is called when state is empty", async () => {
+    const authResponse = await authorizationEndpoint(
+      `${output.PrivateApiGatewayId}`,
+      sessionId,
+      CLIENT_ID,
+      `${CLIENT_URL}/callback`,
+      ""
+    );
+    await authResponse.json();
 
-      expect(authResponse.status).toEqual(400);
-
-    });
+    expect(authResponse.status).toEqual(400);
+  });
 });
