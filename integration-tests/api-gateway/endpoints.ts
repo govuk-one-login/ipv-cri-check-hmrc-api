@@ -14,10 +14,6 @@ import { signedFetch } from "../resources/fetch";
 
 let publicEncryptionKeyBase64: string;
 let privateSigningKey: any;
-let privateAPI: string;
-let preOutput: Partial<{
-  PrivateApiGatewayId: string;
-}>;
 
 type Name = {
   name: {
@@ -60,8 +56,9 @@ export const createPayload = async (sharedClaimsUpdate?: Name) => {
 
 export const getJarAuthorization = async (
   clientId: string,
-  aud: string,
-  iss: string
+  aud?: string,
+  iss?: string,
+  claimsOverride?: unknown
 ) => {
   const { TestHarnessExecuteUrl: testHarnessExecuteUrl } =
     await stackOutputs("test-resources");
@@ -71,27 +68,15 @@ export const getJarAuthorization = async (
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ aud, client_id: clientId, iss }),
+    body: JSON.stringify({
+      aud,
+      client_id: clientId,
+      iss,
+      shared_claims: claimsOverride,
+    }),
   });
 };
 export const createSession = async (
-  privateApi: string,
-  payload: unknown
-): Promise<Response> => {
-  const sessionApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
-  const sessionResponse = await fetch(sessionApiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Forwarded-For": "localhost",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  return sessionResponse;
-};
-
-export const createMultipleNamesSession = async (
   privateApi: string,
   payload: unknown
 ): Promise<Response> => {
@@ -141,9 +126,10 @@ export const authorizationEndpoint = async (
     state: state,
     scope: "openid",
   };
-  const queryString = new URLSearchParams(queryParams);
 
+  const queryString = new URLSearchParams(queryParams);
   const authApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/authorization?${queryString}`;
+
   const authResponse = await fetch(authApiUrl, {
     method: "GET",
     headers: {

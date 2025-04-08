@@ -4,12 +4,13 @@ import {
   clearItemsFromTables,
   getItemByKey,
 } from "../../resources/dynamodb-helper";
+import { getSSMParameters } from "../../resources/ssm-param-helper";
 import {
   abandonEndpoint,
   authorizationEndpoint,
   checkEndpoint,
-  createPayload,
   createSession,
+  getJarAuthorization,
 } from "../endpoints";
 import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
 
@@ -20,6 +21,8 @@ describe("Given the session is valid and expecting to abandon the journey", () =
   let sessionTableName: string;
   let state: string;
   let personIDTableName: string;
+  let audience: string | undefined;
+  let issuer: string | undefined;
   let output: Partial<{
     CommonStackName: string;
     StackName: string;
@@ -28,12 +31,24 @@ describe("Given the session is valid and expecting to abandon the journey", () =
     PrivateApiGatewayId: string;
   }>;
 
-  beforeEach(async () => {
+  const clientId = "ipv-core-stub-aws-headless";
+
+  beforeAll(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
+    const commonStack = output.CommonStackName;
     sessionTableName = `session-${output.CommonStackName}`;
-    const payload = await createPayload();
+
+    [audience, issuer] = await getSSMParameters(
+      `/${commonStack}/clients/${clientId}/jwtAuthentication/audience`,
+      `/${commonStack}/clients/${clientId}/jwtAuthentication/issuer`
+    );
+  });
+
+  beforeEach(async () => {
+    const data = await getJarAuthorization(clientId, audience, issuer);
+    const request = await data.json();
     const privateApi = `${output.PrivateApiGatewayId}`;
-    const session = await createSession(privateApi, payload);
+    const session = await createSession(privateApi, request);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
     state = sessionData.state;

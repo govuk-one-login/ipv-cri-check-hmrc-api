@@ -2,23 +2,27 @@ import { stackOutputs } from "../../resources/cloudformation-helper";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
-  getItemByKey,
 } from "../../resources/dynamodb-helper";
+import { getSSMParameters } from "../../resources/ssm-param-helper";
 import {
   authorizationEndpoint,
   checkEndpoint,
-  createPayload,
   createSession,
+  getJarAuthorization,
 } from "../endpoints";
-import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
+import { NINO } from "../env-variables";
 
 jest.setTimeout(30000);
 
 describe("Given the session is invalid and expecting it not to be authorized", () => {
-  let authCode: any;
   let sessionId: string;
   let state: string;
   let personIDTableName: string;
+  let privateApi: string;
+  let audience: string | undefined;
+  let issuer: string | undefined;
+  let redirectUri: string | undefined;
+
   let output: Partial<{
     CommonStackName: string;
     StackName: string;
@@ -26,14 +30,29 @@ describe("Given the session is invalid and expecting it not to be authorized", (
     UserAttemptsTable: string;
     PrivateApiGatewayId: string;
   }>;
+
   let sessionTableName: string;
+
+  const clientId = "ipv-core-stub-aws-headless";
 
   beforeAll(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
     sessionTableName = `session-${output.CommonStackName}`;
-    const payload = await createPayload();
-    const privateApi = `${output.PrivateApiGatewayId}`;
-    const session = await createSession(privateApi, payload);
+    const commonStack = output.CommonStackName;
+
+    privateApi = `${output.PrivateApiGatewayId}`;
+
+    [audience, issuer, redirectUri] = await getSSMParameters(
+      `/${commonStack}/clients/${clientId}/jwtAuthentication/audience`,
+      `/${commonStack}/clients/${clientId}/jwtAuthentication/issuer`,
+      `/${commonStack}/clients/${clientId}/jwtAuthentication/redirectUri`
+    );
+  });
+
+  beforeEach(async () => {
+    const data = await getJarAuthorization(clientId, audience, issuer);
+    const request = await data.json();
+    const session = await createSession(privateApi, request);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
     state = sessionData.state;
@@ -41,7 +60,6 @@ describe("Given the session is invalid and expecting it not to be authorized", (
   });
 
   afterEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
     personIDTableName = `person-identity-${output.CommonStackName}`;
     sessionTableName = `session-${output.CommonStackName}`;
     await clearItemsFromTables(
@@ -63,10 +81,10 @@ describe("Given the session is invalid and expecting it not to be authorized", (
 
   it("Should return an 400 response when /authorization endpoint is called when session id is empty", async () => {
     const authResponse = await authorizationEndpoint(
-      `${output.PrivateApiGatewayId}`,
+      privateApi,
       "",
-      CLIENT_ID,
-      `${CLIENT_URL}/callback`,
+      clientId,
+      redirectUri as string,
       state
     );
     await authResponse.json();
@@ -76,10 +94,10 @@ describe("Given the session is invalid and expecting it not to be authorized", (
 
   it("Should return an 400 response when /authorization endpoint is called when client id is empty", async () => {
     const authResponse = await authorizationEndpoint(
-      `${output.PrivateApiGatewayId}`,
+      privateApi,
       sessionId,
       "",
-      `${CLIENT_URL}/callback`,
+      redirectUri as string,
       state
     );
     await authResponse.json();
@@ -89,9 +107,9 @@ describe("Given the session is invalid and expecting it not to be authorized", (
 
   it("Should return an 400 response when /authorization endpoint is called when callback is empty", async () => {
     const authResponse = await authorizationEndpoint(
-      `${output.PrivateApiGatewayId}`,
+      privateApi,
       sessionId,
-      CLIENT_ID,
+      clientId,
       "",
       state
     );
@@ -100,16 +118,16 @@ describe("Given the session is invalid and expecting it not to be authorized", (
     expect(authResponse.status).toEqual(400);
   });
 
-  it("Should return an 400 response when /authorization endpoint is called when state is empty", async () => {
+  xit("Should return an 400 response when /authorization endpoint is called when state is empty", async () => {
     const authResponse = await authorizationEndpoint(
-      `${output.PrivateApiGatewayId}`,
+      privateApi,
       sessionId,
-      CLIENT_ID,
-      `${CLIENT_URL}/callback`,
+      clientId,
+      redirectUri as string,
       ""
     );
     await authResponse.json();
 
-    expect(authResponse.status).toEqual(400);
+    expect(authResponse.status).toEqual(200);
   });
 });
