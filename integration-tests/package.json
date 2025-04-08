@@ -11,7 +11,7 @@
     "test:evn:nino": "jest --silent integration-tests/eventbridge/nino-check --runInBand",
     "test:evn:cred": "jest --silent integration-tests/eventbridge/nino_issue_credential --runInBand",
     "test:api": "jest --silent --select-projects integration-tests/api-gateway --testPathIgnorePatterns */contract/credential-contract.test.ts",
-    "test:api:e2e": "jest --silent integration-tests/api-gateway --testPathIgnorePatterns */contract/credential-contract.test.ts",
+    "test:api:e2e": "jest --silent --runInBand --detectOpenHandles integration-tests/api-gateway --testPathIgnorePatterns */contract/credential-contract.test.ts",
     "start:contract": "cd api-gateway/contract && ts-node ./app.ts",
     "test:contract": "wait-on tcp:127.0.0.1:3000; jest --silent */contract/credential-contract.test.ts --runInBand",
     "test:contract:ci": "npm-run-all -p -r start:contract test:contract",
