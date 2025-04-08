@@ -1,12 +1,33 @@
 import {
   DeleteParameterCommand,
   GetParameterCommand,
+  GetParametersCommand,
   PutParameterCommand,
   SSMClient,
 } from "@aws-sdk/client-ssm";
 import { createSendCommand } from "./aws-helper";
 
-const sendCommand = createSendCommand(() => new SSMClient());
+const sendCommand = createSendCommand(
+  () => new SSMClient({ region: "eu-west-2" })
+);
+
+export const getSSMParametersValues = async (
+  ...parameterNames: string[]
+): Promise<Record<string, string>> => {
+  const response = await sendCommand(GetParametersCommand, {
+    Names: parameterNames,
+  });
+
+  const result: Record<string, string> = {};
+
+  response.Parameters?.forEach((param) => {
+    if (param.Name && param.Value) {
+      result[param.Name] = param.Value;
+    }
+  });
+
+  return result;
+};
 
 export const getSSMParameter = (name: string) =>
   sendCommand(GetParameterCommand, { Name: name }).then(
