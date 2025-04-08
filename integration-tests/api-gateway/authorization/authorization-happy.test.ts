@@ -1,53 +1,67 @@
-import { stackOutputs } from "../../resources/cloudformation-helper";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
   getItemByKey,
 } from "../../resources/dynamodb-helper";
+import { loadIntegrationContext } from "../api-test-context/load-integration-context";
 import {
   authorizationEndpoint,
   checkEndpoint,
+  createPayload,
   createSession,
 } from "../endpoints";
 import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
 
-jest.setTimeout(30000);
+jest.setTimeout(30_000);
 
 describe("Given the session is valid and expecting to be authorized", () => {
-  let authCode: any;
-  let sessionId: string;
+  let authCode: { value: string };
   let state: string;
-  let personIDTableName: string;
-  let output: Partial<{
-    CommonStackName: string;
-    StackName: string;
-    NinoUsersTable: string;
-    UserAttemptsTable: string;
-  }>;
-  let sessionTableName: string;
+  let sessionId: string;
+  let sessionResponse: Response;
+  let privateApi: string;
+  let audience: string;
+  let privateSigningKey: string;
+  let publicEncryptionKeyBase64: string;
+  let ninoUsersTable: string;
+  let userAttemptsTable: string;
+  const sessionTableName = "session-common-cri-api";
 
   beforeAll(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    sessionTableName = `session-${output.CommonStackName}`;
-
-    const session = await createSession();
-    const sessionData = await session.json();
-    sessionId = sessionData.session_id;
-    state = sessionData.state;
-    await checkEndpoint({ "session-id": sessionId }, NINO);
+    ({
+      privateApi,
+      audience,
+      privateSigningKey,
+      publicEncryptionKeyBase64,
+      ninoUsersTable,
+      userAttemptsTable,
+    } = await loadIntegrationContext());
   });
 
+  beforeEach(async () => {
+    const claimSet = await createPayload(
+      audience,
+      privateSigningKey,
+      publicEncryptionKeyBase64
+    );
+
+    sessionResponse = await createSession(privateApi, claimSet);
+    const sessionData = await sessionResponse.json();
+    sessionId = sessionData.session_id;
+    state = sessionData.state;
+
+    await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
+  });
   afterEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    personIDTableName = `person-identity-${output.CommonStackName}`;
-    sessionTableName = `session-${output.CommonStackName}`;
+    const personIDTableName = `person-identity-common-cri-api`;
+
     await clearItemsFromTables(
       {
         tableName: personIDTableName,
         items: { sessionId: sessionId },
       },
       {
-        tableName: `${output.NinoUsersTable}`,
+        tableName: ninoUsersTable,
         items: { sessionId: sessionId },
       },
       {
@@ -55,11 +69,12 @@ describe("Given the session is valid and expecting to be authorized", () => {
         items: { sessionId: sessionId },
       }
     );
-    await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
+    await clearAttemptsTable(sessionId, userAttemptsTable);
   });
 
   it("Should return an authorizationCode when /authorization endpoint is called", async () => {
     const authResponse = await authorizationEndpoint(
+      privateApi as string,
       sessionId,
       CLIENT_ID,
       `${CLIENT_URL}/callback`,

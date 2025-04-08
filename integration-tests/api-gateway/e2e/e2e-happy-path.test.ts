@@ -1,4 +1,3 @@
-import { getSSMParameter } from "../../resources/ssm-param-helper";
 import {
   Payload,
   getJarAuthorizationPayload,
@@ -16,21 +15,15 @@ import {
   clearAttemptsTable,
   clearItemsFromTables,
 } from "../../resources/dynamodb-helper";
-import { stackOutputs } from "../../resources/cloudformation-helper";
+import { loadIntegrationContext } from "../api-test-context/load-integration-context";
+import { createSession } from "../endpoints";
 
 let data: any;
 let state: string;
-let authCode: any;
-let privateAPI: string;
-let publicAPI: string;
-let preOutput: Partial<{
-  PrivateApiGatewayId: string;
-  PublicApiGatewayId: string;
-}>;
-jest.setTimeout(30000);
+let authCode;
 
-const createUpdatedClaimset = async (): Promise<any> => {
-  const updatedClaimset = await getClaimSet();
+const createUpdatedClaimset = async (audience: string) => {
+  const updatedClaimset = await getClaimSet(audience);
   updatedClaimset.evidence_requested = {
     scoringPolicy: "gpg45",
     strengthScore: 2,
@@ -38,57 +31,33 @@ const createUpdatedClaimset = async (): Promise<any> => {
   return updatedClaimset;
 };
 
-const createSessionId = async (
-  ipvCoreAuthorizationUrl: { client_id: any; request: string } | null
-): Promise<Response> => {
-  preOutput = await stackOutputs(process.env.STACK_NAME);
-  privateAPI = `${preOutput.PrivateApiGatewayId}`;
-  publicAPI = `${preOutput.PublicApiGatewayId}`;
-  const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
-  const sessionResponse = await fetch(sessionApiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Forwarded-For": "localhost",
-    },
-    body: JSON.stringify(ipvCoreAuthorizationUrl),
-  });
-  data = sessionResponse;
-  const session = await sessionResponse.json();
-  return session;
-};
-
+jest.setTimeout(30_000);
 describe("End to end happy path journey", () => {
-  let session: any;
   let sessionId: string;
   let publicEncryptionKeyBase64: string;
-  let privateSigningKey: JWK;
+  let privateSigningKey: string;
   let personIdTableName: string;
   let sessionTableName: string;
-  let audience: string;
-  let output: Partial<{
-    CommonStackName: string;
-    StackName: string;
-    PrivateApiGatewayId: string;
-    NinoUsersTable: string;
-    UserAttemptsTable: string;
-  }>;
+  let ninoUsersTable: string;
+  let userAttemptsTable: string;
+  let audienceUrl: string;
+  let privateApi: string;
+  let publicApi: string;
 
   beforeAll(async () => {
-    audience = (await createUpdatedClaimset()).aud;
-    output = await stackOutputs(process.env.STACK_NAME);
-    publicEncryptionKeyBase64 =
-      (await getSSMParameter(
-        "/check-hmrc-cri-api/test/publicEncryptionKeyBase64"
-      )) || "";
-    privateSigningKey = JSON.parse(
-      (await getSSMParameter("/check-hmrc-cri-api/test/privateSigningKey")) ||
-        ""
-    );
+    ({
+      privateApi,
+      publicApi,
+      audience: audienceUrl,
+      privateSigningKey,
+      publicEncryptionKeyBase64,
+      ninoUsersTable,
+      userAttemptsTable,
+    } = await loadIntegrationContext());
   });
 
   beforeEach(async () => {
-    const claimsSet = await createUpdatedClaimset();
+    const claimsSet = await createUpdatedClaimset(audienceUrl);
     const audience = claimsSet.aud;
     const payload = {
       clientId: CLIENT_ID,
@@ -100,15 +69,20 @@ describe("End to end happy path journey", () => {
       issuer: CLIENT_URL,
       claimSet: claimsSet,
     } as unknown as Payload;
+
     const ipvCoreAuthorizationUrl = await getJarAuthorizationPayload(payload);
-    session = await createSessionId(ipvCoreAuthorizationUrl);
+    const sessionResponse = await createSession(
+      privateApi as string,
+      ipvCoreAuthorizationUrl
+    );
+    data = sessionResponse;
+    const session = await sessionResponse.json();
     sessionId = session.session_id;
   });
 
   afterEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    personIdTableName = `person-identity-${output.CommonStackName}`;
-    sessionTableName = `session-${output.CommonStackName}`;
+    personIdTableName = "person-identity-common-cri-api";
+    sessionTableName = "session-common-cri-api";
 
     await clearItemsFromTables(
       {
@@ -116,7 +90,7 @@ describe("End to end happy path journey", () => {
         items: { sessionId: sessionId },
       },
       {
-        tableName: `${output.NinoUsersTable}`,
+        tableName: ninoUsersTable,
         items: { sessionId: sessionId },
       },
       {
@@ -124,13 +98,13 @@ describe("End to end happy path journey", () => {
         items: { sessionId: sessionId },
       }
     );
-    await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
+    await clearAttemptsTable(sessionId, userAttemptsTable);
   });
 
   it("Should receive a successful VC when valid name and NINO are entered", async () => {
     expect(data.status).toEqual(201);
-    state = session.state;
-    const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
+    state = data.state;
+    const checkApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
     const jsonData = JSON.stringify({ nino: NINO });
 
     const checkResponse = await fetch(checkApiUrl, {
@@ -157,7 +131,7 @@ describe("End to end happy path journey", () => {
       scope: "openid",
     });
 
-    const authApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/authorization?${queryString}`;
+    const authApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/authorization?${queryString}`;
     const authResponse = await fetch(authApiUrl, {
       method: "GET",
       headers: {
@@ -175,15 +149,15 @@ describe("End to end happy path journey", () => {
       {
         iss: CLIENT_ID,
         sub: CLIENT_ID,
-        aud: audience,
+        aud: audienceUrl,
         exp: 41024444800,
         jti: "47e86fa9-3966-49ac-96ab-5fd2a31e9e56",
         redirect_uri: `${CLIENT_URL}/callback`,
       },
-      privateSigningKey
+      privateSigningKey as unknown as JWK
     );
 
-    const tokenApiURL = `https://${publicAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/token`;
+    const tokenApiURL = `https://${publicApi}.execute-api.eu-west-2.amazonaws.com/${environment}/token`;
     const tokenResponse = await fetch(tokenApiURL, {
       method: "POST",
       headers: {
@@ -196,7 +170,7 @@ describe("End to end happy path journey", () => {
 
     const accessToken = token.access_token;
 
-    const credIssApiURL = `https://${publicAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/credential/issue`;
+    const credIssApiURL = `https://${publicApi}.execute-api.eu-west-2.amazonaws.com/${environment}/credential/issue`;
     const credIssResponse = await fetch(credIssApiURL, {
       method: "POST",
       headers: {

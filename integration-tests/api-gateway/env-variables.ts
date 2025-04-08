@@ -1,6 +1,3 @@
-import { getSSMParameter } from "../resources/ssm-param-helper";
-import { stackOutputs } from "../resources/cloudformation-helper";
-
 type EvidenceRequest = {
   scoringPolicy: string;
   strengthScore: number;
@@ -13,15 +10,10 @@ export const CLIENT_ASSERTION_TYPE =
   "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 export const GRANT_TYPE = "authorization_code";
 export const environment = process.env.Environment || "localdev";
-export const getClaimSet = async () => {
+export const getClaimSet = async (audience: string) => {
   const CLIENT_ID = process.env.CLIENTID ?? "ipv-core-stub-aws-prod";
   const CLIENT_URL =
     process.env.CLIENT_URL ?? "https://cri.core.stubs.account.gov.uk";
-  const output = await stackOutputs(process.env.STACK_NAME);
-  const audience =
-    (await getSSMParameter(
-      `/${output.CommonStackName}/clients/${CLIENT_ID}/jwtAuthentication/audience`
-    )) || "";
   const data = {
     sub: "urn:fdc:gov.uk:2022:0df67954-5537-4c98-92d9-e95f0b2e6f44",
     shared_claims: {
