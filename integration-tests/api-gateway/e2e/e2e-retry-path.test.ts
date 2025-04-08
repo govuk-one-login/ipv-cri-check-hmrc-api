@@ -17,8 +17,9 @@ import {
   clearItemsFromTables,
 } from "../../resources/dynamodb-helper";
 import { stackOutputs } from "../../resources/cloudformation-helper";
+import { createSession } from "../endpoints";
 
-let data: any;
+let sessionData: any;
 let state: string;
 let authCode: any;
 let privateAPI: string;
@@ -40,28 +41,7 @@ const createUpdatedClaimset = async (): Promise<any> => {
   return updatedClaimset;
 };
 
-const createSessionId = async (
-  ipvCoreAuthorizationUrl: { client_id: any; request: string } | null
-): Promise<Response> => {
-  preOutput = await stackOutputs(process.env.STACK_NAME);
-  privateAPI = `${preOutput.PrivateApiGatewayId}`;
-  publicAPI = `${preOutput.PublicApiGatewayId}`;
-  const sessionApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
-  const sessionResponse = await fetch(sessionApiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Forwarded-For": "localhost",
-    },
-    body: JSON.stringify(ipvCoreAuthorizationUrl),
-  });
-  data = sessionResponse;
-  const session = await sessionResponse.json();
-  return session;
-};
-
 describe("Retry Scenario Path Tests", () => {
-  let session: any;
   let sessionId: string;
   let publicEncryptionKeyBase64: string;
   let privateSigningKey: JWK;
@@ -103,7 +83,11 @@ describe("Retry Scenario Path Tests", () => {
       claimSet: claimsSet,
     } as unknown as Payload;
     const ipvCoreAuthorizationUrl = await getJarAuthorizationPayload(payload);
-    session = await createSessionId(ipvCoreAuthorizationUrl);
+    preOutput = await stackOutputs(process.env.STACK_NAME);
+    privateAPI = `${preOutput.PrivateApiGatewayId}`;
+    publicAPI = `${preOutput.PublicApiGatewayId}`;
+    sessionData = await createSession(privateAPI, ipvCoreAuthorizationUrl);
+    const session = await sessionData.json();
     sessionId = session.session_id;
   });
 
@@ -130,8 +114,8 @@ describe("Retry Scenario Path Tests", () => {
   });
 
   it("Should generate a CI when failing the nino check", async () => {
-    expect(data.status).toEqual(201);
-    state = session.state;
+    expect(sessionData.status).toEqual(201);
+    state = sessionData.state;
     const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
     const jsonData = JSON.stringify({ nino: NINO });
 

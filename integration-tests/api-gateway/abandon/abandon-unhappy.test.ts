@@ -7,6 +7,7 @@ import {
   abandonEndpoint,
   authorizationEndpoint,
   checkEndpoint,
+  createPayload,
   createSession,
 } from "../endpoints";
 import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
@@ -23,18 +24,21 @@ describe("Given the session is invalid and expecting to abandon the journey", ()
     StackName: string;
     NinoUsersTable: string;
     UserAttemptsTable: string;
+    PrivateApiGatewayId: string;
   }>;
 
   beforeEach(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
     sessionTableName = `session-${output.CommonStackName}`;
-
-    const session = await createSession();
+    const payload = await createPayload();
+    const privateApi = `${output.PrivateApiGatewayId}`;
+    const session = await createSession(privateApi, payload);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
     state = sessionData.state;
-    await checkEndpoint({ "session-id": sessionId }, NINO);
+    await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
     await authorizationEndpoint(
+      privateApi,
       sessionId,
       CLIENT_ID,
       `${CLIENT_URL}/callback`,
@@ -64,15 +68,21 @@ describe("Given the session is invalid and expecting to abandon the journey", ()
     await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
   });
 
-    it("Should receive a 400 response when /abandon endpoint is called with invalid session id", async () => {
-      const abandonResponse = await abandonEndpoint({
-          "session-id": "test"
-          });
-      expect(abandonResponse.status).toEqual(400);
-    });
+  it("Should receive a 400 response when /abandon endpoint is called with invalid session id", async () => {
+    const abandonResponse = await abandonEndpoint(
+      `${output.PrivateApiGatewayId}`,
+      {
+        "session-id": "test",
+      }
+    );
+    expect(abandonResponse.status).toEqual(400);
+  });
 
-    it("Should receive a 400 response when /abandon endpoint is called with no session id", async () => {
-      const abandonResponse = await abandonEndpoint({});
-      expect(abandonResponse.status).toEqual(400);
-    });
+  it("Should receive a 400 response when /abandon endpoint is called with no session id", async () => {
+    const abandonResponse = await abandonEndpoint(
+      `${output.PrivateApiGatewayId}`,
+      {}
+    );
+    expect(abandonResponse.status).toEqual(400);
+  });
 });

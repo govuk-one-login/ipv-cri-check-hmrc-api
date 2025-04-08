@@ -1,8 +1,4 @@
-import {
-  checkEndpoint,
-  createMultipleNamesSession,
-  createSession,
-} from "../endpoints";
+import { checkEndpoint, createPayload, createSession } from "../endpoints";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
@@ -21,6 +17,7 @@ describe("Given the session and NINO is valid", () => {
     StackName: string;
     NinoUsersTable: string;
     UserAttemptsTable: string;
+    PrivateApiGatewayId: string;
   }>;
 
   afterEach(async () => {
@@ -45,19 +42,29 @@ describe("Given the session and NINO is valid", () => {
   });
 
   it("Should receive a 200 response when /check endpoint is called without optional headers", async () => {
-    const session = await createSession();
+    output = await stackOutputs(process.env.STACK_NAME);
+    const payload = await createPayload();
+    const privateApi = `${output.PrivateApiGatewayId}`;
+    const session = await createSession(privateApi, payload);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
-    const check = await checkEndpoint({ "session-id": sessionId }, NINO);
+    const check = await checkEndpoint(
+      privateApi,
+      { "session-id": sessionId },
+      NINO
+    );
     const checkData = check.status;
     expect(checkData).toEqual(200);
   });
 
   it("Should receive a 200 response when /check endpoint is called with optional headers", async () => {
-    const session = await createSession();
+    const payload = await createPayload();
+    const privateApi = `${output.PrivateApiGatewayId}`;
+    const session = await createSession(privateApi, payload);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
     const check = await checkEndpoint(
+      privateApi,
       { "session-id": sessionId, "txma-audit-encoded": "test encoded header" },
       NINO
     );
@@ -66,10 +73,30 @@ describe("Given the session and NINO is valid", () => {
   });
 
   it("Should receive a 200 response when /check endpoint is called using multiple named user", async () => {
-    const session = await createMultipleNamesSession();
-    const sessionData = await session.json();
+    const privateApi = `${output.PrivateApiGatewayId}`;
+
+    const multipleNamesSession = await createPayload({
+      name: [
+        {
+          nameParts: [
+            { type: "GivenName", value: "Peter" },
+            { type: "GivenName", value: "Syed Habib" },
+            { type: "FamilyName", value: "Martin-Joy" },
+          ],
+        },
+      ],
+    });
+    const sessionResponse = await createSession(
+      privateApi,
+      multipleNamesSession
+    );
+    const sessionData = await sessionResponse.json();
     sessionId = sessionData.session_id;
-    const check = await checkEndpoint({ "session-id": sessionId }, NINO);
+    const check = await checkEndpoint(
+      `${output.PrivateApiGatewayId}`,
+      { "session-id": sessionId },
+      NINO
+    );
     const checkData = check.status;
     expect(checkData).toEqual(200);
   });
@@ -77,6 +104,7 @@ describe("Given the session and NINO is valid", () => {
   it("should 500 when provided with JS in the session header", async () => {
     const maliciousSessionId = `<script>alert('Attack!');</script>`;
     const check = await checkEndpoint(
+      `${output.PrivateApiGatewayId}`,
       {
         "session-id": maliciousSessionId,
         "txma-audit-encoded": "test encoded header",
@@ -87,10 +115,13 @@ describe("Given the session and NINO is valid", () => {
   });
 
   it("should 500 when provided with JS as a nino", async () => {
-    const session = await createSession();
+    const payload = await createPayload();
+    const privateApi = `${output.PrivateApiGatewayId}`;
+    const session = await createSession(privateApi, payload);
     const sessionData = await session.json();
     const maliciousNino = `<script>alert('Attack!');</script>`;
     const check = await checkEndpoint(
+      privateApi,
       {
         "session-id": sessionData.session_id,
         "txma-audit-encoded": "test encoded header",
