@@ -4,21 +4,24 @@ import {
   clearItemsFromTables,
   getItemByKey,
 } from "../../resources/dynamodb-helper";
+import { getSSMParameters } from "../../resources/ssm-param-helper";
 import {
   authorizationEndpoint,
   checkEndpoint,
-  createPayload,
   createSession,
+  getJarAuthorization,
 } from "../endpoints";
-import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
+import { NINO } from "../env-variables";
 
-jest.setTimeout(30000);
+jest.setTimeout(30_000);
 
 describe("Given the session is valid and expecting to be authorized", () => {
-  let authCode: any;
+  let authCode: { value: string };
   let sessionId: string;
   let state: string;
-  let personIDTableName: string;
+  let privateApi: string;
+  let redirectUri: string | undefined;
+
   let output: Partial<{
     CommonStackName: string;
     StackName: string;
@@ -26,27 +29,40 @@ describe("Given the session is valid and expecting to be authorized", () => {
     UserAttemptsTable: string;
     PrivateApiGatewayId: string;
   }>;
+
   let sessionTableName: string;
+
+  const clientId = "ipv-core-stub-aws-headless";
+  let commonStack: string;
 
   beforeAll(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
-    sessionTableName = `session-${output.CommonStackName}`;
-    const payload = await createPayload();
-    const privateApi = `${output.PrivateApiGatewayId}`;
-    const session = await createSession(privateApi, payload);
+    commonStack = `${output.CommonStackName}`;
+    sessionTableName = `session-${commonStack}`;
+
+    privateApi = `${output.PrivateApiGatewayId}`;
+
+    [redirectUri] = await getSSMParameters(
+      `/${commonStack}/clients/${clientId}/jwtAuthentication/redirectUri`
+    );
+  });
+
+  beforeEach(async () => {
+    const data = await getJarAuthorization();
+    const request = await data.json();
+    const session = await createSession(privateApi, request);
     const sessionData = await session.json();
+
     sessionId = sessionData.session_id;
     state = sessionData.state;
+
     await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
   });
 
   afterEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    personIDTableName = `person-identity-${output.CommonStackName}`;
-    sessionTableName = `session-${output.CommonStackName}`;
     await clearItemsFromTables(
       {
-        tableName: personIDTableName,
+        tableName: `person-identity-${commonStack}`,
         items: { sessionId: sessionId },
       },
       {
@@ -62,14 +78,14 @@ describe("Given the session is valid and expecting to be authorized", () => {
   });
 
   it("Should return an authorizationCode when /authorization endpoint is called", async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
     const authResponse = await authorizationEndpoint(
-      `${output.PrivateApiGatewayId}`,
+      privateApi,
       sessionId,
-      CLIENT_ID,
-      `${CLIENT_URL}/callback`,
+      clientId,
+      redirectUri as string,
       state
     );
+
     const authData = await authResponse.json();
     authCode = authData.authorizationCode;
 

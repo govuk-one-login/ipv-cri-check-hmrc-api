@@ -1,4 +1,8 @@
-import { checkEndpoint, createPayload, createSession } from "../endpoints";
+import {
+  checkEndpoint,
+  createSession,
+  getJarAuthorization,
+} from "../endpoints";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
@@ -6,12 +10,13 @@ import {
 import { NINO } from "../env-variables";
 import { stackOutputs } from "../../resources/cloudformation-helper";
 
-jest.setTimeout(30000);
+jest.setTimeout(30_000);
 
 describe("Given the session and NINO is invalid", () => {
   let sessionId: string;
-  let personIDTableName: string;
-  let sessionTableName: string;
+  let privateApi: string;
+  let sessionData: { session_id: string };
+
   let output: Partial<{
     CommonStackName: string;
     StackName: string;
@@ -19,14 +24,26 @@ describe("Given the session and NINO is invalid", () => {
     UserAttemptsTable: string;
     PrivateApiGatewayId: string;
   }>;
+  let commonStack: string;
+
+  beforeAll(async () => {
+    output = await stackOutputs(process.env.STACK_NAME);
+    commonStack = `${output.CommonStackName}`;
+  });
+
+  beforeEach(async () => {
+    const data = await getJarAuthorization();
+    const request = await data.json();
+
+    privateApi = `${output.PrivateApiGatewayId}`;
+    const session = await createSession(privateApi, request);
+    sessionData = await session.json();
+  });
 
   afterEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    personIDTableName = `person-identity-${output.CommonStackName}`;
-    sessionTableName = `session-${output.CommonStackName}`;
     await clearItemsFromTables(
       {
-        tableName: personIDTableName,
+        tableName: `person-identity-${commonStack}`,
         items: { sessionId: sessionId },
       },
       {
@@ -34,7 +51,7 @@ describe("Given the session and NINO is invalid", () => {
         items: { sessionId: sessionId },
       },
       {
-        tableName: sessionTableName,
+        tableName: `session-${commonStack}`,
         items: { sessionId: sessionId },
       }
     );
@@ -42,23 +59,14 @@ describe("Given the session and NINO is invalid", () => {
   });
 
   it("Should receive a 400 response when /check endpoint is called without session id value and optional header", async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    const payload = await createPayload();
-    const privateApi = `${output.PrivateApiGatewayId}`;
-    const session = await createSession(privateApi, payload);
-    const sessionData = await session.json();
     sessionId = sessionData.session_id;
+
     const check = await checkEndpoint(privateApi, {}, NINO);
     const checkData = check.status;
     expect(checkData).toEqual(400);
   });
 
   it("Should receive a 500 response when /check endpoint is called without NiNo", async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    const payload = await createPayload();
-    const privateApi = `${output.PrivateApiGatewayId}`;
-    const session = await createSession(privateApi, payload);
-    const sessionData = await session.json();
     sessionId = sessionData.session_id;
     const check = await checkEndpoint(
       privateApi,
@@ -84,10 +92,6 @@ describe("Given the session and NINO is invalid", () => {
   });
 
   it("should 500 when provided with JS as a nino", async () => {
-    const payload = await createPayload();
-    const privateApi = `${output.PrivateApiGatewayId}`;
-    const session = await createSession(privateApi, payload);
-    const sessionData = await session.json();
     const maliciousNino = `<script>alert('Attack!');</script>`;
     const check = await checkEndpoint(
       privateApi,

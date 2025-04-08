@@ -7,18 +7,16 @@ import {
   abandonEndpoint,
   authorizationEndpoint,
   checkEndpoint,
-  createPayload,
   createSession,
+  getJarAuthorization,
 } from "../endpoints";
 import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
 
-jest.setTimeout(30000);
+jest.setTimeout(30_000);
 
 describe("Given the session is invalid and expecting to abandon the journey", () => {
   let sessionId: string;
-  let sessionTableName: string;
   let state: string;
-  let personIDTableName: string;
   let output: Partial<{
     CommonStackName: string;
     StackName: string;
@@ -26,13 +24,18 @@ describe("Given the session is invalid and expecting to abandon the journey", ()
     UserAttemptsTable: string;
     PrivateApiGatewayId: string;
   }>;
+  let commonStack: string;
+
+  beforeAll(async () => {
+    output = await stackOutputs(process.env.STACK_NAME);
+    commonStack = `${output.CommonStackName}`;
+  });
 
   beforeEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    sessionTableName = `session-${output.CommonStackName}`;
-    const payload = await createPayload();
+    const data = await getJarAuthorization();
+    const request = await data.json();
     const privateApi = `${output.PrivateApiGatewayId}`;
-    const session = await createSession(privateApi, payload);
+    const session = await createSession(privateApi, request);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
     state = sessionData.state;
@@ -47,13 +50,9 @@ describe("Given the session is invalid and expecting to abandon the journey", ()
   });
 
   afterEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    personIDTableName = `person-identity-${output.CommonStackName}`;
-    sessionTableName = `session-${output.CommonStackName}`;
-
     await clearItemsFromTables(
       {
-        tableName: personIDTableName,
+        tableName: `person-identity-${commonStack}`,
         items: { sessionId: sessionId },
       },
       {
@@ -61,7 +60,7 @@ describe("Given the session is invalid and expecting to abandon the journey", ()
         items: { sessionId: sessionId },
       },
       {
-        tableName: sessionTableName,
+        tableName: `session-${commonStack}`,
         items: { sessionId: sessionId },
       }
     );

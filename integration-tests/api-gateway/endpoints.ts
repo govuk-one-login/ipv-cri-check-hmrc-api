@@ -1,97 +1,58 @@
-import { getSSMParameter } from "../resources/ssm-param-helper";
-import {
-  Payload,
-  getJarAuthorizationPayload,
-} from "./crypto/create-jar-request-payload";
-import {
-  getClaimSet,
-  CLIENT_ID,
-  CLIENT_URL,
-  environment,
-} from "./env-variables";
+import { environment, testResourcesStack } from "./env-variables";
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { signedFetch } from "../resources/fetch";
 
-let publicEncryptionKeyBase64: string;
-let privateSigningKey: any;
-let privateAPI: string;
-let preOutput: Partial<{
-  PrivateApiGatewayId: string;
-}>;
-
-type Name = {
-  name: {
-    nameParts: {
-      type: string;
-      value: string;
-    }[];
-  }[];
+export type JWTClaimsSet = {
+  iss: string;
+  sub: string;
+  aud: string;
+  iat: number;
+  exp: number;
+  nbf: number;
+  response_type: string;
+  client_id: string;
+  redirect_uri: string;
+  state: string;
+  govuk_signin_journey_id: string;
+  shared_claims?: undefined;
+  evidence_requested?: undefined;
+  context?: string;
 };
-
-export const createPayload = async (sharedClaimsUpdate?: Name) => {
-  publicEncryptionKeyBase64 =
-    (await getSSMParameter(
-      "/check-hmrc-cri-api/test/publicEncryptionKeyBase64"
-    )) || "";
-  privateSigningKey = JSON.parse(
-    (await getSSMParameter("/check-hmrc-cri-api/test/privateSigningKey")) || ""
-  );
-
-  const correctClaimSet = await getClaimSet();
-  const updateClaimset = {
-    ...correctClaimSet,
-    ...sharedClaimsUpdate,
-    name: sharedClaimsUpdate?.name || correctClaimSet.shared_claims.name,
-  };
-  const audience = correctClaimSet.aud;
-  const payload = {
-    clientId: CLIENT_ID,
-    audience,
-    authorizationEndpoint: `${audience}/oauth2/authorize`,
-    redirectUrl: `${CLIENT_URL}/callback`,
-    publicEncryptionKeyBase64: publicEncryptionKeyBase64,
-    privateSigningKey: privateSigningKey,
-    issuer: CLIENT_URL,
-    claimSet: updateClaimset,
-  } as unknown as Payload;
-  const ipvCoreAuthorizationUrl = await getJarAuthorizationPayload(payload);
-  return ipvCoreAuthorizationUrl;
+type JarAuthorizationOptions = {
+  clientId?: string;
+  aud?: string;
+  iss?: string;
+  claimsOverride?: unknown;
+  evidence_requested?: unknown;
 };
-
-export const getJarAuthorization = async (
-  clientId: string,
-  aud: string,
-  iss: string
-) => {
+export const getJarAuthorization = async ({
+  clientId,
+  aud,
+  iss,
+  claimsOverride,
+  evidence_requested,
+}: JarAuthorizationOptions = {}) => {
   const { TestHarnessExecuteUrl: testHarnessExecuteUrl } =
-    await stackOutputs("test-resources");
+    await stackOutputs(testResourcesStack);
+
+  const body = {
+    aud,
+    client_id: clientId,
+    iss,
+    shared_claims: claimsOverride,
+    evidence_requested,
+  } as JWTClaimsSet;
 
   return await signedFetch(`${testHarnessExecuteUrl}start`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ aud, client_id: clientId, iss }),
+    body: JSON.stringify(body),
   });
 };
+
 export const createSession = async (
-  privateApi: string,
-  payload: unknown
-): Promise<Response> => {
-  const sessionApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
-  const sessionResponse = await fetch(sessionApiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Forwarded-For": "localhost",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  return sessionResponse;
-};
-
-export const createMultipleNamesSession = async (
   privateApi: string,
   payload: unknown
 ): Promise<Response> => {
@@ -141,9 +102,10 @@ export const authorizationEndpoint = async (
     state: state,
     scope: "openid",
   };
-  const queryString = new URLSearchParams(queryParams);
 
+  const queryString = new URLSearchParams(queryParams);
   const authApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/authorization?${queryString}`;
+
   const authResponse = await fetch(authApiUrl, {
     method: "GET",
     headers: {

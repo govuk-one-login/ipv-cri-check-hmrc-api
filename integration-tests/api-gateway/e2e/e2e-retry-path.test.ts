@@ -1,104 +1,94 @@
-import { getSSMParameter } from "../../resources/ssm-param-helper";
-import {
-  Payload,
-  getJarAuthorizationPayload,
-} from "../crypto/create-jar-request-payload";
+import { getSSMParameters } from "../../resources/ssm-param-helper";
 import {
   NINO,
-  CLIENT_ID,
   getClaimSet,
-  CLIENT_URL,
   environment,
+  testResourcesStack,
 } from "../env-variables";
 import { buildPrivateKeyJwtParams } from "../crypto/client";
-import { JWK, decodeJwt } from "jose";
+import { decodeJwt, JWK } from "jose";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
 } from "../../resources/dynamodb-helper";
 import { stackOutputs } from "../../resources/cloudformation-helper";
-import { createSession } from "../endpoints";
+import { createSession, getJarAuthorization } from "../endpoints";
 
-let sessionData: any;
+let sessionData: Response;
 let state: string;
-let authCode: any;
-let privateAPI: string;
-let publicAPI: string;
-let preOutput: Partial<{
-  PrivateApiGatewayId: string;
-  PublicApiGatewayId: string;
-}>;
-jest.setTimeout(30000);
+let authCode: { value: string };
+let privateApi: string;
+let publicApi: string;
 
-const createUpdatedClaimset = async (): Promise<any> => {
-  const updatedClaimset = await getClaimSet();
-  updatedClaimset.shared_claims.name[0].nameParts[0].value = "Error";
-  updatedClaimset.shared_claims.name[0].nameParts[1].value = "NoCidForNino";
-  updatedClaimset.evidence_requested = {
-    scoringPolicy: "gpg45",
-    strengthScore: 2,
-  };
-  return updatedClaimset;
-};
+jest.setTimeout(30_000);
 
 describe("Retry Scenario Path Tests", () => {
   let sessionId: string;
-  let publicEncryptionKeyBase64: string;
-  let privateSigningKey: JWK;
-  let personIDTableName: string;
-  let sessionTableName: string;
-  let audience: string;
+  let audience: string | undefined;
+  let redirectUri: string | undefined;
+  let privateSigningKey: JWK | undefined;
+  let testHarnessExecuteUrl: string;
+
   let output: Partial<{
     CommonStackName: string;
     StackName: string;
     PrivateApiGatewayId: string;
+    PublicApiGatewayId: string;
     NinoUsersTable: string;
     UserAttemptsTable: string;
   }>;
 
+  const clientId = "ipv-core-stub-aws-headless";
+  let commonStack: string;
+
   beforeAll(async () => {
-    audience = (await getClaimSet()).aud;
     output = await stackOutputs(process.env.STACK_NAME);
-    publicEncryptionKeyBase64 =
-      (await getSSMParameter(
-        "/check-hmrc-cri-api/test/publicEncryptionKeyBase64"
-      )) || "";
-    privateSigningKey = JSON.parse(
-      (await getSSMParameter("/check-hmrc-cri-api/test/privateSigningKey")) ||
-        ""
+    commonStack = `${output.CommonStackName}`;
+    privateApi = `${output.PrivateApiGatewayId}`;
+    publicApi = `${output.PublicApiGatewayId}`;
+
+    let privateSigningKeyValue: string | undefined;
+    [audience, redirectUri, privateSigningKeyValue] = await getSSMParameters(
+      `/${commonStack}/clients/${clientId}/jwtAuthentication/audience`,
+      `/${commonStack}/clients/${clientId}/jwtAuthentication/redirectUri`,
+      `/${testResourcesStack}/${clientId}/privateSigningKey`
     );
+
+    privateSigningKey = JSON.parse(privateSigningKeyValue as string);
+
+    ({ TestHarnessExecuteUrl: testHarnessExecuteUrl } =
+      await stackOutputs(testResourcesStack));
+    process.env.CLIENTID = clientId;
+    process.env.CLIENT_URL = testHarnessExecuteUrl.replace(/\/callback$/, "");
   });
 
   beforeEach(async () => {
-    const claimsSet = await createUpdatedClaimset();
-    const audience = claimsSet.aud;
-    const payload = {
-      clientId: CLIENT_ID,
-      audience,
-      authorizationEndpoint: `${audience}/oauth2/authorize`,
-      redirectUrl: `${CLIENT_URL}/callback`,
-      publicEncryptionKeyBase64: publicEncryptionKeyBase64,
-      privateSigningKey: privateSigningKey,
-      issuer: CLIENT_URL,
-      claimSet: claimsSet,
-    } as unknown as Payload;
-    const ipvCoreAuthorizationUrl = await getJarAuthorizationPayload(payload);
-    preOutput = await stackOutputs(process.env.STACK_NAME);
-    privateAPI = `${preOutput.PrivateApiGatewayId}`;
-    publicAPI = `${preOutput.PublicApiGatewayId}`;
-    sessionData = await createSession(privateAPI, ipvCoreAuthorizationUrl);
+    const payload = await getClaimSet(audience);
+    payload.shared_claims.name[0].nameParts[0].value = "Error";
+    payload.shared_claims.name[0].nameParts[1].value = "NoCidForNino";
+    payload.evidence_requested = {
+      scoringPolicy: "gpg45",
+      strengthScore: 2,
+    };
+    const data = await getJarAuthorization({
+      claimsOverride: payload.shared_claims,
+      evidence_requested: payload.evidence_requested,
+    });
+    const request = await data.json();
+    sessionData = await createSession(privateApi, request);
     const session = await sessionData.json();
+    state = session.state;
     sessionId = session.session_id;
+
+    expect(sessionData.status).toEqual(201);
   });
 
   afterEach(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
-    personIDTableName = `person-identity-${output.CommonStackName}`;
-    sessionTableName = `session-${output.CommonStackName}`;
 
     await clearItemsFromTables(
       {
-        tableName: personIDTableName,
+        tableName: `person-identity-${commonStack}`,
         items: { sessionId: sessionId },
       },
       {
@@ -106,7 +96,7 @@ describe("Retry Scenario Path Tests", () => {
         items: { sessionId: sessionId },
       },
       {
-        tableName: sessionTableName,
+        tableName: `session-${commonStack}`,
         items: { sessionId: sessionId },
       }
     );
@@ -114,9 +104,7 @@ describe("Retry Scenario Path Tests", () => {
   });
 
   it("Should generate a CI when failing the nino check", async () => {
-    expect(sessionData.status).toEqual(201);
-    state = sessionData.state;
-    const checkApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
+    const checkApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
     const jsonData = JSON.stringify({ nino: NINO });
 
     const checkRetryResponse = await fetch(checkApiUrl, {
@@ -130,6 +118,7 @@ describe("Retry Scenario Path Tests", () => {
 
     const checkData = checkRetryResponse.status;
     const checkBody = JSON.parse(await checkRetryResponse.text());
+
     expect(checkData).toEqual(200);
     expect(checkBody).toStrictEqual({
       requestRetry: true,
@@ -144,20 +133,21 @@ describe("Retry Scenario Path Tests", () => {
       body: jsonData,
     });
     const checkResponseBody = JSON.parse(await checkResponse.text());
+
     expect(checkResponse.status).toEqual(200);
     expect(checkResponseBody).toStrictEqual({
       requestRetry: false,
     });
 
     const queryString = new URLSearchParams({
-      client_id: CLIENT_ID,
-      redirect_uri: `${CLIENT_URL}/callback`,
+      client_id: clientId,
+      redirect_uri: redirectUri as string,
       response_type: "code",
       state: state,
       scope: "openid",
     });
 
-    const authApiUrl = `https://${privateAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/authorization?${queryString}`;
+    const authApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/authorization?${queryString}`;
     const authResponse = await fetch(authApiUrl, {
       method: "GET",
       headers: {
@@ -173,17 +163,17 @@ describe("Retry Scenario Path Tests", () => {
     const tokenData = await buildPrivateKeyJwtParams(
       authCode.value,
       {
-        iss: CLIENT_ID,
-        sub: CLIENT_ID,
+        iss: clientId,
+        sub: clientId,
         aud: audience,
         exp: 41024444800,
         jti: "47e86fa9-3966-49ac-96ab-5fd2a31e9e56",
-        redirect_uri: `${CLIENT_URL}/callback`,
+        redirect_uri: redirectUri,
       },
-      privateSigningKey
+      privateSigningKey as JWK
     );
 
-    const tokenApiURL = `https://${publicAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/token`;
+    const tokenApiURL = `https://${publicApi}.execute-api.eu-west-2.amazonaws.com/${environment}/token`;
     const tokenResponse = await fetch(tokenApiURL, {
       method: "POST",
       headers: {
@@ -195,7 +185,7 @@ describe("Retry Scenario Path Tests", () => {
     expect(tokenResponse.status).toEqual(200);
     const accessToken = token.access_token;
 
-    const credIssApiURL = `https://${publicAPI}.execute-api.eu-west-2.amazonaws.com/${environment}/credential/issue`;
+    const credIssApiURL = `https://${publicApi}.execute-api.eu-west-2.amazonaws.com/${environment}/credential/issue`;
     const credIssResponse = await fetch(credIssApiURL, {
       method: "POST",
       headers: {

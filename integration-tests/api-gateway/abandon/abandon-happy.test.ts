@@ -8,18 +8,17 @@ import {
   abandonEndpoint,
   authorizationEndpoint,
   checkEndpoint,
-  createPayload,
   createSession,
+  getJarAuthorization,
 } from "../endpoints";
 import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
 
-jest.setTimeout(30000);
+jest.setTimeout(30_000);
 
 describe("Given the session is valid and expecting to abandon the journey", () => {
   let sessionId: string;
   let sessionTableName: string;
   let state: string;
-  let personIDTableName: string;
   let output: Partial<{
     CommonStackName: string;
     StackName: string;
@@ -28,12 +27,19 @@ describe("Given the session is valid and expecting to abandon the journey", () =
     PrivateApiGatewayId: string;
   }>;
 
-  beforeEach(async () => {
+  let commonStack: string;
+
+  beforeAll(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
-    sessionTableName = `session-${output.CommonStackName}`;
-    const payload = await createPayload();
+    commonStack = `${output.CommonStackName}`;
+    sessionTableName = `session-${commonStack}`;
+  });
+
+  beforeEach(async () => {
+    const data = await getJarAuthorization();
+    const request = await data.json();
     const privateApi = `${output.PrivateApiGatewayId}`;
-    const session = await createSession(privateApi, payload);
+    const session = await createSession(privateApi, request);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
     state = sessionData.state;
@@ -48,13 +54,9 @@ describe("Given the session is valid and expecting to abandon the journey", () =
   });
 
   afterEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    personIDTableName = `person-identity-${output.CommonStackName}`;
-    sessionTableName = `session-${output.CommonStackName}`;
-
     await clearItemsFromTables(
       {
-        tableName: personIDTableName,
+        tableName: `person-identity-${commonStack}`,
         items: { sessionId: sessionId },
       },
       {
