@@ -1,81 +1,64 @@
-import { getSSMParameter } from "../resources/ssm-param-helper";
-import {
-  Payload,
-  getJarAuthorizationPayload,
-} from "./crypto/create-jar-request-payload";
-import {
-  getClaimSet,
-  CLIENT_ID,
-  CLIENT_URL,
-  environment,
-} from "./env-variables";
+import { environment } from "./env-variables";
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { signedFetch } from "../resources/fetch";
 
-let publicEncryptionKeyBase64: string;
-let privateSigningKey: any;
-
-type Name = {
-  name: {
-    nameParts: {
-      type: string;
-      value: string;
-    }[];
-  }[];
-};
-
-export const createPayload = async (sharedClaimsUpdate?: Name) => {
-  publicEncryptionKeyBase64 =
-    (await getSSMParameter(
-      "/check-hmrc-cri-api/test/publicEncryptionKeyBase64"
-    )) || "";
-  privateSigningKey = JSON.parse(
-    (await getSSMParameter("/check-hmrc-cri-api/test/privateSigningKey")) || ""
-  );
-
-  const correctClaimSet = await getClaimSet();
-  const updateClaimset = {
-    ...correctClaimSet,
-    ...sharedClaimsUpdate,
-    name: sharedClaimsUpdate?.name || correctClaimSet.shared_claims.name,
-  };
-  const audience = correctClaimSet.aud;
-  const payload = {
-    clientId: CLIENT_ID,
-    audience,
-    authorizationEndpoint: `${audience}/oauth2/authorize`,
-    redirectUrl: `${CLIENT_URL}/callback`,
-    publicEncryptionKeyBase64: publicEncryptionKeyBase64,
-    privateSigningKey: privateSigningKey,
-    issuer: CLIENT_URL,
-    claimSet: updateClaimset,
-  } as unknown as Payload;
-  const ipvCoreAuthorizationUrl = await getJarAuthorizationPayload(payload);
-  return ipvCoreAuthorizationUrl;
+export type JWTClaimsSet = {
+  iss: string;
+  sub: string;
+  aud: string;
+  iat: number;
+  exp: number;
+  nbf: number;
+  response_type: string;
+  client_id: string;
+  redirect_uri: string;
+  state: string;
+  govuk_signin_journey_id: string;
+  shared_claims?: undefined;
+  evidence_requested?: undefined;
+  context?: string;
 };
 
 export const getJarAuthorization = async (
-  clientId: string,
+  clientId?: string,
   aud?: string,
   iss?: string,
-  claimsOverride?: unknown
+  claimsOverride?: unknown,
+  evidence_requested?: unknown
 ) => {
   const { TestHarnessExecuteUrl: testHarnessExecuteUrl } =
     await stackOutputs("test-resources");
-
+  const body = {
+    aud,
+    client_id: clientId,
+    iss,
+    shared_claims: claimsOverride,
+    evidence_requested,
+  } as JWTClaimsSet;
   return await signedFetch(`${testHarnessExecuteUrl}start`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      aud,
-      client_id: clientId,
-      iss,
-      shared_claims: claimsOverride,
-    }),
+    body: JSON.stringify(body),
   });
 };
+export const doCallback = async (code: string) => {
+  const { TestHarnessExecuteUrl: testHarnessExecuteUrl } = await stackOutputs(
+    "olakunle-test-resources"
+  );
+
+  console.log("code", code);
+  const callBackUrl = `${testHarnessExecuteUrl}callback?code=${encodeURIComponent(
+    code
+  )}`;
+
+  console.log("callBackUrl", callBackUrl);
+  return await fetch(callBackUrl, {
+    method: "GET",
+  });
+};
+
 export const createSession = async (
   privateApi: string,
   payload: unknown
