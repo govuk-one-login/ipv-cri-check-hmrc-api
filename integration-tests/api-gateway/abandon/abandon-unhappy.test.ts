@@ -3,11 +3,13 @@ import {
   clearAttemptsTable,
   clearItemsFromTables,
 } from "../../resources/dynamodb-helper";
+import { getSSMParameters } from "../../resources/ssm-param-helper";
 import {
   abandonEndpoint,
   authorizationEndpoint,
   checkEndpoint,
   createSession,
+  getJarAuthorization,
 } from "../endpoints";
 import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
 
@@ -23,18 +25,35 @@ describe("Given the session is invalid and expecting to abandon the journey", ()
     StackName: string;
     NinoUsersTable: string;
     UserAttemptsTable: string;
+    PrivateApiGatewayId: string;
   }>;
+  let audience: string | undefined;
+  let issuer: string | undefined;
 
-  beforeEach(async () => {
+  const clientId = "ipv-core-stub-aws-headless";
+
+  beforeAll(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
+    const commonStack = output.CommonStackName;
     sessionTableName = `session-${output.CommonStackName}`;
 
-    const session = await createSession();
+    [audience, issuer] = await getSSMParameters(
+      `/${commonStack}/clients/${clientId}/jwtAuthentication/audience`,
+      `/${commonStack}/clients/${clientId}/jwtAuthentication/issuer`
+    );
+  });
+
+  beforeEach(async () => {
+    const data = await getJarAuthorization(clientId, audience, issuer);
+    const request = await data.json();
+    const privateApi = `${output.PrivateApiGatewayId}`;
+    const session = await createSession(privateApi, request);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
     state = sessionData.state;
-    await checkEndpoint({ "session-id": sessionId }, NINO);
+    await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
     await authorizationEndpoint(
+      privateApi,
       sessionId,
       CLIENT_ID,
       `${CLIENT_URL}/callback`,
@@ -64,15 +83,21 @@ describe("Given the session is invalid and expecting to abandon the journey", ()
     await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
   });
 
-    it("Should receive a 400 response when /abandon endpoint is called with invalid session id", async () => {
-      const abandonResponse = await abandonEndpoint({
-          "session-id": "test"
-          });
-      expect(abandonResponse.status).toEqual(400);
-    });
+  it("Should receive a 400 response when /abandon endpoint is called with invalid session id", async () => {
+    const abandonResponse = await abandonEndpoint(
+      `${output.PrivateApiGatewayId}`,
+      {
+        "session-id": "test",
+      }
+    );
+    expect(abandonResponse.status).toEqual(400);
+  });
 
-    it("Should receive a 400 response when /abandon endpoint is called with no session id", async () => {
-      const abandonResponse = await abandonEndpoint({});
-      expect(abandonResponse.status).toEqual(400);
-    });
+  it("Should receive a 400 response when /abandon endpoint is called with no session id", async () => {
+    const abandonResponse = await abandonEndpoint(
+      `${output.PrivateApiGatewayId}`,
+      {}
+    );
+    expect(abandonResponse.status).toEqual(400);
+  });
 });

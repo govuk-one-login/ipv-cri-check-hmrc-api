@@ -4,41 +4,66 @@ import {
   clearItemsFromTables,
   getItemByKey,
 } from "../../resources/dynamodb-helper";
+import { getSSMParameters } from "../../resources/ssm-param-helper";
 import {
   authorizationEndpoint,
   checkEndpoint,
   createSession,
+  getJarAuthorization,
 } from "../endpoints";
-import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
+import { NINO } from "../env-variables";
 
 jest.setTimeout(30000);
 
 describe("Given the session is valid and expecting to be authorized", () => {
-  let authCode: any;
+  let authCode: { value: string };
   let sessionId: string;
   let state: string;
   let personIDTableName: string;
+  let privateApi: string;
+  let audience: string | undefined;
+  let issuer: string | undefined;
+  let redirectUri: string | undefined;
+
   let output: Partial<{
     CommonStackName: string;
     StackName: string;
     NinoUsersTable: string;
     UserAttemptsTable: string;
+    PrivateApiGatewayId: string;
   }>;
+
   let sessionTableName: string;
+
+  const clientId = "ipv-core-stub-aws-headless";
 
   beforeAll(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
+    const commonStack = output.CommonStackName;
     sessionTableName = `session-${output.CommonStackName}`;
 
-    const session = await createSession();
+    privateApi = `${output.PrivateApiGatewayId}`;
+
+    [audience, issuer, redirectUri] = await getSSMParameters(
+      `/${commonStack}/clients/${clientId}/jwtAuthentication/audience`,
+      `/${commonStack}/clients/${clientId}/jwtAuthentication/issuer`,
+      `/${commonStack}/clients/${clientId}/jwtAuthentication/redirectUri`
+    );
+  });
+
+  beforeEach(async () => {
+    const data = await getJarAuthorization(clientId, audience, issuer);
+    const request = await data.json();
+    const session = await createSession(privateApi, request);
     const sessionData = await session.json();
+
     sessionId = sessionData.session_id;
     state = sessionData.state;
-    await checkEndpoint({ "session-id": sessionId }, NINO);
+
+    await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
   });
 
   afterEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
     personIDTableName = `person-identity-${output.CommonStackName}`;
     sessionTableName = `session-${output.CommonStackName}`;
     await clearItemsFromTables(
@@ -60,11 +85,13 @@ describe("Given the session is valid and expecting to be authorized", () => {
 
   it("Should return an authorizationCode when /authorization endpoint is called", async () => {
     const authResponse = await authorizationEndpoint(
+      privateApi,
       sessionId,
-      CLIENT_ID,
-      `${CLIENT_URL}/callback`,
+      clientId,
+      redirectUri as string,
       state
     );
+
     const authData = await authResponse.json();
     authCode = authData.authorizationCode;
 
