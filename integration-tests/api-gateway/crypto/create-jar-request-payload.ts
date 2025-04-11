@@ -1,5 +1,4 @@
 import { JWTPayload } from "jose";
-import { buildJarAuthorizationRequest } from "./client";
 
 export type PrivateSigningKey = {
   kty: string;
@@ -21,13 +20,4 @@ export type Payload = {
   privateSigningKey: PrivateSigningKey;
   issuer: string;
   claimSet: JWTPayload;
-};
-
-export const getJarAuthorizationPayload = async (payload: Payload) => {
-  try {
-    return await buildJarAuthorizationRequest(payload);
-  } catch (error) {
-    console.error("Error building Jar Authorization Request:", error);
-    return null;
-  }
 };
