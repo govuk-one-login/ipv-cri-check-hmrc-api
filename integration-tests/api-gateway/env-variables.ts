@@ -3,7 +3,7 @@ export type EvidenceRequest = {
   strengthScore: number;
 };
 
-export const CLIENT_ID = process.env.CLIENTID ?? "ipv-core-stub-aws-prod";
+export const CLIENT_ID = process.env.CLIENTID ?? "ipv-core-stub-aws-headless";
 export const CLIENT_URL =
   process.env.CLIENT_URL ?? "https://cri.core.stubs.account.gov.uk";
 export const NINO = "AA123456C";

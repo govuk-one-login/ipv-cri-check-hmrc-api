@@ -1,36 +1,21 @@
 import { environment, testResourcesStack } from "./env-variables";
 import { stackOutputs } from "../resources/cloudformation-helper";
 import { signedFetch } from "../resources/fetch";
+import { JWTClaimsSet } from "./types";
 
-export type JWTClaimsSet = {
-  iss: string;
-  sub: string;
-  aud: string;
-  iat: number;
-  exp: number;
-  nbf: number;
-  response_type: string;
-  client_id: string;
-  redirect_uri: string;
-  state: string;
-  govuk_signin_journey_id: string;
-  shared_claims?: undefined;
-  evidence_requested?: undefined;
-  context?: string;
-};
 type JarAuthorizationOptions = {
   clientId?: string;
   aud?: string;
   iss?: string;
   claimsOverride?: unknown;
-  evidence_requested?: unknown;
+  evidenceRequested?: unknown;
 };
 export const getJarAuthorization = async ({
   clientId,
   aud,
   iss,
   claimsOverride,
-  evidence_requested,
+  evidenceRequested,
 }: JarAuthorizationOptions = {}) => {
   const { TestHarnessExecuteUrl: testHarnessExecuteUrl } =
     await stackOutputs(testResourcesStack);
@@ -40,7 +25,7 @@ export const getJarAuthorization = async ({
     client_id: clientId,
     iss,
     shared_claims: claimsOverride,
-    evidence_requested,
+    evidence_requested: evidenceRequested,
   } as JWTClaimsSet;
 
   return await signedFetch(`${testHarnessExecuteUrl}start`, {
@@ -91,13 +76,13 @@ export const checkEndpoint = async (
 export const authorizationEndpoint = async (
   privateApi: string,
   sessionId: string,
-  client_id: string,
-  redirect_uri: string,
+  clientId: string,
+  redirectUri: string,
   state: string
 ): Promise<Response> => {
   const queryParams = {
-    client_id: client_id,
-    redirect_uri: redirect_uri,
+    client_id: clientId,
+    redirect_uri: redirectUri,
     response_type: "code",
     state: state,
     scope: "openid",

@@ -1,6 +1,20 @@
 import { JWTPayload } from "jose";
-import { buildJarAuthorizationRequest } from "./client";
-
+export type JWTClaimsSet = {
+  iss: string;
+  sub: string;
+  aud: string;
+  iat: number;
+  exp: number;
+  nbf: number;
+  response_type: string;
+  client_id: string;
+  redirect_uri: string;
+  state: string;
+  govuk_signin_journey_id: string;
+  shared_claims?: undefined;
+  evidence_requested?: undefined;
+  context?: string;
+};
 export type PrivateSigningKey = {
   kty: string;
   d: string;
@@ -21,13 +35,4 @@ export type Payload = {
   privateSigningKey: PrivateSigningKey;
   issuer: string;
   claimSet: JWTPayload;
-};
-
-export const getJarAuthorizationPayload = async (payload: Payload) => {
-  try {
-    return await buildJarAuthorizationRequest(payload);
-  } catch (error) {
-    console.error("Error building Jar Authorization Request:", error);
-    return null;
-  }
 };

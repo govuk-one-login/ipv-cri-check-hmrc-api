@@ -86,7 +86,6 @@ describe("Given the session and NINO is valid", () => {
   });
 
   it("Should receive a 200 response when /check endpoint is called using multiple named user", async () => {
-    const privateApi = `${output.PrivateApiGatewayId}`;
     const multipleNamesSession = {
       name: [
         {
@@ -134,7 +133,7 @@ describe("Given the session and NINO is valid", () => {
     const sessionId = sessionData.session_id;
 
     const check = await checkEndpoint(
-      `${output.PrivateApiGatewayId}`,
+      privateApi,
       { "session-id": sessionId },
       NINO
     );
@@ -146,7 +145,7 @@ describe("Given the session and NINO is valid", () => {
   it("should 500 when provided with JS in the session header", async () => {
     const maliciousSessionId = `<script>alert('Attack!');</script>`;
     const check = await checkEndpoint(
-      `${output.PrivateApiGatewayId}`,
+      privateApi,
       {
         "session-id": maliciousSessionId,
         "txma-audit-encoded": "test encoded header",

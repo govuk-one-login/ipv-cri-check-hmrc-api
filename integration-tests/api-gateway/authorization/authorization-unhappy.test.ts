@@ -10,7 +10,7 @@ import {
   createSession,
   getJarAuthorization,
 } from "../endpoints";
-import { NINO } from "../env-variables";
+import { CLIENT_ID, NINO } from "../env-variables";
 
 jest.setTimeout(30_000);
 
@@ -28,8 +28,6 @@ describe("Given the session is invalid and expecting it not to be authorized", (
     PrivateApiGatewayId: string;
   }>;
 
-  const clientId = "ipv-core-stub-aws-headless";
-
   let commonStack: string;
   beforeAll(async () => {
     output = await stackOutputs(process.env.STACK_NAME);
@@ -38,7 +36,7 @@ describe("Given the session is invalid and expecting it not to be authorized", (
     privateApi = `${output.PrivateApiGatewayId}`;
 
     [redirectUri] = await getSSMParameters(
-      `/${commonStack}/clients/${clientId}/jwtAuthentication/redirectUri`
+      `/${commonStack}/clients/${CLIENT_ID}/jwtAuthentication/redirectUri`
     );
   });
 
@@ -74,7 +72,7 @@ describe("Given the session is invalid and expecting it not to be authorized", (
     const authResponse = await authorizationEndpoint(
       privateApi,
       "",
-      clientId,
+      CLIENT_ID,
       redirectUri as string,
       state
     );
@@ -100,7 +98,7 @@ describe("Given the session is invalid and expecting it not to be authorized", (
     const authResponse = await authorizationEndpoint(
       privateApi,
       sessionId,
-      clientId,
+      CLIENT_ID,
       "",
       state
     );
@@ -113,7 +111,7 @@ describe("Given the session is invalid and expecting it not to be authorized", (
     const authResponse = await authorizationEndpoint(
       privateApi,
       sessionId,
-      clientId,
+      CLIENT_ID,
       redirectUri as string,
       ""
     );

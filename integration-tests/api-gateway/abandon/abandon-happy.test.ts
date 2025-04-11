@@ -19,6 +19,8 @@ describe("Given the session is valid and expecting to abandon the journey", () =
   let sessionId: string;
   let sessionTableName: string;
   let state: string;
+  let privateApi: string;
+
   let output: Partial<{
     CommonStackName: string;
     StackName: string;
@@ -38,7 +40,7 @@ describe("Given the session is valid and expecting to abandon the journey", () =
   beforeEach(async () => {
     const data = await getJarAuthorization();
     const request = await data.json();
-    const privateApi = `${output.PrivateApiGatewayId}`;
+    privateApi = `${output.PrivateApiGatewayId}`;
     const session = await createSession(privateApi, request);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
@@ -72,7 +74,6 @@ describe("Given the session is valid and expecting to abandon the journey", () =
   });
 
   it("Should receive a 200 response when /abandon endpoint is called without optional headers", async () => {
-    const privateApi = `${output.PrivateApiGatewayId}`;
     const abandonResponse = await abandonEndpoint(privateApi, {
       "session-id": sessionId,
     });
@@ -88,7 +89,6 @@ describe("Given the session is valid and expecting to abandon the journey", () =
   });
 
   it("Should receive a 200 response when /abandon endpoint is called with optional headers", async () => {
-    const privateApi = `${output.PrivateApiGatewayId}`;
     const abandonResponse = await abandonEndpoint(privateApi, {
       "session-id": sessionId,
       "txma-audit-encoded": "test encoded header",

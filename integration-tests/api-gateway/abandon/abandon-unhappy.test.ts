@@ -17,6 +17,8 @@ jest.setTimeout(30_000);
 describe("Given the session is invalid and expecting to abandon the journey", () => {
   let sessionId: string;
   let state: string;
+  let privateApi: string;
+
   let output: Partial<{
     CommonStackName: string;
     StackName: string;
@@ -34,7 +36,7 @@ describe("Given the session is invalid and expecting to abandon the journey", ()
   beforeEach(async () => {
     const data = await getJarAuthorization();
     const request = await data.json();
-    const privateApi = `${output.PrivateApiGatewayId}`;
+    privateApi = `${output.PrivateApiGatewayId}`;
     const session = await createSession(privateApi, request);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
@@ -68,20 +70,14 @@ describe("Given the session is invalid and expecting to abandon the journey", ()
   });
 
   it("Should receive a 400 response when /abandon endpoint is called with invalid session id", async () => {
-    const abandonResponse = await abandonEndpoint(
-      `${output.PrivateApiGatewayId}`,
-      {
-        "session-id": "test",
-      }
-    );
+    const abandonResponse = await abandonEndpoint(privateApi, {
+      "session-id": "test",
+    });
     expect(abandonResponse.status).toEqual(400);
   });
 
   it("Should receive a 400 response when /abandon endpoint is called with no session id", async () => {
-    const abandonResponse = await abandonEndpoint(
-      `${output.PrivateApiGatewayId}`,
-      {}
-    );
+    const abandonResponse = await abandonEndpoint(privateApi, {});
     expect(abandonResponse.status).toEqual(400);
   });
 });

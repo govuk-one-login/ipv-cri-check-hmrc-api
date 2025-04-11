@@ -4,15 +4,21 @@ import {
   getClaimSet,
   environment,
   testResourcesStack,
+  CLIENT_ID,
 } from "../env-variables";
-import { buildPrivateKeyJwtParams } from "../crypto/client";
 import { decodeJwt, JWK } from "jose";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
 } from "../../resources/dynamodb-helper";
 import { stackOutputs } from "../../resources/cloudformation-helper";
-import { createSession, getJarAuthorization } from "../endpoints";
+import {
+  authorizationEndpoint,
+  checkEndpoint,
+  createSession,
+  getJarAuthorization,
+} from "../endpoints";
+import { generatePrivateJwtParams } from "../crypto/private-key-jwt-helper";
 
 let sessionData: Response;
 let state: string;
@@ -38,7 +44,6 @@ describe("Retry Scenario Path Tests", () => {
     UserAttemptsTable: string;
   }>;
 
-  const clientId = "ipv-core-stub-aws-headless";
   let commonStack: string;
 
   beforeAll(async () => {
@@ -49,16 +54,15 @@ describe("Retry Scenario Path Tests", () => {
 
     let privateSigningKeyValue: string | undefined;
     [audience, redirectUri, privateSigningKeyValue] = await getSSMParameters(
-      `/${commonStack}/clients/${clientId}/jwtAuthentication/audience`,
-      `/${commonStack}/clients/${clientId}/jwtAuthentication/redirectUri`,
-      `/${testResourcesStack}/${clientId}/privateSigningKey`
+      `/${commonStack}/clients/${CLIENT_ID}/jwtAuthentication/audience`,
+      `/${commonStack}/clients/${CLIENT_ID}/jwtAuthentication/redirectUri`,
+      `/${testResourcesStack}/${CLIENT_ID}/privateSigningKey`
     );
 
     privateSigningKey = JSON.parse(privateSigningKeyValue as string);
 
     ({ TestHarnessExecuteUrl: testHarnessExecuteUrl } =
       await stackOutputs(testResourcesStack));
-    process.env.CLIENTID = clientId;
     process.env.CLIENT_URL = testHarnessExecuteUrl.replace(/\/callback$/, "");
   });
 
@@ -72,7 +76,7 @@ describe("Retry Scenario Path Tests", () => {
     };
     const data = await getJarAuthorization({
       claimsOverride: payload.shared_claims,
-      evidence_requested: payload.evidence_requested,
+      evidenceRequested: payload.evidence_requested,
     });
     const request = await data.json();
     sessionData = await createSession(privateApi, request);
@@ -104,17 +108,11 @@ describe("Retry Scenario Path Tests", () => {
   });
 
   it("Should generate a CI when failing the nino check", async () => {
-    const checkApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
-    const jsonData = JSON.stringify({ nino: NINO });
-
-    const checkRetryResponse = await fetch(checkApiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "session-id": sessionId,
-      },
-      body: jsonData,
-    });
+    let checkRetryResponse = await checkEndpoint(
+      privateApi,
+      { "session-id": sessionId },
+      NINO
+    );
 
     const checkData = checkRetryResponse.status;
     const checkBody = JSON.parse(await checkRetryResponse.text());
@@ -124,53 +122,37 @@ describe("Retry Scenario Path Tests", () => {
       requestRetry: true,
     });
 
-    const checkResponse = await fetch(checkApiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "session-id": sessionId,
-      },
-      body: jsonData,
-    });
-    const checkResponseBody = JSON.parse(await checkResponse.text());
+    checkRetryResponse = await checkEndpoint(
+      privateApi,
+      { "session-id": sessionId },
+      NINO
+    );
 
-    expect(checkResponse.status).toEqual(200);
+    const checkResponseBody = JSON.parse(await checkRetryResponse.text());
+
+    expect(checkRetryResponse.status).toEqual(200);
     expect(checkResponseBody).toStrictEqual({
       requestRetry: false,
     });
 
-    const queryString = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: redirectUri as string,
-      response_type: "code",
-      state: state,
-      scope: "openid",
-    });
-
-    const authApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/authorization?${queryString}`;
-    const authResponse = await fetch(authApiUrl, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "session-id": sessionId,
-      },
-    });
+    const authResponse = await authorizationEndpoint(
+      privateApi,
+      sessionId,
+      CLIENT_ID,
+      redirectUri as string,
+      state
+    );
 
     const authData = await authResponse.json();
     expect(authResponse.status).toEqual(200);
-    authCode = authData.authorizationCode;
 
-    const tokenData = await buildPrivateKeyJwtParams(
+    authCode = authData.authorizationCode;
+    const tokenData = await generatePrivateJwtParams(
+      CLIENT_ID,
       authCode.value,
-      {
-        iss: clientId,
-        sub: clientId,
-        aud: audience,
-        exp: 41024444800,
-        jti: "47e86fa9-3966-49ac-96ab-5fd2a31e9e56",
-        redirect_uri: redirectUri,
-      },
-      privateSigningKey as JWK
+      `${redirectUri}`,
+      privateSigningKey as JWK,
+      `${audience}`
     );
 
     const tokenApiURL = `https://${publicApi}.execute-api.eu-west-2.amazonaws.com/${environment}/token`;
@@ -182,9 +164,10 @@ describe("Retry Scenario Path Tests", () => {
       body: tokenData,
     });
     const token = await tokenResponse.json();
-    expect(tokenResponse.status).toEqual(200);
-    const accessToken = token.access_token;
 
+    expect(tokenResponse.status).toEqual(200);
+
+    const accessToken = token.access_token;
     const credIssApiURL = `https://${publicApi}.execute-api.eu-west-2.amazonaws.com/${environment}/credential/issue`;
     const credIssResponse = await fetch(credIssApiURL, {
       method: "POST",
@@ -202,8 +185,15 @@ describe("Retry Scenario Path Tests", () => {
     const stringifyVc = JSON.stringify(decodedVc);
     const parseVc = JSON.parse(stringifyVc);
 
-    expect(parseVc.vc.evidence[0].validityScore).toBe(0);
-    expect(parseVc.vc.evidence[0].strengthScore).toBe(2);
-    expect(parseVc.vc.evidence[0].ci).toBeDefined();
+    expect(parseVc.vc.evidence).toEqual([
+      {
+        txn: "",
+        type: "IdentityCheck",
+        validityScore: 0,
+        strengthScore: 2,
+        failedCheckDetails: [{ checkMethod: "data" }],
+        ci: [expect.any(String)],
+      },
+    ]);
   });
 });

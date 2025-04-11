@@ -78,10 +78,9 @@ describe("Given the session and NINO is invalid", () => {
   });
 
   it("should 500 when provided with JS in the session header", async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
     const maliciousSessionId = `<script>alert('Attack!');</script>`;
     const check = await checkEndpoint(
-      `${output.PrivateApiGatewayId}`,
+      privateApi,
       {
         "session-id": maliciousSessionId,
         "txma-audit-encoded": "test encoded header",
