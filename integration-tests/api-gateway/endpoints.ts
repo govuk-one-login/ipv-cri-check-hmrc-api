@@ -28,7 +28,7 @@ export const getJarAuthorization = async ({
     evidence_requested: evidenceRequested,
   } as JWTClaimsSet;
 
-  return await signedFetch(`${testHarnessExecuteUrl}start`, {
+  return await signedFetch(new URL("start", testHarnessExecuteUrl).toString(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

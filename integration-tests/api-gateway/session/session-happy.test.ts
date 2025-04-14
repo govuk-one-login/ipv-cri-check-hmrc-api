@@ -10,6 +10,7 @@ describe("Given the session is valid", () => {
 
   let output: Partial<{
     CommonStackName: string;
+    PrivateApiGatewayId: string;
   }>;
 
   beforeAll(async () => {
@@ -20,12 +21,12 @@ describe("Given the session is valid", () => {
     const data = await getJarAuthorization();
     const request = await data.json();
 
-    const outputs = await stackOutputs(process.env.STACK_NAME);
-    const privateApi = `${outputs.PrivateApiGatewayId}`;
+    const privateApi = `${output.PrivateApiGatewayId}`;
 
     sessionResponse = await createSession(privateApi, request);
     jsonSession = await sessionResponse.json();
   });
+
   afterEach(async () => {
     await clearItemsFromTables(
       {

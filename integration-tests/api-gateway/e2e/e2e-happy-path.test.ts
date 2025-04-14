@@ -1,10 +1,12 @@
-import { getSSMParameters } from "../../resources/ssm-param-helper";
+import { getSSMParameter } from "../../resources/ssm-param-helper";
 import {
   NINO,
   getClaimSet,
   environment,
   testResourcesStack,
   CLIENT_ID,
+  REDIRECT_URL,
+  AUDIENCE,
 } from "../env-variables";
 import { decodeJwt, JWK } from "jose";
 import {
@@ -30,10 +32,7 @@ jest.setTimeout(30_000);
 describe("End to end happy path journey", () => {
   let state: string;
   let sessionId: string;
-  let audience: string | undefined;
-  let redirectUri: string | undefined;
   let privateSigningKey: JWK | undefined;
-  let testHarnessExecuteUrl: string;
 
   let output: Partial<{
     CommonStackName: string;
@@ -52,22 +51,15 @@ describe("End to end happy path journey", () => {
     privateApi = `${output.PrivateApiGatewayId}`;
     publicApi = `${output.PublicApiGatewayId}`;
 
-    let privateSigningKeyValue: string | undefined;
-    [audience, redirectUri, privateSigningKeyValue] = await getSSMParameters(
-      `/${commonStack}/clients/${CLIENT_ID}/jwtAuthentication/audience`,
-      `/${commonStack}/clients/${CLIENT_ID}/jwtAuthentication/redirectUri`,
-      `/${testResourcesStack}/${CLIENT_ID}/privateSigningKey`
+    privateSigningKey = JSON.parse(
+      `${await getSSMParameter(
+        `/${testResourcesStack}/${CLIENT_ID}/privateSigningKey`
+      )}`
     );
-
-    privateSigningKey = JSON.parse(privateSigningKeyValue as string);
-
-    ({ TestHarnessExecuteUrl: testHarnessExecuteUrl } =
-      await stackOutputs(testResourcesStack));
-    process.env.CLIENT_URL = testHarnessExecuteUrl.replace(/\/callback$/, "");
   });
 
   beforeEach(async () => {
-    const payload = await getClaimSet(audience);
+    const payload = await getClaimSet();
     payload.evidence_requested = {
       scoringPolicy: "gpg45",
       strengthScore: 2,
@@ -122,7 +114,7 @@ describe("End to end happy path journey", () => {
       privateApi,
       sessionId,
       CLIENT_ID,
-      redirectUri as string,
+      REDIRECT_URL,
       state
     );
 
@@ -133,9 +125,9 @@ describe("End to end happy path journey", () => {
     const tokenData = await generatePrivateJwtParams(
       CLIENT_ID,
       authCode.value,
-      `${redirectUri}`,
+      REDIRECT_URL,
       privateSigningKey as JWK,
-      `${audience}`
+      AUDIENCE
     );
 
     const tokenApiURL = `https://${publicApi}.execute-api.eu-west-2.amazonaws.com/${environment}/token`;

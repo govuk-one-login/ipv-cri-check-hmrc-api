@@ -11,14 +11,13 @@ import {
   createSession,
   getJarAuthorization,
 } from "../endpoints";
-import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
+import { CLIENT_ID, NINO, REDIRECT_URL } from "../env-variables";
 
 jest.setTimeout(30_000);
 
 describe("Given the session is valid and expecting to abandon the journey", () => {
   let sessionId: string;
   let sessionTableName: string;
-  let state: string;
   let privateApi: string;
 
   let output: Partial<{
@@ -44,14 +43,13 @@ describe("Given the session is valid and expecting to abandon the journey", () =
     const session = await createSession(privateApi, request);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
-    state = sessionData.state;
     await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
     await authorizationEndpoint(
       privateApi,
       sessionId,
       CLIENT_ID,
-      `${CLIENT_URL}/callback`,
-      state
+      REDIRECT_URL,
+      sessionData.state
     );
   });
 

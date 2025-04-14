@@ -7,7 +7,7 @@ import {
   clearAttemptsTable,
   clearItemsFromTables,
 } from "../../resources/dynamodb-helper";
-import { NINO } from "../env-variables";
+import { AUDIENCE, NINO } from "../env-variables";
 import { stackOutputs } from "../../resources/cloudformation-helper";
 
 jest.setTimeout(30_000);
@@ -16,7 +16,6 @@ describe("Given the session and NINO is valid", () => {
   let sessionId: string;
   let sessionData: { session_id: string };
   let privateApi: string;
-  let audience: string | undefined;
   let issuer: string | undefined;
   let output: Partial<{
     CommonStackName: string;
@@ -42,6 +41,7 @@ describe("Given the session and NINO is valid", () => {
     const session = await createSession(privateApi, request);
     sessionData = await session.json();
   });
+
   afterEach(async () => {
     await clearItemsFromTables(
       {
@@ -122,7 +122,7 @@ describe("Given the session and NINO is valid", () => {
     };
 
     const data = await getJarAuthorization({
-      aud: audience,
+      aud: AUDIENCE,
       iss: issuer,
       claimsOverride: multipleNamesSession,
     });

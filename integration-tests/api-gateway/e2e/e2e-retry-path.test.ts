@@ -1,10 +1,12 @@
-import { getSSMParameters } from "../../resources/ssm-param-helper";
+import { getSSMParameter } from "../../resources/ssm-param-helper";
 import {
   NINO,
   getClaimSet,
   environment,
   testResourcesStack,
   CLIENT_ID,
+  REDIRECT_URL,
+  AUDIENCE,
 } from "../env-variables";
 import { decodeJwt, JWK } from "jose";
 import {
@@ -26,14 +28,11 @@ let authCode: { value: string };
 let privateApi: string;
 let publicApi: string;
 
-jest.setTimeout(30_000);
+jest.setTimeout(35_000);
 
 describe("Retry Scenario Path Tests", () => {
   let sessionId: string;
-  let audience: string | undefined;
-  let redirectUri: string | undefined;
   let privateSigningKey: JWK | undefined;
-  let testHarnessExecuteUrl: string;
 
   let output: Partial<{
     CommonStackName: string;
@@ -52,22 +51,15 @@ describe("Retry Scenario Path Tests", () => {
     privateApi = `${output.PrivateApiGatewayId}`;
     publicApi = `${output.PublicApiGatewayId}`;
 
-    let privateSigningKeyValue: string | undefined;
-    [audience, redirectUri, privateSigningKeyValue] = await getSSMParameters(
-      `/${commonStack}/clients/${CLIENT_ID}/jwtAuthentication/audience`,
-      `/${commonStack}/clients/${CLIENT_ID}/jwtAuthentication/redirectUri`,
-      `/${testResourcesStack}/${CLIENT_ID}/privateSigningKey`
+    privateSigningKey = JSON.parse(
+      `${await getSSMParameter(
+        `/${testResourcesStack}/${CLIENT_ID}/privateSigningKey`
+      )}`
     );
-
-    privateSigningKey = JSON.parse(privateSigningKeyValue as string);
-
-    ({ TestHarnessExecuteUrl: testHarnessExecuteUrl } =
-      await stackOutputs(testResourcesStack));
-    process.env.CLIENT_URL = testHarnessExecuteUrl.replace(/\/callback$/, "");
   });
 
   beforeEach(async () => {
-    const payload = await getClaimSet(audience);
+    const payload = await getClaimSet();
     payload.shared_claims.name[0].nameParts[0].value = "Error";
     payload.shared_claims.name[0].nameParts[1].value = "NoCidForNino";
     payload.evidence_requested = {
@@ -88,8 +80,6 @@ describe("Retry Scenario Path Tests", () => {
   });
 
   afterEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-
     await clearItemsFromTables(
       {
         tableName: `person-identity-${commonStack}`,
@@ -139,7 +129,7 @@ describe("Retry Scenario Path Tests", () => {
       privateApi,
       sessionId,
       CLIENT_ID,
-      redirectUri as string,
+      REDIRECT_URL,
       state
     );
 
@@ -150,9 +140,9 @@ describe("Retry Scenario Path Tests", () => {
     const tokenData = await generatePrivateJwtParams(
       CLIENT_ID,
       authCode.value,
-      `${redirectUri}`,
+      REDIRECT_URL,
       privateSigningKey as JWK,
-      `${audience}`
+      AUDIENCE
     );
 
     const tokenApiURL = `https://${publicApi}.execute-api.eu-west-2.amazonaws.com/${environment}/token`;

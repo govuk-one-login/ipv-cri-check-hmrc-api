@@ -3,14 +3,13 @@ import {
   clearAttemptsTable,
   clearItemsFromTables,
 } from "../../resources/dynamodb-helper";
-import { getSSMParameters } from "../../resources/ssm-param-helper";
 import {
   authorizationEndpoint,
   checkEndpoint,
   createSession,
   getJarAuthorization,
 } from "../endpoints";
-import { CLIENT_ID, NINO } from "../env-variables";
+import { CLIENT_ID, NINO, REDIRECT_URL } from "../env-variables";
 
 jest.setTimeout(30_000);
 
@@ -18,7 +17,6 @@ describe("Given the session is invalid and expecting it not to be authorized", (
   let sessionId: string;
   let state: string;
   let privateApi: string;
-  let redirectUri: string | undefined;
 
   let output: Partial<{
     CommonStackName: string;
@@ -34,10 +32,6 @@ describe("Given the session is invalid and expecting it not to be authorized", (
     commonStack = `${output.CommonStackName}`;
 
     privateApi = `${output.PrivateApiGatewayId}`;
-
-    [redirectUri] = await getSSMParameters(
-      `/${commonStack}/clients/${CLIENT_ID}/jwtAuthentication/redirectUri`
-    );
   });
 
   beforeEach(async () => {
@@ -73,7 +67,7 @@ describe("Given the session is invalid and expecting it not to be authorized", (
       privateApi,
       "",
       CLIENT_ID,
-      redirectUri as string,
+      REDIRECT_URL,
       state
     );
     await authResponse.json();
@@ -86,7 +80,7 @@ describe("Given the session is invalid and expecting it not to be authorized", (
       privateApi,
       sessionId,
       "",
-      redirectUri as string,
+      REDIRECT_URL,
       state
     );
     await authResponse.json();
@@ -112,7 +106,7 @@ describe("Given the session is invalid and expecting it not to be authorized", (
       privateApi,
       sessionId,
       CLIENT_ID,
-      redirectUri as string,
+      REDIRECT_URL,
       ""
     );
     await authResponse.json();
