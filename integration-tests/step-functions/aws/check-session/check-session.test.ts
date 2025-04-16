@@ -1,4 +1,3 @@
-import { stackOutputs } from "../../../resources/cloudformation-helper";
 import { clearItems, populateTable } from "../../../resources/dynamodb-helper";
 import { executeStepFunction } from "../../../resources/stepfunction-helper";
 
@@ -25,16 +24,12 @@ describe("check-session", () => {
     persistentSessionId: "156714ef-f9df-48c2-ada8-540e7bce44f7",
   };
 
-  let output: Partial<{
-    CommonStackName: string;
-    CheckSessionStateMachineArn: string;
-  }>;
-
   let sessionTableName: string;
+  let checkSessionStateMachineArn: string;
 
   beforeEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    sessionTableName = `session-${output.CommonStackName}`;
+    sessionTableName = `${process.env.SESSION_TABLE}`;
+    checkSessionStateMachineArn = `${process.env.CHECK_SESSION_STATE_MACHINE_ARN}`;
   });
 
   afterEach(async () => {
@@ -47,7 +42,7 @@ describe("check-session", () => {
     await populateTable(sessionTableName, sessionItem);
 
     const startExecutionResult = await executeStepFunction(
-      output.CheckSessionStateMachineArn as string,
+      checkSessionStateMachineArn,
       input
     );
 
@@ -61,7 +56,7 @@ describe("check-session", () => {
     await populateTable(sessionTableName, sessionItem);
 
     const startExecutionResult = await executeStepFunction(
-      output.CheckSessionStateMachineArn as string,
+      checkSessionStateMachineArn,
       input
     );
 
@@ -70,7 +65,7 @@ describe("check-session", () => {
 
   it("should return SESSION_NOT_FOUND when sessionId does not exist", async () => {
     const startExecutionResult = await executeStepFunction(
-      output.CheckSessionStateMachineArn as string,
+      checkSessionStateMachineArn,
       input
     );
 
@@ -82,7 +77,7 @@ describe("check-session", () => {
     await populateTable(sessionTableName, sessionItem);
 
     const startExecutionResult = await executeStepFunction(
-      output.CheckSessionStateMachineArn as string,
+      checkSessionStateMachineArn,
       input
     );
 
@@ -91,7 +86,7 @@ describe("check-session", () => {
 
   it("should return SESSION_NOT_PROVIDED when sessionId is missing", async () => {
     const startExecutionResult = await executeStepFunction(
-      output.CheckSessionStateMachineArn as string
+      checkSessionStateMachineArn
     );
 
     expect(startExecutionResult.output).toBe(
