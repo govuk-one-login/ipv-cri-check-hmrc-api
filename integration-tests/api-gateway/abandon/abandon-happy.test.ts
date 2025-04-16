@@ -9,48 +9,54 @@ import {
   authorizationEndpoint,
   checkEndpoint,
   createSession,
+  getJarAuthorization,
 } from "../endpoints";
-import { CLIENT_ID, CLIENT_URL, NINO } from "../env-variables";
+import { CLIENT_ID, NINO, REDIRECT_URL } from "../env-variables";
 
-jest.setTimeout(30000);
+jest.setTimeout(30_000);
 
 describe("Given the session is valid and expecting to abandon the journey", () => {
   let sessionId: string;
   let sessionTableName: string;
-  let state: string;
-  let personIDTableName: string;
+  let privateApi: string;
+
   let output: Partial<{
     CommonStackName: string;
     StackName: string;
     NinoUsersTable: string;
     UserAttemptsTable: string;
+    PrivateApiGatewayId: string;
   }>;
 
-  beforeEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    sessionTableName = `session-${output.CommonStackName}`;
+  let commonStack: string;
 
-    const session = await createSession();
+  beforeAll(async () => {
+    output = await stackOutputs(process.env.STACK_NAME);
+    commonStack = `${output.CommonStackName}`;
+    sessionTableName = `session-${commonStack}`;
+  });
+
+  beforeEach(async () => {
+    const data = await getJarAuthorization();
+    const request = await data.json();
+    privateApi = `${output.PrivateApiGatewayId}`;
+    const session = await createSession(privateApi, request);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
-    state = sessionData.state;
-    await checkEndpoint({ "session-id": sessionId }, NINO);
+    await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
     await authorizationEndpoint(
+      privateApi,
       sessionId,
       CLIENT_ID,
-      `${CLIENT_URL}/callback`,
-      state
+      REDIRECT_URL,
+      sessionData.state
     );
   });
 
   afterEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    personIDTableName = `person-identity-${output.CommonStackName}`;
-    sessionTableName = `session-${output.CommonStackName}`;
-
     await clearItemsFromTables(
       {
-        tableName: personIDTableName,
+        tableName: `person-identity-${commonStack}`,
         items: { sessionId: sessionId },
       },
       {
@@ -66,7 +72,9 @@ describe("Given the session is valid and expecting to abandon the journey", () =
   });
 
   it("Should receive a 200 response when /abandon endpoint is called without optional headers", async () => {
-    const abandonResponse = await abandonEndpoint({ "session-id": sessionId });
+    const abandonResponse = await abandonEndpoint(privateApi, {
+      "session-id": sessionId,
+    });
     expect(abandonResponse.status).toEqual(200);
 
     const sessionRecord = await getItemByKey(sessionTableName, {
@@ -79,7 +87,7 @@ describe("Given the session is valid and expecting to abandon the journey", () =
   });
 
   it("Should receive a 200 response when /abandon endpoint is called with optional headers", async () => {
-    const abandonResponse = await abandonEndpoint({
+    const abandonResponse = await abandonEndpoint(privateApi, {
       "session-id": sessionId,
       "txma-audit-encoded": "test encoded header",
     });

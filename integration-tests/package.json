@@ -38,5 +38,9 @@
     "testcontainers": "10.23.0",
     "uuid": "8.3.2",
     "wait-on": "8.0.1"
+  },
+  "dependencies": {
+    "@aws-sdk/credential-providers": "3.787.0",
+    "aws-sigv4-fetch": "4.4.1"
   }
 }

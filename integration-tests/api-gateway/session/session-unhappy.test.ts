@@ -1,13 +1,13 @@
-import { createInvalidSession } from "../endpoints";
-
+import { stackOutputs } from "../../resources/cloudformation-helper";
+import { createSession } from "../endpoints";
+jest.setTimeout(35_000);
 describe("Given the session is invalid", () => {
-  let sessionId: string;
-
   it("Should receive a 400 response when /session endpoint is called with null request body", async () => {
-      const sessionResponse = await createInvalidSession();
-      const jsonSession = await sessionResponse.json();
-      sessionId = jsonSession.session_id;
+    const preOutput = await stackOutputs(process.env.STACK_NAME);
+    const privateApi = `${preOutput.PrivateApiGatewayId}`;
+    const anInValidSession = createSession(privateApi, null);
 
-      expect(sessionResponse.status).toEqual(400);
-    });
+    const sessionResponse = await anInValidSession;
+    expect(sessionResponse.status).toEqual(400);
+  });
 });
