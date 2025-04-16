@@ -1,4 +1,3 @@
-import { stackOutputs } from "../../resources/cloudformation-helper";
 import { executeStepFunction } from "../../resources/stepfunction-helper";
 import {
   clearItemsFromTables,
@@ -40,24 +39,28 @@ describe("Nino Hmrc Check Step Function", () => {
   let requestSentEventTestQueue: CreateQueueCommandOutput;
   let responseReceivedEventTestQueue: CreateQueueCommandOutput;
   let txMaAuditEventTestQueue: CreateQueueCommandOutput;
-
-  let output: Partial<{
-    CommonStackName: string;
-    UserAttemptsTable: string;
-    NinoUsersTable: string;
-    NinoCheckStateMachineArn: string;
-    AuditEventRequestSentRule: string;
-    AuditEventResponseReceivedRule: string;
-    AuditEventRequestSentRuleArn: string;
-    AuditEventResponseReceivedRuleArn: string;
-    TxMaAuditEventRule: string;
-    TxMaAuditEventRuleArn: string;
-  }>;
+  let userAttemptsTable: string;
+  let ninoUsersTable: string;
+  let ninoCheckStateMachineArn: string;
+  let auditEventRequestSentRule: string;
+  let auditEventResponseReceivedRule: string;
+  let auditEventRequestSentRuleArn: string;
+  let auditEventResponseReceivedRuleArn: string;
+  let txMaAuditEventRule: string;
+  let txMaAuditEventRuleArn: string;
 
   beforeEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    sessionTableName = `session-${output.CommonStackName}`;
-    personIdentityTableName = `person-identity-${output.CommonStackName}`;
+    personIdentityTableName = `${process.env.PERSON_IDENTITY_TABLE}`;
+    sessionTableName = `${process.env.SESSION_TABLE}`;
+    ninoUsersTable = `${process.env.NINO_USERS_TABLE}`;
+    userAttemptsTable = `${process.env.USERS_ATTEMPTS_TABLE}`;
+    txMaAuditEventRule = `${process.env.TXMA_AUDIT_EVENT_RULE_ENV}`;
+    txMaAuditEventRuleArn = `${process.env.TXMA_AUDIT_EVENT_RULE_ARN}`;
+    auditEventRequestSentRule = `${process.env.AUDIT_EVENT_REQUEST_SENT_RULE}`;
+    auditEventRequestSentRuleArn = `${process.env.AUDIT_EVENT_REQUEST_SENT_RULE_ARN}`;
+    auditEventResponseReceivedRule = `${process.env.AUDIT_EVENT_RESPONSE_RECEIVED_RULE}`;
+    auditEventResponseReceivedRuleArn = `${process.env.AUDIT_EVENT_RESPONSE_RECEIVED_RULE_ARN}`;
+    ninoCheckStateMachineArn = `${process.env.NINO_CHECK_STATE_MACHINE_ARN}`;
 
     await populateTables(
       {
@@ -96,28 +99,26 @@ describe("Nino Hmrc Check Step Function", () => {
       }
     );
 
-    [checkHmrcEventBus, requestSentRuleName] = (
-      output.AuditEventRequestSentRule as string
-    ).split("|");
-    [checkHmrcEventBus, responseReceivedRuleName] = (
-      output.AuditEventResponseReceivedRule as string
-    ).split("|");
+    [checkHmrcEventBus, requestSentRuleName] =
+      auditEventRequestSentRule.split("|");
+    [checkHmrcEventBus, responseReceivedRuleName] =
+      auditEventResponseReceivedRule.split("|");
     [checkHmrcEventBus, txMaAuditEventRuleName] = (
-      output.TxMaAuditEventRule as string
+      txMaAuditEventRule as string
     ).split("|");
 
     requestSentEventTestQueue = await setUpQueueAndAttachToRule(
-      output.AuditEventRequestSentRuleArn as string,
+      auditEventRequestSentRuleArn,
       requestSentRuleName,
       checkHmrcEventBus
     );
     responseReceivedEventTestQueue = await setUpQueueAndAttachToRule(
-      output.AuditEventResponseReceivedRuleArn as string,
+      auditEventResponseReceivedRuleArn,
       responseReceivedRuleName,
       checkHmrcEventBus
     );
     txMaAuditEventTestQueue = await setUpQueueAndAttachToRule(
-      output.TxMaAuditEventRuleArn as string,
+      txMaAuditEventRuleArn,
       txMaAuditEventRuleName,
       checkHmrcEventBus
     );
@@ -134,12 +135,12 @@ describe("Nino Hmrc Check Step Function", () => {
         items: { sessionId: input.sessionId },
       },
       {
-        tableName: output.NinoUsersTable as string,
+        tableName: ninoUsersTable as string,
         items: { sessionId: input.sessionId },
       }
     );
 
-    await clearAttemptsTable(input.sessionId, output.UserAttemptsTable);
+    await clearAttemptsTable(input.sessionId, userAttemptsTable);
 
     await clearItemsFromTables(
       {
@@ -151,12 +152,12 @@ describe("Nino Hmrc Check Step Function", () => {
         items: { sessionId: "check-happy-publish" },
       },
       {
-        tableName: output.NinoUsersTable as string,
+        tableName: ninoUsersTable,
         items: { sessionId: "check-happy-publish" },
       }
     );
 
-    await clearAttemptsTable("check-happy-publish", output.UserAttemptsTable);
+    await clearAttemptsTable("check-happy-publish", userAttemptsTable);
 
     await retry(async () => {
       await removeTargetFromRule(
@@ -199,7 +200,7 @@ describe("Nino Hmrc Check Step Function", () => {
 
   it("should publish REQUEST_SENT event to CheckHmrc EventBridge Bus successfully", async () => {
     const startExecutionResult = await executeStepFunction(
-      output.NinoCheckStateMachineArn as string,
+      ninoCheckStateMachineArn,
       input
     );
     const requestSentQueueMessage = await getQueueMessages(
@@ -219,7 +220,7 @@ describe("Nino Hmrc Check Step Function", () => {
   });
   it("should publish RESPONSE_RECEIVED event to CheckHmrc EventBridge Bus successfully", async () => {
     const startExecutionResult = await executeStepFunction(
-      output.NinoCheckStateMachineArn as string,
+      ninoCheckStateMachineArn,
       input
     );
 
@@ -243,7 +244,7 @@ describe("Nino Hmrc Check Step Function", () => {
   });
   it("should produce REQUEST_SENT and RESPONSE_RECEIVED Events structure expected for TxMA queue using target AuditEvent Step Function", async () => {
     const startExecutionResult = await executeStepFunction(
-      output.NinoCheckStateMachineArn as string,
+      ninoCheckStateMachineArn,
       input
     );
     const txMaAuditEventTestQueueMessage = await getQueueMessages(
