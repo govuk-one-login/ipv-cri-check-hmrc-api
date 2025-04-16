@@ -8,34 +8,21 @@ import {
   clearItemsFromTables,
 } from "../../resources/dynamodb-helper";
 import { NINO } from "../env-variables";
-import { stackOutputs } from "../../resources/cloudformation-helper";
 
 jest.setTimeout(30_000);
 
 describe("Given the session and NINO is invalid", () => {
   let sessionId: string;
   let privateApi: string;
+  let sessionTableName: string;
   let sessionData: { session_id: string };
-
-  let output: Partial<{
-    CommonStackName: string;
-    StackName: string;
-    NinoUsersTable: string;
-    UserAttemptsTable: string;
-    PrivateApiGatewayId: string;
-  }>;
-  let commonStack: string;
-
-  beforeAll(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    commonStack = `${output.CommonStackName}`;
-  });
 
   beforeEach(async () => {
     const data = await getJarAuthorization();
     const request = await data.json();
 
-    privateApi = `${output.PrivateApiGatewayId}`;
+    privateApi = `${process.env.PRIVATE_API}`;
+    sessionTableName = `${process.env.SESSION_TABLE}`;
     const session = await createSession(privateApi, request);
     sessionData = await session.json();
   });
@@ -43,19 +30,19 @@ describe("Given the session and NINO is invalid", () => {
   afterEach(async () => {
     await clearItemsFromTables(
       {
-        tableName: `person-identity-${commonStack}`,
+        tableName: `${process.env.PERSON_IDENTITY_TABLE}`,
         items: { sessionId: sessionId },
       },
       {
-        tableName: `${output.NinoUsersTable}`,
+        tableName: `${process.env.NINO_USERS_TABLE}`,
         items: { sessionId: sessionId },
       },
       {
-        tableName: `session-${commonStack}`,
+        tableName: sessionTableName,
         items: { sessionId: sessionId },
       }
     );
-    await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
+    await clearAttemptsTable(sessionId, `${process.env.USERS_ATTEMPTS_TABLE}`);
   });
 
   it("Should receive a 400 response when /check endpoint is called without session id value and optional header", async () => {
