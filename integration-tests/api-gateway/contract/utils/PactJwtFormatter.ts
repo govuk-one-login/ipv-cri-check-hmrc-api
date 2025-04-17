@@ -1,4 +1,5 @@
-import { base64url, decodeJwt, decodeProtectedHeader } from "jose";
+import { base64url, decodeJwt, decodeProtectedHeader, JWTPayload } from "jose";
+import { JWTClaimsSet } from "../../types";
 
 export const formatJwtForPactTest = (body: string) => {
   const decodedVc = decodeJwt(body);
@@ -8,15 +9,12 @@ export const formatJwtForPactTest = (body: string) => {
   const vcWithReplacedFields = replaceDynamicVcFieldsIfPresent(parseVc);
   const reorderedVc = reorderVc(vcWithReplacedFields);
 
-  return (
-    getJwtHeader(body) +
-    "." +
-    base64url.encode(JSON.stringify(reorderedVc)) +
-    "."
-  );
+  return `${getJwtHeader(body)}.${base64url.encode(
+    JSON.stringify(reorderedVc)
+  )}.`;
 };
 
-const replaceDynamicVcFieldsIfPresent = (parseVc: any) => {
+const replaceDynamicVcFieldsIfPresent = (parseVc: JWTClaimsSet) => {
   parseVc.nbf = parseVc.nbf == null ? parseVc.nbf : 4070908800;
   parseVc.iss = parseVc.iss == null ? parseVc.iss : "dummyNinoComponentId";
   parseVc.exp = parseVc.exp == null ? parseVc.exp : 4070909400;
@@ -24,7 +22,7 @@ const replaceDynamicVcFieldsIfPresent = (parseVc: any) => {
   return parseVc;
 };
 
-const reorderVc = (vc: any) => ({
+const reorderVc = (vc: JWTPayload) => ({
   sub: vc.sub,
   nbf: vc.nbf,
   iss: vc.iss,

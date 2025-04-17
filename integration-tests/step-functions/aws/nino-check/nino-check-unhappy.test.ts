@@ -1,4 +1,3 @@
-import { stackOutputs } from "../../../resources/cloudformation-helper";
 import { executeStepFunction } from "../../../resources/stepfunction-helper";
 import {
   clearAttemptsTable,
@@ -27,20 +26,20 @@ describe("nino-check-unhappy", () => {
     lastName: "Ferguson",
   };
 
-  let output: Partial<{
-    CommonStackName: string;
-    UserAttemptsTable: string;
-    NinoUsersTable: string;
-    NinoCheckStateMachineArn: string;
-  }>;
-
+  let userAttemptsTable: string;
+  let ninoUsersTable: string;
+  let ninoCheckStateMachineArn: string;
   let sessionTableName: string;
   let personIdentityTableName: string;
 
   beforeEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    sessionTableName = `session-${output.CommonStackName}`;
-    personIdentityTableName = `person-identity-${output.CommonStackName}`;
+    sessionTableName = `${process.env.SESSION_TABLE}`;
+    personIdentityTableName = `${process.env.PERSON_IDENTITY_TABLE}`;
+    userAttemptsTable = `${process.env.USERS_ATTEMPTS_TABLE}`;
+    ninoUsersTable = `${process.env.NINO_USERS_TABLE}`;
+    ninoCheckStateMachineArn = `${process.env.NINO_CHECK_STATE_MACHINE_ARN}`;
+    sessionTableName = `${process.env.SESSION_TABLE}`;
+    personIdentityTableName = `${process.env.PERSON_IDENTITY_TABLE}`;
 
     await populateTables(
       {
@@ -91,26 +90,26 @@ describe("nino-check-unhappy", () => {
         items: { sessionId: input.sessionId },
       },
       {
-        tableName: output.NinoUsersTable as string,
+        tableName: ninoUsersTable as string,
         items: { sessionId: input.sessionId },
       }
     );
-    await clearAttemptsTable(input.sessionId, output.UserAttemptsTable);
+    await clearAttemptsTable(input.sessionId, userAttemptsTable);
   });
 
   it("should fail when there is more than 2 nino check attempts", async () => {
-    await populateTable(output.UserAttemptsTable as string, {
+    await populateTable(userAttemptsTable, {
       sessionId: input.sessionId,
       timestamp: Date.now().toString(),
     });
 
-    await populateTable(output.UserAttemptsTable as string, {
+    await populateTable(userAttemptsTable, {
       sessionId: input.sessionId,
       timestamp: Date.now().toString(),
     });
 
     const startExecutionResult = await executeStepFunction(
-      output.NinoCheckStateMachineArn as string,
+      ninoCheckStateMachineArn,
       input
     );
 
@@ -126,7 +125,7 @@ describe("nino-check-unhappy", () => {
     });
 
     const startExecutionResult = await executeStepFunction(
-      output.NinoCheckStateMachineArn as string,
+      ninoCheckStateMachineArn,
       input
     );
 
@@ -139,7 +138,7 @@ describe("nino-check-unhappy", () => {
     });
 
     const startExecutionResult = await executeStepFunction(
-      output.NinoCheckStateMachineArn as string,
+      ninoCheckStateMachineArn,
       input
     );
 
@@ -184,7 +183,7 @@ describe("nino-check-unhappy", () => {
     });
 
     const startExecutionResult = await executeStepFunction(
-      output.NinoCheckStateMachineArn as string,
+      ninoCheckStateMachineArn,
       inputDeceased
     );
 
@@ -231,7 +230,7 @@ describe("nino-check-unhappy", () => {
     });
 
     const startExecutionResult = await executeStepFunction(
-      output.NinoCheckStateMachineArn as string,
+      ninoCheckStateMachineArn,
       inputNoCidNinoUser
     );
 
@@ -306,16 +305,16 @@ describe("nino-check-unhappy", () => {
           items: { sessionId: mockInput2.sessionId },
         },
         {
-          tableName: output.NinoUsersTable as string,
+          tableName: ninoUsersTable,
           items: { sessionId: mockInput2.sessionId },
         }
       );
-      await clearAttemptsTable(mockInput2.sessionId, output.UserAttemptsTable);
+      await clearAttemptsTable(mockInput2.sessionId, userAttemptsTable);
     });
 
     it("should throw an error when parameter for url is missing", async () => {
       const startExecutionResult = await executeStepFunction(
-        output.NinoCheckStateMachineArn as string,
+        ninoCheckStateMachineArn,
         mockInput2
       );
 
@@ -326,7 +325,7 @@ describe("nino-check-unhappy", () => {
       await updateSSMParameter(mockThirdPartyUrlSSM, "bad-url");
 
       const startExecutionResult = await executeStepFunction(
-        output.NinoCheckStateMachineArn as string,
+        ninoCheckStateMachineArn,
         mockInput2
       );
       expect(startExecutionResult.status).toEqual("FAILED");

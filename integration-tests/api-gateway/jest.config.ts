@@ -5,4 +5,5 @@ export default {
   ...baseConfig,
   projects: [],
   displayName: "integration-tests/api-gateway",
+  globalSetup: "../globalStackOutputSetup.ts",
 } satisfies Config;

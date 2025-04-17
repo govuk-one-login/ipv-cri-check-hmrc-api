@@ -1,4 +1,3 @@
-import { stackOutputs } from "../../../resources/cloudformation-helper";
 import {
   clearItems,
   getItemByKey,
@@ -12,30 +11,18 @@ describe("Abandon", () => {
     "txma-audit-encoded": "test encoded header",
   };
 
-  let output: Partial<{
-    CommonStackName: string;
-    AbandonStateMachineArn: string;
-    AuditEventAbandonedRule: string;
-    AuditEventAbandonedRuleArn: string;
-    TxMaAuditEventRule: string;
-    TxMaAuditEventRuleArn: string;
-  }>;
-
   let sessionTableName: string;
 
   it("should return a 400 when session does not exist", async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-
     const startExecutionResult = await executeStepFunction(
-      output.AbandonStateMachineArn as string,
+      `${process.env.ABANDON_STATE_MACHINE_ARN}`,
       input
     );
     expect(startExecutionResult.output).toBe('{"httpStatus":400}');
   });
   describe("step function execution", () => {
     beforeEach(async () => {
-      output = await stackOutputs(process.env.STACK_NAME);
-      sessionTableName = `session-${output.CommonStackName}`;
+      sessionTableName = `${process.env.SESSION_TABLE}`;
 
       await populateTable(sessionTableName, {
         sessionId: input.sessionId,
@@ -56,7 +43,7 @@ describe("Abandon", () => {
     });
     it("should remove the authorizationCode when session exists", async () => {
       const startExecutionResult = await executeStepFunction(
-        output.AbandonStateMachineArn as string,
+        `${process.env.ABANDON_STATE_MACHINE_ARN}`,
         input
       );
 

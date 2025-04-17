@@ -1,4 +1,3 @@
-import { stackOutputs } from "../../../resources/cloudformation-helper";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
@@ -10,13 +9,6 @@ type EvidenceRequest = {
   strengthScore: number;
 };
 
-type StackOutput = Partial<{
-  CommonStackName: string;
-  StackName: string;
-  NinoUsersTable: string;
-  UserAttemptsTable: string;
-}>;
-
 const testUser = {
   nino: "AA000003D",
   dob: "1965-07-08",
@@ -25,15 +17,12 @@ const testUser = {
 };
 
 export const populateDatabaseForContractTests = async () => {
-  const stackOutput: StackOutput = await stackOutputs(process.env.STACK_NAME);
-
   await ninoCheckPassedData(
     {
       sessionId: "contract-issue-credential-passed",
       nino: "AA000003D",
     },
-    "Bearer issue-credential-passed",
-    stackOutput
+    "Bearer issue-credential-passed"
   );
 
   await ninoCheckPassedData(
@@ -42,7 +31,6 @@ export const populateDatabaseForContractTests = async () => {
       nino: "AA000003D",
     },
     "Bearer issue-credential-identity-passed",
-    stackOutput,
     {
       scoringPolicy: "gpg45",
       strengthScore: 2,
@@ -54,8 +42,7 @@ export const populateDatabaseForContractTests = async () => {
       sessionId: "contract-issue-credential-failed",
       nino: "AA000003D",
     },
-    "Bearer issue-credential-failed",
-    stackOutput
+    "Bearer issue-credential-failed"
   );
 
   await ninoCheckFailedData(
@@ -64,7 +51,6 @@ export const populateDatabaseForContractTests = async () => {
       nino: "AA000003D",
     },
     "Bearer issue-credential-identity-failed",
-    stackOutput,
     {
       scoringPolicy: "gpg45",
       strengthScore: 2,
@@ -73,11 +59,10 @@ export const populateDatabaseForContractTests = async () => {
 };
 
 export const clearContractTestsFromDatabase = async () => {
-  const stackOutput: StackOutput = await stackOutputs(process.env.STACK_NAME);
-  await clearData("contract-issue-credential-passed", stackOutput);
-  await clearData("contract-issue-credential-identity-passed", stackOutput);
-  await clearData("contract-issue-credential-failed", stackOutput);
-  await clearData("contract-issue-credential-identity-failed", stackOutput);
+  await clearData("contract-issue-credential-passed");
+  await clearData("contract-issue-credential-identity-passed");
+  await clearData("contract-issue-credential-failed");
+  await clearData("contract-issue-credential-identity-failed");
 };
 
 const ninoCheckPassedData = async (
@@ -86,19 +71,18 @@ const ninoCheckPassedData = async (
     nino: string;
   },
   bearerToken: string,
-  stackOutput: StackOutput,
   evidenceRequested?: EvidenceRequest
 ) => {
   await populateTables(
     {
-      tableName: `${stackOutput.NinoUsersTable}`,
+      tableName: `${process.env.NINO_USERS_TABLE}`,
       items: {
         sessionId: input.sessionId,
         nino: input.nino,
       },
     },
     {
-      tableName: `person-identity-${stackOutput.CommonStackName}`,
+      tableName: `${process.env.PERSON_IDENTITY_TABLE}`,
       items: {
         sessionId: input.sessionId,
         nino: input.nino,
@@ -120,11 +104,11 @@ const ninoCheckPassedData = async (
       },
     },
     {
-      tableName: `session-${stackOutput.CommonStackName}`,
+      tableName: `${process.env.SESSION_TABLE}`,
       items: getSessionItem(input, bearerToken, evidenceRequested),
     },
     {
-      tableName: `${stackOutput.UserAttemptsTable}`,
+      tableName: `${process.env.USERS_ATTEMPTS_TABLE}`,
       items: {
         sessionId: input.sessionId,
         timestamp: Date.now().toString(),
@@ -141,19 +125,18 @@ const ninoCheckFailedData = async (
     nino: string;
   },
   bearerToken: string,
-  stackOutput: StackOutput,
   evidenceRequested?: EvidenceRequest
 ) => {
   await populateTables(
     {
-      tableName: `${stackOutput.NinoUsersTable}`,
+      tableName: `${process.env.NINO_USERS_TABLE}`,
       items: {
         sessionId: input.sessionId,
         nino: input.nino,
       },
     },
     {
-      tableName: `person-identity-${stackOutput.CommonStackName}`,
+      tableName: `${process.env.PERSON_IDENTITY_TABLE}`,
       items: {
         sessionId: input.sessionId,
         nino: input.nino,
@@ -175,11 +158,11 @@ const ninoCheckFailedData = async (
       },
     },
     {
-      tableName: `session-${stackOutput.CommonStackName}`,
+      tableName: `${process.env.SESSION_TABLE}`,
       items: getSessionItem(input, bearerToken, evidenceRequested),
     },
     {
-      tableName: `${stackOutput.UserAttemptsTable}`,
+      tableName: `${process.env.USERS_ATTEMPTS_TABLE}`,
       items: {
         sessionId: input.sessionId,
         timestamp: Date.now().toString() + 1,
@@ -189,7 +172,7 @@ const ninoCheckFailedData = async (
       },
     },
     {
-      tableName: `${stackOutput.UserAttemptsTable}`,
+      tableName: `${process.env.USERS_ATTEMPTS_TABLE}`,
       items: {
         sessionId: input.sessionId,
         timestamp: Date.now().toString(),
@@ -225,20 +208,20 @@ const getSessionItem = (
   txn: "dummyTxn",
 });
 
-const clearData = async (sessionId: string, stackOutput: StackOutput) => {
+const clearData = async (sessionId: string) => {
   await clearItemsFromTables(
     {
-      tableName: `session-${stackOutput.CommonStackName}`,
+      tableName: `${process.env.SESSION_TABLE}`,
       items: { sessionId },
     },
     {
-      tableName: `person-identity-${stackOutput.CommonStackName}`,
+      tableName: `${process.env.PERSON_IDENTITY_TABLE}`,
       items: { sessionId },
     },
     {
-      tableName: `${stackOutput.NinoUsersTable}`,
+      tableName: `${process.env.NINO_USERS_TABLE}`,
       items: { sessionId },
     }
   );
-  await clearAttemptsTable(sessionId, `${stackOutput.UserAttemptsTable}`);
+  await clearAttemptsTable(sessionId, `${process.env.USERS_ATTEMPTS_TABLE}`);
 };

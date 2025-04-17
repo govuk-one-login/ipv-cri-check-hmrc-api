@@ -6,6 +6,7 @@ export type JWTClaimsSet = {
   iat: number;
   exp: number;
   nbf: number;
+  jti: string;
   response_type: string;
   client_id: string;
   redirect_uri: string;

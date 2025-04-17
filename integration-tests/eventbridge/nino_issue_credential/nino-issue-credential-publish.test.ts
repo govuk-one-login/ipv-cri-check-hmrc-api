@@ -1,4 +1,3 @@
-import { stackOutputs } from "../../resources/cloudformation-helper";
 import { executeStepFunction } from "../../resources/stepfunction-helper";
 import {
   clearAttemptsTable,
@@ -33,19 +32,15 @@ describe("Nino Check Hmrc Issue Credential", () => {
   let vcIssuedEventTestQueue: CreateQueueCommandOutput;
   let endEventTestQueue: CreateQueueCommandOutput;
   let txMaAuditEventTestQueue: CreateQueueCommandOutput;
-
-  let output: Partial<{
-    CommonStackName: string;
-    UserAttemptsTable: string;
-    NinoUsersTable: string;
-    NinoIssueCredentialStateMachineArn: string;
-    AuditEventVcIssuedRule: string;
-    AuditEventEndRule: string;
-    AuditEventEndRuleArn: string;
-    AuditEventVcIssuedRuleArn: string;
-    TxMaAuditEventRule: string;
-    TxMaAuditEventRuleArn: string;
-  }>;
+  let userAttemptsTable: string;
+  let ninoUsersTable: string;
+  let ninoIssueCredentialStateMachineArn: string;
+  let auditEventVcIssuedRule: string;
+  let auditEventEndRule: string;
+  let auditEventEndRuleArn: string;
+  let auditEventVcIssuedRuleArn: string;
+  let txMaAuditEventRule: string;
+  let txMaAuditEventRuleArn: string;
 
   const testUser = {
     nino: "AA000003D",
@@ -55,14 +50,22 @@ describe("Nino Check Hmrc Issue Credential", () => {
   };
 
   beforeEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    personIdentityTableName = `person-identity-${output.CommonStackName}`;
-    sessionTableName = `session-${output.CommonStackName}`;
+    personIdentityTableName = `${process.env.PERSON_IDENTITY_TABLE}`;
+    sessionTableName = `${process.env.SESSION_TABLE}`;
+    ninoUsersTable = `${process.env.NINO_USERS_TABLE}`;
+    userAttemptsTable = `${process.env.USERS_ATTEMPTS_TABLE}`;
+    auditEventVcIssuedRule = `${process.env.AUDIT_EVENT_VC_ISSUED_RULE}`;
+    auditEventEndRule = `${process.env.AUDIT_EVENT_END_RULE}`;
+    txMaAuditEventRule = `${process.env.TXMA_AUDIT_EVENT_RULE_ENV}`;
+    txMaAuditEventRuleArn = `${process.env.TXMA_AUDIT_EVENT_RULE_ARN}`;
+    auditEventVcIssuedRuleArn = `${process.env.AUDIT_EVENT_VC_ISSUED_RULE_ARN}`;
+    auditEventEndRuleArn = `${process.env.AUDIT_EVENT_END_RULE_ARN}`;
+    ninoIssueCredentialStateMachineArn = `${process.env.NINO_CREDENTIAL_STATE_MACHINE_ARN}`;
 
     await Promise.all([
       populateTables(
         {
-          tableName: output.NinoUsersTable as string,
+          tableName: ninoUsersTable as string,
           items: {
             sessionId: "issue-credential-happy-publish",
             nino: "AA000003D",
@@ -103,7 +106,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
           ),
         },
         {
-          tableName: output.UserAttemptsTable as string,
+          tableName: userAttemptsTable as string,
           items: {
             sessionId: "issue-credential-happy-publish",
             timestamp: Date.now().toString() + 1,
@@ -113,7 +116,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
           },
         },
         {
-          tableName: output.UserAttemptsTable as string,
+          tableName: userAttemptsTable as string,
           items: {
             sessionId: "issue-credential-happy-publish",
             timestamp: Date.now().toString(),
@@ -124,27 +127,21 @@ describe("Nino Check Hmrc Issue Credential", () => {
         }
       ),
     ]);
-    [checkHmrcEventBus, vcIssuedRuleName] = (
-      output.AuditEventVcIssuedRule as string
-    ).split("|");
-    [checkHmrcEventBus, endEventRuleName] = (
-      output.AuditEventEndRule as string
-    ).split("|");
-    [checkHmrcEventBus, txMaAuditEventRuleName] = (
-      output.TxMaAuditEventRule as string
-    ).split("|");
+    [checkHmrcEventBus, vcIssuedRuleName] = auditEventVcIssuedRule.split("|");
+    [checkHmrcEventBus, endEventRuleName] = auditEventEndRule.split("|");
+    [checkHmrcEventBus, txMaAuditEventRuleName] = txMaAuditEventRule.split("|");
     vcIssuedEventTestQueue = await setUpQueueAndAttachToRule(
-      output.AuditEventVcIssuedRuleArn as string,
+      auditEventVcIssuedRuleArn,
       vcIssuedRuleName,
       checkHmrcEventBus
     );
     endEventTestQueue = await setUpQueueAndAttachToRule(
-      output.AuditEventEndRuleArn as string,
+      auditEventEndRuleArn,
       endEventRuleName,
       checkHmrcEventBus
     );
     txMaAuditEventTestQueue = await setUpQueueAndAttachToRule(
-      output.TxMaAuditEventRuleArn as string,
+      txMaAuditEventRuleArn,
       txMaAuditEventRuleName,
       checkHmrcEventBus
     );
@@ -161,14 +158,14 @@ describe("Nino Check Hmrc Issue Credential", () => {
         items: { sessionId: "issue-credential-happy-publish" },
       },
       {
-        tableName: output.NinoUsersTable as string,
+        tableName: ninoUsersTable,
         items: { sessionId: "issue-credential-happy-publish" },
       }
     );
 
     await clearAttemptsTable(
       "issue-credential-happy-publish",
-      output.UserAttemptsTable
+      userAttemptsTable
     );
 
     await removeTargetFromRule(targetId, checkHmrcEventBus, vcIssuedRuleName);
@@ -296,7 +293,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
   });
 
   const getExecutionResult = async (token: string) =>
-    executeStepFunction(output.NinoIssueCredentialStateMachineArn as string, {
+    executeStepFunction(ninoIssueCredentialStateMachineArn, {
       bearerToken: token,
     });
 
@@ -321,6 +318,6 @@ describe("Nino Check Hmrc Issue Credential", () => {
     clientSessionId: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
     persistentSessionId: "156714ef-f9df-48c2-ada8-540e7bce44f7",
     evidenceRequest,
-    txn: "mock-txn"
+    txn: "mock-txn",
   });
 });

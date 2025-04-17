@@ -13,7 +13,6 @@ import {
   clearAttemptsTable,
   clearItemsFromTables,
 } from "../../resources/dynamodb-helper";
-import { stackOutputs } from "../../resources/cloudformation-helper";
 import {
   authorizationEndpoint,
   checkEndpoint,
@@ -32,24 +31,14 @@ jest.setTimeout(35_000);
 
 describe("Retry Scenario Path Tests", () => {
   let sessionId: string;
+  let sessionTableName: string;
   let privateSigningKey: JWK | undefined;
 
-  let output: Partial<{
-    CommonStackName: string;
-    StackName: string;
-    PrivateApiGatewayId: string;
-    PublicApiGatewayId: string;
-    NinoUsersTable: string;
-    UserAttemptsTable: string;
-  }>;
-
-  let commonStack: string;
-
   beforeAll(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    commonStack = `${output.CommonStackName}`;
-    privateApi = `${output.PrivateApiGatewayId}`;
-    publicApi = `${output.PublicApiGatewayId}`;
+    privateApi = `${process.env.PRIVATE_API}`;
+    publicApi = `${process.env.PUBLIC_API}`;
+
+    sessionTableName = `${process.env.SESSION_TABLE}`;
 
     privateSigningKey = JSON.parse(
       `${await getSSMParameter(
@@ -82,19 +71,19 @@ describe("Retry Scenario Path Tests", () => {
   afterEach(async () => {
     await clearItemsFromTables(
       {
-        tableName: `person-identity-${commonStack}`,
+        tableName: `${process.env.PERSON_IDENTITY_TABLE}`,
         items: { sessionId: sessionId },
       },
       {
-        tableName: `${output.NinoUsersTable}`,
+        tableName: `${process.env.NINO_USERS_TABLE}`,
         items: { sessionId: sessionId },
       },
       {
-        tableName: `session-${commonStack}`,
+        tableName: sessionTableName,
         items: { sessionId: sessionId },
       }
     );
-    await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
+    await clearAttemptsTable(sessionId, `${process.env.USERS_ATTEMPTS_TABLE}`);
   });
 
   it("Should generate a CI when failing the nino check", async () => {

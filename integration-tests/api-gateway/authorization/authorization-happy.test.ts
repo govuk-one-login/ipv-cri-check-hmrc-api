@@ -19,30 +19,13 @@ describe("Given the session is valid and expecting to be authorized", () => {
   let sessionId: string;
   let state: string;
   let privateApi: string;
-
-  let output: Partial<{
-    CommonStackName: string;
-    StackName: string;
-    NinoUsersTable: string;
-    UserAttemptsTable: string;
-    PrivateApiGatewayId: string;
-  }>;
-
   let sessionTableName: string;
-
-  let commonStack: string;
-
-  beforeAll(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    commonStack = `${output.CommonStackName}`;
-    sessionTableName = `session-${commonStack}`;
-
-    privateApi = `${output.PrivateApiGatewayId}`;
-  });
 
   beforeEach(async () => {
     const data = await getJarAuthorization();
     const request = await data.json();
+    privateApi = `${process.env.PRIVATE_API}`;
+    sessionTableName = `${process.env.SESSION_TABLE}`;
     const session = await createSession(privateApi, request);
     const sessionData = await session.json();
 
@@ -55,11 +38,11 @@ describe("Given the session is valid and expecting to be authorized", () => {
   afterEach(async () => {
     await clearItemsFromTables(
       {
-        tableName: `person-identity-${commonStack}`,
+        tableName: `${process.env.PERSON_IDENTITY_TABLE}`,
         items: { sessionId: sessionId },
       },
       {
-        tableName: `${output.NinoUsersTable}`,
+        tableName: `${process.env.NINO_USERS_TABLE}`,
         items: { sessionId: sessionId },
       },
       {
@@ -67,7 +50,7 @@ describe("Given the session is valid and expecting to be authorized", () => {
         items: { sessionId: sessionId },
       }
     );
-    await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
+    await clearAttemptsTable(sessionId, `${process.env.USERS_ATTEMPTS_TABLE}`);
   });
 
   it("Should return an authorizationCode when /authorization endpoint is called", async () => {
