@@ -72,7 +72,7 @@ jobs:
 
   eventbridge-abandon-tests:
     name: Run tests
-    needs: [deploy, apigw-tests]
+    needs: deploy
     uses: ./.github/workflows/run-evn-abn-tests.yml
     permissions:
       id-token: write
@@ -83,7 +83,7 @@ jobs:
 
   eventbridge-nino-check-tests:
     name: Run tests
-    needs: [deploy, eventbridge-abandon-tests ]
+    needs: deploy
     uses: ./.github/workflows/run-evn-nino-tests.yml
     permissions:
       id-token: write
@@ -94,7 +94,7 @@ jobs:
 
   eventbridge-issue-credential-check-tests:
     name: Run tests
-    needs: [deploy, eventbridge-nino-check-tests ]
+    needs: deploy
     uses: ./.github/workflows/run-evn-cred-tests.yml
     permissions:
       id-token: write
