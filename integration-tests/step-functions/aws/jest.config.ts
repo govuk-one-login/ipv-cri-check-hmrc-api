@@ -6,4 +6,5 @@ export default {
   projects: [],
   displayName: "integration-tests/step-functions/aws",
   setupFiles: ["<rootDir>/setEnvVars.js"],
+  globalSetup: "../../globalStackOutputSetup.ts",
 } satisfies Config;

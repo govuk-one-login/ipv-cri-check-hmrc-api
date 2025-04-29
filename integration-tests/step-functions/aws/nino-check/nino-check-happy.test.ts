@@ -1,4 +1,3 @@
-import { stackOutputs } from "../../../resources/cloudformation-helper";
 import { executeStepFunction } from "../../../resources/stepfunction-helper";
 import {
   clearItemsFromTables,
@@ -24,18 +23,16 @@ describe("nino-check-happy", () => {
 
   let sessionTableName: string;
   let personIdentityTableName: string;
-
-  let output: Partial<{
-    CommonStackName: string;
-    UserAttemptsTable: string;
-    NinoUsersTable: string;
-    NinoCheckStateMachineArn: string;
-  }>;
+  let userAttemptsTable: string;
+  let ninoUsersTable: string;
+  let ninoCheckStateMachineArn: string;
 
   beforeEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    sessionTableName = `session-${output.CommonStackName}`;
-    personIdentityTableName = `person-identity-${output.CommonStackName}`;
+    userAttemptsTable = `${process.env.USERS_ATTEMPTS_TABLE}`;
+    ninoUsersTable = `${process.env.NINO_USERS_TABLE}`;
+    ninoCheckStateMachineArn = `${process.env.NINO_CHECK_STATE_MACHINE_ARN}`;
+    sessionTableName = `${process.env.SESSION_TABLE}`;
+    personIdentityTableName = `${process.env.PERSON_IDENTITY_TABLE}`;
 
     await populateTables(
       {
@@ -86,11 +83,11 @@ describe("nino-check-happy", () => {
         items: { sessionId: input.sessionId },
       },
       {
-        tableName: output.NinoUsersTable as string,
+        tableName: ninoUsersTable as string,
         items: { sessionId: input.sessionId },
       }
     );
-    await clearAttemptsTable(input.sessionId, output.UserAttemptsTable);
+    await clearAttemptsTable(input.sessionId, userAttemptsTable);
     await clearItemsFromTables(
       {
         tableName: sessionTableName,
@@ -101,17 +98,17 @@ describe("nino-check-happy", () => {
         items: { sessionId: "check-unhappy" },
       },
       {
-        tableName: output.NinoUsersTable as string,
+        tableName: ninoUsersTable as string,
         items: { sessionId: "check-unhappy" },
       }
     );
-    await clearAttemptsTable("check-unhappy", output.UserAttemptsTable);
+    await clearAttemptsTable("check-unhappy", userAttemptsTable);
   });
 
   describe("Step Function success", () => {
     it("should return 200 Ok on 1st attempt", async () => {
       const startExecutionResult = await executeStepFunction(
-        output.NinoCheckStateMachineArn as string,
+        ninoCheckStateMachineArn,
         input
       );
 
@@ -171,7 +168,7 @@ describe("nino-check-happy", () => {
       );
 
       const firstExecutionResult = await executeStepFunction(
-        output.NinoCheckStateMachineArn as string,
+        ninoCheckStateMachineArn as string,
         {
           sessionId: inputNoCidNinoUser.sessionId,
           nino: testNoCidNinoUser.nino,
@@ -179,7 +176,7 @@ describe("nino-check-happy", () => {
       );
 
       const secondExecutionResult = await executeStepFunction(
-        output.NinoCheckStateMachineArn as string,
+        ninoCheckStateMachineArn as string,
         input
       );
 

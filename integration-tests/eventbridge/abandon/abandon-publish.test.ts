@@ -1,5 +1,4 @@
 import { CreateQueueCommandOutput } from "@aws-sdk/client-sqs";
-import { stackOutputs } from "../../resources/cloudformation-helper";
 import { clearItems, populateTable } from "../../resources/dynamodb-helper";
 import {
   deleteQueue,
@@ -19,15 +18,11 @@ describe("Abandon Step Function", () => {
     "txma-audit-encoded": "test encoded header",
   };
 
-  let output: Partial<{
-    CommonStackName: string;
-    AbandonStateMachineArn: string;
-    AuditEventAbandonedRule: string;
-    AuditEventAbandonedRuleArn: string;
-    TxMaAuditEventRule: string;
-    TxMaAuditEventRuleArn: string;
-  }>;
-
+  let abandonStateMachineArn: string;
+  let auditEventAbandonedRuleEnv: string;
+  let auditEventAbandonedRuleArn: string;
+  let txMaAuditEventRuleEnv: string;
+  let txMaAuditEventRuleArn: string;
   let sessionTableName: string;
   let checkHmrcEventBus: string;
   let auditEventAbandonedRule: string;
@@ -36,14 +31,17 @@ describe("Abandon Step Function", () => {
   let txMaAuditEventTestQueue: CreateQueueCommandOutput;
 
   beforeEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    sessionTableName = `session-${output.CommonStackName}`;
+    sessionTableName = `${process.env.SESSION_TABLE}`;
+    auditEventAbandonedRuleEnv = `${process.env.AUDIT_EVENT_ABANDON_RULE_ENV}`;
+    txMaAuditEventRuleEnv = `${process.env.TXMA_AUDIT_EVENT_RULE_ENV}`;
+    auditEventAbandonedRuleArn = `${process.env.AUDIT_EVENT_ABANDON_RULE_ARN}`;
+    txMaAuditEventRuleArn = `${process.env.TXMA_AUDIT_EVENT_RULE_ARN}`;
+    abandonStateMachineArn = `${process.env.ABANDON_STATE_MACHINE_ARN}`;
 
-    [checkHmrcEventBus, auditEventAbandonedRule] = (
-      output?.AuditEventAbandonedRule as string
-    ).split("|");
+    [checkHmrcEventBus, auditEventAbandonedRule] =
+      auditEventAbandonedRuleEnv.split("|");
     [checkHmrcEventBus, txMaAuditEventRuleName] = (
-      output.TxMaAuditEventRule as string
+      txMaAuditEventRuleEnv as string
     ).split("|");
 
     await populateTable(sessionTableName, {
@@ -59,12 +57,12 @@ describe("Abandon Step Function", () => {
     });
 
     abandonedEventTestQueue = await setUpQueueAndAttachToRule(
-      output.AuditEventAbandonedRuleArn as string,
+      auditEventAbandonedRuleArn,
       auditEventAbandonedRule,
       checkHmrcEventBus
     );
     txMaAuditEventTestQueue = await setUpQueueAndAttachToRule(
-      output.TxMaAuditEventRuleArn as string,
+      txMaAuditEventRuleArn,
       txMaAuditEventRuleName,
       checkHmrcEventBus
     );
@@ -110,7 +108,7 @@ describe("Abandon Step Function", () => {
 
   it("should publish ABANDONED event to a queue with an abandoned rule set", async () => {
     const startExecutionResult = await executeStepFunction(
-      output.AbandonStateMachineArn as string,
+      abandonStateMachineArn,
       input
     );
     const messages = await getQueueMessages(
@@ -127,7 +125,7 @@ describe("Abandon Step Function", () => {
   });
   it("should produce ABANDONED Event structure for the TxMA destination queue using target AuditEvent Step Function", async () => {
     const startExecutionResult = await executeStepFunction(
-      output.AbandonStateMachineArn as string,
+      abandonStateMachineArn,
       input
     );
     const txMaAuditEventTestQueueMessage = await getQueueMessages(

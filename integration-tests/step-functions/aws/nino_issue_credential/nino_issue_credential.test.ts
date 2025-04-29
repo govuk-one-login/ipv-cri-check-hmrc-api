@@ -1,6 +1,5 @@
 import { JWK, importJWK, jwtVerify } from "jose";
 import { createPublicKey } from "crypto";
-import { stackOutputs } from "../../../resources/cloudformation-helper";
 import { executeStepFunction } from "../../../resources/stepfunction-helper";
 import {
   clearAttemptsTable,
@@ -8,7 +7,7 @@ import {
   populateTables,
 } from "../../../resources/dynamodb-helper";
 
-import { getSSMParameter } from "../../../resources/ssm-param-helper";
+import { getSSMParameters } from "../../../resources/ssm-param-helper";
 import { getPublicKey } from "../../../resources/kms-helper";
 import { createHash } from "crypto";
 
@@ -24,13 +23,13 @@ type EvidenceRequest = {
 describe("Nino Check Hmrc Issue Credential", () => {
   let sessionTableName: string;
   let personIdentityTableName: string;
-
-  let output: Partial<{
-    CommonStackName: string;
-    UserAttemptsTable: string;
-    NinoUsersTable: string;
-    NinoIssueCredentialStateMachineArn: string;
-  }>;
+  let commonStackName: string;
+  let userAttemptsTable: string;
+  let ninoUsersTable: string;
+  let ninoIssueCredentialStateMachineArn: string;
+  let alg: string | undefined;
+  let kmsKeyId: string | undefined;
+  let issuer: string | undefined;
 
   const testUser = {
     nino: "AA000003D",
@@ -41,19 +40,20 @@ describe("Nino Check Hmrc Issue Credential", () => {
   let hash: string;
 
   beforeAll(async () => {
-    const kmskeyid = await getSSMParameter(
-      "/common-cri-api/verifiableCredentialKmsSigningKeyId"
+    commonStackName = `${process.env.COMMON_STACK_NAME}`;
+    userAttemptsTable = `${process.env.USERS_ATTEMPTS_TABLE}`;
+    ninoUsersTable = `${process.env.NINO_USERS_TABLE}`;
+    sessionTableName = `${process.env.SESSION_TABLE}`;
+    personIdentityTableName = `${process.env.PERSON_IDENTITY_TABLE}`;
+    ninoIssueCredentialStateMachineArn = `${process.env.NINO_CREDENTIAL_STATE_MACHINE_ARN}`;
+
+    [kmsKeyId, alg, issuer] = await getSSMParameters(
+      `/${commonStackName}/verifiableCredentialKmsSigningKeyId`,
+      `/${commonStackName}/clients/ipv-core-stub-aws-build/jwtAuthentication/authenticationAlg`,
+      `/${commonStackName}/verifiable-credential/issuer`
     );
 
-    hash = createHash("sha256")
-      .update(kmskeyid || "")
-      .digest("hex");
-  });
-
-  beforeEach(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    sessionTableName = `session-${output.CommonStackName}`;
-    personIdentityTableName = `person-identity-${output.CommonStackName}`;
+    hash = createHash("sha256").update(`${kmsKeyId}`).digest("hex");
   });
 
   describe("Identity Check passed with success check details", () => {
@@ -64,7 +64,6 @@ describe("Nino Check Hmrc Issue Credential", () => {
           nino: "AA000003D",
         },
         "Bearer identity-check passed",
-        output,
         {
           scoringPolicy: "gpg45",
           strengthScore: 2,
@@ -86,26 +85,22 @@ describe("Nino Check Hmrc Issue Credential", () => {
     });
 
     it("should have a VC with a valid signature", async () => {
-      const kid = (await getSSMParameter(
-        `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
-      )) as string;
-      const alg = (await getSSMParameter(
-        `/${output.CommonStackName}/clients/ipv-core-stub-aws-build/jwtAuthentication/authenticationAlg`
-      )) as string;
-
       const startExecutionResult = await getExecutionResult(
         "Bearer identity-check passed"
       );
       const token = JSON.parse(startExecutionResult.output as string);
 
-      const signingPublicJwk = await createSigningPublicJWK(kid, alg);
+      const signingPublicJwk = await createSigningPublicJWK(
+        `${kmsKeyId}`,
+        `${alg}`
+      );
       const publicVerifyingJwk = await importJWK(
         signingPublicJwk,
         signingPublicJwk?.alg || alg
       );
 
       const { payload } = await jwtVerify(token.jwt, publicVerifyingJwk, {
-        algorithms: [alg],
+        algorithms: [`${alg}`],
       });
 
       const result = await aVcWithCheckDetails();
@@ -144,7 +139,6 @@ describe("Nino Check Hmrc Issue Credential", () => {
           nino: "AA000003D",
         },
         "Bearer identity-check failed",
-        output,
         {
           scoringPolicy: "gpg45",
           strengthScore: 2,
@@ -154,26 +148,22 @@ describe("Nino Check Hmrc Issue Credential", () => {
     afterEach(async () => await clearData("issue-credential-identity-failed"));
 
     it("should have a VC with a valid signature", async () => {
-      const kid = (await getSSMParameter(
-        `/${output.CommonStackName}/verifiableCredentialKmsSigningKeyId`
-      )) as string;
-      const alg = (await getSSMParameter(
-        `/${output.CommonStackName}/clients/ipv-core-stub-aws-build/jwtAuthentication/authenticationAlg`
-      )) as string;
-
       const startExecutionResult = await getExecutionResult(
         "Bearer identity-check failed"
       );
       const token = JSON.parse(startExecutionResult.output as string);
 
-      const signingPublicJwk = await createSigningPublicJWK(kid, alg);
+      const signingPublicJwk = await createSigningPublicJWK(
+        `${kmsKeyId}`,
+        `${alg}`
+      );
       const publicVerifyingJwk = await importJWK(
         signingPublicJwk,
         signingPublicJwk?.alg || alg
       );
 
       const { payload } = await jwtVerify(token.jwt, publicVerifyingJwk, {
-        algorithms: [alg],
+        algorithms: [`${alg}`],
       });
 
       const result = await aVcWithFailedCheckDetailsAndCi();
@@ -213,8 +203,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
           sessionId: "issue-credential-record-check-passed",
           nino: "AA000003D",
         },
-        "Bearer record-check passed",
-        output
+        "Bearer record-check passed"
       );
     });
     afterEach(
@@ -252,8 +241,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
           sessionId: "issue-credential-record-check-failed",
           nino: "AA000003D",
         },
-        "Bearer record-check failed",
-        output
+        "Bearer record-check failed"
       );
     });
     afterEach(
@@ -287,7 +275,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
   });
 
   const getExecutionResult = async (token: string) =>
-    executeStepFunction(output.NinoIssueCredentialStateMachineArn as string, {
+    executeStepFunction(ninoIssueCredentialStateMachineArn as string, {
       bearerToken: token,
     });
 
@@ -319,9 +307,6 @@ describe("Nino Check Hmrc Issue Credential", () => {
   };
 
   const getBaseVcCredential = async () => {
-    const issuer = await getSSMParameter(
-      `/${output.CommonStackName}/verifiable-credential/issuer`
-    );
     return {
       iss: `${issuer}`,
       jti: expect.any(String),
@@ -459,12 +444,11 @@ describe("Nino Check Hmrc Issue Credential", () => {
       nino: string;
     },
     bearerToken: string,
-    output: Record<string, string>,
     evidenceRequested?: EvidenceRequest
   ) => {
     await populateTables(
       {
-        tableName: output.NinoUsersTable as string,
+        tableName: ninoUsersTable,
         items: {
           sessionId: input.sessionId,
           nino: input.nino,
@@ -497,7 +481,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
         items: getSessionItem(input, bearerToken, evidenceRequested),
       },
       {
-        tableName: output.UserAttemptsTable as string,
+        tableName: userAttemptsTable,
         items: {
           sessionId: input.sessionId,
           timestamp: Date.now().toString(),
@@ -513,12 +497,11 @@ describe("Nino Check Hmrc Issue Credential", () => {
       nino: string;
     },
     bearerToken: string,
-    output: Record<string, string>,
     evidenceRequested?: EvidenceRequest
   ) => {
     await populateTables(
       {
-        tableName: output.NinoUsersTable as string,
+        tableName: ninoUsersTable,
         items: {
           sessionId: input.sessionId,
           nino: input.nino,
@@ -551,7 +534,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
         items: getSessionItem(input, bearerToken, evidenceRequested),
       },
       {
-        tableName: output.UserAttemptsTable as string,
+        tableName: userAttemptsTable,
         items: {
           sessionId: input.sessionId,
           timestamp: Date.now().toString() + 1,
@@ -561,7 +544,7 @@ describe("Nino Check Hmrc Issue Credential", () => {
         },
       },
       {
-        tableName: output.UserAttemptsTable as string,
+        tableName: userAttemptsTable,
         items: {
           sessionId: input.sessionId,
           timestamp: Date.now().toString(),
@@ -583,10 +566,10 @@ describe("Nino Check Hmrc Issue Credential", () => {
         items: { sessionId },
       },
       {
-        tableName: output.NinoUsersTable as string,
+        tableName: ninoUsersTable,
         items: { sessionId },
       }
     );
-    await clearAttemptsTable(sessionId, output.UserAttemptsTable);
+    await clearAttemptsTable(sessionId, userAttemptsTable);
   };
 });

@@ -1,4 +1,3 @@
-import { stackOutputs } from "../../resources/cloudformation-helper";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
@@ -17,26 +16,13 @@ describe("Given the session is invalid and expecting it not to be authorized", (
   let sessionId: string;
   let state: string;
   let privateApi: string;
-
-  let output: Partial<{
-    CommonStackName: string;
-    StackName: string;
-    NinoUsersTable: string;
-    UserAttemptsTable: string;
-    PrivateApiGatewayId: string;
-  }>;
-
-  let commonStack: string;
-  beforeAll(async () => {
-    output = await stackOutputs(process.env.STACK_NAME);
-    commonStack = `${output.CommonStackName}`;
-
-    privateApi = `${output.PrivateApiGatewayId}`;
-  });
+  let sessionTableName: string;
 
   beforeEach(async () => {
     const data = await getJarAuthorization();
     const request = await data.json();
+    privateApi = `${process.env.PRIVATE_API}`;
+    sessionTableName = `${process.env.SESSION_TABLE}`;
     const session = await createSession(privateApi, request);
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
@@ -47,19 +33,19 @@ describe("Given the session is invalid and expecting it not to be authorized", (
   afterEach(async () => {
     await clearItemsFromTables(
       {
-        tableName: `person-identity-${commonStack}`,
+        tableName: `${process.env.PERSON_IDENTITY_TABLE}`,
         items: { sessionId: sessionId },
       },
       {
-        tableName: `${output.NinoUsersTable}`,
+        tableName: `${process.env.NINO_USERS_TABLE}`,
         items: { sessionId: sessionId },
       },
       {
-        tableName: `session-${commonStack}`,
+        tableName: sessionTableName,
         items: { sessionId: sessionId },
       }
     );
-    await clearAttemptsTable(sessionId, `${output.UserAttemptsTable}`);
+    await clearAttemptsTable(sessionId, `${process.env.USERS_ATTEMPTS_TABLE}`);
   });
 
   it("Should return an 400 response when /authorization endpoint is called when session id is empty", async () => {
