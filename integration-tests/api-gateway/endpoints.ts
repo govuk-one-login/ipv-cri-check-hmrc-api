@@ -59,7 +59,7 @@ export const checkEndpoint = async (
   headers: { "session-id"?: string; "txma-audit-encoded"?: string },
   nino: string
 ): Promise<Response> => {
-  const checkApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
+  const checkApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/check-function`;
   const jsonData = JSON.stringify({ nino: nino });
   const checkResponse = await fetch(checkApiUrl, {
     method: "POST",
