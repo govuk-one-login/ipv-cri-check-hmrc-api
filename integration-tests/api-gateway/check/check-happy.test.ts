@@ -21,8 +21,8 @@ describe("Given the session and NINO is valid", () => {
   beforeEach(async () => {
     const data = await getJarAuthorization();
     const request = await data.json();
-    privateApi = `${process.env.PRIVATE_API}`;
-    sessionTableName = `${process.env.SESSION_TABLE}`;
+    privateApi = "p1lwmmvrug";
+    sessionTableName = "session-common-cri-api";
     const session = await createSession(privateApi, request);
     sessionData = await session.json();
   });
@@ -30,19 +30,18 @@ describe("Given the session and NINO is valid", () => {
   afterEach(async () => {
     await clearItemsFromTables(
       {
-        tableName: `${process.env.PERSON_IDENTITY_TABLE}`,
+        tableName: "person-identity-common-cri-api",
         items: { sessionId: sessionId },
       },
       {
-        tableName: `${process.env.NINO_USERS_TABLE}`,
-        items: { sessionId: sessionId },
-      },
-      {
-        tableName: sessionTableName,
+        tableName: "session-common-cri-api",
         items: { sessionId: sessionId },
       }
     );
-    await clearAttemptsTable(sessionId, `${process.env.USERS_ATTEMPTS_TABLE}`);
+    await clearAttemptsTable(
+      sessionId,
+      "preview-check-hmrc-api-oj-2958-user-attempts"
+    );
   });
 
   it("Should receive a 200 response when /check endpoint is called without optional headers", async () => {
