@@ -107,6 +107,36 @@ paths:
         passthroughBehavior: "when_no_match"
         contentHandling: "CONVERT_TO_TEXT"
         type: "aws_proxy"
+
+  /check-function:
+    post:
+      summary: "IP address of the client."
+      parameters:
+        - $ref: "#/components/parameters/SessionHeader"
+        - $ref: "#/components/parameters/AuditHeader"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Nino"
+        required: true
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      x-amazon-apigateway-request-validator: "Validate both"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        passThroughBehavior: "when_no_templates"
+        type: "aws_proxy"
+        credentials:
+          Fn::Sub: ${ExecuteLambdaRole.Arn}
+        uri:
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NinoCheckFunction.Arn}/invocations
+
   /check:
     post:
       summary: "IP address of the client."

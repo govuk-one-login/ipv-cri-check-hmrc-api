@@ -508,6 +508,80 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref TimeFunctionLogGroup
 
+  NinoCheckFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/nino-check-function/src/nino-check-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/NinoCheckFunction
+
+      Environment:
+        Variables:
+          AuditEventPrefix: !Ref AuditEventNamePrefix
+          UserAttemptsTable: !Ref UserAttemptsTable
+          NinoUsersTable: !Ref NinoUsersTable
+          UserAgent: !Ref UserAgent
+          BearerTokenName: !Ref BearerTokenName
+          CommonStackName: !Ref CommonStackName
+          CheckHmrcEventBus: !Ref CheckHmrcEventBus
+          CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+          AuditEventNameResponseReceived:
+            !FindInMap [Audit, EventName, ResponseReceived]
+          AuditEventNameRequestSent: !FindInMap [Audit, EventName, RequestSent]
+
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserAttemptsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref NinoUsersTable
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${BearerTokenName}-??????
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameters
+              - ssm:GetParameter
+            Resource:
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/NinoCheckUrl/*"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/OtgUrl/*"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${UserAgent}"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
+        - Statement:
+            Effect: Allow
+            Action: logs:*
+            Resource: "*"
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
+  NinoCheckFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/NinoCheckFunction
+      RetentionInDays: 30
+
+  NinoCheckFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevLikeEnvironment
+    Properties:
+      DestinationArn:
+        !FindInMap [ PlatformConfiguration, !Ref Environment, CSLSEGRESS ]
+      FilterPattern: ""
+      LogGroupName: !Ref NinoCheckFunctionLogGroup
+
   UserAgent:
     Type: AWS::SSM::Parameter
     Properties:
@@ -747,6 +821,31 @@ Resources:
                 Action:
                   - states:StartExecution
                   - states:StartSyncExecution
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
+  ExecuteLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Role to allow API gateway to execute Lambdas
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: apigateway.amazonaws.com
+      Policies:
+        - PolicyName: AllowLambdaInvoke
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Resource: "*"
+                Action:
+                  - lambda:InvokeFunction
       PermissionsBoundary: !If
         - UsePermissionsBoundary
         - !Ref PermissionsBoundary
