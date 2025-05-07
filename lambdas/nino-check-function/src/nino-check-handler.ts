@@ -167,17 +167,19 @@ export class NinoCheckHandler implements LambdaInterface {
       }
 
       /** Set Auth Code and Expiry */
-      await storeAuthorizationCode(
+      const storeAuthPromise = storeAuthorizationCode(
         ssmParameters.sessionTableName,
         sessionItem.sessionId
       );
 
       /** Save NINO & sessionId */
-      await saveNinoToUserAttemptsTable(
+      const storeNinoPromise = saveNinoToUserAttemptsTable(
         sessionItem.sessionId,
         nino,
         sessionItem.expiryDate
       );
+
+      await Promise.all([storeAuthPromise, storeNinoPromise]);
 
       logger.info("User has passed the NINO check!");
 
@@ -407,8 +409,10 @@ async function handleMatchingResponse(
     );
     return false;
   } else if (json.code === "INVALID_CREDENTIALS") {
+    // perhaps call OTG again and re-try
     throw new Error("Matching API responded with INVALID_CREDENTIALS");
   } else {
+    // retry 3x before throwing?
     throw new Error(
       "Matching API responded with unexpected status " + matchingResponse.status
     );
