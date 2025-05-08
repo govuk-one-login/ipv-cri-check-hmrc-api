@@ -10,10 +10,6 @@ permissions:
   id-token: write
   contents: read
 
-concurrency:
-  group: evn-isc-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
-
 jobs:
   run-tests:
     name: EVN - CRED
