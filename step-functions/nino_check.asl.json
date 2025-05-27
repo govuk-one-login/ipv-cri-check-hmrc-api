@@ -360,9 +360,17 @@
           "Next": "Store Deceased Attempt"
         },
         {
-          "Variable": "$.hmrc_response.payload.body.code",
-          "StringEquals": "INVALID_CREDENTIALS",
-          "Next": "Err: Failed Auth"
+          "Next": "Err: Failed Auth",
+          "And": [
+            {
+              "Variable": "$.hmrc_response.payload.body.code",
+              "IsPresent": true
+            },
+            {
+              "Variable": "$.hmrc_response.payload.body.code",
+              "StringEquals": "INVALID_CREDENTIALS"
+            }
+          ]
         }
       ],
       "Default": "Err: API Error"
