@@ -79,6 +79,14 @@ export class MatchingHandler implements LambdaInterface {
           );
         }
 
+        if (response.status >= 500) {
+          return {
+            status: response.status.toString(),
+            body: "Internal server error",
+            txn: txn,
+          };
+        }
+
         return {
           status: response.status.toString(),
           body: responseBody,
