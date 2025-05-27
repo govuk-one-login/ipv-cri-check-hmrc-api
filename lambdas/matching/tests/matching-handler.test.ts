@@ -108,6 +108,28 @@ describe("matching-handler", () => {
     expect(result.txn).toStrictEqual("mock-txn");
   });
 
+  it("should return 500 with internal server error", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      headers: {
+        get: jest
+          .fn()
+          .mockReturnValueOnce("mock-txn")
+          .mockReturnValueOnce("application/json"),
+      },
+      text: jest
+        .fn()
+        .mockResolvedValueOnce("dummy-error-message-containing-pii"),
+      status: 500,
+    });
+
+    const matchingHandler = new MatchingHandler();
+    const result = await matchingHandler.handler(testEvent, {} as Context);
+
+    expect(result.status).toBe("500");
+    expect(result.body).toStrictEqual("Internal server error");
+    expect(result.txn).toStrictEqual("mock-txn");
+  });
+
   it("should return a valid response when the content-type is application/json and the body is not valid JSON", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       headers: {

@@ -26,6 +26,13 @@ describe("nino-check-unhappy", () => {
     lastName: "Ferguson",
   };
 
+  const internalErrorUser = {
+    nino: "EE000003D",
+    dob: "1990-01-01",
+    firstName: "Error",
+    lastName: "InternalError",
+  };
+
   let userAttemptsTable: string;
   let ninoUsersTable: string;
   let ninoCheckStateMachineArn: string;
@@ -55,6 +62,18 @@ describe("nino-check-unhappy", () => {
         },
       },
       {
+        tableName: sessionTableName,
+        items: {
+          sessionId: internalErrorUser.lastName,
+          expiryDate: 9999999999,
+          clientId: "ipv-core-stub-aws-prod",
+          clientSessionId: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
+          persistentSessionId: "156714ef-f9df-48c2-ada8-540e7bce44f7",
+          subject: "test",
+          clientIpAddress: "00.100.8.20",
+        },
+      },
+      {
         tableName: personIdentityTableName,
         items: {
           sessionId: input.sessionId,
@@ -75,6 +94,28 @@ describe("nino-check-unhappy", () => {
             },
           ],
         },
+      },
+      {
+        tableName: personIdentityTableName,
+        items: {
+          sessionId: internalErrorUser.lastName,
+          nino: internalErrorUser.nino,
+          birthDates: [{ value: internalErrorUser.dob }],
+          names: [
+            {
+              nameParts: [
+                {
+                  type: "GivenName",
+                  value: internalErrorUser.firstName,
+                },
+                {
+                  type: "FamilyName",
+                  value: internalErrorUser.lastName,
+                },
+              ],
+            },
+          ],
+        },
       }
     );
   });
@@ -90,11 +131,30 @@ describe("nino-check-unhappy", () => {
         items: { sessionId: input.sessionId },
       },
       {
+        tableName: personIdentityTableName,
+        items: { sessionId: internalErrorUser.lastName },
+      },
+      {
+        tableName: ninoUsersTable as string,
+        items: { sessionId: internalErrorUser.lastName },
+      },
+      {
         tableName: ninoUsersTable as string,
         items: { sessionId: input.sessionId },
       }
     );
     await clearAttemptsTable(input.sessionId, userAttemptsTable);
+  });
+
+  it("should handle hmrc pdv 500 errors", async () => {
+    const startExecutionResult = await executeStepFunction(
+      ninoCheckStateMachineArn,
+      {
+        sessionId: internalErrorUser.lastName,
+        nino: internalErrorUser.nino,
+      }
+    );
+    expect(startExecutionResult.status).toEqual("FAILED");
   });
 
   it("should fail when there is more than 2 nino check attempts", async () => {
