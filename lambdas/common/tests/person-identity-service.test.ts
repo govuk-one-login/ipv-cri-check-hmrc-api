@@ -8,6 +8,10 @@ import {
 
 const dynamoClient = new DynamoDBClient();
 
+/**
+ * Given an expiry time, returns a DynamoDB response and an unmarshalled record with that expiry.
+ * Used immediately below to generate valid / expired test data.
+ */
 function personIdentityObjectPairWithExpiry(
   time: number
 ): [QueryCommandOutput, PersonIdentityItem] {
@@ -47,13 +51,11 @@ const now = Math.round(Date.now() / 1000);
 
 // an hour from now
 const validExpiryTime = now + 60 * 60;
-
 const [validPersonIdentityResult, validPersonIdentityItem] =
   personIdentityObjectPairWithExpiry(validExpiryTime);
 
 // an hour ago
 const invalidExpiryTime = now - 60 * 60;
-
 const [expiredPersonIdentityResult] =
   personIdentityObjectPairWithExpiry(invalidExpiryTime);
 
