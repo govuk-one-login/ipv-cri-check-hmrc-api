@@ -378,8 +378,10 @@ Resources:
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: Errors
       Namespace: AWS/Lambda
