@@ -59,7 +59,14 @@ const invalidExpiryTime = now - 60 * 60;
 const [expiredPersonIdentityResult] =
   personIdentityObjectPairWithExpiry(invalidExpiryTime);
 
+// @ts-expect-error - we need to override setTimeout to speed up execution of the tests
+global.setTimeout = jest.fn((callback) => callback());
+
 describe("getPersonIdentity", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("returns a valid personIdentityItem given a valid session ID", async () => {
     dynamoClient.send = jest.fn().mockResolvedValue(validPersonIdentityResult);
 
