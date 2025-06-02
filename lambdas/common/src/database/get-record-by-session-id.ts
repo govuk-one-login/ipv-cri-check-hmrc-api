@@ -9,7 +9,7 @@ import { RecordExpiredError, RecordNotFoundError } from "./exceptions/errors";
  * Handles retries and expiry validation, and returns an array of valid entries.
  * The array will usually have length 1, but it's possible that multiple rows will be returned.
  */
-export async function getSessionRecord<
+export async function getRecordBySessionId<
   /**
    * The type that will be returned by the function. Must include sessionId and expiryDate keys.
    */

@@ -1,6 +1,6 @@
 import { DynamoDBClient, QueryCommandOutput } from "@aws-sdk/client-dynamodb";
 import { PersonIdentityItem } from "../../src/database/types/person-identity";
-import { getSessionRecord } from "../../src/database/get-session-record";
+import { getRecordBySessionId } from "../../src/database/get-record-by-session-id";
 import {
   RecordExpiredError,
   RecordNotFoundError,
@@ -74,7 +74,7 @@ const invalidExpiryTime = now - 60 * 60;
 // @ts-expect-error - we need to override setTimeout to speed up execution of the tests
 global.setTimeout = jest.fn((callback) => callback());
 
-describe("getPersonIdentity", () => {
+describe("getRecordBySessionId", () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
@@ -82,7 +82,7 @@ describe("getPersonIdentity", () => {
   it("returns a valid personIdentityItem given a valid session ID", async () => {
     dynamoClient.send = jest.fn().mockResolvedValue(validPersonIdentityResult);
 
-    const result = await getSessionRecord<PersonIdentityItem>(
+    const result = await getRecordBySessionId<PersonIdentityItem>(
       "12345678",
       tableName,
       dynamoClient
@@ -98,7 +98,7 @@ describe("getPersonIdentity", () => {
 
     dynamoClient.send = jest.fn().mockResolvedValue(validMultipleRecordsResult);
 
-    const result = await getSessionRecord<PersonIdentityItem>(
+    const result = await getRecordBySessionId<PersonIdentityItem>(
       "12345678",
       tableName,
       dynamoClient
@@ -121,7 +121,7 @@ describe("getPersonIdentity", () => {
     );
     expect(singleValidResult).toHaveLength(1);
 
-    const result = await getSessionRecord<PersonIdentityItem>(
+    const result = await getRecordBySessionId<PersonIdentityItem>(
       "12345678",
       tableName,
       dynamoClient
@@ -140,7 +140,11 @@ describe("getPersonIdentity", () => {
       .mockResolvedValue(expiredPersonIdentityResult);
 
     await expect(
-      getSessionRecord<PersonIdentityItem>("12345678", tableName, dynamoClient)
+      getRecordBySessionId<PersonIdentityItem>(
+        "12345678",
+        tableName,
+        dynamoClient
+      )
     ).rejects.toThrow(RecordExpiredError);
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
   });
@@ -155,7 +159,11 @@ describe("getPersonIdentity", () => {
       .mockResolvedValue(multipleExpiredPersonIdentityResult);
 
     await expect(
-      getSessionRecord<PersonIdentityItem>("12345678", tableName, dynamoClient)
+      getRecordBySessionId<PersonIdentityItem>(
+        "12345678",
+        tableName,
+        dynamoClient
+      )
     ).rejects.toThrow(RecordExpiredError);
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
   });
@@ -174,7 +182,7 @@ describe("getPersonIdentity", () => {
       .mockResolvedValueOnce(noMatchResponse)
       .mockResolvedValueOnce(validPersonIdentityResult);
 
-    const result = await getSessionRecord<PersonIdentityItem>(
+    const result = await getRecordBySessionId<PersonIdentityItem>(
       "12345678",
       tableName,
       dynamoClient
@@ -190,7 +198,7 @@ describe("getPersonIdentity", () => {
       .mockResolvedValueOnce(noMatchResponse)
       .mockResolvedValueOnce(validPersonIdentityResult);
 
-    const result = await getSessionRecord<PersonIdentityItem>(
+    const result = await getRecordBySessionId<PersonIdentityItem>(
       "12345678",
       tableName,
       dynamoClient
@@ -204,7 +212,11 @@ describe("getPersonIdentity", () => {
     dynamoClient.send = jest.fn().mockResolvedValue(noMatchResponse);
 
     await expect(
-      getSessionRecord<PersonIdentityItem>("12345678", tableName, dynamoClient)
+      getRecordBySessionId<PersonIdentityItem>(
+        "12345678",
+        tableName,
+        dynamoClient
+      )
     ).rejects.toThrow(RecordNotFoundError);
     expect(dynamoClient.send).toHaveBeenCalledTimes(4);
   });
