@@ -22,7 +22,7 @@ export async function getRecordBySessionId<
   /** Optional parameter; used for mocking the DynamoDB client when testing. */
   dynamoClient: DynamoDBClient = new DynamoDBClient()
 ) {
-  async function queryPersonIdentity() {
+  async function queryRecord() {
     const command = new QueryCommand({
       TableName: tableName,
       KeyConditionExpression: "sessionId = :value",
@@ -42,25 +42,23 @@ export async function getRecordBySessionId<
     return result.Items;
   }
 
-  const queryResult = await withRetry(queryPersonIdentity);
+  const queryResult = await withRetry(queryRecord);
 
-  // convert DynamoDB query output into the PersonIdentityItem type
+  // convert DynamoDB query output into the requested type
   // eg, { key1: { S: "value1" }, key2: { N: "5" } } => { key1: "value1", key2: 5 }
-  const personIdentityItems = queryResult.map((v) =>
+  const retrievedRecords = queryResult.map((v) =>
     unmarshall(v)
   ) as ReturnType[];
 
-  const validIdentityItems = personIdentityItems.filter(
-    (v) => !isRecordExpired(v)
-  );
+  const validRecords = retrievedRecords.filter((v) => !isRecordExpired(v));
 
-  if (validIdentityItems.length === 0) {
+  if (validRecords.length === 0) {
     throw new RecordExpiredError(
       tableName,
       sessionId,
-      personIdentityItems.map((v) => v.expiryDate)
+      retrievedRecords.map((v) => v.expiryDate)
     );
   }
 
-  return validIdentityItems;
+  return validRecords;
 }
