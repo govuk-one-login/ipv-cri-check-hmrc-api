@@ -2,15 +2,18 @@ export class RecordExpiredError extends Error {
   constructor(
     public readonly recordName: string,
     public readonly sessionId: string,
-    public readonly expiryDate: number
+    public readonly expiryDates: number[]
   ) {
     super();
   }
 
   get message() {
-    return `${this.recordName} with session ID ${
+    return `Found only expired records for ${this.recordName} on sessionId ${
       this.sessionId
-    } has expired (expiry time: ${new Date(this.expiryDate).toISOString()}).`;
+    }: ${this.expiryDates
+      // multiply by 1000 as expiryDate is in Unix seconds but Date expects milliseconds
+      .map((r) => new Date(r * 1000).toISOString())
+      .join(", ")}.`;
   }
 }
 

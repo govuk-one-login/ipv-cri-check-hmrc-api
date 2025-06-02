@@ -25,26 +25,32 @@ export async function getPersonIdentity(
 
     const result = await dynamoClient.send(command);
 
-    if (result.Count !== 1 || !result.Items) {
+    if (result.Count === 0 || !result.Items) {
       throw new RecordNotFoundError("PersonIdentityItem", sessionId);
     }
 
-    return result.Items[0];
+    return result.Items;
   }
 
   const queryResult = await withRetry(queryPersonIdentity);
 
   // convert DynamoDB query output into the PersonIdentityItem type
   // eg, { key1: { S: "value1" }, key2: { N: "5" } } => { key1: "value1", key2: 5 }
-  const personIdentityItem = unmarshall(queryResult) as PersonIdentityItem;
+  const personIdentityItems = queryResult.map((v) =>
+    unmarshall(v)
+  ) as PersonIdentityItem[];
 
-  if (isRecordExpired(personIdentityItem)) {
+  const validIdentityItems = personIdentityItems.filter(
+    (v) => !isRecordExpired(v)
+  );
+
+  if (validIdentityItems.length === 0) {
     throw new RecordExpiredError(
       "PersonIdentityItem",
-      personIdentityItem.sessionId,
-      personIdentityItem.expiryDate
+      sessionId,
+      personIdentityItems.map((v) => v.expiryDate)
     );
   }
 
-  return personIdentityItem;
+  return validIdentityItems;
 }
