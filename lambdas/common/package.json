@@ -11,11 +11,11 @@
     "compile": "tsc"
   },
   "dependencies": {
-    "@aws-lambda-powertools/logger": "2.3.0",
     "@aws-sdk/client-dynamodb": "^3.682.0",
     "@aws-sdk/util-dynamodb": "3.788.0"
   },
   "devDependencies": {
+    "@aws-lambda-powertools/logger": "2.3.0",
     "@types/jest": "^29.5.5",
     "@typescript-eslint/eslint-plugin": "^8.13.0",
     "@typescript-eslint/parser": "^8.13.0",
