@@ -11,6 +11,7 @@
     "compile": "tsc"
   },
   "dependencies": {
+    "@aws-lambda-powertools/logger": "2.3.0",
     "@aws-sdk/client-dynamodb": "^3.682.0",
     "@aws-sdk/util-dynamodb": "3.788.0"
   },

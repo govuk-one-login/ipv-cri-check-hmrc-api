@@ -3,6 +3,7 @@ import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { withRetry } from "../util/retry";
 import { isRecordExpired } from "./util/is-record-expired";
 import { RecordExpiredError, RecordNotFoundError } from "./exceptions/errors";
+import { Logger } from "@aws-lambda-powertools/logger";
 
 /**
  * Retrieves a record from DynamoDB, given a table name and session ID.
@@ -20,7 +21,9 @@ export async function getRecordBySessionId<
   /** The session ID to search for. */
   sessionId: string,
   /** Optional parameter; used for mocking the DynamoDB client when testing. */
-  dynamoClient: DynamoDBClient = new DynamoDBClient()
+  dynamoClient: DynamoDBClient = new DynamoDBClient(),
+  /** Optional parameter; used for mocking the DynamoDB client when testing. */
+  logger: Logger = new Logger()
 ) {
   async function queryRecord() {
     const command = new QueryCommand({
@@ -42,7 +45,14 @@ export async function getRecordBySessionId<
     return result.Items;
   }
 
-  const queryResult = await withRetry(queryRecord);
+  const queryResult = await withRetry(
+    queryRecord,
+    {
+      maxRetries: 3,
+      baseDelay: 300,
+    },
+    logger
+  );
 
   // convert DynamoDB query output into the requested type
   // eg, { key1: { S: "value1" }, key2: { N: "5" } } => { key1: "value1", key2: 5 }
