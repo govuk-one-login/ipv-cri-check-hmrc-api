@@ -94,8 +94,8 @@ describe("getRecordBySessionId()", () => {
     const result = await getRecordBySessionId<PersonIdentityItem>(
       tableName,
       "12345678",
-      dynamoClient,
-      logger
+      logger,
+      dynamoClient
     );
 
     expect(result).toEqual(validPersonIdentityOutput);
@@ -111,8 +111,8 @@ describe("getRecordBySessionId()", () => {
     const result = await getRecordBySessionId<PersonIdentityItem>(
       tableName,
       "12345678",
-      dynamoClient,
-      logger
+      logger,
+      dynamoClient
     );
 
     expect(result).toEqual(validMultipleRecordsOutput);
@@ -135,8 +135,8 @@ describe("getRecordBySessionId()", () => {
     const result = await getRecordBySessionId<PersonIdentityItem>(
       tableName,
       "12345678",
-      dynamoClient,
-      logger
+      logger,
+      dynamoClient
     );
 
     expect(result).toEqual(singleValidResult);
@@ -155,8 +155,8 @@ describe("getRecordBySessionId()", () => {
       getRecordBySessionId<PersonIdentityItem>(
         tableName,
         "12345678",
-        dynamoClient,
-        logger
+        logger,
+        dynamoClient
       )
     ).rejects.toThrow(RecordExpiredError);
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
@@ -175,8 +175,8 @@ describe("getRecordBySessionId()", () => {
       getRecordBySessionId<PersonIdentityItem>(
         tableName,
         "12345678",
-        dynamoClient,
-        logger
+        logger,
+        dynamoClient
       )
     ).rejects.toThrow(RecordExpiredError);
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
@@ -199,8 +199,8 @@ describe("getRecordBySessionId()", () => {
     const result = await getRecordBySessionId<PersonIdentityItem>(
       "12345678",
       tableName,
-      dynamoClient,
-      logger
+      logger,
+      dynamoClient
     );
 
     expect(result).toEqual(validPersonIdentityOutput);
@@ -216,8 +216,8 @@ describe("getRecordBySessionId()", () => {
     const result = await getRecordBySessionId<PersonIdentityItem>(
       tableName,
       "12345678",
-      dynamoClient,
-      logger
+      logger,
+      dynamoClient
     );
 
     expect(result).toEqual(validPersonIdentityOutput);
@@ -231,8 +231,8 @@ describe("getRecordBySessionId()", () => {
       getRecordBySessionId<PersonIdentityItem>(
         tableName,
         "12345678",
-        dynamoClient,
-        logger
+        logger,
+        dynamoClient
       )
     ).rejects.toThrow(RecordNotFoundError);
     expect(dynamoClient.send).toHaveBeenCalledTimes(4);

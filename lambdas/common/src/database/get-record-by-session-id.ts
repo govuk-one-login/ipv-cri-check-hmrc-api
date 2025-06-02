@@ -20,10 +20,10 @@ export async function getRecordBySessionId<
   tableName: string,
   /** The session ID to search for. */
   sessionId: string,
+  /** Optional parameter; used for mocking the logger in testing or passing custom loggers from the caller. */
+  logger: Logger = new Logger(),
   /** Optional parameter; used for mocking the DynamoDB client when testing. */
-  dynamoClient: DynamoDBClient = new DynamoDBClient(),
-  /** Optional parameter; used for mocking the DynamoDB client when testing. */
-  logger: Logger = new Logger()
+  dynamoClient: DynamoDBClient = new DynamoDBClient()
 ) {
   async function queryRecord() {
     const command = new QueryCommand({
