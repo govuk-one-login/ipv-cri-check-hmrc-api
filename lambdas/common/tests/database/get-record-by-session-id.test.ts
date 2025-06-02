@@ -5,7 +5,7 @@ import {
   RecordExpiredError,
   RecordNotFoundError,
 } from "../../src/database/exceptions/errors";
-import { Logger } from "@aws-lambda-powertools/logger";
+import { mockLogger } from "../logger";
 
 const tableName = "some-table-some-stack";
 const dynamoClient = new DynamoDBClient();
@@ -62,14 +62,6 @@ const noMatchResponse: QueryCommandOutput = {
   $metadata: {},
 };
 
-const logger = {
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-  critical: jest.fn(),
-} as unknown as Logger;
-
 const now = Math.round(Date.now() / 1000);
 
 // an hour from now
@@ -94,7 +86,7 @@ describe("getRecordBySessionId()", () => {
     const result = await getRecordBySessionId<PersonIdentityItem>(
       tableName,
       "12345678",
-      logger,
+      mockLogger,
       dynamoClient
     );
 
@@ -111,7 +103,7 @@ describe("getRecordBySessionId()", () => {
     const result = await getRecordBySessionId<PersonIdentityItem>(
       tableName,
       "12345678",
-      logger,
+      mockLogger,
       dynamoClient
     );
 
@@ -135,7 +127,7 @@ describe("getRecordBySessionId()", () => {
     const result = await getRecordBySessionId<PersonIdentityItem>(
       tableName,
       "12345678",
-      logger,
+      mockLogger,
       dynamoClient
     );
 
@@ -155,7 +147,7 @@ describe("getRecordBySessionId()", () => {
       getRecordBySessionId<PersonIdentityItem>(
         tableName,
         "12345678",
-        logger,
+        mockLogger,
         dynamoClient
       )
     ).rejects.toThrow(RecordExpiredError);
@@ -175,7 +167,7 @@ describe("getRecordBySessionId()", () => {
       getRecordBySessionId<PersonIdentityItem>(
         tableName,
         "12345678",
-        logger,
+        mockLogger,
         dynamoClient
       )
     ).rejects.toThrow(RecordExpiredError);
@@ -199,7 +191,7 @@ describe("getRecordBySessionId()", () => {
     const result = await getRecordBySessionId<PersonIdentityItem>(
       "12345678",
       tableName,
-      logger,
+      mockLogger,
       dynamoClient
     );
 
@@ -216,7 +208,7 @@ describe("getRecordBySessionId()", () => {
     const result = await getRecordBySessionId<PersonIdentityItem>(
       tableName,
       "12345678",
-      logger,
+      mockLogger,
       dynamoClient
     );
 
@@ -231,7 +223,7 @@ describe("getRecordBySessionId()", () => {
       getRecordBySessionId<PersonIdentityItem>(
         tableName,
         "12345678",
-        logger,
+        mockLogger,
         dynamoClient
       )
     ).rejects.toThrow(RecordNotFoundError);
