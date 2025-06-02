@@ -1,4 +1,4 @@
-import { withRetry } from "../src/util/retry";
+import { withRetry } from "../../src/util/retry";
 
 jest.setTimeout(30000);
 
