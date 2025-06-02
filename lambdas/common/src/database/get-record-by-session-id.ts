@@ -49,8 +49,6 @@ export async function getRecordBySessionId<
     baseDelay: 300,
   });
 
-  // convert DynamoDB query output into the requested type
-  // eg, { key1: { S: "value1" }, key2: { N: "5" } } => { key1: "value1", key2: 5 }
   const retrievedRecords = queryResult.map((v) =>
     unmarshall(v)
   ) as ReturnType[];
