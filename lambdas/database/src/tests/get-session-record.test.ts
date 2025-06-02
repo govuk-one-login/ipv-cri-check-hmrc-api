@@ -1,10 +1,7 @@
 import { DynamoDBClient, QueryCommandOutput } from "@aws-sdk/client-dynamodb";
-import { PersonIdentityItem } from "../src/types/person-identity";
-import { getPersonIdentity } from "../src/person-identity-service";
-import {
-  RecordExpiredError,
-  RecordNotFoundError,
-} from "../src/exceptions/errors";
+import { PersonIdentityItem } from "../types/person-identity";
+import { getSessionRecord } from "../get-session-record";
+import { RecordExpiredError, RecordNotFoundError } from "../../errors";
 
 const dynamoClient = new DynamoDBClient();
 
@@ -81,7 +78,7 @@ describe("getPersonIdentity", () => {
   it("returns a valid personIdentityItem given a valid session ID", async () => {
     dynamoClient.send = jest.fn().mockResolvedValue(validPersonIdentityResult);
 
-    const result = await getPersonIdentity("12345678", dynamoClient);
+    const result = await getSessionRecord("12345678", dynamoClient);
 
     expect(result).toEqual(validPersonIdentityOutput);
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
@@ -93,7 +90,7 @@ describe("getPersonIdentity", () => {
 
     dynamoClient.send = jest.fn().mockResolvedValue(validMultipleRecordsResult);
 
-    const result = await getPersonIdentity("12345678", dynamoClient);
+    const result = await getSessionRecord("12345678", dynamoClient);
 
     expect(result).toEqual(validMultipleRecordsOutput);
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
@@ -112,7 +109,7 @@ describe("getPersonIdentity", () => {
     );
     expect(singleValidResult).toHaveLength(1);
 
-    const result = await getPersonIdentity("12345678", dynamoClient);
+    const result = await getSessionRecord("12345678", dynamoClient);
 
     expect(result).toEqual(singleValidResult);
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
@@ -126,7 +123,7 @@ describe("getPersonIdentity", () => {
       .fn()
       .mockResolvedValue(expiredPersonIdentityResult);
 
-    await expect(getPersonIdentity("12345678", dynamoClient)).rejects.toThrow(
+    await expect(getSessionRecord("12345678", dynamoClient)).rejects.toThrow(
       RecordExpiredError
     );
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
@@ -141,7 +138,7 @@ describe("getPersonIdentity", () => {
       .fn()
       .mockResolvedValue(multipleExpiredPersonIdentityResult);
 
-    await expect(getPersonIdentity("12345678", dynamoClient)).rejects.toThrow(
+    await expect(getSessionRecord("12345678", dynamoClient)).rejects.toThrow(
       RecordExpiredError
     );
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
@@ -161,7 +158,7 @@ describe("getPersonIdentity", () => {
       .mockResolvedValueOnce(noMatchResponse)
       .mockResolvedValueOnce(validPersonIdentityResult);
 
-    const result = await getPersonIdentity("12345678", dynamoClient);
+    const result = await getSessionRecord("12345678", dynamoClient);
 
     expect(result).toEqual(validPersonIdentityOutput);
     expect(dynamoClient.send).toHaveBeenCalledTimes(4);
@@ -173,7 +170,7 @@ describe("getPersonIdentity", () => {
       .mockResolvedValueOnce(noMatchResponse)
       .mockResolvedValueOnce(validPersonIdentityResult);
 
-    const result = await getPersonIdentity("12345678", dynamoClient);
+    const result = await getSessionRecord("12345678", dynamoClient);
 
     expect(result).toEqual(validPersonIdentityOutput);
     expect(dynamoClient.send).toHaveBeenCalledTimes(2);
@@ -182,7 +179,7 @@ describe("getPersonIdentity", () => {
   it("throws a RecordNotFoundError if DynamoDB returns no records, after three retries", async () => {
     dynamoClient.send = jest.fn().mockResolvedValue(noMatchResponse);
 
-    await expect(getPersonIdentity("12345678", dynamoClient)).rejects.toThrow(
+    await expect(getSessionRecord("12345678", dynamoClient)).rejects.toThrow(
       RecordNotFoundError
     );
     expect(dynamoClient.send).toHaveBeenCalledTimes(4);

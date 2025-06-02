@@ -1,13 +1,13 @@
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { withRetry } from "./util/retry";
+import { withRetry } from "../../common/src/retry";
 import { PersonIdentityItem } from "./types/person-identity";
 import { isRecordExpired } from "./util/is-record-expired";
 import { RecordExpiredError, RecordNotFoundError } from "./exceptions/errors";
 
-const personIdentityTableName = `person-identity-${process.env.CommonStackName}`;
+const personIdentityTableName = process.env.DYNAMO_TABLE_NAME;
 
-export async function getPersonIdentity(
+export async function getSessionRecord(
   sessionId: string,
   /** Optional parameter; used for mocking the DynamoDB client when testing. */
   dynamoClient: DynamoDBClient = new DynamoDBClient()
