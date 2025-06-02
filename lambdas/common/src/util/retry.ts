@@ -2,12 +2,12 @@ import { Logger } from "@aws-lambda-powertools/logger";
 
 export async function withRetry<T>(
   fn: () => Promise<T>,
+  logger: Logger,
   options: {
     maxRetries?: number;
     baseDelay?: number;
     shouldRetry?: (error: unknown, attempt: number) => boolean;
-  } = {},
-  logger: Logger = new Logger()
+  } = {}
 ): Promise<T> {
   const { maxRetries = 3, baseDelay = 300, shouldRetry = () => true } = options;
 

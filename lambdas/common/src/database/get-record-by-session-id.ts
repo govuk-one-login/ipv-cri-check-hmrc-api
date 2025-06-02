@@ -20,8 +20,7 @@ export async function getRecordBySessionId<
   tableName: string,
   /** The session ID to search for. */
   sessionId: string,
-  /** Optional parameter; used for mocking the logger in testing or passing custom loggers from the caller. */
-  logger: Logger = new Logger(),
+  logger: Logger,
   /** Optional parameter; used for mocking the DynamoDB client when testing. */
   dynamoClient: DynamoDBClient = new DynamoDBClient()
 ) {
@@ -45,14 +44,10 @@ export async function getRecordBySessionId<
     return result.Items;
   }
 
-  const queryResult = await withRetry(
-    queryRecord,
-    {
-      maxRetries: 3,
-      baseDelay: 300,
-    },
-    logger
-  );
+  const queryResult = await withRetry(queryRecord, logger, {
+    maxRetries: 3,
+    baseDelay: 300,
+  });
 
   // convert DynamoDB query output into the requested type
   // eg, { key1: { S: "value1" }, key2: { N: "5" } } => { key1: "value1", key2: 5 }
