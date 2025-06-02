@@ -1,7 +1,10 @@
 import { DynamoDBClient, QueryCommandOutput } from "@aws-sdk/client-dynamodb";
-import { PersonIdentityItem } from "../types/person-identity";
-import { getSessionRecord } from "../get-session-record";
-import { RecordExpiredError, RecordNotFoundError } from "../../errors";
+import { PersonIdentityItem } from "../src/database/types/person-identity";
+import { getSessionRecord } from "../src/database/get-session-record";
+import {
+  RecordExpiredError,
+  RecordNotFoundError,
+} from "../src/database/exceptions/errors";
 
 const dynamoClient = new DynamoDBClient();
 

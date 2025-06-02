@@ -1,6 +1,6 @@
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { withRetry } from "../../common/src/retry";
+import { withRetry } from "../util/retry";
 import { PersonIdentityItem } from "./types/person-identity";
 import { isRecordExpired } from "./util/is-record-expired";
 import { RecordExpiredError, RecordNotFoundError } from "./exceptions/errors";
