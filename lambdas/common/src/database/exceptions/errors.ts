@@ -26,6 +26,6 @@ export class RecordNotFoundError extends Error {
   }
 
   get message() {
-    return `Failed to find an entry in the ${this.recordName} table with session ID ${this.sessionId}.`;
+    return `Failed to find a valid entry in the ${this.recordName} table with session ID ${this.sessionId}.`;
   }
 }
