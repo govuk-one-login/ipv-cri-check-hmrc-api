@@ -64,13 +64,11 @@ const noMatchResponse: QueryCommandOutput = {
 
 const now = Math.round(Date.now() / 1000);
 
-// an hour from now
-const validExpiryTime = now + 60 * 60;
+const anHourFromNow = now + 60 * 60;
 const [validPersonIdentityResult, validPersonIdentityOutput] =
-  personIdentityObjectPairWithExpiry(validExpiryTime);
+  personIdentityObjectPairWithExpiry(anHourFromNow);
 
-// an hour ago
-const invalidExpiryTime = now - 60 * 60;
+const anHourAgo = now - 60 * 60;
 
 // @ts-expect-error - we need to override setTimeout to speed up execution of the tests
 global.setTimeout = jest.fn((callback) => callback());
@@ -96,7 +94,7 @@ describe("getRecordBySessionId()", () => {
 
   it("returns multiple records if that is what DynamoDB returns", async () => {
     const [validMultipleRecordsResult, validMultipleRecordsOutput] =
-      personIdentityObjectPairWithExpiry(validExpiryTime, 3);
+      personIdentityObjectPairWithExpiry(anHourFromNow, 3);
 
     dynamoClient.send = jest.fn().mockResolvedValue(validMultipleRecordsResult);
 
@@ -115,7 +113,7 @@ describe("getRecordBySessionId()", () => {
     // Generate 4 items, spaced 25 minutes apart, starting an hour ago.
     // This should give us three invalid items (-60, -35, -10) and one valid one (+15)
     const [mixedMultipleRecordsResult, mixedMultipleRecordsOutput] =
-      personIdentityObjectPairWithExpiry(invalidExpiryTime, 4, 25);
+      personIdentityObjectPairWithExpiry(anHourAgo, 4, 25);
 
     dynamoClient.send = jest.fn().mockResolvedValue(mixedMultipleRecordsResult);
 
@@ -137,7 +135,7 @@ describe("getRecordBySessionId()", () => {
 
   it("throws a RecordExpiredError without retrying if the session has expired", async () => {
     const [expiredPersonIdentityResult] =
-      personIdentityObjectPairWithExpiry(invalidExpiryTime);
+      personIdentityObjectPairWithExpiry(anHourAgo);
 
     dynamoClient.send = jest
       .fn()
@@ -157,7 +155,7 @@ describe("getRecordBySessionId()", () => {
   it("throws a RecordExpiredError without retrying if multiple expired sessions are retrieved", async () => {
     // generate 5 expired sessions
     const [multipleExpiredPersonIdentityResult] =
-      personIdentityObjectPairWithExpiry(invalidExpiryTime, 5);
+      personIdentityObjectPairWithExpiry(anHourAgo, 5);
 
     dynamoClient.send = jest
       .fn()
