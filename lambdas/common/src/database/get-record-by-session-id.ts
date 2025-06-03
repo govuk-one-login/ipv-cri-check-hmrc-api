@@ -9,6 +9,8 @@ import { Logger } from "@aws-lambda-powertools/logger";
  * Retrieves a record from DynamoDB, given a table name and session ID.
  * Handles retries and expiry validation, and returns an array of valid entries.
  * The array will usually have length 1, but it's possible that multiple rows will be returned.
+ *
+ * Use a type parameter to set the type of the entity that will be returned.
  */
 export async function getRecordBySessionId<
   /**
