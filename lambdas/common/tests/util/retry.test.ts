@@ -1,4 +1,5 @@
 import { withRetry } from "../../src/util/retry";
+import { mockLogger } from "../logger";
 
 jest.setTimeout(30000);
 
@@ -14,7 +15,7 @@ describe("withRetry", () => {
 
   it("should return result on first success", async () => {
     const fn = jest.fn().mockResolvedValue("success");
-    const result = await withRetry(fn);
+    const result = await withRetry(fn, mockLogger);
     expect(result).toBe("success");
     expect(fn).toHaveBeenCalledTimes(1);
   });
@@ -26,7 +27,10 @@ describe("withRetry", () => {
       .mockRejectedValueOnce(new Error("fail 2"))
       .mockResolvedValue("final success");
 
-    const promise = withRetry(fn, { maxRetries: 3, baseDelay: 100 });
+    const promise = withRetry(fn, mockLogger, {
+      maxRetries: 3,
+      baseDelay: 100,
+    });
 
     for (let i = 0; i < 2; i++) {
       await Promise.resolve();
@@ -45,7 +49,7 @@ describe("withRetry", () => {
     const error = new Error("always fails");
     const fn = jest.fn().mockRejectedValue(error);
 
-    const promise = withRetry(fn, { maxRetries: 2, baseDelay: 50 });
+    const promise = withRetry(fn, mockLogger, { maxRetries: 2, baseDelay: 50 });
 
     for (let i = 0; i < 2; i++) {
       await Promise.resolve();
@@ -64,9 +68,9 @@ describe("withRetry", () => {
     const fn = jest.fn().mockRejectedValue(error);
 
     const shouldRetry = jest.fn().mockReturnValue(false);
-    await expect(withRetry(fn, { maxRetries: 3, shouldRetry })).rejects.toThrow(
-      "fatal"
-    );
+    await expect(
+      withRetry(fn, mockLogger, { maxRetries: 3, shouldRetry })
+    ).rejects.toThrow("fatal");
 
     expect(fn).toHaveBeenCalledTimes(1);
     expect(shouldRetry).toHaveBeenCalledWith(error, 0);
@@ -86,7 +90,7 @@ describe("withRetry", () => {
       .mockReturnValueOnce(true)
       .mockReturnValue(true);
 
-    const promise = withRetry(fn, {
+    const promise = withRetry(fn, mockLogger, {
       maxRetries: 5,
       baseDelay: 10,
       shouldRetry,
@@ -113,7 +117,7 @@ describe("withRetry", () => {
       .mockResolvedValue("success");
 
     const baseDelay = 100;
-    const promise = withRetry(fn, { maxRetries: 2, baseDelay });
+    const promise = withRetry(fn, mockLogger, { maxRetries: 2, baseDelay });
 
     await Promise.resolve();
 
