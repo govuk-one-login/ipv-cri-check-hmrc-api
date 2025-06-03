@@ -6,6 +6,7 @@ import {
   RecordNotFoundError,
 } from "../../src/database/exceptions/errors";
 import { mockLogger } from "../logger";
+import { SessionItem } from "../../src/database/types/session-item";
 
 const tableName = "some-table-some-stack";
 const dynamoClient = new DynamoDBClient();
@@ -226,5 +227,72 @@ describe("getRecordBySessionId()", () => {
       )
     ).rejects.toThrow(RecordNotFoundError);
     expect(dynamoClient.send).toHaveBeenCalledTimes(4);
+  });
+
+  it("returns a record from the session table", async () => {
+    const expiry = Date.now() + 1000000;
+    dynamoClient.send = jest.fn().mockResolvedValueOnce({
+      Count: 1,
+      Items: [
+        {
+          expiryDate: { N: expiry.toString() },
+          sessionId: { S: "dummy" },
+          clientId: { S: "dummy" },
+          clientSessionId: { S: "dummy" },
+          authorizationCodeExpiryDate: { N: "0" },
+          redirectUri: { S: "dummy" },
+          accessToken: { S: "dummy" },
+          accessTokenExpiryDate: { S: "dummy" },
+          clientIpAddress: { S: "dummy" },
+          subject: { S: "dummy" },
+        },
+      ],
+    });
+
+    const result = await getRecordBySessionId<SessionItem>(
+      tableName,
+      "dummy",
+      mockLogger,
+      dynamoClient
+    );
+
+    expect(result).toEqual([
+      {
+        expiryDate: expiry,
+        sessionId: "dummy",
+        clientId: "dummy",
+        clientSessionId: "dummy",
+        authorizationCodeExpiryDate: 0,
+        redirectUri: "dummy",
+        accessToken: "dummy",
+        accessTokenExpiryDate: "dummy",
+        clientIpAddress: "dummy",
+        subject: "dummy",
+      },
+    ]);
+    expect(dynamoClient.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("should throw if session has expired", async () => {
+    dynamoClient.send = jest.fn().mockResolvedValueOnce({
+      Count: 1,
+      Items: [
+        {
+          expiryDate: { N: "123" },
+          sessionId: { S: "dummy" },
+        },
+      ],
+    });
+
+    const result = getRecordBySessionId<SessionItem>(
+      tableName,
+      "dummy",
+      mockLogger,
+      dynamoClient
+    );
+
+    await expect(result).rejects.toThrow(RecordExpiredError);
+
+    expect(dynamoClient.send).toHaveBeenCalledTimes(1);
   });
 });
