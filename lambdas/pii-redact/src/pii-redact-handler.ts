@@ -8,6 +8,7 @@ import {
   PutLogEventsCommand,
   PutLogEventsCommandOutput,
   CreateLogStreamCommand,
+  ResourceAlreadyExistsException,
 } from "@aws-sdk/client-cloudwatch-logs";
 import { redactPII } from "./pii-redactor";
 import {
@@ -92,12 +93,18 @@ export class PiiRedactHandler implements LambdaInterface {
     if (!(await this.logStreamExists(logStreamName))) {
       logger.info("Creating log stream " + logStreamName);
 
-      await cloudwatch.send(
-        new CreateLogStreamCommand({
-          logGroupName: logGroupName,
-          logStreamName: logStreamName,
-        })
-      );
+      try {
+        await cloudwatch.send(
+          new CreateLogStreamCommand({
+            logStreamName: logStreamName,
+            logGroupName: logGroupName,
+          })
+        );
+      } catch (error: unknown) {
+        if (error instanceof ResourceAlreadyExistsException) {
+          logger.info(logStreamName + " already exists");
+        }
+      }
 
       await this.saveLogStreamRecordInDB(logStreamName);
       logger.info("Added " + logStreamName + " to " + logStreamTrackingTable);
