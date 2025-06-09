@@ -8,6 +8,7 @@ import {
   PutLogEventsCommand,
   PutLogEventsCommandOutput,
   CreateLogStreamCommand,
+  ResourceAlreadyExistsException,
 } from "@aws-sdk/client-cloudwatch-logs";
 import { redactPII } from "./pii-redactor";
 import {
@@ -19,24 +20,22 @@ import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 
 initOpenTelemetry();
 
-const logger = new Logger();
 const cloudwatch = new CloudWatchLogsClient();
 
 const logStreamTrackingTable = process.env.RedactionLogStreamTrackingTable;
 
 export class PiiRedactHandler implements LambdaInterface {
-  private readonly dynamodb: DynamoDBClient;
-
-  constructor(dynamodb = new DynamoDBClient()) {
-    this.dynamodb = dynamodb;
-  }
+  constructor(
+    private readonly dynamodb = new DynamoDBClient(),
+    private readonly logger = new Logger()
+  ) {}
 
   public async handler(
     event: CloudWatchLogsEvent,
     _context: unknown
   ): Promise<object> {
     try {
-      logger.info("Received " + JSON.stringify(event));
+      this.logger.info("Received " + JSON.stringify(event));
 
       const logDataBase64 = event.awslogs.data;
       const logDataBuffer = Buffer.from(logDataBase64, "base64");
@@ -56,7 +55,7 @@ export class PiiRedactHandler implements LambdaInterface {
       return {};
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.error(`Error in PiiRedactHandler: ${message}`);
+      this.logger.error(`Error in PiiRedactHandler: ${message}`);
       throw error;
     }
   }
@@ -66,7 +65,7 @@ export class PiiRedactHandler implements LambdaInterface {
     logStream: string,
     logEvents: CloudWatchLogsDecodedData
   ) {
-    logger.info("Putting redacted logs into " + redactLogGroup);
+    this.logger.info("Putting redacted logs into " + redactLogGroup);
 
     try {
       const response: PutLogEventsCommandOutput = await cloudwatch.send(
@@ -81,26 +80,38 @@ export class PiiRedactHandler implements LambdaInterface {
           })),
         })
       );
-      logger.info(JSON.stringify(response));
+      this.logger.info(JSON.stringify(response));
     } catch (error) {
-      logger.error(`Error putting log events into ${redactLogGroup}: ${error}`);
+      this.logger.error(
+        `Error putting log events into ${redactLogGroup}: ${error}`
+      );
       throw error;
     }
   }
 
   private async createLogStream(logStreamName: string, logGroupName: string) {
     if (!(await this.logStreamExists(logStreamName))) {
-      logger.info("Creating log stream " + logStreamName);
+      this.logger.info("Creating log stream " + logStreamName);
 
-      await cloudwatch.send(
-        new CreateLogStreamCommand({
-          logGroupName: logGroupName,
-          logStreamName: logStreamName,
-        })
-      );
+      try {
+        await cloudwatch.send(
+          new CreateLogStreamCommand({
+            logStreamName: logStreamName,
+            logGroupName: logGroupName,
+          })
+        );
+      } catch (error: unknown) {
+        if (error instanceof ResourceAlreadyExistsException) {
+          this.logger.info(logStreamName + " already exists");
+        } else {
+          throw error;
+        }
+      }
 
       await this.saveLogStreamRecordInDB(logStreamName);
-      logger.info("Added " + logStreamName + " to " + logStreamTrackingTable);
+      this.logger.info(
+        "Added " + logStreamName + " to " + logStreamTrackingTable
+      );
     }
   }
 
