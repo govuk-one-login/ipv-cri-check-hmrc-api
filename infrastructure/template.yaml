@@ -40,10 +40,6 @@ Parameters:
     Description: "The unique credential issuer identifier"
     Type: AWS::SSM::Parameter::Value<String>
     Default: "/common-cri-parameters/CriIdentifier"
-  SupportManualURL:
-    Type: String
-    Default: "https://team-manual.account.gov.uk/teams/CRI-Orange-team/supporting-cri-orange/hmrc-nino-runbook/#backend-api-alarms"
-    Description: The support manual URL to be provided in alarm messages.
   LambdaDeploymentPreference:
     Description: "Specifies the configuration to enable gradual Lambda deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'AllAtOnce'"
     Type: String
@@ -77,6 +73,9 @@ Conditions:
     !Not [!Equals [!FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency], 0]]
 
 Mappings:
+  StaticVariables:
+    Urls:
+      SupportManualURL: "https://team-manual.account.gov.uk/teams/CRI-Orange-team/supporting-cri-orange/hmrc-nino-runbook/#backend-api-alarms"
   # Only numeric values should be assigned here
   MaxJwtTtl:
     Environment:
@@ -354,7 +353,9 @@ Resources:
     Condition: DeployAlarms
     Properties:
       AlarmName: !Sub ${AWS::StackName}-CheckHmrcLambdaConcurrency80-alarm
-      AlarmDescription: !Sub Check HMRC ${Environment} lambdas alarm if over 80% of concurrent executions is used ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "Check HMRC ${Environment} lambdas alarm if over 80% of concurrent executions is used. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
@@ -376,7 +377,9 @@ Resources:
     Condition: DeployAlarms
     Properties:
       AlarmName: !Sub ${AWS::StackName}-CheckHmrcLambdaErrors-alarm
-      AlarmDescription: !Sub Check HMRC ${Environment} lambda errors"
+      AlarmDescription: !Sub
+        - "Check HMRC ${Environment} lambda errors. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
@@ -400,7 +403,9 @@ Resources:
     Condition: DeployAlarms
     Properties:
       AlarmName: !Sub ${AWS::StackName}-CheckHmrcLambdaThrottle-alarm
-      AlarmDescription: !Sub Check HMRC ${Environment} lambda throttle"
+      AlarmDescription: !Sub
+        - "Check HMRC ${Environment} lambda throttle. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
@@ -608,7 +613,9 @@ Resources:
     Condition: DeployAlarms
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-PublicNinoCheckApi-FatalError-alarm"
-      AlarmDescription: !Sub "Trigger an alarm when Fatal ${PublicNinoCheckApi} Error occurs. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "Trigger an alarm when Fatal ${PublicNinoCheckApi} Error occurs. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
@@ -711,7 +718,9 @@ Resources:
     Condition: DeployAlarms
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-PrivateNinoCheckApi-FatalError-alarm"
-      AlarmDescription: !Sub "Trigger an alarm when Fatal ${PrivateNinoCheckApi} Error occurs. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "Trigger an alarm when Fatal ${PrivateNinoCheckApi} Error occurs.Runbook:  ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
@@ -897,7 +906,9 @@ Resources:
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
-      AlarmDescription: !Sub "${CheckSessionStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${CheckSessionStateMachine} failed 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckSessionStateMachine-alarm"
       MetricName: "ExecutionsFailed"
       Namespace: AWS/States
@@ -1043,7 +1054,9 @@ Resources:
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
-      AlarmDescription: !Sub "${NinoCheckStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${NinoCheckStateMachine} failed 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachine-ExecutionsFailed-alarm"
       MetricName: "ExecutionsFailed"
       Namespace: AWS/States
@@ -1147,7 +1160,9 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "${AbandonStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${AbandonStateMachine} failed 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       AlarmName: !Sub "${AWS::StackName}-${Environment}-AbandonStateMachine-ExecutionsFailed-alarm"
       MetricName: "ExecutionsFailed"
       Namespace: AWS/States
@@ -1288,7 +1303,9 @@ Resources:
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
-      AlarmDescription: !Sub "${NinoIssueCredentialStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${NinoIssueCredentialStateMachine} failed 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachine-ExecutionsFailed-alarm"
       MetricName: "ExecutionsFailed"
       Namespace: AWS/States
@@ -1469,7 +1486,9 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "${TxMaAuditEventRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${TxMaAuditEventRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       AlarmName: !Sub "${AWS::StackName}-${Environment}-TxMaAuditEventRule-FailedInvocations-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
@@ -1494,7 +1513,9 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "${AuditEventRequestSentRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${AuditEventRequestSentRule} (Failed Invocations) 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventRequestSentRule-FailedInvocations-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
@@ -1519,7 +1540,9 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "${AuditEventResponseReceivedRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${AuditEventResponseReceivedRule} (Failed Invocations) 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventResponseReceivedRule-FailedInvocations-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
@@ -1544,7 +1567,9 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "${AuditEventVcIssuedRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${AuditEventVcIssuedRule} (Failed Invocations) 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventVcIssuedRule-FailedInvocations-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
@@ -1569,7 +1594,9 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "${AuditEventEndRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${AuditEventEndRule} (Failed Invocations) 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventEndRule-FailedInvocations-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
@@ -1594,7 +1621,9 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "${AuditEventAbandonedRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${AuditEventAbandonedRule} (Failed Invocations) 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventAbandonedRule-FailedInvocations-alarm"
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
@@ -1620,7 +1649,9 @@ Resources:
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
-      AlarmDescription: !Sub "${AWS::StackName}-${Environment} PutEvents (PutEvents Failed) 4 or more requests in the last hour. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${AWS::StackName}-${Environment} PutEvents (PutEvents Failed) 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckHmrcEventBus-PutEventsApproximateFailedCount-alarm"
       MetricName: PutEventsApproximateFailedCount
       ComparisonOperator: GreaterThanThreshold
