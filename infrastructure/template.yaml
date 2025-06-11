@@ -351,6 +351,7 @@ Resources:
 
   CheckHmrcLambdaConcurrency80Alarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: DeployAlarms
     Properties:
       AlarmName: !Sub ${AWS::StackName}-CheckHmrcLambdaConcurrency80-alarm
       AlarmDescription: !Sub Check HMRC ${Environment} lambdas alarm if over 80% of concurrent executions is used ${SupportManualURL}"
@@ -372,6 +373,7 @@ Resources:
 
   CheckHmrcLambdaErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: DeployAlarms
     Properties:
       AlarmName: !Sub ${AWS::StackName}-CheckHmrcLambdaErrors-alarm
       AlarmDescription: !Sub Check HMRC ${Environment} lambda errors"
@@ -395,6 +397,7 @@ Resources:
 
   CheckHmrcLambdaThrottle:
     Type: AWS::CloudWatch::Alarm
+    Condition: DeployAlarms
     Properties:
       AlarmName: !Sub ${AWS::StackName}-CheckHmrcLambdaThrottle-alarm
       AlarmDescription: !Sub Check HMRC ${Environment} lambda throttle"
@@ -602,7 +605,7 @@ Resources:
     DependsOn:
       - "PublicNinoCheckApiFatalErrorMetricFilter"
     Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-PublicNinoCheckApi-FatalError-alarm"
       AlarmDescription: !Sub "Trigger an alarm when Fatal ${PublicNinoCheckApi} Error occurs. ${SupportManualURL}"
@@ -705,7 +708,7 @@ Resources:
     DependsOn:
       - "PrivateNinoCheckApiFatalErrorMetricFilter"
     Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-PrivateNinoCheckApi-FatalError-alarm"
       AlarmDescription: !Sub "Trigger an alarm when Fatal ${PrivateNinoCheckApi} Error occurs. ${SupportManualURL}"
@@ -730,7 +733,7 @@ Resources:
 
   NinoCheckAPIGW5XXErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckApi-5XXError-alarm"
       AlarmDescription: !Sub Check HMRC ${Environment} API Gateway 5XX errors
@@ -886,7 +889,7 @@ Resources:
 
   CheckSessionStateMachineAlarm:
     Type: "AWS::CloudWatch::Alarm"
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Properties:
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
@@ -1032,7 +1035,7 @@ Resources:
 
   NinoCheckStateMachineAlarm:
     Type: "AWS::CloudWatch::Alarm"
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Properties:
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
@@ -1138,7 +1141,7 @@ Resources:
 
   AbandonStateMachineAlarm:
     Type: "AWS::CloudWatch::Alarm"
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Properties:
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
@@ -1277,7 +1280,7 @@ Resources:
 
   NinoIssueCredentialStateMachineAlarm:
     Type: "AWS::CloudWatch::Alarm"
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Properties:
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
@@ -1459,7 +1462,7 @@ Resources:
   #                                                                  #
   ####################################################################
   TxMaAuditEventRuleAlarm:
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
@@ -1484,7 +1487,7 @@ Resources:
           Value: !Ref CheckHmrcEventBus
 
   AuditEventRequestSentRuleAlarm:
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
@@ -1509,7 +1512,7 @@ Resources:
           Value: !Ref CheckHmrcEventBus
 
   AuditEventResponseReceivedRuleAlarm:
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
@@ -1534,7 +1537,7 @@ Resources:
           Value: !Ref CheckHmrcEventBus
 
   AuditEventVcIssuedRuleAlarm:
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
@@ -1559,7 +1562,7 @@ Resources:
           Value: !Ref CheckHmrcEventBus
 
   AuditEventEndRuleAlarm:
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
@@ -1584,7 +1587,7 @@ Resources:
           Value: !Ref CheckHmrcEventBus
 
   AuditEventAbandonedRuleAlarm:
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
@@ -1609,7 +1612,7 @@ Resources:
           Value: !Ref CheckHmrcEventBus
 
   CheckHmrcPutEventAlarm:
-    Condition: "DeployAlarms"
+    Condition: DeployAlarms
     Type: AWS::CloudWatch::Alarm
     Properties:
       OKActions:
