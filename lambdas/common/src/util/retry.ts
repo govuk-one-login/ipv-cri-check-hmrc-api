@@ -16,14 +16,12 @@ export async function withRetry<T>(
       return await fn();
     } catch (error) {
       if (attempt === maxRetries || !shouldRetry(error, attempt)) {
-        logger.info(
-          `Failed to execute callback '${fn.name}' after ${attempt} retries.`
-        );
+        logger.info(`Failed to execute callback after ${attempt} retries.`);
         throw error;
       }
       const delay = baseDelay * Math.pow(2, attempt);
       logger.info(
-        `Failed to execute callback '${fn.name}' (retry attempt ${attempt}). Waiting ${delay} ms and retrying...`
+        `Failed to execute callback (retry attempt ${attempt}). Waiting ${delay} ms and retrying...`
       );
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
