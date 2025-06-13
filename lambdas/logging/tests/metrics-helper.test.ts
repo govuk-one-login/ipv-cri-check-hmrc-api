@@ -5,6 +5,7 @@ import { MetricDimensions, MetricNames } from "../metric-types";
 jest.mock("@aws-lambda-powertools/metrics", () => ({
   ...jest.requireActual("@aws-lambda-powertools/metrics"),
   Metrics: jest.fn(() => ({
+    addMetric: jest.fn(),
     singleMetric: () => ({
       addDimension: jest.fn(),
       addMetric: jest.fn(),
@@ -39,6 +40,30 @@ describe("metrics-helper", () => {
       MetricNames.ResponseLatency,
       MetricUnits.Milliseconds,
       latency
+    );
+  });
+
+  it(`should use default values in captureMetric() correctly`, () => {
+    const metricName = "my-cool-metric";
+    metricsHelper.captureMetric(metricName);
+
+    expect(metricsHelper.metrics.addMetric).toHaveBeenCalledWith(
+      metricName,
+      MetricUnits.Count,
+      1
+    );
+  });
+
+  it(`should override default values in captureMetric() correctly`, () => {
+    const metricName = "my-cool-metric";
+    const count = 4000000;
+    const unit = MetricUnits.TerabytesPerSecond;
+    metricsHelper.captureMetric(metricName, count, unit);
+
+    expect(metricsHelper.metrics.addMetric).toHaveBeenCalledWith(
+      metricName,
+      unit,
+      count
     );
   });
 });

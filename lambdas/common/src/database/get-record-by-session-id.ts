@@ -11,12 +11,20 @@ import { Logger } from "@aws-lambda-powertools/logger";
  * The array will usually have length 1, but it's possible that multiple rows will be returned.
  *
  * Use a type parameter to set the type of the entity that will be returned.
+ *
+ * NB: as some tables may not guarantee that sessionId is unique (eg, multiple attempts for the
+ * same session), this function only guarantees that there will be at least one non-expired
+ * record in the returned array. If you're expecting only one, you can check the length of the
+ * returned array and use the TooManyRecordsException available in ./exceptions/errors if it
+ * suits your needs.
  */
 export async function getRecordBySessionId<
   /**
-   * The type that will be returned by the function. Must include sessionId and expiryDate keys.
+   * The type that will be returned by the function. Must include sessionId key.
+   *
+   * If an expiryDate column exists, it will validate it.
    */
-  ReturnType extends { sessionId: string; expiryDate: number },
+  ReturnType extends { sessionId: string; expiryDate?: number },
 >(
   /** The name of the table in DynamoDB. Probably looks like "some-table-some-stack". */
   tableName: string,
@@ -61,7 +69,7 @@ export async function getRecordBySessionId<
     throw new RecordExpiredError(
       tableName,
       sessionId,
-      retrievedRecords.map((v) => v.expiryDate)
+      retrievedRecords.map((v) => v.expiryDate ?? -1)
     );
   }
 
