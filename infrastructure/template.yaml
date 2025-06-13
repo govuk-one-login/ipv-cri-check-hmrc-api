@@ -64,13 +64,22 @@ Conditions:
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
   UseCanaryDeploymentAlarms: !Or
-    - !Not [ !Equals [ !Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE ]]
-    - !Not [ !Equals [ !Ref LambdaDeploymentPreference, AllAtOnce ]]
+    - !Not [!Equals [!Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE]]
+    - !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
   AddProvisionedConcurrency:
-    !Not [!Equals [!FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency], 0]]
+    !Not [
+      !Equals [
+        !FindInMap [
+          EnvironmentConfiguration,
+          !Ref Environment,
+          provisionedConcurrency,
+        ],
+        0,
+      ],
+    ]
 
 Mappings:
   StaticVariables:
@@ -186,10 +195,14 @@ Globals:
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
     AutoPublishAlias: live
-    ProvisionedConcurrencyConfig:
-      !If
+    ProvisionedConcurrencyConfig: !If
       - AddProvisionedConcurrency
-      - ProvisionedConcurrentExecutions: !FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency]
+      - ProvisionedConcurrentExecutions:
+          !FindInMap [
+            EnvironmentConfiguration,
+            !Ref Environment,
+            provisionedConcurrency,
+          ]
       - !Ref AWS::NoValue
 
 Resources:
@@ -290,7 +303,8 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-JwtSigner"
-          DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+          DOMAIN_NAME:
+            !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
 
   JwtSignerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1010,7 +1024,8 @@ Resources:
         SsmParametersFunction: !Ref SsmParametersFunction.Version
         OTGFunction: !Ref OTGFunction.Version
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+        CheckHmrcEventBusSource:
+          !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         AuditEventNameResponseReceived:
           !FindInMap [Audit, EventName, ResponseReceived]
         AuditEventNameRequestSent: !FindInMap [Audit, EventName, RequestSent]
@@ -1148,7 +1163,8 @@ Resources:
         CommonStackName: !Ref CommonStackName
         SsmParametersFunction: !Ref SsmParametersFunction.Version
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+        CheckHmrcEventBusSource:
+          !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         AuditEventNameAbandoned: !FindInMap [Audit, EventName, Abandoned]
       Logging:
         Destinations:
@@ -1265,7 +1281,8 @@ Resources:
         JwtSignerFunction: !Ref JwtSignerFunction.Version
         SsmParametersFunction: !Ref SsmParametersFunction.Version
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+        CheckHmrcEventBusSource:
+          !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
         AuditEventNameVcIssued: !FindInMap [Audit, EventName, VcIssued]
         AuditEventNameEnd: !FindInMap [Audit, EventName, End]
       Logging:
@@ -1495,14 +1512,14 @@ Resources:
         - Arn: !Sub
             - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
             - auditEventQueueName:
-                Fn::ImportValue: !Sub  "${TxmaStackName}-AuditEventQueueName"
+                Fn::ImportValue: !Sub "${TxmaStackName}-AuditEventQueueName"
           Id: AuditEventQueue
           InputPath: "$.detail"
           DeadLetterConfig: !If
-              - IsDevLikeEnvironment
-              - !Ref AWS::NoValue
-              - Arn:
-                  Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventDLQArn
+            - IsDevLikeEnvironment
+            - !Ref AWS::NoValue
+            - Arn:
+                Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventDLQArn
 
   EventBridgeStateMachineExecutionRole:
     Type: AWS::IAM::Role
@@ -1739,7 +1756,7 @@ Resources:
         - Name: StateMachineArn
           Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${CheckSessionStateMachine}"
         - Name: Alias
-          Value: 'live'
+          Value: "live"
       Namespace: AWS/States
       Statistic: Sum
       Unit: Count
@@ -1764,7 +1781,7 @@ Resources:
         - Name: StateMachineArn
           Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AbandonStateMachine}"
         - Name: Alias
-          Value: 'live'
+          Value: "live"
       Namespace: AWS/States
       Statistic: Sum
       Unit: Count
@@ -1789,7 +1806,7 @@ Resources:
         - Name: StateMachineArn
           Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoCheckStateMachine}"
         - Name: Alias
-          Value: 'live'
+          Value: "live"
       Namespace: AWS/States
       Statistic: Sum
       Unit: Count
@@ -1814,7 +1831,7 @@ Resources:
         - Name: StateMachineArn
           Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoIssueCredentialStateMachine"
         - Name: Alias
-          Value: 'live'
+          Value: "live"
       Namespace: AWS/States
       Statistic: Sum
       Unit: Count
@@ -1839,7 +1856,7 @@ Resources:
         - Name: StateMachineArn
           Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AuditEventStateMachine}"
         - Name: Alias
-          Value: 'live'
+          Value: "live"
       Namespace: AWS/States
       Statistic: Sum
       Unit: Count
@@ -2178,7 +2195,8 @@ Resources:
         CredentialSubjectFunctionArn: !Ref CredentialSubjectFunction.Version
         TimeFunctionArn: !Ref TimeFunction.Version
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+        CheckHmrcEventBusSource:
+          !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -2390,7 +2408,7 @@ Resources:
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/PIIRedactFunction
       CodeSigningConfigArn:
-        !If [ EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue ]
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RedactionLogStreamTrackingTable
@@ -2418,7 +2436,7 @@ Resources:
     Properties:
       FunctionName: !GetAtt PIIRedactFunction.Arn
       Action: lambda:InvokeFunction
-      Principal: !Join [ ".", [ "logs", !Ref "AWS::Region", "amazonaws.com" ] ]
+      Principal: !Join [".", ["logs", !Ref "AWS::Region", "amazonaws.com"]]
       SourceAccount: !Ref AWS::AccountId
 
   PIIRedactFunctionCloudWatchAliasPermissions:
@@ -2426,7 +2444,7 @@ Resources:
     Properties:
       FunctionName: !Ref PIIRedactFunction.Alias
       Action: lambda:InvokeFunction
-      Principal: !Join [ ".", [ "logs", !Ref "AWS::Region", "amazonaws.com" ] ]
+      Principal: !Join [".", ["logs", !Ref "AWS::Region", "amazonaws.com"]]
       SourceAccount: !Ref AWS::AccountId
 
   NinoCheckStateMachineLogsSubscriptionFilter:
@@ -2494,7 +2512,12 @@ Resources:
                 - codedeploy.amazonaws.com
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
-      PermissionsBoundary: !If [ UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue ]
+      PermissionsBoundary:
+        !If [
+          UsePermissionsBoundary,
+          !Ref PermissionsBoundary,
+          !Ref AWS::NoValue,
+        ]
 
 ##################################################################
 #                                                                  #
