@@ -422,6 +422,66 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
+  AbandonFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/abandon/src/abandon-handler.lambdaHandler
+      DeploymentPreference:
+        Enabled: true
+        Type: !Ref LambdaDeploymentPreference
+        Role: !GetAtt CodeDeployServiceRole.Arn
+        Alarms: !If
+          - UseCanaryDeploymentAlarms
+          - [
+              !Ref AbandonFunctionCanaryErrors,
+              !Ref AbandonStateMachineCanary5xxErrors,
+            ]
+          - [!Ref AWS::NoValue]
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/AbandonFunction
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Abandon"
+          SESSION_TABLE_NAME: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+          ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
+          EVENT_BUS_NAME: !Ref CheckHmrcEventBus
+          EVENT_BUS_SOURCE: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBWritePolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
+
+  AbandonFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AbandonFunction.Alias
+      Principal: apigateway.amazonaws.com
+
+  AbandonFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/AbandonFunction
+      RetentionInDays: 30
+
+  AbandonFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevLikeEnvironment
+    Properties:
+      DestinationArn:
+        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
+      LogGroupName: !Ref AbandonFunctionLogGroup
+
   MatchingFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -1881,6 +1941,33 @@ Resources:
       Period: 60
       EvaluationPeriods: 3
       DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  AbandonFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the AbandonFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-AbandonFunction:live"
+        - Name: FunctionName
+          Value: !Ref AbandonFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt AbandonFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
