@@ -8,7 +8,7 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "unit": "export POWERTOOLS_DEV=true && jest --silent",
+    "unit": "jest --silent",
     "test": "npm run unit --",
     "test:coverage": "npm run unit -- --coverage",
     "sam:validate": "cd infrastructure && sam validate && sam validate --lint",
@@ -22,8 +22,7 @@
     "@aws-lambda-powertools/parameters": "1.17.0",
     "@aws-lambda-powertools/tracer": "1.14.2",
     "@aws-sdk/client-cloudwatch-logs": "3.574.0",
-    "@aws-sdk/client-dynamodb": "3.828.0",
-    "@aws-sdk/client-eventbridge": "3.828.0",
+    "@aws-sdk/client-dynamodb": "^3.682.0",
     "@aws-sdk/client-ssm": "3.363.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-otlp-grpc": "^0.26.0",

@@ -6,19 +6,19 @@ import {
   setUpQueueAndAttachToRule,
   targetId,
 } from "../../resources/queue-helper";
+import { executeStepFunction } from "../../resources/stepfunction-helper";
 import { removeTargetFromRule } from "../../resources/event-bridge-helper";
 import { pause, retry } from "../../resources/util";
-import { abandonEndpoint } from "../../api-gateway/endpoints";
 
-describe("Abandon Endpoint", () => {
+describe("Abandon Step Function", () => {
   jest.setTimeout(30_0000); // 5 minutes
 
   const input = {
-    "session-id": "abandon-test-publish",
+    sessionId: "abandon-test-publish",
     "txma-audit-encoded": "test encoded header",
   };
 
-  let privateApi: string;
+  let abandonStateMachineArn: string;
   let auditEventAbandonedRuleEnv: string;
   let auditEventAbandonedRuleArn: string;
   let txMaAuditEventRuleEnv: string;
@@ -36,7 +36,7 @@ describe("Abandon Endpoint", () => {
     txMaAuditEventRuleEnv = `${process.env.TXMA_AUDIT_EVENT_RULE_ENV}`;
     auditEventAbandonedRuleArn = `${process.env.AUDIT_EVENT_ABANDON_RULE_ARN}`;
     txMaAuditEventRuleArn = `${process.env.TXMA_AUDIT_EVENT_RULE_ARN}`;
-    privateApi = `${process.env.PRIVATE_API}`;
+    abandonStateMachineArn = `${process.env.ABANDON_STATE_MACHINE_ARN}`;
 
     [checkHmrcEventBus, auditEventAbandonedRule] =
       auditEventAbandonedRuleEnv.split("|");
@@ -45,7 +45,7 @@ describe("Abandon Endpoint", () => {
     ).split("|");
 
     await populateTable(sessionTableName, {
-      sessionId: "abandon-test-publish",
+      sessionId: input.sessionId,
       expiryDate: 9999999999,
       clientId: "exampleClientId",
       authorizationCode: "9999999999",
@@ -71,7 +71,7 @@ describe("Abandon Endpoint", () => {
   afterEach(async () => {
     // Clear items from the session table
     await clearItems(sessionTableName, {
-      sessionId: "abandon-test-publish",
+      sessionId: input.sessionId,
     });
 
     // Retry removing the first target from the txMaAuditEventRuleName
@@ -107,9 +107,10 @@ describe("Abandon Endpoint", () => {
   });
 
   it("should publish ABANDONED event to a queue with an abandoned rule set", async () => {
-    const abandonResponse = await abandonEndpoint(privateApi, input);
-    expect(abandonResponse.status).toBe(200);
-
+    const startExecutionResult = await executeStepFunction(
+      abandonStateMachineArn,
+      input
+    );
     const messages = await getQueueMessages(
       abandonedEventTestQueue.QueueUrl as string
     );
@@ -117,13 +118,16 @@ describe("Abandon Endpoint", () => {
       messages[0].Body as string
     );
 
+    expect(startExecutionResult.output).toBe('{"httpStatus":200}');
+
     expect(detailType).toBe("ABANDONED");
     expect(source).toBe("review-hc.localdev.account.gov.uk");
   });
   it("should produce ABANDONED Event structure for the TxMA destination queue using target AuditEvent Step Function", async () => {
-    const abandonResponse = await abandonEndpoint(privateApi, input);
-    expect(abandonResponse.status).toBe(200);
-
+    const startExecutionResult = await executeStepFunction(
+      abandonStateMachineArn,
+      input
+    );
     const txMaAuditEventTestQueueMessage = await getQueueMessages(
       txMaAuditEventTestQueue.QueueUrl as string
     );
@@ -131,6 +135,8 @@ describe("Abandon Endpoint", () => {
     const txMaPayload = txMaAuditEventTestQueueMessage.map(
       (queueMessage) => JSON.parse(queueMessage.Body as string).detail
     );
+
+    expect(startExecutionResult.output).toBeDefined();
 
     expect(txMaPayload).toContainEqual({
       component_id: "https://review-hc.dev.account.gov.uk",
