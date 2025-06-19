@@ -187,14 +187,33 @@ paths:
           description: Internal Server Error
       x-amazon-apigateway-integration:
         httpMethod: "POST"
+        passthroughBehavior: "when_no_templates"
+        type: "aws"
+        credentials:
+          Fn::Sub: ${ExecuteStateMachineRole.Arn}
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AbandonFunction.Arn}:live/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:states:action/StartSyncExecution
+        requestTemplates:
+          application/json:
+            Fn::Sub: |-
+              {
+                "input": "{\"sessionId\": \"$util.escapeJavaScript($input.params('session-id').trim())\"}",
+                "stateMachineArn": "${AbandonStateMachine.Arn}:live"
+              }
         responses:
           default:
-            statusCode: "200"
-        passthroughBehavior: "when_no_match"
-        contentHandling: "CONVERT_TO_TEXT"
-        type: "aws_proxy"
+            statusCode: 500
+            responseTemplates:
+              application/json: |
+                #set($response = $util.parseJson($input.body))
+                #set($output = $util.parseJson($response.output))
+                #if($response.status == "FAILED")
+                #set($context.responseOverride.status = 500)
+                #elseif($output.httpStatus)
+                #set($context.responseOverride.status = $output.httpStatus)
+                #else
+                #set($context.responseOverride.status = 200)
+                #end
 
 components:
   parameters:
