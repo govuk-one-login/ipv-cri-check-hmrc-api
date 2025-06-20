@@ -107,14 +107,25 @@ describe("nino-check-happy", () => {
 
   describe("Step Function success", () => {
     it("should return 200 Ok on 1st attempt", async () => {
-      const startExecutionResult = await executeStepFunction(
-        ninoCheckStateMachineArn,
-        input
+      const result = await fetch(
+        "https://p1lwmmvrug.execute-api.eu-west-2.amazonaws.com/localdev/check-function",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            nino: input.nino,
+          }),
+          headers: {
+            "session-id": input.sessionId,
+          },
+        }
       );
 
-      expect(JSON.parse(startExecutionResult.output || "")).toStrictEqual({
-        httpStatus: 200,
-        body: '{"requestRetry":false}',
+      const body = await result.json();
+
+      expect(result.status).toBe(200);
+
+      expect(body).toEqual({
+        requestRetry: false,
       });
     });
 
@@ -167,27 +178,45 @@ describe("nino-check-happy", () => {
         }
       );
 
-      const firstExecutionResult = await executeStepFunction(
-        ninoCheckStateMachineArn as string,
+      const first = await fetch(
+        "https://p1lwmmvrug.execute-api.eu-west-2.amazonaws.com/localdev/check-function",
         {
-          sessionId: inputNoCidNinoUser.sessionId,
-          nino: testNoCidNinoUser.nino,
+          method: "POST",
+          body: JSON.stringify({
+            nino: inputNoCidNinoUser.nino,
+          }),
+          headers: {
+            "session-id": inputNoCidNinoUser.sessionId,
+          },
         }
       );
 
-      const secondExecutionResult = await executeStepFunction(
-        ninoCheckStateMachineArn as string,
-        input
+      const firstExecutionResult = await first.json();
+
+      const second = await fetch(
+        "https://p1lwmmvrug.execute-api.eu-west-2.amazonaws.com/localdev/check-function",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            nino: input.nino,
+          }),
+          headers: {
+            "session-id": inputNoCidNinoUser.sessionId,
+          },
+        }
       );
 
-      expect(JSON.parse(firstExecutionResult.output || "")).toStrictEqual({
-        httpStatus: 200,
-        body: '{"requestRetry":true}',
+      const secondExecutionResult = await second.json();
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(200);
+
+      expect(firstExecutionResult).toEqual({
+        requestRetry: true,
       });
 
-      expect(JSON.parse(secondExecutionResult.output || "")).toStrictEqual({
-        httpStatus: 200,
-        body: '{"requestRetry":false}',
+      expect(secondExecutionResult).toEqual({
+        requestRetry: false,
       });
     });
   });
