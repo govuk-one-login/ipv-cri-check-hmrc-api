@@ -2,7 +2,6 @@ import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge
 import { AbandonHandlerConfig } from "../config/abandon-handler-config";
 import { SessionItem } from "../../../common/src/database/types/session-item";
 import { logger } from "../../../common/src/util/logger";
-import { CriError } from "../../../common/src/errors/cri-error";
 
 const eventBridgeClient = new EventBridgeClient({ region: "eu-west-2" });
 
@@ -20,7 +19,7 @@ export function createUserAuditInfo(sessionItem: SessionItem) {
 }
 
 export async function sendAuditEvent(config: AbandonHandlerConfig, userAuditInfo: any, txmaAuditHeader?: string) {
-  logger.info("Sending audit event ...");
+  logger.info("Sending ABANDONED audit event ...");
   const response = await eventBridgeClient.send(
     new PutEventsCommand({
       Entries: [
@@ -39,7 +38,8 @@ export async function sendAuditEvent(config: AbandonHandlerConfig, userAuditInfo
     })
   );
   if (response.FailedEntryCount && response.FailedEntryCount > 0) {
-    throw new CriError(500, "Failed to send AuditEvent");
+    logger.error("Failed to send ABANDONED audit event: EventBridge Response included failed entries");
+  } else {
+    logger.info("ABANDONED audit event sent successfully");
   }
-  logger.info("Audit event sent.");
 }

@@ -130,7 +130,7 @@ describe("abandon-audit-service", () => {
       await expect(sendAuditEvent(config, userInfo, "txmaAuditHeader")).rejects.toThrow(Error);
     });
 
-    it("should throw an CriError if put command returns failed entries", async () => {
+    it("should not error if put command returns failed entries", async () => {
       ebMock.on(PutEventsCommand).resolves({
         Entries: [],
         FailedEntryCount: 1,
@@ -145,7 +145,7 @@ describe("abandon-audit-service", () => {
         persistent_session_id: "persisent-id",
       };
 
-      await expect(sendAuditEvent(config, userInfo, "txmaAuditHeader")).rejects.toThrow(CriError);
+      await expect(sendAuditEvent(config, userInfo, "txmaAuditHeader")).resolves.not.toThrow();
     });
   });
 });
