@@ -6,8 +6,8 @@ import { Context } from "aws-lambda";
 
 export class TimeHandler implements LambdaInterface {
   public async handler(event: TimeEvent, context: Context) {
-    const logHelper = new LogHelper(context);
-    logHelper.logEntry(context.functionName, event.govJourneyId);
+    const logHelper = new LogHelper(context, event.govJourneyId);
+    logHelper.logEntry();
 
     try {
       return {
@@ -17,7 +17,7 @@ export class TimeHandler implements LambdaInterface {
       };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      logHelper.logError(context.functionName, event.govJourneyId, message);
+      logHelper.logError(message);
       throw error;
     }
   }

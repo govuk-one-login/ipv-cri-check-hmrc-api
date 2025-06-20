@@ -15,8 +15,8 @@ export class CiMappingHandler implements LambdaInterface {
     event: CiMappingEvent,
     context: Context
   ): Promise<Array<ContraIndicator>> {
-    const logHelper = new LogHelper(context);
-    logHelper.logEntry(context.functionName, event.govJourneyId);
+    const logHelper = new LogHelper(context, event.govJourneyId);
+    logHelper.logEntry();
     try {
       return getCIsForHmrcErrors(event);
     } catch (error: unknown) {
@@ -24,7 +24,7 @@ export class CiMappingHandler implements LambdaInterface {
       if (message === HMRC_ERRORS_ABSENT) {
         return [];
       }
-      logHelper.logError(context.functionName, event.govJourneyId, message);
+      logHelper.logError(message);
       throw error;
     }
   }

@@ -4,8 +4,12 @@ import { MetricDimensions, MetricNames } from "./metric-types";
 export class MetricsHelper {
   singleMetric: Metrics;
 
-  constructor(metrics = new Metrics()) {
+  constructor(public readonly metrics = new Metrics()) {
     this.singleMetric = metrics.singleMetric();
+  }
+
+  public captureMetric(name: string, value = 1, unit = MetricUnits.Count) {
+    this.metrics.addMetric(name, unit, value);
   }
 
   captureResponseLatency(start: number, metricValue: string): number {

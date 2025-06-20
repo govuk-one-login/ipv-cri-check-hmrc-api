@@ -24,8 +24,8 @@ export class JwtSignerHandler implements LambdaInterface {
     event: SignerPayLoad,
     context: Context
   ): Promise<string> {
-    const logHelper = new LogHelper(context);
-    logHelper.logEntry(context.functionName, event.govJourneyId);
+    const logHelper = new LogHelper(context, event.govJourneyId);
+    logHelper.logEntry();
 
     const parsedHeader = JSON.parse(event.header) as SignerHeader;
 

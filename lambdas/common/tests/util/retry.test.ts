@@ -68,9 +68,7 @@ describe("withRetry", () => {
     const fn = jest.fn().mockRejectedValue(error);
 
     const shouldRetry = jest.fn().mockReturnValue(false);
-    await expect(
-      withRetry(fn, mockLogger, { maxRetries: 3, shouldRetry })
-    ).rejects.toThrow("fatal");
+    await expect(withRetry(fn, mockLogger, { maxRetries: 3, shouldRetry })).rejects.toThrow("fatal");
 
     expect(fn).toHaveBeenCalledTimes(1);
     expect(shouldRetry).toHaveBeenCalledWith(error, 0);
@@ -78,17 +76,9 @@ describe("withRetry", () => {
 
   it("should retry only while shouldRetry returns true", async () => {
     const error = new Error("transient");
-    const fn = jest
-      .fn()
-      .mockRejectedValueOnce(error)
-      .mockRejectedValueOnce(error)
-      .mockResolvedValue("recovered");
+    const fn = jest.fn().mockRejectedValueOnce(error).mockRejectedValueOnce(error).mockResolvedValue("recovered");
 
-    const shouldRetry = jest
-      .fn()
-      .mockReturnValueOnce(true)
-      .mockReturnValueOnce(true)
-      .mockReturnValue(true);
+    const shouldRetry = jest.fn().mockReturnValueOnce(true).mockReturnValueOnce(true).mockReturnValue(true);
 
     const promise = withRetry(fn, mockLogger, {
       maxRetries: 5,
@@ -111,10 +101,7 @@ describe("withRetry", () => {
   });
 
   it("should use exponential backoff correctly", async () => {
-    const fn = jest
-      .fn()
-      .mockRejectedValueOnce(new Error("fail 1"))
-      .mockResolvedValue("success");
+    const fn = jest.fn().mockRejectedValueOnce(new Error("fail 1")).mockResolvedValue("success");
 
     const baseDelay = 100;
     const promise = withRetry(fn, mockLogger, { maxRetries: 2, baseDelay });
