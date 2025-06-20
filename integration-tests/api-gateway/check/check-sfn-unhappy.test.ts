@@ -1,12 +1,5 @@
-import {
-  checkEndpoint,
-  createSession,
-  getJarAuthorization,
-} from "../endpoints";
-import {
-  clearAttemptsTable,
-  clearItemsFromTables,
-} from "../../resources/dynamodb-helper";
+import { checkEndpoint, createSession, getJarAuthorization } from "../endpoints";
+import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamodb-helper";
 import { NINO } from "../env-variables";
 
 jest.setTimeout(30_000);
