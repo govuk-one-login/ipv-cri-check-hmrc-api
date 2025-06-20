@@ -40,7 +40,7 @@ export async function matchUserDetailsWithPdv(
 
   const latency = metricsHelper.captureResponseLatency(requestStartTime, "MatchingHandler");
   logger.info({
-    message: "HMRC API response received",
+    message: "PDV API response received",
     url: apiUrl,
     status: response.status,
     latencyInMs: latency,
