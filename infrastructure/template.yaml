@@ -59,13 +59,12 @@ Conditions:
   IsDevEnvironment: !Equals [!Ref Environment, dev]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
   IsProdEnvironment: !Equals [!Ref Environment, production]
-  IsDevLikeEnvironment:
-    !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
+  IsDevLikeEnvironment: !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
   UseCanaryDeploymentAlarms: !Or
-    - !Not [ !Equals [ !Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE ]]
-    - !Not [ !Equals [ !Ref LambdaDeploymentPreference, AllAtOnce ]]
+    - !Not [!Equals [!Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE]]
+    - !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
@@ -152,8 +151,7 @@ Globals:
     Runtime: nodejs22.x
     Architectures: [arm64]
     MemorySize: 2048
-    PermissionsBoundary:
-      !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
+    PermissionsBoundary: !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
     VpcConfig:
       SecurityGroupIds:
         - !ImportValue cri-vpc-AWSServicesEndpointSecurityGroupId
@@ -186,8 +184,7 @@ Globals:
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
     AutoPublishAlias: live
-    ProvisionedConcurrencyConfig:
-      !If
+    ProvisionedConcurrencyConfig: !If
       - AddProvisionedConcurrency
       - ProvisionedConcurrentExecutions: !FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency]
       - !Ref AWS::NoValue
@@ -218,8 +215,7 @@ Resources:
       Handler: lambdas/ci-mapping/src/ci-mapping-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-CiMapping"
@@ -234,8 +230,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref CiMappingFunctionLogGroup
 
@@ -249,8 +244,7 @@ Resources:
       Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-CredentialSubject"
@@ -265,8 +259,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref CredentialSubjectFunctionLogGroup
 
@@ -280,8 +273,7 @@ Resources:
       Handler: lambdas/jwt-signer/src/jwt-signer-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Policies:
         - Statement:
             Effect: Allow
@@ -302,8 +294,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref JwtSignerFunctionLogGroup
 
@@ -317,8 +308,7 @@ Resources:
       Handler: lambdas/otg-api/src/otg-api-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-OTG"
@@ -333,8 +323,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref OTGFunctionLogGroup
 
@@ -490,15 +479,11 @@ Resources:
         Role: !GetAtt CodeDeployServiceRole.Arn
         Alarms: !If
           - UseCanaryDeploymentAlarms
-          - [
-              !Ref AbandonFunctionCanaryErrors,
-              !Ref AbandonStateMachineCanary5xxErrors,
-            ]
+          - [!Ref AbandonFunctionCanaryErrors, !Ref AbandonStateMachineCanary5xxErrors]
           - [!Ref AWS::NoValue]
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/AbandonFunction
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Abandon"
@@ -531,8 +516,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref AbandonFunctionLogGroup
 
@@ -546,8 +530,7 @@ Resources:
       Handler: lambdas/matching/src/matching-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Matching"
@@ -562,8 +545,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref MatchingFunctionLogGroup
 
@@ -577,8 +559,7 @@ Resources:
       Handler: lambdas/ssm-parameters/src/ssm-parameters-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Policies:
         - SSMParameterReadPolicy:
             ParameterName: "*"
@@ -596,8 +577,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref SsmParametersFunctionLogGroup
 
@@ -611,8 +591,7 @@ Resources:
       Handler: lambdas/time-handler/src/time-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
-      CodeSigningConfigArn:
-        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Time"
@@ -627,8 +606,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref TimeFunctionLogGroup
 
@@ -705,8 +683,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref PublicNinoCheckApiAccessLogGroup
 
@@ -810,8 +787,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref PrivateNinoCheckApiAccessLogGroup
 
@@ -1071,8 +1047,7 @@ Resources:
         OTGFunction: !Ref OTGFunction.Version
         CheckHmrcEventBus: !Ref CheckHmrcEventBus
         CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-        AuditEventNameResponseReceived:
-          !FindInMap [Audit, EventName, ResponseReceived]
+        AuditEventNameResponseReceived: !FindInMap [Audit, EventName, ResponseReceived]
         AuditEventNameRequestSent: !FindInMap [Audit, EventName, RequestSent]
       Logging:
         Destinations:
@@ -1143,8 +1118,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedNinoCheckStateMachineLogGroup
 
@@ -1251,8 +1225,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedAbandonStateMachineLogGroup
 
@@ -1392,8 +1365,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedNinoIssueCredentialLogGroup
 
@@ -1444,8 +1416,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedCheckSessionStateMachineLogGroup
 
@@ -1555,14 +1526,14 @@ Resources:
         - Arn: !Sub
             - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
             - auditEventQueueName:
-                Fn::ImportValue: !Sub  "${TxmaStackName}-AuditEventQueueName"
+                Fn::ImportValue: !Sub "${TxmaStackName}-AuditEventQueueName"
           Id: AuditEventQueue
           InputPath: "$.detail"
           DeadLetterConfig: !If
-              - IsDevLikeEnvironment
-              - !Ref AWS::NoValue
-              - Arn:
-                  Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventDLQArn
+            - IsDevLikeEnvironment
+            - !Ref AWS::NoValue
+            - Arn:
+                Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventDLQArn
 
   EventBridgeStateMachineExecutionRole:
     Type: AWS::IAM::Role
@@ -1799,7 +1770,7 @@ Resources:
         - Name: StateMachineArn
           Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${CheckSessionStateMachine}"
         - Name: Alias
-          Value: 'live'
+          Value: "live"
       Namespace: AWS/States
       Statistic: Sum
       Unit: Count
@@ -1824,7 +1795,7 @@ Resources:
         - Name: StateMachineArn
           Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AbandonStateMachine}"
         - Name: Alias
-          Value: 'live'
+          Value: "live"
       Namespace: AWS/States
       Statistic: Sum
       Unit: Count
@@ -1849,7 +1820,7 @@ Resources:
         - Name: StateMachineArn
           Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoCheckStateMachine}"
         - Name: Alias
-          Value: 'live'
+          Value: "live"
       Namespace: AWS/States
       Statistic: Sum
       Unit: Count
@@ -1874,7 +1845,7 @@ Resources:
         - Name: StateMachineArn
           Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoIssueCredentialStateMachine"
         - Name: Alias
-          Value: 'live'
+          Value: "live"
       Namespace: AWS/States
       Statistic: Sum
       Unit: Count
@@ -1899,7 +1870,7 @@ Resources:
         - Name: StateMachineArn
           Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AuditEventStateMachine}"
         - Name: Alias
-          Value: 'live'
+          Value: "live"
       Namespace: AWS/States
       Statistic: Sum
       Unit: Count
@@ -2298,8 +2269,7 @@ Resources:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevLikeEnvironment
     Properties:
-      DestinationArn:
-        !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedAuditEventStateMachineLogGroup
 
@@ -2476,8 +2446,7 @@ Resources:
       Handler: lambdas/pii-redact/src/pii-redact-handler.lambdaHandler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/PIIRedactFunction
-      CodeSigningConfigArn:
-        !If [ EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue ]
+      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RedactionLogStreamTrackingTable
@@ -2505,7 +2474,7 @@ Resources:
     Properties:
       FunctionName: !GetAtt PIIRedactFunction.Arn
       Action: lambda:InvokeFunction
-      Principal: !Join [ ".", [ "logs", !Ref "AWS::Region", "amazonaws.com" ] ]
+      Principal: !Join [".", ["logs", !Ref "AWS::Region", "amazonaws.com"]]
       SourceAccount: !Ref AWS::AccountId
 
   PIIRedactFunctionCloudWatchAliasPermissions:
@@ -2513,7 +2482,7 @@ Resources:
     Properties:
       FunctionName: !Ref PIIRedactFunction.Alias
       Action: lambda:InvokeFunction
-      Principal: !Join [ ".", [ "logs", !Ref "AWS::Region", "amazonaws.com" ] ]
+      Principal: !Join [".", ["logs", !Ref "AWS::Region", "amazonaws.com"]]
       SourceAccount: !Ref AWS::AccountId
 
   NinoCheckStateMachineLogsSubscriptionFilter:
@@ -2581,7 +2550,7 @@ Resources:
                 - codedeploy.amazonaws.com
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
-      PermissionsBoundary: !If [ UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue ]
+      PermissionsBoundary: !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
 
 ##################################################################
 #                                                                  #
