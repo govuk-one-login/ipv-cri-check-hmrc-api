@@ -16,8 +16,8 @@ export class SsmParametersHandler implements LambdaInterface {
     event: { parameters: string[]; govJourneyId: string },
     context: Context
   ): Promise<Parameter[]> {
-    const logHelper = new LogHelper(context);
-    logHelper.logEntry(context.functionName, event.govJourneyId);
+    const logHelper = new LogHelper(context, event.govJourneyId);
+    logHelper.logEntry();
 
     if (!Array.isArray(event.parameters)) {
       throw new Error("Input must be string array");
@@ -36,8 +36,6 @@ export class SsmParametersHandler implements LambdaInterface {
         ", "
       )}`;
       logHelper.logError(
-        context.functionName,
-        event.govJourneyId,
         errorMessage
       );
       throw new Error(errorMessage);

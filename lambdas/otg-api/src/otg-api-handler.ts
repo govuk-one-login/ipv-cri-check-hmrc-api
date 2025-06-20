@@ -20,8 +20,8 @@ export class OTGApiHandler implements LambdaInterface {
     event: { apiURL: string; govJourneyId: string },
     context: Context
   ): Promise<{ token: string; expiry: number }> {
-    const logHelper = new LogHelper(context, this.logger);
-    logHelper.logEntry(context.functionName, event.govJourneyId);
+    const logHelper = new LogHelper(context, event.govJourneyId, this.logger);
+    logHelper.logEntry();
 
     try {
       const requestStartTime = Math.floor(performance.now());
@@ -55,7 +55,7 @@ export class OTGApiHandler implements LambdaInterface {
       );
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      logHelper.logError(context.functionName, event.govJourneyId, message);
+      logHelper.logError(message);
       throw error;
     }
   }

@@ -1,14 +1,22 @@
-import { DynamoDBClient, QueryCommandOutput } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, QueryCommand, QueryCommandOutput } from "@aws-sdk/client-dynamodb";
 import { PersonIdentityItem } from "../../src/database/types/person-identity";
 import { getRecordBySessionId } from "../../src/database/get-record-by-session-id";
-import {
-  RecordExpiredError,
-  RecordNotFoundError,
-} from "../../src/database/exceptions/errors";
+import { RecordExpiredError, RecordNotFoundError, TooManyRecordsError } from "../../src/database/exceptions/errors";
 import { mockLogger } from "../logger";
 import { SessionItem } from "../../src/database/types/session-item";
 
 const tableName = "some-table-some-stack";
+
+jest.mock("@aws-sdk/client-dynamodb", () => ({
+  QueryCommand: jest.fn().mockImplementation((input) => ({
+    type: "QueryCommandInstance",
+    input,
+  })),
+  DynamoDBClient: jest.fn().mockImplementation(() => ({
+    send: jest.fn(),
+  })),
+}));
+
 const dynamoClient = new DynamoDBClient();
 
 /**
@@ -29,9 +37,7 @@ function personIdentityObjectPairWithExpiry(
    */
   expiryInterval: number = 1
 ): [QueryCommandOutput, PersonIdentityItem[]] {
-  const expiries = new Array(count)
-    .fill(0)
-    .map((_, index) => time + index * expiryInterval * 60);
+  const expiries = new Array(count).fill(0).map((_, index) => time + index * expiryInterval * 60);
 
   return [
     {
@@ -66,8 +72,7 @@ const noMatchResponse: QueryCommandOutput = {
 const now = Math.round(Date.now() / 1000);
 
 const anHourFromNow = now + 60 * 60;
-const [validPersonIdentityResult, validPersonIdentityOutput] =
-  personIdentityObjectPairWithExpiry(anHourFromNow);
+const [validPersonIdentityResult, validPersonIdentityOutput] = personIdentityObjectPairWithExpiry(anHourFromNow);
 
 const anHourAgo = now - 60 * 60;
 
@@ -86,16 +91,30 @@ describe("getRecordBySessionId()", () => {
       tableName,
       "12345678",
       mockLogger,
+      undefined,
       dynamoClient
     );
 
     expect(result).toEqual(validPersonIdentityOutput);
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
+    expect(dynamoClient.send).toHaveBeenCalledWith(
+      new QueryCommand({
+        TableName: tableName,
+        KeyConditionExpression: "sessionId = :value",
+        ExpressionAttributeValues: {
+          ":value": {
+            S: "12345678",
+          },
+        },
+      })
+    );
   });
 
-  it("returns multiple records if that is what DynamoDB returns", async () => {
-    const [validMultipleRecordsResult, validMultipleRecordsOutput] =
-      personIdentityObjectPairWithExpiry(anHourFromNow, 3);
+  it("returns multiple records if allowMultipleEntries=true", async () => {
+    const [validMultipleRecordsResult, validMultipleRecordsOutput] = personIdentityObjectPairWithExpiry(
+      anHourFromNow,
+      3
+    );
 
     dynamoClient.send = jest.fn().mockResolvedValue(validMultipleRecordsResult);
 
@@ -103,6 +122,44 @@ describe("getRecordBySessionId()", () => {
       tableName,
       "12345678",
       mockLogger,
+      { allowMultipleEntries: true },
+      dynamoClient
+    );
+
+    expect(result).toEqual(validMultipleRecordsOutput);
+    expect(dynamoClient.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns no records if allowNoEntries=true", async () => {
+    const [validMultipleRecordsResult, validMultipleRecordsOutput] = personIdentityObjectPairWithExpiry(
+      anHourFromNow,
+      0
+    );
+
+    dynamoClient.send = jest.fn().mockResolvedValue(validMultipleRecordsResult);
+
+    const result = await getRecordBySessionId<PersonIdentityItem>(
+      tableName,
+      "12345678",
+      mockLogger,
+      { allowNoEntries: true },
+      dynamoClient
+    );
+
+    expect(result).toEqual(validMultipleRecordsOutput);
+    expect(dynamoClient.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("doesn't check expiry date if checkExpiryDate=false", async () => {
+    const [validMultipleRecordsResult, validMultipleRecordsOutput] = personIdentityObjectPairWithExpiry(anHourAgo, 1);
+
+    dynamoClient.send = jest.fn().mockResolvedValue(validMultipleRecordsResult);
+
+    const result = await getRecordBySessionId<PersonIdentityItem>(
+      tableName,
+      "12345678",
+      mockLogger,
+      { checkExpiryDate: false },
       dynamoClient
     );
 
@@ -113,63 +170,79 @@ describe("getRecordBySessionId()", () => {
   it("filters out expired records if DynamoDB returns a mixture", async () => {
     // Generate 4 items, spaced 25 minutes apart, starting an hour ago.
     // This should give us three invalid items (-60, -35, -10) and one valid one (+15)
-    const [mixedMultipleRecordsResult, mixedMultipleRecordsOutput] =
-      personIdentityObjectPairWithExpiry(anHourAgo, 4, 25);
+    const [mixedMultipleRecordsResult, mixedMultipleRecordsOutput] = personIdentityObjectPairWithExpiry(
+      anHourAgo,
+      4,
+      25
+    );
 
     dynamoClient.send = jest.fn().mockResolvedValue(mixedMultipleRecordsResult);
 
-    const singleValidResult = mixedMultipleRecordsOutput.filter(
-      (v) => v.expiryDate > Date.now() / 1000
-    );
+    const singleValidResult = mixedMultipleRecordsOutput.filter((v) => v.expiryDate > Date.now() / 1000);
     expect(singleValidResult).toHaveLength(1);
 
-    const result = await getRecordBySessionId<PersonIdentityItem>(
-      tableName,
-      "12345678",
-      mockLogger,
-      dynamoClient
-    );
+    const result = await getRecordBySessionId<PersonIdentityItem>(tableName, "12345678", mockLogger, {}, dynamoClient);
 
     expect(result).toEqual(singleValidResult);
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
   });
 
-  it("throws a RecordExpiredError without retrying if the session has expired", async () => {
-    const [expiredPersonIdentityResult] =
-      personIdentityObjectPairWithExpiry(anHourAgo);
+  it("throws a RecordExpiredError without retrying if the record has expired", async () => {
+    const [expiredPersonIdentityResult] = personIdentityObjectPairWithExpiry(anHourAgo);
 
-    dynamoClient.send = jest
-      .fn()
-      .mockResolvedValue(expiredPersonIdentityResult);
+    dynamoClient.send = jest.fn().mockResolvedValue(expiredPersonIdentityResult);
 
     await expect(
-      getRecordBySessionId<PersonIdentityItem>(
-        tableName,
-        "12345678",
-        mockLogger,
-        dynamoClient
-      )
+      getRecordBySessionId<PersonIdentityItem>(tableName, "12345678", mockLogger, undefined, dynamoClient)
     ).rejects.toThrow(RecordExpiredError);
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
   });
 
-  it("throws a RecordExpiredError without retrying if multiple expired sessions are retrieved", async () => {
+  it("throws a RecordExpiredError without retrying if multiple expired records are retrieved", async () => {
     // generate 5 expired sessions
-    const [multipleExpiredPersonIdentityResult] =
-      personIdentityObjectPairWithExpiry(anHourAgo, 5);
+    const [multipleExpiredPersonIdentityResult] = personIdentityObjectPairWithExpiry(anHourAgo, 5);
 
-    dynamoClient.send = jest
-      .fn()
-      .mockResolvedValue(multipleExpiredPersonIdentityResult);
+    dynamoClient.send = jest.fn().mockResolvedValue(multipleExpiredPersonIdentityResult);
 
     await expect(
-      getRecordBySessionId<PersonIdentityItem>(
-        tableName,
-        "12345678",
-        mockLogger,
-        dynamoClient
-      )
+      getRecordBySessionId<PersonIdentityItem>(tableName, "12345678", mockLogger, undefined, dynamoClient)
     ).rejects.toThrow(RecordExpiredError);
+    expect(dynamoClient.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws a TooManyRecordsError without retrying if multiple records are retrieved", async () => {
+    const [multiplePersonIdentityResult] = personIdentityObjectPairWithExpiry(anHourFromNow, 2);
+
+    dynamoClient.send = jest.fn().mockResolvedValue(multiplePersonIdentityResult);
+
+    await expect(
+      getRecordBySessionId<PersonIdentityItem>(tableName, "12345678", mockLogger, undefined, dynamoClient)
+    ).rejects.toThrow(TooManyRecordsError);
+    expect(dynamoClient.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("doesn't break if result.Items is undefined", async () => {
+    dynamoClient.send = jest.fn().mockResolvedValue({ Count: 0 });
+
+    const result = await getRecordBySessionId<PersonIdentityItem>(
+      tableName,
+      "12345678",
+      mockLogger,
+      { allowNoEntries: true },
+      dynamoClient
+    );
+
+    expect(result).toEqual([]);
+    expect(dynamoClient.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("doesn't break if checkExpiryDate is true but a record is missing its expiry date", async () => {
+    dynamoClient.send = jest.fn().mockResolvedValue({ Count: 1, Items: [{ sessionId: { S: "12345678" } }] });
+
+    await expect(
+      getRecordBySessionId<PersonIdentityItem>(tableName, "12345678", mockLogger, undefined, dynamoClient)
+    ).rejects.toThrow(RecordExpiredError);
+
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
   });
 
@@ -187,12 +260,7 @@ describe("getRecordBySessionId()", () => {
       .mockResolvedValueOnce(noMatchResponse)
       .mockResolvedValueOnce(validPersonIdentityResult);
 
-    const result = await getRecordBySessionId<PersonIdentityItem>(
-      "12345678",
-      tableName,
-      mockLogger,
-      dynamoClient
-    );
+    const result = await getRecordBySessionId<PersonIdentityItem>("12345678", tableName, mockLogger, {}, dynamoClient);
 
     expect(result).toEqual(validPersonIdentityOutput);
     expect(dynamoClient.send).toHaveBeenCalledTimes(4);
@@ -208,6 +276,7 @@ describe("getRecordBySessionId()", () => {
       tableName,
       "12345678",
       mockLogger,
+      undefined,
       dynamoClient
     );
 
@@ -219,12 +288,7 @@ describe("getRecordBySessionId()", () => {
     dynamoClient.send = jest.fn().mockResolvedValue(noMatchResponse);
 
     await expect(
-      getRecordBySessionId<PersonIdentityItem>(
-        tableName,
-        "12345678",
-        mockLogger,
-        dynamoClient
-      )
+      getRecordBySessionId<PersonIdentityItem>(tableName, "12345678", mockLogger, undefined, dynamoClient)
     ).rejects.toThrow(RecordNotFoundError);
     expect(dynamoClient.send).toHaveBeenCalledTimes(4);
   });
@@ -249,12 +313,7 @@ describe("getRecordBySessionId()", () => {
       ],
     });
 
-    const result = await getRecordBySessionId<SessionItem>(
-      tableName,
-      "dummy",
-      mockLogger,
-      dynamoClient
-    );
+    const result = await getRecordBySessionId<SessionItem>(tableName, "dummy", mockLogger, undefined, dynamoClient);
 
     expect(result).toEqual([
       {
@@ -284,12 +343,7 @@ describe("getRecordBySessionId()", () => {
       ],
     });
 
-    const result = getRecordBySessionId<SessionItem>(
-      tableName,
-      "dummy",
-      mockLogger,
-      dynamoClient
-    );
+    const result = getRecordBySessionId<SessionItem>(tableName, "dummy", mockLogger, {}, dynamoClient);
 
     await expect(result).rejects.toThrow(RecordExpiredError);
 

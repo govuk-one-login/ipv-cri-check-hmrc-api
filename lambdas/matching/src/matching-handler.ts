@@ -22,9 +22,8 @@ export class MatchingHandler implements LambdaInterface {
     event: MatchEvent,
     context: Context
   ): Promise<{ status: string; body: string; txn: string }> {
-    const logHelper = new LogHelper(context, this.logger);
+    const logHelper = new LogHelper(context, event.user.govuk_signin_journey_id, this.logger);
     logHelper.logEntry(
-      context.functionName,
       event.user.govuk_signin_journey_id
     );
 

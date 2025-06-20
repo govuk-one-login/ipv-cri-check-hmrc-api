@@ -16,8 +16,8 @@ export class CredentialSubjectHandler implements LambdaInterface {
     event: UserInfoEvent,
     context: Context
   ): Promise<CredentialSubject> {
-    const logHelper = new LogHelper(context);
-    logHelper.logEntry(context.functionName, event.govJourneyId);
+    const logHelper = new LogHelper(context, event.govJourneyId);
+    logHelper.logEntry();
 
     try {
       return credentialSubjectBuilder
@@ -31,7 +31,7 @@ export class CredentialSubjectHandler implements LambdaInterface {
         .build();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      logHelper.logError(context.functionName, event.govJourneyId, message);
+      logHelper.logError(message);
       throw error;
     }
   }

@@ -13,7 +13,7 @@ jest.mock("@aws-lambda-powertools/logger", () => ({
 export const context: Context = {
   awsRequestId: "",
   callbackWaitsForEmptyEventLoop: false,
-  functionName: "",
+  functionName: "TestSource",
   functionVersion: "",
   invokedFunctionArn: "",
   logGroupName: "",
@@ -27,11 +27,13 @@ export const context: Context = {
   succeed(): void {},
 };
 
+const govJourneyId = "123456";
+
 describe("log-helper", () => {
   let logHelper: LogHelper;
 
   beforeEach(() => {
-    logHelper = new LogHelper(context);
+    logHelper = new LogHelper(context, govJourneyId);
   });
 
   afterEach(() => {
@@ -39,28 +41,23 @@ describe("log-helper", () => {
   });
 
   it("should log entry with source and govJourneyId", () => {
-    const source = "TestSource";
-    const govJourneyId = "123456";
-
-    logHelper.logEntry(source, govJourneyId);
+    logHelper.logEntry();
 
     expect(logHelper.logger.appendKeys).toHaveBeenCalledWith({
       govuk_signin_journey_id: govJourneyId,
     });
     expect(logHelper.logger.info).toHaveBeenCalledWith(
-      `${source} invoked with government journey id: ${govJourneyId}`
+      `${context.functionName} invoked with government journey id: ${govJourneyId}`
     );
   });
 
   it("should log errors with message JourneyId", () => {
-    const source = "TestSource";
-    const govJourneyId = "123456";
     const errorMessage = "Test error message";
 
-    logHelper.logError(source, govJourneyId, errorMessage);
+    logHelper.logError(errorMessage);
 
     expect(logHelper.logger.error).toHaveBeenCalledWith({
-      message: `Error in ${source}: ${errorMessage}`,
+      message: `Error in ${context.functionName}: ${errorMessage}`,
       govuk_signin_journey_id: govJourneyId,
     });
   });

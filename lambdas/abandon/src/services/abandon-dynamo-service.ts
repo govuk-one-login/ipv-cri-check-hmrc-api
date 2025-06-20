@@ -9,10 +9,7 @@ const dynamoClient = new DynamoDBClient();
 
 export async function retrieveSessionRecord(sessionTableName: string, sessionId: string) {
   try {
-    const sessionItems = await getRecordBySessionId<SessionItem>(sessionTableName, sessionId, logger, dynamoClient);
-    if (sessionItems.length > 1) {
-      logger.warn("Multiple sessions found for session id");
-    }
+    const sessionItems = await getRecordBySessionId<SessionItem>(sessionTableName, sessionId, logger, {}, dynamoClient);
     return sessionItems[0];
   } catch (error: unknown) {
     if (error instanceof RecordNotFoundError) {
