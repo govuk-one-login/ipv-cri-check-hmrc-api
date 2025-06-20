@@ -1013,6 +1013,77 @@ Resources:
         - Name: StateMachineArn
           Value: !Ref CheckSessionStateMachine
 
+  NinoCheckFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/nino-check/src/handler.handler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/NinoCheckFunction
+      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: check-hmrc-cri-api/OtgUrl/*
+        - SSMParameterReadPolicy:
+            ParameterName: check-hmrc-cri-api/NinoCheckUrl/*
+        - SSMParameterReadPolicy:
+            # I would use !Ref UserAgent here, but this returns the name with leading slash.
+            # There is no easy native way to strip the first character of a string in CloudFormation syntax.
+            ParameterName: !Sub ${AWS::StackName}/UserAgent
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBWritePolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+        - DynamoDBWritePolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+        - DynamoDBReadPolicy:
+            TableName: !Ref UserAttemptsTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref UserAttemptsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref NinoUsersTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref NinoUsersTable
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-NinoCheckFunction"
+          PDV_USER_AGENT_PARAM_NAME: !Ref UserAgent
+          SESSION_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+          PERSON_IDENTITY_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+          ATTEMPT_TABLE: !Ref UserAttemptsTable
+          NINO_USER_TABLE: !Ref NinoUsersTable
+          AUDIT_EVENT_BUS: !Ref CheckHmrcEventBus
+          AUDIT_SOURCE: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+          AUDIT_ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
+
+  NinoCheckFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/NinoCheckFunction
+      RetentionInDays: 30
+
+  NinoCheckFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevLikeEnvironment
+    Properties:
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
+      LogGroupName: !Ref NinoCheckFunctionLogGroup
+
+  NinoCheckFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref NinoCheckFunction.Alias
+      Principal: apigateway.amazonaws.com
+
   NinoCheckStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:

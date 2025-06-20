@@ -166,6 +166,36 @@ paths:
                 #set($context.responseOverride.status = 200)
                 #end
                 $output.body
+  /check-test:
+    post:
+      summary: "IP address of the client."
+      parameters:
+        - $ref: "#/components/parameters/SessionHeader"
+        - $ref: "#/components/parameters/AuditHeader"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Nino"
+        required: true
+      x-amazon-apigateway-request-validator: "Validate both"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NinoCheckFunction.Arn}:live/invocations
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
   /abandon:
     post:
       summary: "IP address of the client."
