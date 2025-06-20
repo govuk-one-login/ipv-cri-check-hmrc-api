@@ -10,7 +10,6 @@
     "deploy": "../../deploy.sh",
     "compile": "tsc"
   },
-  "dependencies": {},
   "devDependencies": {
     "aws-sdk-client-mock": "4.1.0",
     "aws-sdk-client-mock-jest": "4.1.0"
