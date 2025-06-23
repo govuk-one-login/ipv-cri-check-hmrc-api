@@ -70,7 +70,7 @@ Conditions:
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
   AddProvisionedConcurrency:
-    !Not [!Equals [!FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency], 0]]
+    !Not [!Equals [!FindInMap [ProvisionedConcurrency, Environment, !Ref Environment], 0]]
 
 Mappings:
   StaticVariables:
@@ -95,6 +95,15 @@ Mappings:
       staging: MONTHS
       integration: MONTHS
       production: MONTHS
+
+  ProvisionedConcurrency:
+    Environment:
+      localdev: 0
+      dev: 0
+      build: 1
+      staging: 0
+      integration: 0
+      production: 1
 
   Dynatrace:
     SecretArn:
@@ -127,22 +136,16 @@ Mappings:
 
   EnvironmentConfiguration:
     localdev:
-      provisionedConcurrency: 0
       DOMAINNAME: review-hc.localdev.account.gov.uk
     dev:
-      provisionedConcurrency: 0
       DOMAINNAME: review-hc.dev.account.gov.uk
     build:
-      provisionedConcurrency: 1
       DOMAINNAME: review-hc.build.account.gov.uk
     staging:
-      provisionedConcurrency: 0
       DOMAINNAME: review-hc.staging.account.gov.uk
     integration:
-      provisionedConcurrency: 0
       DOMAINNAME: review-hc.integration.account.gov.uk
     production:
-      provisionedConcurrency: 1
       DOMAINNAME: review-hc.production.account.gov.uk
 
 Globals:
@@ -189,7 +192,7 @@ Globals:
     ProvisionedConcurrencyConfig:
       !If
       - AddProvisionedConcurrency
-      - ProvisionedConcurrentExecutions: !FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency]
+      - ProvisionedConcurrentExecutions: !FindInMap [ProvisionedConcurrency, Environment, !Ref Environment]
       - !Ref AWS::NoValue
 
 Resources:
