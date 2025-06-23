@@ -28,7 +28,7 @@ jobs:
         uses: aws-actions/setup-sam@v2
 
       - name: Build SAM application
-        uses: govuk-one-login/github-actions/sam/build-application@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
+        uses: govuk-one-login/github-actions/sam/build-application@cef7e167735911d22a0812e3029af71dff3924f1
         id: build
         with:
           template: infrastructure/template.yaml

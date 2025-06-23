@@ -11,6 +11,8 @@ There are 3 types of Integration Tests: Mocked, AWS and API Gateway
 These tests run against the real state machine deployed in AWS.
 To run these tests the following environment variables are needed:
 
+
+
 - STACK_NAME
 - AWS_REGION
 - AWS_ACCESS_KEY_ID
