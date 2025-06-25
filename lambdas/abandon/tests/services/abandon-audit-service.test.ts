@@ -5,6 +5,7 @@ import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
 import { AbandonHandlerConfig } from "../../src/config/abandon-handler-config";
 import { CriError } from "../../../common/src/errors/cri-error";
+import { UnixSecondsTimestamp } from "../../../common/src/types/brands";
 
 describe("abandon-audit-service", () => {
   describe("createUserAuditInfo", () => {
@@ -18,7 +19,7 @@ describe("abandon-audit-service", () => {
       };
 
       const sessionItem: SessionItem = {
-        expiryDate: 0,
+        expiryDate: 0 as UnixSecondsTimestamp,
         sessionId: "session-id",
         clientId: "dummy",
         clientSessionId: "abc123",
@@ -45,7 +46,7 @@ describe("abandon-audit-service", () => {
       };
 
       const sessionItem: SessionItem = {
-        expiryDate: 0,
+        expiryDate: 0 as UnixSecondsTimestamp,
         sessionId: "session-id",
         clientId: "dummy",
         clientSessionId: "abc123",

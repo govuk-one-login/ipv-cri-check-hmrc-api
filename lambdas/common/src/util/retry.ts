@@ -1,4 +1,5 @@
 import { Logger } from "@aws-lambda-powertools/logger";
+import { safeStringifyError } from "./stringify-error";
 
 export async function withRetry<T>(
   fn: () => Promise<T>,
@@ -21,7 +22,9 @@ export async function withRetry<T>(
       }
       const delay = baseDelay * Math.pow(2, attempt);
       logger.info(
-        `Failed to execute callback (retry attempt ${attempt}). Waiting ${delay} ms and retrying...`
+        `Failed to execute callback (retry attempt ${attempt}; error: ${safeStringifyError(
+          error
+        )}). Waiting ${delay} ms and retrying...`
       );
       await new Promise((resolve) => setTimeout(resolve, delay));
     }

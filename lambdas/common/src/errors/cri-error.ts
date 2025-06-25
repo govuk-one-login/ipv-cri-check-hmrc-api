@@ -1,9 +1,10 @@
 export class CriError extends Error {
-  status: number;
+  public readonly name = "CriError";
 
-  constructor(status: number, message: string) {
+  constructor(
+    public readonly status: number,
+    message: string
+  ) {
     super(message);
-    this.status = status;
-    this.name = "CriError";
   }
 }
