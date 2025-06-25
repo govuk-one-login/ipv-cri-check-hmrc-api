@@ -1,12 +1,5 @@
-import {
-  checkEndpoint,
-  createSession,
-  getJarAuthorization,
-} from "../endpoints";
-import {
-  clearAttemptsTable,
-  clearItemsFromTables,
-} from "../../resources/dynamodb-helper";
+import { checkEndpoint, createSession, getJarAuthorization } from "../endpoints";
+import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamodb-helper";
 import { AUDIENCE, NINO } from "../env-variables";
 
 jest.setTimeout(30_000);
@@ -48,11 +41,7 @@ describe("Given the session and NINO is valid", () => {
   it("Should receive a 200 response when /check endpoint is called without optional headers", async () => {
     sessionId = sessionData.session_id;
 
-    const check = await checkEndpoint(
-      privateApi,
-      { "session-id": sessionId },
-      NINO
-    );
+    const check = await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
     const checkData = check.status;
 
     expect(checkData).toEqual(200);
@@ -117,11 +106,7 @@ describe("Given the session and NINO is valid", () => {
     const sessionData = await sessionResponse.json();
     const sessionId = sessionData.session_id;
 
-    const check = await checkEndpoint(
-      privateApi,
-      { "session-id": sessionId },
-      NINO
-    );
+    const check = await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
     const checkData = check.status;
 
     expect(checkData).toEqual(200);
