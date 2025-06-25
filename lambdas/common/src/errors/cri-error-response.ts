@@ -8,8 +8,11 @@ export function handleErrorResponse(err: unknown, logger: Logger) {
       return formatResponse(err.status, "Internal server error");
     }
     return formatResponse(err.status, err.message);
+  } else if (err instanceof Error) {
+    logger.error("Error thrown: " + err.name);
+  } else {
+    logger.error("Unknown error thrown");
   }
-  err instanceof Error ? logger.error("Error thrown: " + err.name) : logger.error("Unknown error thrown");
   return formatResponse(500, "Internal server error");
 }
 
