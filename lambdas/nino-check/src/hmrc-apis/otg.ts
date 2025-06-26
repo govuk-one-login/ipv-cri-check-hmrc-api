@@ -1,18 +1,14 @@
-import { Logger } from "@aws-lambda-powertools/logger";
-import { MetricsHelper } from "../../../logging/metrics-helper";
 import { OtgConfig, OtgTokenResponse } from "./types/otg";
+import { logger } from "../../../common/src/util/logger";
+import { captureLatency } from "../../../common/src/util/metrics";
 
-export async function getTokenFromOtg(
-  { apiUrl }: OtgConfig,
-  logger: Logger,
-  metricsHelper: MetricsHelper
-): Promise<OtgTokenResponse> {
-  const requestStartTime = Math.floor(performance.now());
-  const response = await fetch(apiUrl, {
-    method: "GET",
-  });
+export async function getTokenFromOtg({ apiUrl }: OtgConfig): Promise<string> {
+  const [response, latency] = await captureLatency("OTGHandler", () =>
+    fetch(apiUrl, {
+      method: "GET",
+    })
+  );
 
-  const latency = metricsHelper.captureResponseLatency(requestStartTime, "OTGHandler");
   logger.info({
     message: "OTG API response received",
     url: apiUrl,
@@ -27,7 +23,7 @@ export async function getTokenFromOtg(
     if (now > expiry) {
       throw new Error("OTG returned an expired Bearer Token");
     }
-    return body;
+    return body.token;
   }
 
   throw new Error(`Error response received from OTG ${response.status} ${response.statusText}`);

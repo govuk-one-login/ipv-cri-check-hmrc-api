@@ -21,9 +21,9 @@ export async function withRetry<T>(
       }
       const delay = baseDelay * Math.pow(2, attempt);
       logger.info(
-        `Failed to execute callback (retry attempt ${attempt}; error: ${String(
-          error
-        )}). Waiting ${delay} ms and retrying...`
+        `Failed to execute callback (retry attempt ${attempt}; error: ${
+          error instanceof Error ? error.name : "[unknown]"
+        }). Waiting ${delay} ms and retrying...`
       );
       await new Promise((resolve) => setTimeout(resolve, delay));
     }

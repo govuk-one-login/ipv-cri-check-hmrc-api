@@ -1,7 +1,7 @@
-import { MetricsHelper } from "../../../logging/metrics-helper";
 import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
 import { PdvApiErrorBody, PdvApiInput, PdvApiResponseBody, PdvConfig, PdvFunctionOutput } from "./types/pdv";
-import { Logger } from "@aws-lambda-powertools/logger";
+import { logger } from "../../../common/src/util/logger";
+import { captureLatency } from "../../../common/src/util/metrics";
 
 export function buildPdvInput(personIdentity: PersonIdentityItem, nino: string): PdvApiInput {
   let firstName = "";
@@ -43,22 +43,20 @@ export function buildPdvInput(personIdentity: PersonIdentityItem, nino: string):
 export async function matchUserDetailsWithPdv(
   { apiUrl, userAgent }: PdvConfig,
   oAuthToken: string,
-  apiInput: PdvApiInput,
-  logger: Logger,
-  metricsHelper: MetricsHelper
+  apiInput: PdvApiInput
 ): Promise<PdvFunctionOutput> {
-  const requestStartTime = Math.floor(performance.now());
-  const response = await fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "User-Agent": userAgent,
-      Authorization: `Bearer ${oAuthToken}`,
-    },
-    body: JSON.stringify(apiInput),
-  });
+  const [response, latency] = await captureLatency("MatchingHandler", () =>
+    fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": userAgent,
+        Authorization: `Bearer ${oAuthToken}`,
+      },
+      body: JSON.stringify(apiInput),
+    })
+  );
 
-  const latency = metricsHelper.captureResponseLatency(requestStartTime, "MatchingHandler");
   logger.info({
     message: "PDV API response received",
     url: apiUrl,
@@ -77,14 +75,6 @@ export async function matchUserDetailsWithPdv(
       parsedBody = JSON.parse(responseBody);
     } catch (error: unknown) {
       logger.info(`Received a non-json body for the application/json content-type (error: ${error})`);
-    }
-
-    if (response.status >= 500) {
-      return {
-        httpStatus: response.status,
-        body: "Internal server error",
-        txn: txn,
-      };
     }
 
     return {

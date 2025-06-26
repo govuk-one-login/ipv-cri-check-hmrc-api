@@ -9,7 +9,7 @@ import {
   mockTableNames,
 } from "./mocks/mockConfig";
 import * as functionConfigModule from "../src/helpers/function-config";
-import * as getSessionInfoModule from "../src/helpers/get-session-info";
+import * as getSessionInfoModule from "../src/helpers/retrieve-session";
 import * as validateNinoModule from "../src/helpers/validate-nino";
 import * as addAuthCodeToSessionModule from "../src/helpers/add-auth-code-to-session";
 import { RecordExpiredError, RecordNotFoundError } from "../../common/src/database/exceptions/errors";

@@ -1,6 +1,6 @@
 import * as getRecordModule from "../../../common/src/database/get-record-by-session-id";
 import { TooManyAttemptsError } from "../../src/exceptions/errors";
-import { getSessionInfo } from "../../src/helpers/get-session-info";
+import { getSessionInfo } from "../../src/helpers/retrieve-session";
 import { TableNames } from "../../src/types/input";
 import { mockHelpers } from "../mocks/mockConfig";
 import { mockAttempt, mockPersonIdentity, mockSession, mockSessionId } from "../mocks/mockRecords";

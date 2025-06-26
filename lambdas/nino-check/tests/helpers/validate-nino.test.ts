@@ -9,7 +9,7 @@ import { PutEventsCommand } from "@aws-sdk/client-eventbridge";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
-import { validateNino } from "../../src/helpers/validate-nino";
+import { handleNinoResponse } from "../../src/helpers/validate-nino";
 import { CriError } from "../../../common/src/errors/cri-error";
 import { Helpers } from "../../src/types/input";
 
@@ -65,7 +65,7 @@ describe("NINo Check function validateNino()", () => {
   });
 
   it("works as expected with normal inputs", async () => {
-    const result = await validateNino(
+    const result = await handleNinoResponse(
       mockClientId,
       mockFunctionConfig,
       mockHelpers,
@@ -142,7 +142,7 @@ describe("NINo Check function validateNino()", () => {
     });
 
     await expect(
-      validateNino(mockClientId, mockFunctionConfig, mockHelpers, mockPersonIdentity, mockSession, mockNino)
+      handleNinoResponse(mockClientId, mockFunctionConfig, mockHelpers, mockPersonIdentity, mockSession, mockNino)
     ).rejects.toThrow(Error);
   });
 
@@ -153,7 +153,7 @@ describe("NINo Check function validateNino()", () => {
     });
 
     await expect(
-      validateNino(mockClientId, mockFunctionConfig, mockHelpers, mockPersonIdentity, mockSession, mockNino)
+      handleNinoResponse(mockClientId, mockFunctionConfig, mockHelpers, mockPersonIdentity, mockSession, mockNino)
     ).rejects.toThrow(otgError);
 
     expect(matchUserDetailsWithPdv).not.toHaveBeenCalled();
@@ -168,7 +168,7 @@ describe("NINo Check function validateNino()", () => {
     });
 
     await expect(
-      validateNino(mockClientId, mockFunctionConfig, mockHelpers, mockPersonIdentity, mockSession, mockNino)
+      handleNinoResponse(mockClientId, mockFunctionConfig, mockHelpers, mockPersonIdentity, mockSession, mockNino)
     ).rejects.toThrow(pdvError);
 
     expect(mockDynamoClient).not.toHaveReceivedAnyCommand();
@@ -239,12 +239,12 @@ describe("NINo Check function validateNino()", () => {
 
       if (error) {
         await expect(
-          validateNino(mockClientId, mockFunctionConfig, mockHelpers, mockPersonIdentity, mockSession, mockNino)
+          handleNinoResponse(mockClientId, mockFunctionConfig, mockHelpers, mockPersonIdentity, mockSession, mockNino)
         ).rejects.toThrow(error);
 
         expect(mockDynamoClient).not.toHaveReceivedAnyCommand();
       } else {
-        const res = await validateNino(
+        const res = await handleNinoResponse(
           mockClientId,
           mockFunctionConfig,
           mockHelpers,

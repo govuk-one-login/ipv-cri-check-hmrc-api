@@ -57,7 +57,7 @@ describe("Given the session and NINO is invalid", () => {
     expect(checkData).toEqual(500);
   });
 
-  it("should 500 when provided with a missing session id", async () => {
+  it("should 400 when provided with a missing session id", async () => {
     const missingSessionId = `this session id does not exist`;
     const check = await ninoCheckEndpoint(
       privateApi,

@@ -1,13 +1,14 @@
 import { randomUUID } from "crypto";
 import { TimeUnits, toEpochSecondsFromNow } from "../utils/date-time";
-import { Helpers, TableNames } from "../types/input";
+import { TableNames } from "../types/input";
 import { marshall } from "@aws-sdk/util-dynamodb";
-import { PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { NinoUser } from "../types/nino-user";
+import { logger } from "../../../common/src/util/logger";
 
 export async function addAuthCodeToSession(
+  dynamoClient: DynamoDBClient,
   { sessionTable, ninoUserTable }: TableNames,
-  { logger, dynamoClient }: Helpers,
   sessionId: string,
   nino: string
 ) {
