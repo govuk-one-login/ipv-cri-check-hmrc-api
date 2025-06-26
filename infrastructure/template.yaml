@@ -196,6 +196,35 @@ Globals:
       - !Ref AWS::NoValue
 
 Resources:
+  JWKSBucketRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+        Version: 2012-10-17
+      Policies:
+        - PolicyName: AccessJWKSJson
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:Get*"
+                Resource: !Sub
+                  - "arn:aws:s3:::govuk-one-login-hmrc-check-published-keys-${env}/jwks.json"
+                  - env: !If [IsLocalDevEnvironment, "dev", !Ref Environment]
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      Tags:
+        - Key: "key_consumer_type"
+          Value: "use"
+
   RedactionLogStreamTrackingTable:
     Type: AWS::DynamoDB::Table
     Properties:
