@@ -1,36 +1,24 @@
-import { UnixTimestamp } from "../../../common/src/types/brands";
 import * as otgModule from "../../src/hmrc-apis/otg";
 import * as pdvModule from "../../src/hmrc-apis/pdv";
-import { mockFunctionConfig, mockHelpers as importedHelpers, mockSaveRes, mockTableNames } from "../mocks/mockConfig";
-import { mockNino, mockPersonIdentity, mockSession } from "../mocks/mockRecords";
+import { mockFunctionConfig, mockSaveRes, mockTableNames } from "../mocks/mockConfig";
+import { mockNino, mockPersonIdentity, mockSession } from "../mocks/mockData";
 import { PdvFunctionOutput } from "../../src/hmrc-apis/types/pdv";
 import * as ssmModule from "@aws-lambda-powertools/parameters/ssm";
 import { PutEventsCommand } from "@aws-sdk/client-eventbridge";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
-import { handleNinoResponse } from "../../src/helpers/validate-nino";
 import { CriError } from "../../../common/src/errors/cri-error";
-import { Helpers } from "../../src/types/input";
 
 const getTokenFromOtg = jest.spyOn(otgModule, "getTokenFromOtg");
 const matchUserDetailsWithPdv = jest.spyOn(pdvModule, "matchUserDetailsWithPdv");
 const getParametersByName = jest.spyOn(ssmModule, "getParametersByName");
-jest.mock("@aws-sdk/client-eventbridge");
 
 const mockDynamoClient = mockClient(DynamoDBClient);
 mockDynamoClient.on(PutItemCommand).resolves(mockSaveRes);
 mockDynamoClient.on(UpdateItemCommand).resolves(mockSaveRes);
 
-const mockHelpers: Helpers = {
-  ...importedHelpers,
-  dynamoClient: mockDynamoClient as unknown as DynamoDBClient,
-};
-
-const mockOtgRes = {
-  token: "gimme access",
-  expiry: 9999 as UnixTimestamp,
-};
+const mockOtgToken = "gimme access";
 
 const mockPdvRes = {
   httpStatus: 200,
@@ -55,11 +43,8 @@ describe("NINo Check function validateNino()", () => {
       "/check-hmrc-cri-api/NinoCheckUrl/${clientId}": "https://pdv.hmrc.gov.uk",
       "user-agent-param-name": "billybob",
     });
-    getTokenFromOtg.mockResolvedValue(mockOtgRes);
+    getTokenFromOtg.mockResolvedValue(mockOtgToken);
     matchUserDetailsWithPdv.mockResolvedValue(mockPdvRes);
-    (PutEventsCommand as unknown as jest.Mock).mockImplementation((data) => ({
-      payload: data,
-    }));
 
     mockDynamoClient.resetHistory();
   });
@@ -160,7 +145,7 @@ describe("NINo Check function validateNino()", () => {
   });
 
   it("handles PDV execution errors correctly", async () => {
-    getTokenFromOtg.mockResolvedValue(mockOtgRes);
+    getTokenFromOtg.mockResolvedValue(mockOtgToken);
 
     const pdvError = new Error(`First Name is blank`);
     matchUserDetailsWithPdv.mockImplementation(() => {
@@ -175,7 +160,7 @@ describe("NINo Check function validateNino()", () => {
   });
 
   it("handles errors from the PDV API correctly", async () => {
-    getTokenFromOtg.mockResolvedValue(mockOtgRes);
+    getTokenFromOtg.mockResolvedValue(mockOtgToken);
 
     const dummyPdvBody: Omit<PdvFunctionOutput, "httpStatus"> = {
       body: "{ bad: true }",

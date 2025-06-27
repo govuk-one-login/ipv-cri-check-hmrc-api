@@ -1,4 +1,4 @@
-import { mockNino, mockPersonIdentity, mockSession } from "./mocks/mockRecords";
+import { mockNino, mockPersonIdentity, mockSession } from "./mocks/mockData";
 import { APIGatewayProxyEvent, Context } from "aws-lambda";
 import {
   mockDeviceInformationHeader,
@@ -10,7 +10,7 @@ import {
 } from "./mocks/mockConfig";
 import * as functionConfigModule from "../src/helpers/function-config";
 import * as getSessionInfoModule from "../src/helpers/retrieve-session";
-import * as validateNinoModule from "../src/helpers/validate-nino";
+import * as validateNinoModule from "../src/helpers/nino";
 import * as addAuthCodeToSessionModule from "../src/helpers/add-auth-code-to-session";
 import { RecordExpiredError, RecordNotFoundError } from "../../common/src/database/exceptions/errors";
 import { TooManyAttemptsError } from "../src/exceptions/errors";

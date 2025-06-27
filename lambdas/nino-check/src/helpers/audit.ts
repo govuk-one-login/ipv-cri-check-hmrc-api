@@ -1,6 +1,6 @@
 import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge";
 import { NinoSessionItem } from "../types/nino-session-item";
-import { AuditUser } from "./validate-nino";
+import { AuditUser } from "./nino";
 import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
 import { AuditConfig } from "../types/input";
 import { marshall } from "@aws-sdk/util-dynamodb";
@@ -31,18 +31,18 @@ export async function sendRequestSentEvent(
     new PutEventsCommand({
       Entries: [
         {
+          DetailType: "REQUEST_SENT",
+          EventBusName: auditConfig.eventBus,
+          Source: auditConfig.source,
           Detail: JSON.stringify({
             auditPrefix,
             user,
             deviceInformation: auditConfig.deviceInformation,
+            issuer: auditConfig.issuer,
             nino,
             // marshall the person identity for consistency with the step function that came before this Lambda
             userInfoEvent: { Items: [marshall(personIdentity)], Count: 1 },
-            issuer: auditConfig.issuer,
           }),
-          DetailType: "REQUEST_SENT",
-          EventBusName: auditConfig.eventBus,
-          Source: auditConfig.source,
         },
       ],
     })
@@ -56,6 +56,9 @@ export async function sendResponseReceivedEvent(auditConfig: AuditConfig, sessio
     new PutEventsCommand({
       Entries: [
         {
+          DetailType: "RESPONSE_RECEIVED",
+          EventBusName: auditConfig.eventBus,
+          Source: auditConfig.source,
           Detail: JSON.stringify({
             auditPrefix,
             user,
@@ -63,9 +66,6 @@ export async function sendResponseReceivedEvent(auditConfig: AuditConfig, sessio
             issuer: auditConfig.issuer,
             evidence: [{ txn }],
           }),
-          DetailType: "RESPONSE_RECEIVED",
-          EventBusName: auditConfig.eventBus,
-          Source: auditConfig.source,
         },
       ],
     })

@@ -30,7 +30,7 @@ export async function retrievePersonIdentity(
       throw new CriError(500, `No person identity entry found for the given session ID.`);
     }
 
-    logger.info(`Caught unexpected person identity retrieval error: ${safeStringifyError(error)}`);
+    logger.error(`Caught unexpected person identity retrieval error: ${safeStringifyError(error)}`);
 
     throw new CriError(500, "Unexpected error getting person identity");
   }

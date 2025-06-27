@@ -1,9 +1,10 @@
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { addAuthCodeToSession } from "../../src/helpers/add-auth-code-to-session";
-import { mockHelpers, mockSaveRes, mockTableNames } from "../mocks/mockConfig";
+import { mockSaveRes, mockTableNames } from "../mocks/mockConfig";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
-import { mockNino, mockSessionId } from "../mocks/mockRecords";
+import { mockNino, mockSessionId } from "../mocks/mockData";
+jest.mock("../../../common/src/util/logger");
 
 const mockDynamoClient = mockClient(DynamoDBClient);
 mockDynamoClient.on(PutItemCommand).resolves(mockSaveRes);
@@ -11,12 +12,7 @@ mockDynamoClient.on(UpdateItemCommand).resolves(mockSaveRes);
 
 describe("NINo Check function issueAuthorizationCode()", () => {
   it(`saves entities to Dynamo as expected`, async () => {
-    await addAuthCodeToSession(
-      mockTableNames,
-      { ...mockHelpers, dynamoClient: mockDynamoClient as unknown as DynamoDBClient },
-      mockSessionId,
-      mockNino
-    );
+    await addAuthCodeToSession(mockDynamoClient as unknown as DynamoDBClient, mockTableNames, mockSessionId, mockNino);
 
     expect(mockDynamoClient).toHaveReceivedCommandWith(UpdateItemCommand, {
       TableName: mockTableNames.sessionTable,

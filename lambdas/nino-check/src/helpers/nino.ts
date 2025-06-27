@@ -1,27 +1,14 @@
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
-import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
-import { SessionItem } from "../../../common/src/database/types/session-item";
 import { ISO8601DateString, UnixTimestamp } from "../../../common/src/types/brands";
-import { getTokenFromOtg } from "../hmrc-apis/otg";
-import { buildPdvInput, matchUserDetailsWithPdv } from "../hmrc-apis/pdv";
-import { OtgConfig } from "../hmrc-apis/types/otg";
-import { PdvConfig, PdvFunctionOutput } from "../hmrc-apis/types/pdv";
-import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge";
+import { PdvFunctionOutput } from "../hmrc-apis/types/pdv";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { CriError } from "../../../common/src/errors/cri-error";
-import { NinoCheckFunctionConfig } from "./function-config";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { AttemptItem } from "../types/attempt";
 import { logger } from "../../../common/src/util/logger";
-import { MetricsHelper } from "../../../logging/metrics-helper";
-import { TableNames } from "../types/input";
 import { NinoSessionItem } from "../types/nino-session-item";
 import { captureMetric } from "../../../common/src/util/metrics";
-
-export type HmrcApiConfig = {
-  otg: OtgConfig;
-  pdv: PdvConfig;
-};
+import { HmrcApiConfig } from "./function-config";
 
 export type AuditUser = {
   govuk_signin_journey_id: string;
@@ -99,27 +86,29 @@ export async function saveAttempt(
   logger.info(`Saved attempt: ${attemptRes.$metadata.httpStatusCode}`);
 }
 
-export async function handlePdvResponse(pdvRes: PdvFunctionOutput): Promise<boolean> {
+export function handlePdvResponse(pdvRes: PdvFunctionOutput): boolean {
   const ninoMatch = pdvRes.httpStatus === 200;
 
   if (ninoMatch) {
-    if (pdvRes.httpStatus === 424) {
-      captureMetric(`DeceasedUserMetric`);
-      logger.info(`Deceased response received`);
-    } else if (pdvRes.httpStatus === 401 && "errors" in (pdvRes.parsedBody ?? {})) {
-      captureMetric(`RetryAttemptsSentMetric`);
-      logger.info(`Failed PDV match received.`);
-    } else if (pdvRes.parsedBody && "code" in pdvRes.parsedBody && pdvRes.parsedBody?.code === "INVALID_CREDENTIALS") {
-      captureMetric(`FailedHMRCAuthMetric`);
-      logger.info(`Failed to authenticate with HMRC API: response had a code of ${pdvRes.parsedBody.code}`);
-      throw new CriError(500, "Failed to authenticate with HMRC API");
-    } else {
-      captureMetric(`HMRCAPIErrorMetric`);
-      logger.info(`Received an unexpected error response from the PDV API - status: ${pdvRes.httpStatus}`);
-      throw new CriError(500, "Unexpected error with the PDV API");
-    }
-  } else {
     captureMetric(`SuccessfulFirstAttemptMetric`);
+  } else if (pdvRes.httpStatus === 424) {
+    captureMetric(`DeceasedUserMetric`);
+    logger.info(`Deceased response received`);
+  } else if (pdvRes.httpStatus === 401 && "errors" in (pdvRes.parsedBody ?? {})) {
+    captureMetric(`RetryAttemptsSentMetric`);
+    logger.info(`Failed PDV match received.`);
+  } else if (pdvRes.parsedBody && "code" in pdvRes.parsedBody && pdvRes.parsedBody?.code === "INVALID_CREDENTIALS") {
+    captureMetric(`FailedHMRCAuthMetric`);
+    logger.info(
+      `Failed to authenticate with HMRC API: response had a code of ${pdvRes.parsedBody.code} & http status of ${pdvRes.httpStatus}`
+    );
+
+    throw new CriError(500, "Failed to authenticate with HMRC API");
+  } else {
+    captureMetric(`HMRCAPIErrorMetric`);
+    logger.info(`Received an unexpected error response from the PDV API - status: ${pdvRes.httpStatus}`);
+
+    throw new CriError(500, "Unexpected error with the PDV API");
   }
 
   return ninoMatch;

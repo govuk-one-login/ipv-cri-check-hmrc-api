@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda
 import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { addAuthCodeToSession } from "./helpers/add-auth-code-to-session";
 import { NinoCheckFunctionConfig } from "./helpers/function-config";
-import { getHmrcConfig, saveAttempt, saveTxn, handlePdvResponse } from "./helpers/validate-nino";
+import { getHmrcConfig, saveAttempt, saveTxn, handlePdvResponse } from "./helpers/nino";
 import { InputBody } from "./types/input";
 import { CriError } from "../../common/src/errors/cri-error";
 import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
@@ -86,7 +86,7 @@ class NinoCheckHandler implements LambdaInterface {
 
       await sendResponseReceivedEvent(functionConfig.audit, session, pdvRes.txn);
 
-      const ninoMatch = await handlePdvResponse(pdvRes);
+      const ninoMatch = handlePdvResponse(pdvRes);
 
       if (ninoMatch) {
         await saveAttempt(dynamoClient, tableNames.attemptTable, session, pdvRes);

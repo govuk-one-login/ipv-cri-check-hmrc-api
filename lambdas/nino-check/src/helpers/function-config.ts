@@ -1,3 +1,5 @@
+import { OtgConfig } from "../hmrc-apis/types/otg";
+import { PdvConfig } from "../hmrc-apis/types/pdv";
 import { AuditConfig, HmrcEnvVars, TableNames } from "../types/input";
 
 const envVarNames = {
@@ -40,3 +42,8 @@ export class NinoCheckFunctionConfig {
     };
   }
 }
+
+export type HmrcApiConfig = {
+  otg: OtgConfig;
+  pdv: PdvConfig;
+};
