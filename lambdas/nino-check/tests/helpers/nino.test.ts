@@ -29,7 +29,7 @@ describe("getHmrcConfig()", () => {
   const getParametersByName = jest.spyOn(ssmModule, "getParametersByName");
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
   });
 
   it("behaves as expected when the SSM fetch works", async () => {
@@ -68,7 +68,7 @@ describe("saveTxn()", () => {
   const sessionTableName = "big-session-gang";
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
   });
 
   it("works correctly with valid input", async () => {
@@ -95,7 +95,7 @@ describe("saveAttempt()", () => {
   const attemptTableName = "attempt-zone";
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
   });
 
   it("works correctly with valid input", async () => {
@@ -122,7 +122,7 @@ describe("saveAttempt()", () => {
 
 describe("handlePdvResponse()", () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
   });
 
   it("handles a valid response correctly", () => {

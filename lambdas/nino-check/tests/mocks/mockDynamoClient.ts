@@ -1,9 +1,7 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+export const mockDynamoClient = {
+  send: jest.fn(),
+};
 
 jest.mock("@aws-sdk/client-dynamodb", () => ({
-  DynamoDBClient: jest.fn().mockImplementation(() => ({
-    send: jest.fn(),
-  })),
+  DynamoDBClient: jest.fn().mockImplementation(() => mockDynamoClient),
 }));
-
-export const mockDynamoClient = new DynamoDBClient();

@@ -1,5 +1,5 @@
 import { AuditConfig, HmrcEnvVars, TableNames } from "../../src/types/input";
-import { NinoCheckFunctionConfig } from "../../src/helpers/function-config";
+import { HmrcApiConfig, NinoCheckFunctionConfig } from "../../src/helpers/function-config";
 
 export const mockTableNames: TableNames = {
   sessionTable: "session-table",
@@ -19,6 +19,16 @@ export const mockAuditConfig: AuditConfig = {
 
 export const mockHmrcEnvVars: HmrcEnvVars = {
   pdvUserAgentParamName: "user-agent-param",
+};
+
+export const mockHmrcConfig: HmrcApiConfig = {
+  otg: {
+    apiUrl: "https://otg.hmrc.gov.uk",
+  },
+  pdv: {
+    apiUrl: "https://pdv.hmrc.gov.uk",
+    userAgent: "billybob",
+  },
 };
 
 export const mockFunctionConfig: NinoCheckFunctionConfig = {

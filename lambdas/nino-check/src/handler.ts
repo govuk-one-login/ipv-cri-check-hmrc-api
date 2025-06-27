@@ -15,9 +15,10 @@ import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { captureMetric } from "../../common/src/util/metrics";
 import { getTokenFromOtg } from "./hmrc-apis/otg";
 import { sendRequestSentEvent, sendResponseReceivedEvent } from "./helpers/audit";
-import { buildPdvInput, matchUserDetailsWithPdv } from "./hmrc-apis/pdv";
+import { matchUserDetailsWithPdv } from "./hmrc-apis/pdv";
 import { PdvFunctionOutput } from "./hmrc-apis/types/pdv";
 import { safeStringifyError } from "../../common/src/util/stringify-error";
+import { buildPdvInput } from "./helpers/build-pdv-input";
 
 initOpenTelemetry();
 

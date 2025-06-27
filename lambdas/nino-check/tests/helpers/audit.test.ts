@@ -15,7 +15,7 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 
 describe("sendRequestSentEvent()", () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
   });
 
   it("sends the event correctly given valid input", async () => {
@@ -51,7 +51,7 @@ describe("sendRequestSentEvent()", () => {
 
 describe("sendResponseReceivedEvent()", () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
   });
 
   it("sends the event correctly given valid input", async () => {
