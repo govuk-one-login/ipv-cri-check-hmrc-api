@@ -1,62 +1,47 @@
+jest.mock("../../../common/src/util/logger");
+jest.mock("../../../common/src/util/metrics");
+import { logger } from "../../../common/src/util/logger";
+import { captureLatency } from "../../../common/src/util/metrics";
 import { getTokenFromOtg } from "../../src/hmrc-apis/otg";
-import { mockLogger } from "../../../common/tests/logger";
-import { mockMetricsHelper } from "../../../common/tests/metrics-helper";
 
 const apiUrl = "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub";
 
-const mockParams = [{ apiUrl }, mockLogger, mockMetricsHelper] as const;
+const mockParams = [{ apiUrl }] as const;
+
+const latency = 1001;
+
+(captureLatency as unknown as jest.Mock).mockImplementation(async (_, callback) => [await callback(), latency]);
+
+const mockToken = "goodToken";
+const mockExpiry = Date.now() + 600000;
+
+global.fetch = jest.fn();
+(global.fetch as jest.Mock).mockResolvedValueOnce({
+  json: jest.fn().mockResolvedValueOnce({
+    token: mockToken,
+    expiry: mockExpiry,
+  }),
+  status: 200,
+  ok: true,
+});
 
 describe("getTokenFromOtg", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("should return a token and expiry", async () => {
-    const mockToken = "goodToken";
-    const mockExpiry = Date.now() + 600000;
+  it("should return the token and log the outcome", async () => {
+    const token = await getTokenFromOtg(...mockParams);
+    expect(token).toBe(mockToken);
 
-    global.fetch = jest.fn();
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      json: jest.fn().mockResolvedValueOnce({
-        token: mockToken,
-        expiry: mockExpiry,
-      }),
-      ok: true,
-    });
-
-    const result = await getTokenFromOtg(...mockParams);
-    expect(result.token).toBe(mockToken);
-    expect(result.expiry).toBe(mockExpiry);
-
-    expect(mockMetricsHelper.captureResponseLatency).toHaveBeenCalledWith(expect.any(Number), "OTGHandler");
-  });
-
-  it("should log API latency and push the metric", async () => {
-    const mockToken = "goodToken";
-    const mockExpiry = Date.now() + 600000;
-
-    global.fetch = jest.fn();
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      json: jest.fn().mockResolvedValueOnce({
-        token: mockToken,
-        expiry: mockExpiry,
-      }),
-      status: 200,
-      ok: true,
-    });
-
-    await getTokenFromOtg(...mockParams);
-
-    expect(mockLogger.info).toHaveBeenCalledWith(
+    expect(logger.info).toHaveBeenCalledWith(
       expect.objectContaining({
         message: "OTG API response received",
         url: apiUrl,
         status: 200,
-        latencyInMs: expect.anything(),
+        latencyInMs: latency,
       })
     );
-
-    expect(mockMetricsHelper.captureResponseLatency).toHaveBeenCalledWith(expect.any(Number), "OTGHandler");
   });
 
   it("should throw when an invalid response is returned from OTG", async () => {
@@ -83,6 +68,7 @@ describe("getTokenFromOtg", () => {
         token: mockToken,
         expiry: mockExpiry,
       }),
+      status: 200,
       ok: true,
     });
 

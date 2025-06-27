@@ -21,12 +21,3 @@ export async function captureLatency<T>(name: string, callback: () => Promise<T>
 
   return [res, latency];
 }
-
-export function captureResponseLatency(start: number, metricValue: string): number {
-  const latency = Math.floor(performance.now()) - start;
-
-  singleMetric.addDimension(MetricDimensions.HTTP, metricValue);
-  singleMetric.addMetric(MetricNames.ResponseLatency, MetricUnits.Milliseconds, latency);
-
-  return latency;
-}

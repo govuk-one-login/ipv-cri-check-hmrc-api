@@ -17,6 +17,7 @@ import { getTokenFromOtg } from "./hmrc-apis/otg";
 import { sendRequestSentEvent, sendResponseReceivedEvent } from "./helpers/audit";
 import { buildPdvInput, matchUserDetailsWithPdv } from "./hmrc-apis/pdv";
 import { PdvFunctionOutput } from "./hmrc-apis/types/pdv";
+import { safeStringifyError } from "../../common/src/util/stringify-error";
 
 initOpenTelemetry();
 
@@ -24,7 +25,7 @@ const dynamoClient = new DynamoDBClient();
 
 const MAX_PAST_ATTEMPTS = 1;
 
-export class NinoCheckHandler implements LambdaInterface {
+class NinoCheckHandler implements LambdaInterface {
   @logger.injectLambdaContext({ resetKeys: true })
   public async handler({ body, headers }: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
     try {
@@ -76,7 +77,7 @@ export class NinoCheckHandler implements LambdaInterface {
       } catch (error) {
         captureMetric(`MatchingLambdaErrorMetric`);
 
-        logger.error(`Error in ${context.functionName}: ${error instanceof Error ? error.name : typeof error}`);
+        logger.error(`Error in ${context.functionName}: ${safeStringifyError(error)}`);
 
         throw new CriError(500, "Unexpected error when validating NINo");
       }
@@ -108,3 +109,6 @@ export class NinoCheckHandler implements LambdaInterface {
     }
   }
 }
+
+const handlerClass = new NinoCheckHandler();
+export const handler = handlerClass.handler.bind(handlerClass);

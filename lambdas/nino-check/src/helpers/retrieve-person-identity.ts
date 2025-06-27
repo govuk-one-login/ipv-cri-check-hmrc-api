@@ -4,6 +4,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { logger } from "../../../common/src/util/logger";
 import { RecordExpiredError, RecordNotFoundError } from "../../../common/src/database/exceptions/errors";
 import { CriError } from "../../../common/src/errors/cri-error";
+import { safeStringifyError } from "../../../common/src/util/stringify-error";
 
 export async function retrievePersonIdentity(
   personIdentityTableName: string,
@@ -29,9 +30,7 @@ export async function retrievePersonIdentity(
       throw new CriError(500, `No person identity entry found for the given session ID.`);
     }
 
-    logger.info(
-      `Caught unexpected person identity retrieval error: ${error instanceof Error ? error.name : typeof error}`
-    );
+    logger.info(`Caught unexpected person identity retrieval error: ${safeStringifyError(error)}`);
 
     throw new CriError(500, "Unexpected error getting person identity");
   }

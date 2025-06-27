@@ -2,6 +2,7 @@ import { PersonIdentityItem } from "../../../common/src/database/types/person-id
 import { PdvApiErrorBody, PdvApiInput, PdvApiResponseBody, PdvConfig, PdvFunctionOutput } from "./types/pdv";
 import { logger } from "../../../common/src/util/logger";
 import { captureLatency } from "../../../common/src/util/metrics";
+import { safeStringifyError } from "../../../common/src/util/stringify-error";
 
 export function buildPdvInput(personIdentity: PersonIdentityItem, nino: string): PdvApiInput {
   let firstName = "";
@@ -73,8 +74,19 @@ export async function matchUserDetailsWithPdv(
 
     try {
       parsedBody = JSON.parse(responseBody);
-    } catch (error: unknown) {
-      logger.info(`Received a non-json body for the application/json content-type (error: ${error})`);
+    } catch (error) {
+      logger.info(
+        `Received a non-json body for the application/json content-type (error: ${safeStringifyError(error)})`
+      );
+    }
+
+    if (response.status >= 500) {
+      // 5xx errors from HMRC sometimes contain PII
+      return {
+        httpStatus: response.status,
+        body: "Internal server error",
+        txn: txn,
+      };
     }
 
     return {

@@ -5,6 +5,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { logger } from "../../../common/src/util/logger";
 import { CriError } from "../../../common/src/errors/cri-error";
 import { captureMetric } from "../../../common/src/util/metrics";
+import { safeStringifyError } from "../../../common/src/util/stringify-error";
 
 export async function retrieveSession(
   sessionTableName: string,
@@ -30,7 +31,7 @@ export async function retrieveSession(
       throw new CriError(400, `No valid session entry found for the given id`);
     }
 
-    logger.error(`Caught unexpected session retrieval error: ${error instanceof Error ? error.name : typeof error}`);
+    logger.error(`Caught unexpected session retrieval error: ${safeStringifyError(error)}`);
 
     throw new CriError(400, "Unexpected error getting session information");
   }
