@@ -72,8 +72,11 @@ jobs:
 
   eventbridge-abandon-tests:
     name: Run tests
-    needs: [deploy, apigw-tests]
+    needs: deploy
     uses: ./.github/workflows/run-evn-abn-tests.yml
+    concurrency:
+      group: evn-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: false
     permissions:
       id-token: write
       contents: read
@@ -83,8 +86,11 @@ jobs:
 
   eventbridge-nino-check-tests:
     name: Run tests
-    needs: [deploy, eventbridge-abandon-tests ]
+    needs: deploy
     uses: ./.github/workflows/run-evn-nino-tests.yml
+    concurrency:
+      group: evn-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: false
     permissions:
       id-token: write
       contents: read
@@ -94,8 +100,11 @@ jobs:
 
   eventbridge-issue-credential-check-tests:
     name: Run tests
-    needs: [deploy, eventbridge-nino-check-tests ]
+    needs: deploy
     uses: ./.github/workflows/run-evn-cred-tests.yml
+    concurrency:
+      group: evn-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: false
     permissions:
       id-token: write
       contents: read
