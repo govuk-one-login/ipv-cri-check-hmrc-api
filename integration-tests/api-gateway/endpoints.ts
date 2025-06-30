@@ -17,8 +17,7 @@ export const getJarAuthorization = async ({
   claimsOverride,
   evidenceRequested,
 }: JarAuthorizationOptions = {}) => {
-  const { TestHarnessExecuteUrl: testHarnessExecuteUrl } =
-    await stackOutputs(testResourcesStack);
+  const { TestHarnessExecuteUrl: testHarnessExecuteUrl } = await stackOutputs(testResourcesStack);
 
   const body = {
     aud,
@@ -37,10 +36,7 @@ export const getJarAuthorization = async ({
   });
 };
 
-export const createSession = async (
-  privateApi: string,
-  payload: unknown
-): Promise<Response> => {
+export const createSession = async (privateApi: string, payload: unknown): Promise<Response> => {
   const sessionApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/session`;
   const sessionResponse = await fetch(sessionApiUrl, {
     method: "POST",
@@ -60,6 +56,25 @@ export const checkEndpoint = async (
   nino: string
 ): Promise<Response> => {
   const checkApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/check`;
+  const jsonData = JSON.stringify({ nino: nino });
+  const checkResponse = await fetch(checkApiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...headers,
+    },
+    body: jsonData,
+  });
+
+  return checkResponse;
+};
+
+export const ninoCheckEndpoint = async (
+  privateApi: string,
+  headers: { "session-id"?: string; "txma-audit-encoded"?: string },
+  nino: string
+): Promise<Response> => {
+  const checkApiUrl = `https://${privateApi}.execute-api.eu-west-2.amazonaws.com/${environment}/check-test`;
   const jsonData = JSON.stringify({ nino: nino });
   const checkResponse = await fetch(checkApiUrl, {
     method: "POST",
