@@ -2751,7 +2751,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Properties:
       LogGroupName: !Ref NinoIssueCredentialLogGroup
-      FilterPattern: '{($.details.name = "Create Signed JWT")}'
+      FilterPattern: '{($.details.name = "Create Signed JWT") && ($.type = "PassStateExited")}'
       MetricTransformations:
         - MetricValue: 1
           MetricName: VCIssuedMetric
