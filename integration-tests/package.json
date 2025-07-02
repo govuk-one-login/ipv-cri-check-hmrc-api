@@ -8,7 +8,8 @@
     "test:sfn:mocked": "jest --silent --select-projects integration-tests/step-functions/mocked",
     "test:evn": "jest --silent --select-projects integration-tests/eventbridge --runInBand",
     "test:evn:abandon": "jest --silent integration-tests/eventbridge/abandon --runInBand",
-    "test:evn:nino": "jest --silent integration-tests/eventbridge/nino-check --runInBand",
+    "test:evn:nino:sfn": "jest --silent integration-tests/eventbridge/nino-check-sfn --runInBand",
+    "test:evn:nino:lambda": "jest --silent integration-tests/eventbridge/nino-check-lambda --runInBand",
     "test:evn:cred": "jest --silent integration-tests/eventbridge/nino_issue_credential --runInBand",
     "test:api": "jest --silent --select-projects integration-tests/api-gateway --testPathIgnorePatterns */contract/credential-contract.test.ts",
     "test:api:e2e": "jest --silent integration-tests/api-gateway --testPathIgnorePatterns */contract/credential-contract.test.ts",
@@ -38,7 +39,7 @@
     "wait-on": "8.0.1"
   },
   "dependencies": {
-    "@aws-sdk/credential-providers": "3.787.0",
+    "@aws-sdk/credential-providers": "3.828.0",
     "aws-sigv4-fetch": "4.4.1"
   }
 }

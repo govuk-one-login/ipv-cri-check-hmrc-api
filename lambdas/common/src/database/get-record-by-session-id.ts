@@ -1,9 +1,11 @@
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { withRetry } from "../util/retry";
-import { isRecordExpired } from "./util/is-record-expired";
-import { RecordExpiredError, RecordNotFoundError } from "./exceptions/errors";
+import { isRecordExpired, RecordWithExpiry } from "./util/is-record-expired";
+import { RecordExpiredError, RecordNotFoundError, TooManyRecordsError } from "./exceptions/errors";
 import { Logger } from "@aws-lambda-powertools/logger";
+
+export type SessionIdRecord = { sessionId: string } & RecordWithExpiry;
 
 /**
  * Retrieves a record from DynamoDB, given a table name and session ID.
@@ -13,19 +15,20 @@ import { Logger } from "@aws-lambda-powertools/logger";
  * Use a type parameter to set the type of the entity that will be returned.
  */
 export async function getRecordBySessionId<
-  /**
-   * The type that will be returned by the function. Must include sessionId and expiryDate keys.
-   */
-  ReturnType extends { sessionId: string; expiryDate: number },
+  /** The type that will be returned by the function. Must include sessionId key. */
+  ReturnType extends SessionIdRecord,
 >(
   /** The name of the table in DynamoDB. Probably looks like "some-table-some-stack". */
   tableName: string,
   /** The session ID to search for. */
   sessionId: string,
   logger: Logger,
-  /** Optional parameter; used for mocking the DynamoDB client when testing. */
-  dynamoClient: DynamoDBClient = new DynamoDBClient()
+  opts?: { allowNoEntries?: boolean; allowMultipleEntries?: boolean },
+  dynamoClient = new DynamoDBClient()
 ) {
+  const allowNoEntries = opts?.allowNoEntries ?? false;
+  const allowMultipleEntries = opts?.allowMultipleEntries ?? false;
+
   async function queryRecord() {
     const command = new QueryCommand({
       TableName: tableName,
@@ -39,11 +42,11 @@ export async function getRecordBySessionId<
 
     const result = await dynamoClient.send(command);
 
-    if (result.Count === 0 || !result.Items) {
+    if (!allowNoEntries && (result.Count === 0 || !result.Items)) {
       throw new RecordNotFoundError(tableName, sessionId);
     }
 
-    return result.Items;
+    return result.Items ?? [];
   }
 
   const queryResult = await withRetry(queryRecord, logger, {
@@ -51,18 +54,20 @@ export async function getRecordBySessionId<
     baseDelay: 300,
   });
 
-  const retrievedRecords = queryResult.map((v) =>
-    unmarshall(v)
-  ) as ReturnType[];
+  const retrievedRecords = queryResult.map((v) => unmarshall(v)) as ReturnType[];
 
   const validRecords = retrievedRecords.filter((v) => !isRecordExpired(v));
 
-  if (validRecords.length === 0) {
+  if (retrievedRecords.length > 0 && validRecords.length === 0) {
     throw new RecordExpiredError(
       tableName,
       sessionId,
-      retrievedRecords.map((v) => v.expiryDate)
+      retrievedRecords.map((v) => v.expiryDate ?? v.ttl ?? -1)
     );
+  }
+
+  if (!allowMultipleEntries && validRecords.length > 1) {
+    throw new TooManyRecordsError(tableName, sessionId, validRecords.length);
   }
 
   return validRecords;

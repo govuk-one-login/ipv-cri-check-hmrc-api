@@ -81,10 +81,21 @@ jobs:
       stack-name: ${{ needs.deploy.outputs.stack-name }}
       aws-region: ${{ needs.deploy.outputs.aws-region }}
 
-  eventbridge-nino-check-tests:
+  eventbridge-nino-check-tests-sfn:
     name: Run tests
-    needs: [deploy, eventbridge-abandon-tests ]
-    uses: ./.github/workflows/run-evn-nino-tests.yml
+    needs: [deploy, eventbridge-abandon-tests]
+    uses: ./.github/workflows/run-evn-nino-tests-sfn.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      stack-name: ${{ needs.deploy.outputs.stack-name }}
+      aws-region: ${{ needs.deploy.outputs.aws-region }}
+
+  eventbridge-nino-check-tests-lambda:
+    name: Run tests
+    needs: [deploy, eventbridge-nino-check-tests-sfn]
+    uses: ./.github/workflows/run-evn-nino-tests-lambda.yml
     permissions:
       id-token: write
       contents: read
@@ -94,7 +105,7 @@ jobs:
 
   eventbridge-issue-credential-check-tests:
     name: Run tests
-    needs: [deploy, eventbridge-nino-check-tests ]
+    needs: [deploy, eventbridge-nino-check-tests-lambda]
     uses: ./.github/workflows/run-evn-cred-tests.yml
     permissions:
       id-token: write

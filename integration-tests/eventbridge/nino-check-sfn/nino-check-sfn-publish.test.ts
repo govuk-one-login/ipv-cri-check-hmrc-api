@@ -1,16 +1,7 @@
 import { executeStepFunction } from "../../resources/stepfunction-helper";
-import {
-  clearItemsFromTables,
-  clearAttemptsTable,
-  populateTables,
-} from "../../resources/dynamodb-helper";
+import { clearItemsFromTables, clearAttemptsTable, populateTables } from "../../resources/dynamodb-helper";
 import { CreateQueueCommandOutput } from "@aws-sdk/client-sqs";
-import {
-  deleteQueue,
-  getQueueMessages,
-  setUpQueueAndAttachToRule,
-  targetId,
-} from "../../resources/queue-helper";
+import { deleteQueue, getQueueMessages, setUpQueueAndAttachToRule, targetId } from "../../resources/queue-helper";
 import { removeTargetFromRule } from "../../resources/event-bridge-helper";
 import { pause, retry } from "../../resources/util";
 
@@ -18,7 +9,7 @@ jest.setTimeout(650_000);
 
 describe("Nino Hmrc Check Step Function", () => {
   const input = {
-    sessionId: "check-happy-publish",
+    sessionId: "check-sf-happy-publish",
     nino: "AA000003D",
     "txma-audit-encoded": "test encoded header",
   };
@@ -99,13 +90,9 @@ describe("Nino Hmrc Check Step Function", () => {
       }
     );
 
-    [checkHmrcEventBus, requestSentRuleName] =
-      auditEventRequestSentRule.split("|");
-    [checkHmrcEventBus, responseReceivedRuleName] =
-      auditEventResponseReceivedRule.split("|");
-    [checkHmrcEventBus, txMaAuditEventRuleName] = (
-      txMaAuditEventRule as string
-    ).split("|");
+    [checkHmrcEventBus, requestSentRuleName] = auditEventRequestSentRule.split("|");
+    [checkHmrcEventBus, responseReceivedRuleName] = auditEventResponseReceivedRule.split("|");
+    [checkHmrcEventBus, txMaAuditEventRuleName] = txMaAuditEventRule.split("|");
 
     requestSentEventTestQueue = await setUpQueueAndAttachToRule(
       auditEventRequestSentRuleArn,
@@ -135,7 +122,7 @@ describe("Nino Hmrc Check Step Function", () => {
         items: { sessionId: input.sessionId },
       },
       {
-        tableName: ninoUsersTable as string,
+        tableName: ninoUsersTable,
         items: { sessionId: input.sessionId },
       }
     );
@@ -160,27 +147,15 @@ describe("Nino Hmrc Check Step Function", () => {
     await clearAttemptsTable("check-happy-publish", userAttemptsTable);
 
     await retry(async () => {
-      await removeTargetFromRule(
-        targetId,
-        checkHmrcEventBus,
-        requestSentRuleName
-      );
+      await removeTargetFromRule(targetId, checkHmrcEventBus, requestSentRuleName);
     });
 
     await retry(async () => {
-      await removeTargetFromRule(
-        targetId,
-        checkHmrcEventBus,
-        responseReceivedRuleName
-      );
+      await removeTargetFromRule(targetId, checkHmrcEventBus, responseReceivedRuleName);
     });
 
     await retry(async () => {
-      await removeTargetFromRule(
-        targetId,
-        checkHmrcEventBus,
-        txMaAuditEventRuleName
-      );
+      await removeTargetFromRule(targetId, checkHmrcEventBus, txMaAuditEventRuleName);
     });
 
     await retry(async () => {
@@ -199,19 +174,13 @@ describe("Nino Hmrc Check Step Function", () => {
   });
 
   it("should publish REQUEST_SENT event to CheckHmrc EventBridge Bus successfully", async () => {
-    const startExecutionResult = await executeStepFunction(
-      ninoCheckStateMachineArn,
-      input
+    const startExecutionResult = await executeStepFunction(ninoCheckStateMachineArn, input);
+    const requestSentQueueMessage = await getQueueMessages(requestSentEventTestQueue.QueueUrl as string);
+    const { "detail-type": requestSentDetailType, source: requestSentSource } = JSON.parse(
+      requestSentQueueMessage[0].Body as string
     );
-    const requestSentQueueMessage = await getQueueMessages(
-      requestSentEventTestQueue.QueueUrl as string
-    );
-    const { "detail-type": requestSentDetailType, source: requestSentSource } =
-      JSON.parse(requestSentQueueMessage[0].Body as string);
 
-    expect(startExecutionResult.output).toBe(
-      '{"httpStatus":200,"body":"{\\"requestRetry\\":false}"}'
-    );
+    expect(startExecutionResult.output).toBe('{"httpStatus":200,"body":"{\\"requestRetry\\":false}"}');
 
     expect(startExecutionResult.output).toBeDefined();
     expect(requestSentQueueMessage).not.toHaveLength(0);
@@ -219,21 +188,15 @@ describe("Nino Hmrc Check Step Function", () => {
     expect(requestSentSource).toBe("review-hc.localdev.account.gov.uk");
   });
   it("should publish RESPONSE_RECEIVED event to CheckHmrc EventBridge Bus successfully", async () => {
-    const startExecutionResult = await executeStepFunction(
-      ninoCheckStateMachineArn,
-      input
-    );
+    const startExecutionResult = await executeStepFunction(ninoCheckStateMachineArn, input);
 
-    const responseReceivedQueueMessage = await getQueueMessages(
-      responseReceivedEventTestQueue.QueueUrl as string
+    const responseReceivedQueueMessage = await getQueueMessages(responseReceivedEventTestQueue.QueueUrl as string);
+    const { "detail-type": responseReceivedDetailType, source: responseReceivedSource } = JSON.parse(
+      responseReceivedQueueMessage[0].Body as string
     );
-    const {
-      "detail-type": responseReceivedDetailType,
-      source: responseReceivedSource,
-    } = JSON.parse(responseReceivedQueueMessage[0].Body as string);
 
     expect(startExecutionResult.output).toBeDefined();
-    expect(JSON.parse(startExecutionResult.output || "")).toStrictEqual({
+    expect(JSON.parse(startExecutionResult.output ?? "")).toStrictEqual({
       httpStatus: 200,
       body: '{"requestRetry":false}',
     });
@@ -243,13 +206,8 @@ describe("Nino Hmrc Check Step Function", () => {
     expect(responseReceivedSource).toBe("review-hc.localdev.account.gov.uk");
   });
   it("should produce REQUEST_SENT and RESPONSE_RECEIVED Events structure expected for TxMA queue using target AuditEvent Step Function", async () => {
-    const startExecutionResult = await executeStepFunction(
-      ninoCheckStateMachineArn,
-      input
-    );
-    const txMaAuditEventTestQueueMessage = await getQueueMessages(
-      txMaAuditEventTestQueue.QueueUrl as string
-    );
+    const startExecutionResult = await executeStepFunction(ninoCheckStateMachineArn, input);
+    const txMaAuditEventTestQueueMessage = await getQueueMessages(txMaAuditEventTestQueue.QueueUrl as string);
 
     const txMaPayload = txMaAuditEventTestQueueMessage.map(
       (queueMessage) => JSON.parse(queueMessage.Body as string).detail
@@ -278,7 +236,7 @@ describe("Nino Hmrc Check Step Function", () => {
         govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
         ip_address: "00.100.8.20",
         persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-        session_id: "check-happy-publish",
+        session_id: "check-sf-happy-publish",
         user_id: "test",
       },
     };
@@ -294,7 +252,7 @@ describe("Nino Hmrc Check Step Function", () => {
         govuk_signin_journey_id: "252561a2-c6ef-47e7-87ab-93891a2a6a41",
         ip_address: "00.100.8.20",
         persistent_session_id: "156714ef-f9df-48c2-ada8-540e7bce44f7",
-        session_id: "check-happy-publish",
+        session_id: "check-sf-happy-publish",
         user_id: "test",
       },
       extensions: {

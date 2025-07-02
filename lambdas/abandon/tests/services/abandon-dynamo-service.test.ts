@@ -6,6 +6,9 @@ import { CriError } from "../../../common/src/errors/cri-error";
 
 describe("abandon-dynamo-service", () => {
   const ddbMock = mockClient(DynamoDBClient);
+  const now = Math.round(Date.now() / 1000);
+  const anHourFromNow = now + 60 * 60;
+
   describe("retrieveSessionRecord", () => {
     beforeEach(() => {
       ddbMock.reset();
@@ -17,6 +20,7 @@ describe("abandon-dynamo-service", () => {
           {
             sessionId: { S: "session-123" },
             clientSessionId: { S: "gov-123" },
+            expiryDate: { N: anHourFromNow.toString() },
           },
         ],
         Count: 1,
@@ -32,26 +36,6 @@ describe("abandon-dynamo-service", () => {
         KeyConditionExpression: "sessionId = :value",
         TableName: "session-table",
       });
-    });
-
-    it("should successfully return the first session item", async () => {
-      ddbMock.on(QueryCommand).resolves({
-        Items: [
-          {
-            sessionId: { S: "abc123" },
-            clientSessionId: { S: "123abc" },
-          },
-          {
-            sessionId: { S: "abc123" },
-            clientSessionId: { S: "gov-456" },
-          },
-        ],
-        Count: 2,
-      });
-
-      const sessionItem = await retrieveSessionRecord("session-table", "session-123");
-      expect(sessionItem.sessionId).toBe("abc123");
-      expect(sessionItem.clientSessionId).toBe("123abc");
     });
 
     it("should throw when Session not found", async () => {
@@ -78,7 +62,7 @@ describe("abandon-dynamo-service", () => {
         Items: [
           {
             sessionId: { S: "session-123" },
-            expiryDate: { N: "0" },
+            expiryDate: { N: "1" },
           },
         ],
         Count: 1,

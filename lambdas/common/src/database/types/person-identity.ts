@@ -1,5 +1,7 @@
 // Source: https://github.com/govuk-one-login/ipv-cri-common-lambdas/blob/main/lambdas/src/types/person-identity-item.ts
 
+import { UnixSecondsTimestamp } from "../../types/brands";
+
 export interface PersonIdentitySocialSecurityRecord {
   personalNumber: string;
 }
@@ -40,6 +42,6 @@ export interface PersonIdentityItem {
   addresses: PersonIdentityAddress[];
   names: PersonIdentityName[];
   birthDates: PersonIdentityDateOfBirth[];
-  expiryDate: number;
+  expiryDate: UnixSecondsTimestamp;
   socialSecurityRecord?: PersonIdentitySocialSecurityRecord[];
 }

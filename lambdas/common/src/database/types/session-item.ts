@@ -1,5 +1,7 @@
+import { UnixSecondsTimestamp } from "../../types/brands";
+
 export interface SessionItem {
-  expiryDate: number;
+  expiryDate: UnixSecondsTimestamp;
   sessionId: string;
   clientId: string;
   clientSessionId: string;

@@ -1,0 +1,195 @@
+jest.mock("../../common/src/util/logger", () => ({
+  logger: mockLogger,
+}));
+jest.mock("../src/helpers/write-completed-check");
+jest.mock("../src/helpers/audit");
+jest.mock("../src/helpers/function-config");
+jest.mock("../src/helpers/nino");
+jest.mock("../src/helpers/retrieve-attempts");
+jest.mock("../src/helpers/retrieve-person-identity");
+jest.mock("../src/helpers/retrieve-session");
+jest.mock("../src/hmrc-apis/pdv");
+jest.mock("../src/hmrc-apis/otg");
+jest.mock("../../common/src/util/metrics");
+
+import { mockDynamoClient } from "./mocks/mockDynamoClient";
+import { mockNino, mockOtgToken, mockPdvRes, mockPersonIdentity, mockSession, mockSessionId } from "./mocks/mockData";
+import { APIGatewayProxyEvent, Context } from "aws-lambda";
+import { mockDeviceInformationHeader, mockFunctionConfig, mockHmrcConfig } from "./mocks/mockConfig";
+import { mockLogger } from "../../common/tests/logger";
+
+import { handler } from "../src/handler";
+import { retrieveSession } from "../src/helpers/retrieve-session";
+import { NinoCheckFunctionConfig } from "../src/helpers/function-config";
+import { getHmrcConfig, handlePdvResponse, saveAttempt, saveTxn } from "../src/helpers/nino";
+import { retrieveAttempts } from "../src/helpers/retrieve-attempts";
+import { retrievePersonIdentity } from "../src/helpers/retrieve-person-identity";
+import { sendRequestSentEvent, sendResponseReceivedEvent } from "../src/helpers/audit";
+import { matchUserDetailsWithPdv } from "../src/hmrc-apis/pdv";
+import { writeCompletedCheck } from "../src/helpers/write-completed-check";
+import { getTokenFromOtg } from "../src/hmrc-apis/otg";
+import { buildPdvInput } from "../src/helpers/build-pdv-input";
+import { captureMetric } from "../../common/src/util/metrics";
+
+const mockContext: Context = {
+  awsRequestId: "",
+  callbackWaitsForEmptyEventLoop: false,
+  functionName: "",
+  functionVersion: "",
+  invokedFunctionArn: "",
+  logGroupName: "",
+  logStreamName: "",
+  memoryLimitInMB: "",
+  done(): void {},
+  fail(): void {},
+  getRemainingTimeInMillis(): number {
+    return 0;
+  },
+  succeed(): void {},
+};
+
+const internalServerError = {
+  statusCode: 500,
+  body: JSON.stringify({ message: "Internal server error" }),
+};
+
+const handlerInput: Parameters<typeof handler> = [
+  {
+    headers: {
+      "session-id": mockSessionId,
+      "txma-audit-encoded": mockDeviceInformationHeader,
+    },
+    body: JSON.stringify({
+      nino: mockNino,
+    }),
+  } as unknown as APIGatewayProxyEvent,
+  mockContext,
+];
+
+(NinoCheckFunctionConfig as unknown as jest.Mock).mockReturnValue(mockFunctionConfig);
+(retrieveSession as unknown as jest.Mock).mockResolvedValue(mockSession);
+(getHmrcConfig as unknown as jest.Mock).mockResolvedValue(mockHmrcConfig);
+(retrieveAttempts as unknown as jest.Mock).mockResolvedValue([]);
+(retrievePersonIdentity as unknown as jest.Mock).mockResolvedValue(mockPersonIdentity);
+(getTokenFromOtg as unknown as jest.Mock).mockResolvedValue(mockOtgToken);
+(matchUserDetailsWithPdv as unknown as jest.Mock).mockResolvedValue(mockPdvRes);
+(handlePdvResponse as unknown as jest.Mock).mockResolvedValue(true);
+
+describe("nino-check handler", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("executes successfully with a valid input", async () => {
+    const response = await handler(...handlerInput);
+
+    expect(response).toStrictEqual({
+      statusCode: 200,
+      body: JSON.stringify({ requestRetry: false }),
+    });
+
+    expect(NinoCheckFunctionConfig).toHaveBeenCalled();
+    expect(mockLogger.appendKeys).toHaveBeenCalledWith({
+      govuk_signin_journey_id: mockSession.clientSessionId,
+    });
+    expect(sendRequestSentEvent).toHaveBeenCalledWith(
+      mockFunctionConfig.audit,
+      mockSession,
+      mockPersonIdentity,
+      mockNino,
+      mockDeviceInformationHeader
+    );
+    expect(matchUserDetailsWithPdv).toHaveBeenCalledWith(
+      mockHmrcConfig.pdv,
+      mockOtgToken,
+      buildPdvInput(mockPersonIdentity, mockNino)
+    );
+    expect(saveTxn).toHaveBeenCalledWith(
+      mockDynamoClient,
+      mockFunctionConfig.tableNames.sessionTable,
+      mockSessionId,
+      mockPdvRes.txn
+    );
+    expect(sendResponseReceivedEvent).toHaveBeenCalledWith(
+      mockFunctionConfig.audit,
+      mockSession,
+      mockPdvRes.txn,
+      mockDeviceInformationHeader
+    );
+    expect(saveAttempt).toHaveBeenCalledWith(
+      mockDynamoClient,
+      mockFunctionConfig.tableNames.attemptTable,
+      mockSession,
+      mockPdvRes
+    );
+    expect(writeCompletedCheck).toHaveBeenCalledWith(
+      mockDynamoClient,
+      mockFunctionConfig.tableNames,
+      mockSessionId,
+      mockNino
+    );
+  });
+
+  it("handles application errors correctly", async () => {
+    (retrieveSession as unknown as jest.Mock).mockImplementationOnce(() => {
+      throw new Error("nooooooo!!!");
+    });
+
+    const response = await handler(...handlerInput);
+
+    expect(response).toStrictEqual(internalServerError);
+
+    expect(NinoCheckFunctionConfig).toHaveBeenCalled();
+    expect(retrieveSession).toHaveBeenCalledWith(
+      mockFunctionConfig.tableNames.sessionTable,
+      mockDynamoClient,
+      mockSessionId
+    );
+    expect(getHmrcConfig).not.toHaveBeenCalled();
+  });
+
+  it("handles a too-many-attempts scenario correctly", async () => {
+    (retrieveAttempts as unknown as jest.Mock).mockResolvedValueOnce(2);
+
+    const response = await handler(...handlerInput);
+
+    expect(response).toStrictEqual({
+      statusCode: 200,
+      body: JSON.stringify({ requestRetry: false }),
+    });
+
+    expect(mockLogger.appendKeys).toHaveBeenCalledWith({
+      govuk_signin_journey_id: mockSession.clientSessionId,
+    });
+    expect(retrieveAttempts).toHaveBeenCalled();
+    expect(captureMetric).toHaveBeenCalledWith("AttemptsExceededMetric");
+    expect(retrievePersonIdentity).not.toHaveBeenCalled();
+  });
+
+  it("handles a problem with the PDV function correctly", async () => {
+    (matchUserDetailsWithPdv as unknown as jest.Mock).mockImplementationOnce(() => {
+      throw new Error("broken!");
+    });
+
+    const response = await handler(...handlerInput);
+
+    expect(response).toStrictEqual(internalServerError);
+
+    expect(captureMetric).toHaveBeenCalledWith("MatchingLambdaErrorMetric");
+    expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("Error"));
+    expect(saveTxn).not.toHaveBeenCalled();
+  });
+
+  it("behaves correctly if ninoMatch is false", async () => {
+    (handlePdvResponse as unknown as jest.Mock).mockReturnValueOnce(false);
+
+    const response = await handler(...handlerInput);
+
+    expect(response).toStrictEqual({
+      statusCode: 200,
+      body: JSON.stringify({ requestRetry: true }),
+    });
+
+    expect(writeCompletedCheck).not.toHaveBeenCalled();
+  });
+});
