@@ -12,7 +12,7 @@ import { retrieveSession } from "./helpers/retrieve-session";
 import { retrieveAttempts } from "./helpers/retrieve-attempts";
 import { retrievePersonIdentity } from "./helpers/retrieve-person-identity";
 import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
-import { captureMetric } from "../../common/src/util/metrics";
+import { captureMetric, metrics } from "../../common/src/util/metrics";
 import { getTokenFromOtg } from "./hmrc-apis/otg";
 import { sendRequestSentEvent, sendResponseReceivedEvent } from "./helpers/audit";
 import { matchUserDetailsWithPdv } from "./hmrc-apis/pdv";
@@ -28,6 +28,7 @@ const MAX_PAST_ATTEMPTS = 1;
 
 class NinoCheckHandler implements LambdaInterface {
   @logger.injectLambdaContext({ resetKeys: true })
+  @metrics.logMetrics({ throwOnEmptyMetrics: false, captureColdStartMetric: true })
   public async handler({ body, headers }: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
     try {
       logger.info(`${context.functionName} invoked.`);

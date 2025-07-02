@@ -1,7 +1,7 @@
 import { Metrics, MetricUnits } from "@aws-lambda-powertools/metrics";
 import { MetricDimensions, MetricNames } from "../../../logging/metric-types";
 
-const metrics = new Metrics();
+export const metrics = new Metrics();
 
 const singleMetric = metrics.singleMetric();
 
