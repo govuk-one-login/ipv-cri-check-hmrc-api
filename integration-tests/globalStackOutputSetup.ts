@@ -6,7 +6,7 @@ let outputs: Partial<{
   PublicApiGatewayId: string;
   NinoUsersTable: string;
   UserAttemptsTable: string;
-  AbandonStateMachineArn: string;
+
   CheckSessionStateMachineArn: string;
   NinoCheckStateMachineArn: string;
   NinoIssueCredentialStateMachineArn: string;
@@ -48,7 +48,7 @@ export default async function globalSetup() {
       "person-identity-common-cri-api";
     process.env.SESSION_TABLE =
       `session-${outputs.CommonStackName}` || "session-common-cri-api";
-    process.env.ABANDON_STATE_MACHINE_ARN = outputs.AbandonStateMachineArn;
+
     process.env.CHECK_SESSION_STATE_MACHINE_ARN =
       outputs.CheckSessionStateMachineArn;
     process.env.NINO_CHECK_STATE_MACHINE_ARN = outputs.NinoCheckStateMachineArn;
