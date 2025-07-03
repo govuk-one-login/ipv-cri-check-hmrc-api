@@ -827,7 +827,7 @@ Resources:
         Role: !GetAtt CodeDeployServiceRole.Arn
         Alarms: !If
           - UseCanaryDeploymentAlarms
-          - [!Ref AbandonFunctionCanaryErrors, !Ref AbandonStateMachineCanary5xxErrors]
+          - [!Ref AbandonFunctionCanaryErrors, !Ref AbandonFunctionCanary5xxErrors]
           - [!Ref AWS::NoValue]
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/AbandonFunction
@@ -1585,111 +1585,6 @@ Resources:
         - Name: StateMachineArn
           Value: !Ref NinoCheckStateMachine
 
-  AbandonStateMachine:
-    Type: AWS::Serverless::StateMachine
-    Properties:
-      AutoPublishAlias: live
-      DeploymentPreference:
-        Type: !Ref StepFunctionsDeploymentPreference
-        Interval: !If [IsProdEnvironment, 15, 5]
-        Percentage: !If [IsProdEnvironment, 10, 50]
-        Alarms: !If
-          - UseCanaryDeploymentAlarms
-          - - !Ref SsmParametersFunctionCanaryErrors
-            - !Ref AbandonStateMachineFailedCanary
-            - !Ref AbandonStateMachineCanary5xxErrors
-          - !Ref AWS::NoValue
-        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AbandonStateMachine}:live"
-      Type: EXPRESS
-      DefinitionUri: ../step-functions/abandon.asl.json
-      DefinitionSubstitutions:
-        AuditEventPrefix: !Ref AuditEventNamePrefix
-        CheckSessionStateMachineArn: !Sub ${CheckSessionStateMachine}:live
-        CommonStackName: !Ref CommonStackName
-        SsmParametersFunction: !Ref SsmParametersFunction.Version
-        CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-        AuditEventNameAbandoned: !FindInMap [Audit, EventName, Abandoned]
-      Logging:
-        Destinations:
-          - CloudWatchLogsLogGroup:
-              LogGroupArn: !GetAtt AbandonStateMachineLogGroup.Arn
-        IncludeExecutionData: True
-        Level: ALL
-      Policies:
-        - LambdaInvokePolicy:
-            FunctionName: !Ref SsmParametersFunction
-        - DynamoDBReadPolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-        - DynamoDBWritePolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref CheckHmrcEventBus
-        - Statement:
-            Effect: Allow
-            Action:
-              - states:StartSyncExecution
-              - states:StartExecution
-            Resource:
-              - !Ref CheckSessionStateMachine
-        - Statement:
-            Effect: Allow
-            Action: logs:*
-            Resource: "*"
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-
-  AbandonStateMachineLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs"
-      RetentionInDays: 30
-
-  PIIRedactedAbandonStateMachineLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedAbandonStateMachineLogGroup
-
-  AbandonStateMachineFailedMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref AbandonStateMachineLogGroup
-      FilterPattern: '{$.type = "ExecutionFailed"}'
-      MetricTransformations:
-        - MetricValue: "1"
-          MetricName: "AbandonStateMachine}-Error"
-          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
-
-  AbandonStateMachineAlarm:
-    Type: "AWS::CloudWatch::Alarm"
-    Condition: DeployAlarms
-    Properties:
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub
-        - "${AbandonStateMachine} failed 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
-        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-AbandonStateMachine-ExecutionsFailed-alarm"
-      MetricName: "ExecutionsFailed"
-      Namespace: AWS/States
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Sum
-      DatapointsToAlarm: 1
-      EvaluationPeriods: 1
-      Period: 3600
-      Threshold: 3
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: StateMachineArn
-          Value: !Ref AbandonStateMachine
-
   NinoIssueCredentialStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -2206,31 +2101,6 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  AbandonStateMachineFailedCanary:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the AbandonStateMachine"
-      MetricName: ExecutionsFailed
-      Dimensions:
-        - Name: StateMachineArn
-          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AbandonStateMachine}"
-        - Name: Alias
-          Value: "live"
-      Namespace: AWS/States
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   NinoCheckStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -2306,7 +2176,7 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  AbandonStateMachineCanary5xxErrors:
+  AbandonFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
     Properties:
@@ -2315,7 +2185,7 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: "AbandonStateMachine returning 5xx response."
+      AlarmDescription: "Abandon lambda returning 5xx response."
       Namespace: AWS/ApiGateway
       MetricName: 5XXError
       Dimensions:
@@ -2831,16 +2701,6 @@ Resources:
           MetricName: VCIssuedMetric
           MetricNamespace: !Ref CriIdentifier
 
-  AbandonedJourneyMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref AbandonStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Clear Auth Code")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: AbandonedAuthMetric
-          MetricNamespace: !Ref CriIdentifier
-
   ####################################################################
   #                                                                  #
   # Log Groups for Slunk (PII Redacted)                              #
@@ -2851,12 +2711,6 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs-pii-redacted"
-      RetentionInDays: 30
-
-  PIIRedactedAbandonStateMachineLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-Abandon-state-machine-logs-pii-redacted"
       RetentionInDays: 30
 
   PIIRedactedNinoIssueCredentialLogGroup:
@@ -2946,15 +2800,6 @@ Resources:
       DestinationArn: !Ref PIIRedactFunction.Alias
       FilterPattern: ""
       LogGroupName: !Ref NinoCheckStateMachineLogGroup
-
-  AbandonStateMachineLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
-    Properties:
-      FilterName: "PII Redaction"
-      DestinationArn: !Ref PIIRedactFunction.Alias
-      FilterPattern: ""
-      LogGroupName: !Ref AbandonStateMachineLogGroup
 
   NinoIssueCredentialLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
@@ -3047,9 +2892,6 @@ Outputs:
   NinoUsersTable:
     Description: NinoUsersTable table name
     Value: !Ref NinoUsersTable
-  AbandonStateMachineArn:
-    Description: Abandon state machine ARN
-    Value: !Ref AbandonStateMachine
   AuditEventResponseReceivedRule:
     Description: AuditEvent Response Received Rule
     Value: !Ref AuditEventResponseReceivedRule
