@@ -63,3 +63,19 @@ export const mockPdvRes = {
   },
   txn: "good",
 };
+
+export const mockPdvErrorRes = {
+  httpStatus: 401,
+  body: "cool stuff",
+  parsedBody: {
+    errors: "CID returned no record",
+  },
+  txn: "good",
+};
+
+export const mockPdvDeceasedRes = {
+  httpStatus: 424,
+  body: "Request to create account for a deceased user",
+  parsedBody: undefined,
+  txn: "good",
+};
