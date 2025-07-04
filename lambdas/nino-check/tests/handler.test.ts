@@ -21,7 +21,7 @@ import { mockLogger } from "../../common/tests/logger";
 import { handler } from "../src/handler";
 import { retrieveSession } from "../src/helpers/retrieve-session";
 import { NinoCheckFunctionConfig } from "../src/helpers/function-config";
-import { getHmrcConfig, handlePdvResponse, saveAttempt, saveTxn } from "../src/helpers/nino";
+import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../src/helpers/nino";
 import { retrieveAttempts } from "../src/helpers/retrieve-attempts";
 import { retrievePersonIdentity } from "../src/helpers/retrieve-person-identity";
 import { sendRequestSentEvent, sendResponseReceivedEvent } from "../src/helpers/audit";
@@ -30,6 +30,7 @@ import { writeCompletedCheck } from "../src/helpers/write-completed-check";
 import { getTokenFromOtg } from "../src/hmrc-apis/otg";
 import { buildPdvInput } from "../src/helpers/build-pdv-input";
 import { captureMetric } from "../../common/src/util/metrics";
+import { CriError } from "../../common/src/errors/cri-error";
 
 const mockContext: Context = {
   awsRequestId: "",
@@ -73,7 +74,7 @@ const handlerInput: Parameters<typeof handler> = [
 (retrievePersonIdentity as unknown as jest.Mock).mockResolvedValue(mockPersonIdentity);
 (getTokenFromOtg as unknown as jest.Mock).mockResolvedValue(mockOtgToken);
 (matchUserDetailsWithPdv as unknown as jest.Mock).mockResolvedValue(mockPdvRes);
-(handlePdvResponse as unknown as jest.Mock).mockResolvedValue(true);
+(handleResponseAndSaveAttempt as unknown as jest.Mock).mockResolvedValue(true);
 
 describe("nino-check handler", () => {
   beforeEach(() => {
@@ -116,7 +117,7 @@ describe("nino-check handler", () => {
       mockPdvRes.txn,
       mockDeviceInformationHeader
     );
-    expect(saveAttempt).toHaveBeenCalledWith(
+    expect(handleResponseAndSaveAttempt).toHaveBeenCalledWith(
       mockDynamoClient,
       mockFunctionConfig.tableNames.attemptTable,
       mockSession,
@@ -181,7 +182,7 @@ describe("nino-check handler", () => {
   });
 
   it("behaves correctly if ninoMatch is false", async () => {
-    (handlePdvResponse as unknown as jest.Mock).mockReturnValueOnce(false);
+    (handleResponseAndSaveAttempt as unknown as jest.Mock).mockReturnValueOnce(false);
 
     const response = await handler(...handlerInput);
 
@@ -189,6 +190,31 @@ describe("nino-check handler", () => {
       statusCode: 200,
       body: JSON.stringify({ requestRetry: true }),
     });
+
+    expect(writeCompletedCheck).not.toHaveBeenCalled();
+    expect(captureMetric).toHaveBeenCalledWith("RetryAttemptsSentMetric");
+  });
+
+  it("should return 200 if nino match is false but its the final attempt", async () => {
+    (retrieveAttempts as unknown as jest.Mock).mockResolvedValueOnce(1);
+    (handleResponseAndSaveAttempt as unknown as jest.Mock).mockReturnValueOnce(false);
+
+    const response = await handler(...handlerInput);
+
+    expect(response).toStrictEqual({
+      statusCode: 200,
+      body: JSON.stringify({ requestRetry: false }),
+    });
+  });
+
+  it("should return 500 if unexpected Error recieved from PDV request", async () => {
+    (handleResponseAndSaveAttempt as unknown as jest.Mock).mockImplementationOnce(() => {
+      throw new CriError(500, "Error");
+    });
+
+    const response = await handler(...handlerInput);
+
+    expect(response).toStrictEqual(internalServerError);
 
     expect(writeCompletedCheck).not.toHaveBeenCalled();
   });

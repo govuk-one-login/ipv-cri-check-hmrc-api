@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda
 import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { writeCompletedCheck } from "./helpers/write-completed-check";
 import { NinoCheckFunctionConfig } from "./helpers/function-config";
-import { getHmrcConfig, saveAttempt, saveTxn, handlePdvResponse } from "./helpers/nino";
+import { getHmrcConfig, saveTxn, handleResponseAndSaveAttempt } from "./helpers/nino";
 import { InputBody } from "./types/input";
 import { CriError } from "../../common/src/errors/cri-error";
 import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
@@ -91,15 +91,17 @@ class NinoCheckHandler implements LambdaInterface {
 
       await sendResponseReceivedEvent(functionConfig.audit, session, pdvRes.txn, deviceInformationHeader);
 
-      const ninoMatch = handlePdvResponse(pdvRes);
-
-      if (ninoMatch) {
-        await saveAttempt(dynamoClient, functionConfig.tableNames.attemptTable, session, pdvRes);
-      }
+      const ninoMatch = await handleResponseAndSaveAttempt(
+        dynamoClient,
+        functionConfig.tableNames.attemptTable,
+        session,
+        pdvRes
+      );
 
       logger.info(`Completed NINo verification - ninoMatch=${ninoMatch}.`);
 
       if (!ninoMatch && !isFinalAttempt) {
+        captureMetric(`RetryAttemptsSentMetric`);
         logger.info(`Failed to verify. This was not the last attempt - requesting the user retries.`);
         return { statusCode: 200, body: JSON.stringify({ requestRetry: true }) };
       }
