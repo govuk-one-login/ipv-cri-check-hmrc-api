@@ -15,10 +15,10 @@ import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { captureMetric, metrics } from "../../common/src/util/metrics";
 import { getTokenFromOtg } from "./hmrc-apis/otg";
 import { sendRequestSentEvent, sendResponseReceivedEvent } from "./helpers/audit";
-import { matchUserDetailsWithPdv } from "./hmrc-apis/pdv";
-import { PdvFunctionOutput } from "./hmrc-apis/types/pdv";
+import { callPdvMatchingApi } from "./hmrc-apis/pdv";
 import { safeStringifyError } from "../../common/src/util/stringify-error";
 import { buildPdvInput } from "./helpers/build-pdv-input";
+import { ParsedPdvMatchResponse } from "./hmrc-apis/types/pdv";
 
 initOpenTelemetry();
 
@@ -75,27 +75,25 @@ class NinoCheckHandler implements LambdaInterface {
 
       logger.info(`Successfully retrieved OAuth token from HMRC. Proceeding with PDV request...`);
 
-      let pdvRes: PdvFunctionOutput;
+      let parsedPdvMatchResponse: ParsedPdvMatchResponse;
 
       try {
-        pdvRes = await matchUserDetailsWithPdv(hmrcApiConfig.pdv, token, buildPdvInput(personIdentity, nino));
+        parsedPdvMatchResponse = await callPdvMatchingApi(hmrcApiConfig.pdv, token, buildPdvInput(personIdentity, nino));
       } catch (error) {
         captureMetric(`MatchingLambdaErrorMetric`);
-
         logger.error(`Error in ${context.functionName}: ${safeStringifyError(error)}`);
-
         throw new CriError(500, "Unexpected error when validating NINo");
       }
 
-      await saveTxn(dynamoClient, functionConfig.tableNames.sessionTable, sessionId, pdvRes.txn);
+      await saveTxn(dynamoClient, functionConfig.tableNames.sessionTable, sessionId, parsedPdvMatchResponse.txn);
 
-      await sendResponseReceivedEvent(functionConfig.audit, session, pdvRes.txn, deviceInformationHeader);
+      await sendResponseReceivedEvent(functionConfig.audit, session, parsedPdvMatchResponse.txn, deviceInformationHeader);
 
       const ninoMatch = await handleResponseAndSaveAttempt(
         dynamoClient,
         functionConfig.tableNames.attemptTable,
         session,
-        pdvRes
+        parsedPdvMatchResponse
       );
 
       logger.info(`Completed NINo verification - ninoMatch=${ninoMatch}.`);

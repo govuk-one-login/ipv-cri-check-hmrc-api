@@ -6,7 +6,7 @@ import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../../src/helpers/nino";
-import { mockPdvDeceasedRes, mockPdvErrorRes, mockPdvRes, mockSession, mockSessionId, mockTxn } from "../mocks/mockData";
+import { mockPdvDeceasedRes, mockPdvErrorRes, mockPdvInvalidCredsRes, mockPdvRes, mockSession, mockSessionId, mockTxn } from "../mocks/mockData";
 import { captureMetric } from "../../../common/src/util/metrics";
 import { logger } from "../../../common/src/util/logger";
 
@@ -140,7 +140,7 @@ describe("handleResponseAndSaveAttempt()", () => {
           S: String(mockPdvDeceasedRes.httpStatus),
         },
         text: {
-          S: String(mockPdvDeceasedRes.body),
+          S: String(mockPdvDeceasedRes.errorBody),
         },
         attempt: { S: "FAIL" },
         ttl: { N: String(mockSession.expiryDate) },
@@ -165,7 +165,7 @@ describe("handleResponseAndSaveAttempt()", () => {
           S: String(mockPdvErrorRes.httpStatus),
         },
         text: {
-          S: String(mockPdvErrorRes.parsedBody.errors),
+          S: String(mockPdvErrorRes.errorBody.errorMessage),
         },
         attempt: { S: "FAIL" },
         ttl: { N: String(mockSession.expiryDate) },
@@ -182,7 +182,7 @@ describe("handleResponseAndSaveAttempt()", () => {
     } as const;
 
     try {
-      const match = await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, { ...mockPdvRes, httpStatus: 400, parsedBody: body, body: JSON.stringify(body) });
+      const match = await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, mockPdvInvalidCredsRes);
     } catch (error) {
       thrown = true;
 
@@ -208,21 +208,5 @@ describe("handleResponseAndSaveAttempt()", () => {
     expect(thrown).toEqual(true);
     expect(captureMetric).toHaveBeenCalledWith("HMRCAPIErrorMetric");
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("999"));
-  });
-
-  it("handles a PDV API error with no valid JSON body correctly", async () => {
-    let thrown = false;
-
-    try {
-      await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, { ...mockPdvRes, httpStatus: 401, parsedBody: undefined });
-    } catch (error) {
-      thrown = true;
-
-      expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 500 }));
-    }
-
-    expect(thrown).toEqual(true);
-    expect(captureMetric).toHaveBeenCalledWith("HMRCAPIErrorMetric");
-    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("401"));
   });
 });

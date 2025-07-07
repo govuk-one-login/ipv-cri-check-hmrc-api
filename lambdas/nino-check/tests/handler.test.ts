@@ -25,7 +25,7 @@ import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../src/hel
 import { retrieveAttempts } from "../src/helpers/retrieve-attempts";
 import { retrievePersonIdentity } from "../src/helpers/retrieve-person-identity";
 import { sendRequestSentEvent, sendResponseReceivedEvent } from "../src/helpers/audit";
-import { matchUserDetailsWithPdv } from "../src/hmrc-apis/pdv";
+import { callPdvMatchingApi } from "../src/hmrc-apis/pdv";
 import { writeCompletedCheck } from "../src/helpers/write-completed-check";
 import { getTokenFromOtg } from "../src/hmrc-apis/otg";
 import { buildPdvInput } from "../src/helpers/build-pdv-input";
@@ -73,7 +73,7 @@ const handlerInput: Parameters<typeof handler> = [
 (retrieveAttempts as unknown as jest.Mock).mockResolvedValue([]);
 (retrievePersonIdentity as unknown as jest.Mock).mockResolvedValue(mockPersonIdentity);
 (getTokenFromOtg as unknown as jest.Mock).mockResolvedValue(mockOtgToken);
-(matchUserDetailsWithPdv as unknown as jest.Mock).mockResolvedValue(mockPdvRes);
+(callPdvMatchingApi as unknown as jest.Mock).mockResolvedValue(mockPdvRes);
 (handleResponseAndSaveAttempt as unknown as jest.Mock).mockResolvedValue(true);
 
 describe("nino-check handler", () => {
@@ -100,7 +100,7 @@ describe("nino-check handler", () => {
       mockNino,
       mockDeviceInformationHeader
     );
-    expect(matchUserDetailsWithPdv).toHaveBeenCalledWith(
+    expect(callPdvMatchingApi).toHaveBeenCalledWith(
       mockHmrcConfig.pdv,
       mockOtgToken,
       buildPdvInput(mockPersonIdentity, mockNino)
@@ -168,7 +168,7 @@ describe("nino-check handler", () => {
   });
 
   it("handles a problem with the PDV function correctly", async () => {
-    (matchUserDetailsWithPdv as unknown as jest.Mock).mockImplementationOnce(() => {
+    (callPdvMatchingApi as unknown as jest.Mock).mockImplementationOnce(() => {
       throw new Error("broken!");
     });
 

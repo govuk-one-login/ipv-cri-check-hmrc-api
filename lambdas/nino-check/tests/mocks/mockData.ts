@@ -54,28 +54,30 @@ export const mockOtgToken = "gimme access";
 
 export const mockPdvRes = {
   httpStatus: 200,
-  body: "cool stuff",
-  parsedBody: {
-    firstName: "bob",
-    lastName: "jenkins",
-    nino: "AA123456B",
-    dateOfBirth: "1994-09-24",
-  },
-  txn: "good",
+  errorBody: "",
+  txn: "good"
 };
 
 export const mockPdvErrorRes = {
   httpStatus: 401,
-  body: "cool stuff",
-  parsedBody: {
-    errors: "CID returned no record",
+  errorBody: {
+    type: "matching_error",
+    errorMessage: "CID returned no record",
   },
   txn: "good",
 };
 
 export const mockPdvDeceasedRes = {
   httpStatus: 424,
-  body: "Request to create account for a deceased user",
-  parsedBody: undefined,
+  errorBody: "Request to create account for a deceased user",
+  txn: "good",
+};
+
+export const mockPdvInvalidCredsRes = {
+  httpStatus: 400,
+  errorBody: {
+    type: "invalid_creds",
+    errorMessage: "INVALID_CREDENTIALS",
+  },
   txn: "good",
 };

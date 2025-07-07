@@ -1,13 +1,13 @@
-import { PdvApiErrorBody, PdvApiInput, PdvApiResponseBody, PdvConfig, PdvFunctionOutput } from "./types/pdv";
+import { PdvApiErrorBody, PdvApiErrorJSON, PdvApiInput, PdvConfig, ParsedPdvMatchResponse } from "./types/pdv";
 import { logger } from "../../../common/src/util/logger";
 import { captureLatency } from "../../../common/src/util/metrics";
 import { safeStringifyError } from "../../../common/src/util/stringify-error";
 
-export async function matchUserDetailsWithPdv(
+export async function callPdvMatchingApi(
   { apiUrl, userAgent }: PdvConfig,
   oAuthToken: string,
   apiInput: PdvApiInput
-): Promise<PdvFunctionOutput> {
+): Promise<ParsedPdvMatchResponse> {
   const [response, latency] = await captureLatency("MatchingHandler", () =>
     fetch(apiUrl, {
       method: "POST",
@@ -28,40 +28,43 @@ export async function matchUserDetailsWithPdv(
   });
 
   const txn = response.headers.get("x-amz-cf-id") ?? "";
+
+  let errorBody: PdvApiErrorBody = "";
+  if (response.status !== 200) {
+    errorBody = await parsePdvErrorBody(response);
+  }
+
+  return {
+    httpStatus: response.status,
+    txn,
+    errorBody,
+  };
+}
+
+async function parsePdvErrorBody(response: Response): Promise<PdvApiErrorBody> {
   const contentType = response.headers.get("content-type");
 
-  if (contentType?.includes("application/json")) {
-    const responseBody = await response.text();
-    let parsedBody: PdvApiResponseBody | PdvApiErrorBody | undefined;
+  if (response.status >= 500) {
+    // 5xx errors from HMRC sometimes contain PII
+    return "Internal server error";
+  }
 
+  const responseBody = await response.text();
+  if (contentType?.includes("application/json")) {
     try {
-      parsedBody = JSON.parse(responseBody);
+      const json = JSON.parse(responseBody);
+      if ("errors" in json) {
+        return { type: "matching_error", errorMessage: json.errors } as PdvApiErrorJSON;
+      } else if ("code" in json && json.code === "INVALID_CREDENTIALS") {
+        return { type: "invalid_creds", errorMessage: json.code } as PdvApiErrorJSON;
+      } else {
+        logger.error("Unknown JSON response structure received from the Pdv request");
+      }
     } catch (error) {
       logger.error(
         `Received a non-json body for the application/json content-type (error: ${safeStringifyError(error)})`
       );
     }
-
-    if (response.status >= 500) {
-      // 5xx errors from HMRC sometimes contain PII
-      return {
-        httpStatus: response.status,
-        body: "Internal server error",
-        txn: txn,
-      };
-    }
-
-    return {
-      httpStatus: response.status,
-      body: responseBody,
-      parsedBody,
-      txn: txn,
-    };
-  } else {
-    return {
-      httpStatus: response.status,
-      body: await response.text(),
-      txn: txn,
-    };
   }
+  return responseBody;
 }
