@@ -5,8 +5,8 @@ import * as ssmModule from "@aws-lambda-powertools/parameters/ssm";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
-import { getHmrcConfig, handlePdvResponse, saveAttempt, saveTxn } from "../../src/helpers/nino";
-import { mockPdvRes, mockSession, mockSessionId, mockTxn } from "../mocks/mockData";
+import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../../src/helpers/nino";
+import { mockPdvDeceasedRes, mockPdvErrorRes, mockPdvInvalidCredsRes, mockPdvRes, mockSession, mockSessionId, mockTxn } from "../mocks/mockData";
 import { captureMetric } from "../../../common/src/util/metrics";
 import { logger } from "../../../common/src/util/logger";
 
@@ -91,16 +91,18 @@ describe("saveTxn()", () => {
   });
 });
 
-describe("saveAttempt()", () => {
+describe("handleResponseAndSaveAttempt()", () => {
   const attemptTableName = "attempt-zone";
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("works correctly with valid input", async () => {
-    await saveAttempt(mockDynamoClient, attemptTableName, mockSession, mockPdvRes);
+  it("handles a valid response correctly", async () => {
+    const match = await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, mockPdvRes);
 
+    expect(match).toEqual(true);
+    expect(captureMetric).toHaveBeenCalledWith("SuccessfulFirstAttemptMetric");
     expect(ddbMock).toHaveReceivedCommandWith(PutItemCommand, {
       TableName: attemptTableName,
       Item: {
@@ -118,50 +120,60 @@ describe("saveAttempt()", () => {
       },
     });
   });
-});
 
-describe("handlePdvResponse()", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it("handles a valid response correctly", () => {
-    const match = handlePdvResponse(mockPdvRes);
-
-    expect(match).toEqual(true);
-
-    expect(captureMetric).toHaveBeenCalledWith("SuccessfulFirstAttemptMetric");
-  });
-
-  it("handles a deceased response correctly", () => {
-    const match = handlePdvResponse({
-      ...mockPdvRes,
-      httpStatus: 424,
-      parsedBody: undefined,
-      body: "something about the user being deceased",
-    });
+  it("handles a deceased response correctly", async () => {
+    const match = await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, mockPdvDeceasedRes);
 
     expect(match).toEqual(false);
 
     expect(captureMetric).toHaveBeenCalledWith("DeceasedUserMetric");
+       expect(ddbMock).toHaveReceivedCommandWith(PutItemCommand, {
+      TableName: attemptTableName,
+      Item: {
+        sessionId: {
+          S: mockSession.sessionId,
+        },
+        timestamp: {
+          S: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/),
+        },
+        status: {
+          S: String(mockPdvDeceasedRes.httpStatus),
+        },
+        text: {
+          S: String(mockPdvDeceasedRes.errorBody),
+        },
+        attempt: { S: "FAIL" },
+        ttl: { N: String(mockSession.expiryDate) },
+      },
+    });
   });
 
-  it("handles a failed match response correctly", () => {
-    const body = { errors: "this person is fake news" };
-
-    const match = handlePdvResponse({
-      ...mockPdvRes,
-      httpStatus: 401,
-      parsedBody: body,
-      body: JSON.stringify(body),
-    });
+  it("handles a failed match response correctly", async () => {
+    const match = await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, mockPdvErrorRes);
 
     expect(match).toEqual(false);
-
-    expect(captureMetric).toHaveBeenCalledWith("RetryAttemptsSentMetric");
+    expect(ddbMock).toHaveReceivedCommandWith(PutItemCommand, {
+      TableName: attemptTableName,
+      Item: {
+        sessionId: {
+          S: mockSession.sessionId,
+        },
+        timestamp: {
+          S: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/),
+        },
+        status: {
+          S: String(mockPdvErrorRes.httpStatus),
+        },
+        text: {
+          S: String(mockPdvErrorRes.errorBody.errorMessage),
+        },
+        attempt: { S: "FAIL" },
+        ttl: { N: String(mockSession.expiryDate) },
+      },
+    });
   });
 
-  it("handles an invalid credentials response correctly", () => {
+  it("handles an invalid credentials response correctly", async () => {
     let thrown = false;
 
     const body = {
@@ -170,7 +182,7 @@ describe("handlePdvResponse()", () => {
     } as const;
 
     try {
-      handlePdvResponse({ ...mockPdvRes, httpStatus: 400, parsedBody: body, body: JSON.stringify(body) });
+      const match = await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, mockPdvInvalidCredsRes);
     } catch (error) {
       thrown = true;
 
@@ -182,11 +194,11 @@ describe("handlePdvResponse()", () => {
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("400"));
   });
 
-  it("handles an unexpected PDV API error correctly", () => {
+  it("handles an unexpected PDV API error correctly", async () => {
     let thrown = false;
 
     try {
-      handlePdvResponse({ ...mockPdvRes, httpStatus: 999 });
+      await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, { ...mockPdvRes, httpStatus: 999 });
     } catch (error) {
       thrown = true;
 
@@ -196,21 +208,5 @@ describe("handlePdvResponse()", () => {
     expect(thrown).toEqual(true);
     expect(captureMetric).toHaveBeenCalledWith("HMRCAPIErrorMetric");
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("999"));
-  });
-
-  it("handles a PDV API error with no valid JSON body correctly", () => {
-    let thrown = false;
-
-    try {
-      handlePdvResponse({ ...mockPdvRes, httpStatus: 401, parsedBody: undefined });
-    } catch (error) {
-      thrown = true;
-
-      expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 500 }));
-    }
-
-    expect(thrown).toEqual(true);
-    expect(captureMetric).toHaveBeenCalledWith("HMRCAPIErrorMetric");
-    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("401"));
   });
 });

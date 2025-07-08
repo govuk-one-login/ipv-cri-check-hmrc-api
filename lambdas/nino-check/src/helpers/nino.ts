@@ -1,6 +1,6 @@
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 import { ISO8601DateString } from "../../../common/src/types/brands";
-import { PdvFunctionOutput } from "../hmrc-apis/types/pdv";
+import { PdvApiErrorJSON, PdvApiErrorBody, ParsedPdvMatchResponse } from "../hmrc-apis/types/pdv";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { CriError } from "../../../common/src/errors/cri-error";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
@@ -62,23 +62,26 @@ export async function saveTxn(dynamoClient: DynamoDBClient, sessionTableName: st
   logger.info(`Saved txn to session table: ${txnRes.$metadata.httpStatusCode}.`);
 }
 
-export async function saveAttempt(
+async function saveAttempt(
   dynamoClient: DynamoDBClient,
   attemptTableName: string,
   session: NinoSessionItem,
-  pdvRes: PdvFunctionOutput
+  matchOutcome: "PASS" | "FAIL",
+  status: number,
+  error?: string
 ) {
   const newAttempt: AttemptItem = {
     sessionId: session.sessionId,
     timestamp: new Date().toISOString() as ISO8601DateString,
-    status: pdvRes.httpStatus.toString(),
-    attempt: "PASS",
+    status: status.toString(),
+    attempt: matchOutcome,
+    text: error,
     ttl: session.expiryDate,
   };
 
   const putAttemptCmd = new PutItemCommand({
     TableName: attemptTableName,
-    Item: marshall(newAttempt),
+    Item: marshall(newAttempt, { removeUndefinedValues: true }),
   });
 
   const attemptRes = await dynamoClient.send(putAttemptCmd);
@@ -86,30 +89,52 @@ export async function saveAttempt(
   logger.info(`Saved attempt: ${attemptRes.$metadata.httpStatusCode}`);
 }
 
-export function handlePdvResponse(pdvRes: PdvFunctionOutput): boolean {
-  const ninoMatch = pdvRes.httpStatus === 200;
+export async function handleResponseAndSaveAttempt(
+  dynamoClient: DynamoDBClient,
+  attemptTableName: string,
+  session: NinoSessionItem,
+  pdvMatchResponse: ParsedPdvMatchResponse
+): Promise<boolean> {
+  const responseHttpStatus = pdvMatchResponse.httpStatus;
 
-  if (ninoMatch) {
+  if (responseHttpStatus === 200) {
     captureMetric(`SuccessfulFirstAttemptMetric`);
-  } else if (pdvRes.httpStatus === 424) {
-    captureMetric(`DeceasedUserMetric`);
-    logger.info(`Deceased response received`);
-  } else if (pdvRes.httpStatus === 401 && "errors" in (pdvRes.parsedBody ?? {})) {
-    captureMetric(`RetryAttemptsSentMetric`);
-    logger.info(`Failed PDV match received.`);
-  } else if (pdvRes.parsedBody && "code" in pdvRes.parsedBody && pdvRes.parsedBody?.code === "INVALID_CREDENTIALS") {
-    captureMetric(`FailedHMRCAuthMetric`);
-    logger.info(
-      `Failed to authenticate with HMRC API: response had a code of ${pdvRes.parsedBody.code} & http status of ${pdvRes.httpStatus}`
-    );
-
-    throw new CriError(500, "Failed to authenticate with HMRC API");
-  } else {
-    captureMetric(`HMRCAPIErrorMetric`);
-    logger.info(`Received an unexpected error response from the PDV API - status: ${pdvRes.httpStatus}`);
-
-    throw new CriError(500, "Unexpected error with the PDV API");
+    await saveAttempt(dynamoClient, attemptTableName, session, "PASS", responseHttpStatus);
+    return true;
   }
 
-  return ninoMatch;
+  const parsedErrorBody = pdvMatchResponse.errorBody;
+
+  if (responseHttpStatus === 401 && isErrorResponse(parsedErrorBody)) {
+    logger.info(`Failed PDV match received.`);
+    await saveAttempt(dynamoClient, attemptTableName, session, "FAIL", responseHttpStatus, parsedErrorBody.errorMessage);
+    return false;
+  }
+
+  if (responseHttpStatus === 424 && typeof parsedErrorBody === 'string') {
+    captureMetric(`DeceasedUserMetric`);
+    logger.info(`Deceased response received`);
+    await saveAttempt(dynamoClient, attemptTableName, session, "FAIL", responseHttpStatus, parsedErrorBody);
+    return false;
+  }
+
+  if (isInvalidCredentialResponse(parsedErrorBody)) {
+    captureMetric(`FailedHMRCAuthMetric`);
+    logger.info(
+      `Failed to authenticate with HMRC API: response had a code of ${parsedErrorBody.errorMessage} & http status of ${responseHttpStatus}`
+    );
+    throw new CriError(500, "Failed to authenticate with HMRC API");
+  }
+
+  captureMetric(`HMRCAPIErrorMetric`);
+  logger.info(`Received an unexpected error response from the PDV API - status: ${responseHttpStatus}`);
+  throw new CriError(500, "Unexpected error with the PDV API");
+}
+
+function isErrorResponse(response: PdvApiErrorBody): response is PdvApiErrorJSON {
+  return typeof response !== 'string' && response.type === 'matching_error';
+}
+
+function isInvalidCredentialResponse(response: PdvApiErrorBody): response is PdvApiErrorJSON {
+  return typeof response !== 'string' && response.type === 'invalid_creds';
 }

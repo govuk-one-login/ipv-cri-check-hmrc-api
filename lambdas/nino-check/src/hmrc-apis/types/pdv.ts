@@ -5,26 +5,16 @@ export type PdvApiInput = {
   nino: string;
 };
 
-export type PdvApiResponseBody = {
-  firstName: string;
-  lastName: string;
-  nino: string;
-  dateOfBirth: string;
-};
+export type PdvApiErrorJSON = {
+  type: string,
+  errorMessage: string
+}
 
-export type PdvApiErrorBody = {
-  errors: string;
-};
+export type PdvApiErrorBody = PdvApiErrorJSON | string;
 
-export type PdvInvalidAuthBody = {
-  code: "INVALID_CREDENTIALS";
-  message: string;
-};
-
-export type PdvFunctionOutput = {
+export type ParsedPdvMatchResponse = {
   httpStatus: number;
-  body: string;
-  parsedBody?: PdvApiResponseBody | PdvApiErrorBody | PdvInvalidAuthBody;
+  errorBody: PdvApiErrorBody
   txn: string;
 };
 

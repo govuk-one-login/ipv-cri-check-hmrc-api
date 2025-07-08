@@ -3,7 +3,7 @@ jest.mock("../../../common/src/util/logger");
 import { PdvApiInput } from "../../src/hmrc-apis/types/pdv";
 import { logger } from "../../../common/src/util/logger";
 import { captureLatency } from "../../../common/src/util/metrics";
-import { matchUserDetailsWithPdv } from "../../src/hmrc-apis/pdv";
+import { callPdvMatchingApi } from "../../src/hmrc-apis/pdv";
 
 const apiUrl = "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match";
 const userAgent = "govuk-one-login";
@@ -46,15 +46,9 @@ describe("matchUserDetailsWithPdv", () => {
       status: 200,
     });
 
-    const result = await matchUserDetailsWithPdv(...mockInput);
+    const result = await callPdvMatchingApi(...mockInput);
 
     expect(result.httpStatus).toBe(200);
-    expect(result.body).toStrictEqual({
-      firstName: "Jim",
-      lastName: "Ferguson",
-      dateOfBirth: "1948-04-23",
-      nino: "AA000003D",
-    });
     expect(result.txn).toStrictEqual("mock-txn");
     expect(logger.info).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -80,15 +74,9 @@ describe("matchUserDetailsWithPdv", () => {
       status: 200,
     });
 
-    const result2 = await matchUserDetailsWithPdv(...mockInput);
+    const result2 = await callPdvMatchingApi(...mockInput);
 
     expect(result2.httpStatus).toBe(200);
-    expect(result2.body).toStrictEqual({
-      firstName: "Jim",
-      lastName: "Ferguson",
-      dateOfBirth: "1948-04-23",
-      nino: "AA000003D",
-    });
     expect(result2.txn).toStrictEqual("");
   });
 
@@ -101,10 +89,10 @@ describe("matchUserDetailsWithPdv", () => {
       status: 500,
     });
 
-    const result = await matchUserDetailsWithPdv(...mockInput);
+    const result = await callPdvMatchingApi(...mockInput);
 
     expect(result.httpStatus).toBe(500);
-    expect(result.body).toStrictEqual("Internal server error");
+    expect(result.errorBody).toStrictEqual("Internal server error");
     expect(result.txn).toStrictEqual("mock-txn");
   });
 
@@ -117,12 +105,12 @@ describe("matchUserDetailsWithPdv", () => {
       status: 422,
     });
 
-    const result = await matchUserDetailsWithPdv(...mockInput);
+    const result = await callPdvMatchingApi(...mockInput);
 
     expect(logger.error).toHaveBeenCalled();
 
     expect(result.httpStatus).toBe(422);
-    expect(result.body).toStrictEqual("Request to create account for a deceased user");
+    expect(result.errorBody).toStrictEqual("Request to create account for a deceased user");
   });
 
   it("should return text when content type is not json", async () => {
@@ -134,21 +122,11 @@ describe("matchUserDetailsWithPdv", () => {
       status: 200,
     });
 
-    const result = await matchUserDetailsWithPdv(...mockInput);
+    const result = await callPdvMatchingApi(...mockInput);
 
     expect(result.httpStatus).toBe(200);
-    expect(result.body).toStrictEqual("Test Text");
+    expect(result.errorBody).toStrictEqual("");
     expect(result.txn).toStrictEqual("mock-txn");
-  });
-
-  it("should return an error message when response has no content-type and has no body", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      headers: {
-        get: jest.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce(""),
-      },
-      status: 200,
-    });
-    await expect(matchUserDetailsWithPdv(...mockInput)).rejects.toThrow();
   });
 
   it("should log API latency, and push a metric", async () => {
@@ -160,7 +138,7 @@ describe("matchUserDetailsWithPdv", () => {
       status: 200,
     });
 
-    await matchUserDetailsWithPdv(...mockInput);
+    await callPdvMatchingApi(...mockInput);
 
     expect(logger.info).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -170,5 +148,75 @@ describe("matchUserDetailsWithPdv", () => {
         latencyInMs: expect.anything(),
       })
     );
+  });
+
+  it("should return parsed deceased response", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      headers: {
+        get: jest.fn().mockReturnValueOnce("mock-txn"),
+      },
+      text: jest.fn().mockResolvedValueOnce("Request to create account for a deceased user"),
+      status: 424,
+    });
+
+    const result = await callPdvMatchingApi(...mockInput);
+
+    expect(result.httpStatus).toBe(424);
+    expect(result.txn).toStrictEqual("mock-txn");
+    expect(result.errorBody).toStrictEqual("Request to create account for a deceased user");
+  });
+
+   it("should return parsed deceased response even with JSON contentt-type header", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      headers: {
+        get: jest.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
+      },
+      text: jest.fn().mockResolvedValueOnce("Request to create account for a deceased user"),
+      status: 424,
+    });
+
+    const result = await callPdvMatchingApi(...mockInput);
+
+    expect(result.httpStatus).toBe(424);
+    expect(result.txn).toStrictEqual("mock-txn");
+    expect(result.errorBody).toStrictEqual("Request to create account for a deceased user");
+  });
+
+  it("should return parsed matching error response", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      headers: {
+        get: jest.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
+      },
+      text: jest.fn().mockResolvedValueOnce(JSON.stringify({ errors: "CID returned no record" })),
+      status: 401,
+    });
+
+    const result = await callPdvMatchingApi(...mockInput);
+
+    expect(result.httpStatus).toBe(401);
+    expect(result.txn).toStrictEqual("mock-txn");
+    expect(result.errorBody).toStrictEqual({
+      type: "matching_error",
+      errorMessage: "CID returned no record",
+    });
+  });
+
+  it("should return parsed invalid creds error response", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      headers: {
+        get: jest.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
+      },
+      text: jest.fn().mockResolvedValueOnce(JSON.stringify({ code: "INVALID_CREDENTIALS" })),
+      status: 401,
+    });
+
+    const result = await callPdvMatchingApi(...mockInput);
+
+    expect(result.httpStatus).toBe(401);
+    expect(result.txn).toStrictEqual("mock-txn");
+    expect(result.errorBody).toStrictEqual({
+      type: "invalid_creds",
+      errorMessage: "INVALID_CREDENTIALS",
+    });
   });
 });

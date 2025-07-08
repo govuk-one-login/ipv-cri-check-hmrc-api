@@ -1,11 +1,5 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import {
-  DeleteCommand,
-  DynamoDBDocumentClient,
-  GetCommand,
-  PutCommand,
-  QueryCommand,
-} from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { createSendCommand } from "./aws-helper";
 
 type Keys = Record<string, unknown>;
@@ -19,6 +13,15 @@ const sendCommand = createSendCommand(() =>
 
 export const getItemByKey = (tableName: string, key: Keys) =>
   sendCommand(GetCommand, { TableName: tableName, Key: key });
+
+export const queryItemsBySessionId = (tableName: string, sessionId: string) =>
+  sendCommand(QueryCommand, {
+    TableName: tableName,
+    KeyConditionExpression: "sessionId = :sessionId",
+    ExpressionAttributeValues: {
+      ":sessionId": sessionId ,
+    },
+  });
 
 export const populateTable = (tableName: string, items: Keys) =>
   sendCommand(PutCommand, { TableName: tableName, Item: items });
