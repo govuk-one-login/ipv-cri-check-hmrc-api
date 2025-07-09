@@ -1,9 +1,9 @@
 import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge";
-import { NinoSessionItem } from "../types/nino-session-item";
+import { NinoSessionItem } from "../../../common/src/types/nino-session-item";
 import { AuditUser } from "./nino";
 import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
-import { AuditConfig } from "../types/input";
 import { marshall } from "@aws-sdk/util-dynamodb";
+import { AuditConfig } from "../../../common/src/config/base-function-config";
 
 const eventsClient = new EventBridgeClient();
 

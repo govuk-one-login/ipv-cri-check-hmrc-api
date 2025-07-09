@@ -8,10 +8,11 @@ jest.mock("@aws-sdk/client-eventbridge", () => ({
 }));
 
 import { PutEventsCommandInput } from "@aws-sdk/client-eventbridge";
-import { mockAuditConfig, mockDeviceInformationHeader } from "../mocks/mockConfig";
-import { mockNino, mockPersonIdentity, mockSession, mockTxn } from "../mocks/mockData";
+import { mockDeviceInformationHeader } from "../mocks/mockConfig";
+import { mockNino, mockPersonIdentity, mockSession, mockTxn } from "../../../common/tests/mocks/mockData";
 import { sendRequestSentEvent, sendResponseReceivedEvent } from "../../src/helpers/audit";
 import { marshall } from "@aws-sdk/util-dynamodb";
+import { mockAuditConfig } from "../../../common/tests/mocks/mockConfig";
 
 describe("sendRequestSentEvent()", () => {
   beforeEach(() => {

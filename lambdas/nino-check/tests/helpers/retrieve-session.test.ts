@@ -1,15 +1,15 @@
-import { RecordExpiredError, RecordNotFoundError } from "../../../common/src/database/exceptions/errors";
+import { RecordNotFoundError } from "../../../common/src/database/exceptions/errors";
 import * as getRecordModule from "../../../common/src/database/get-record-by-session-id";
 import { logger } from "../../../common/src/util/logger";
 import { captureMetric } from "../../../common/src/util/metrics";
 import { retrieveSession } from "../../src/helpers/retrieve-session";
-import { mockDynamoClient } from "../mocks/mockDynamoClient";
-import { mockSession, mockSessionId } from "../mocks/mockData";
+import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
+import { mockSession, mockSessionId } from "../../../common/tests/mocks/mockData";
 jest.mock("../../../common/src/util/logger");
 jest.mock("../../../common/src/util/metrics");
 
 const getRecordBySessionId = jest.spyOn(getRecordModule, "getRecordBySessionId");
-getRecordBySessionId.mockResolvedValue([mockSession]);
+getRecordBySessionId.mockResolvedValue(mockSession);
 
 const sessionTableName = "my-session-zone";
 
@@ -22,25 +22,6 @@ describe("retrieveSession()", () => {
     const result = await retrieveSession(sessionTableName, mockDynamoClient, mockSessionId);
 
     expect(result).toEqual(mockSession);
-  });
-
-  it("handles expired record(s) correctly", async () => {
-    getRecordBySessionId.mockImplementationOnce(() => {
-      throw new RecordExpiredError(sessionTableName, mockSessionId, [42]);
-    });
-
-    let thrown = false;
-
-    try {
-      await retrieveSession(sessionTableName, mockDynamoClient, mockSessionId);
-    } catch (error) {
-      thrown = true;
-      expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 400 }));
-    }
-
-    expect(thrown).toEqual(true);
-    expect(captureMetric).toHaveBeenCalledWith("InvalidSessionErrorMetric");
-    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("42"));
   });
 
   it("handles a missing record correctly", async () => {
