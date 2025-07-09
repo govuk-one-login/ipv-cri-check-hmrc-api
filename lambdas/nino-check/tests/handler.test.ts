@@ -5,15 +5,16 @@ jest.mock("../src/helpers/write-completed-check");
 jest.mock("../src/helpers/audit");
 jest.mock("../src/helpers/function-config");
 jest.mock("../src/helpers/nino");
-jest.mock("../src/helpers/retrieve-attempts");
-jest.mock("../src/helpers/retrieve-person-identity");
+jest.mock("../../common/src/database/count-attempts");
+jest.mock("../../common/src/database/get-record-by-session-id");
 jest.mock("../src/helpers/retrieve-session");
 jest.mock("../src/hmrc-apis/pdv");
 jest.mock("../src/hmrc-apis/otg");
 jest.mock("../../common/src/util/metrics");
 
-import { mockDynamoClient } from "./mocks/mockDynamoClient";
-import { mockNino, mockOtgToken, mockPdvRes, mockPersonIdentity, mockSession, mockSessionId } from "./mocks/mockData";
+import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
+import { mockOtgToken, mockPdvRes } from "./mocks/mockData";
+import { mockNino, mockPersonIdentity, mockSession, mockSessionId } from "../../common/tests/mocks/mockData";
 import { APIGatewayProxyEvent, Context } from "aws-lambda";
 import { mockDeviceInformationHeader, mockFunctionConfig, mockHmrcConfig } from "./mocks/mockConfig";
 import { mockLogger } from "../../common/tests/logger";
@@ -22,8 +23,6 @@ import { handler } from "../src/handler";
 import { retrieveSession } from "../src/helpers/retrieve-session";
 import { NinoCheckFunctionConfig } from "../src/helpers/function-config";
 import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../src/helpers/nino";
-import { retrieveAttempts } from "../src/helpers/retrieve-attempts";
-import { retrievePersonIdentity } from "../src/helpers/retrieve-person-identity";
 import { sendRequestSentEvent, sendResponseReceivedEvent } from "../src/helpers/audit";
 import { callPdvMatchingApi } from "../src/hmrc-apis/pdv";
 import { writeCompletedCheck } from "../src/helpers/write-completed-check";
@@ -31,6 +30,8 @@ import { getTokenFromOtg } from "../src/hmrc-apis/otg";
 import { buildPdvInput } from "../src/helpers/build-pdv-input";
 import { captureMetric } from "../../common/src/util/metrics";
 import { CriError } from "../../common/src/errors/cri-error";
+import { countAttempts } from "../../common/src/database/count-attempts";
+import { getRecordBySessionId } from "../../common/src/database/get-record-by-session-id";
 
 const mockContext: Context = {
   awsRequestId: "",
@@ -70,8 +71,8 @@ const handlerInput: Parameters<typeof handler> = [
 (NinoCheckFunctionConfig as unknown as jest.Mock).mockReturnValue(mockFunctionConfig);
 (retrieveSession as unknown as jest.Mock).mockResolvedValue(mockSession);
 (getHmrcConfig as unknown as jest.Mock).mockResolvedValue(mockHmrcConfig);
-(retrieveAttempts as unknown as jest.Mock).mockResolvedValue([]);
-(retrievePersonIdentity as unknown as jest.Mock).mockResolvedValue(mockPersonIdentity);
+(countAttempts as unknown as jest.Mock).mockResolvedValue(0);
+(getRecordBySessionId as unknown as jest.Mock).mockResolvedValue(mockPersonIdentity);
 (getTokenFromOtg as unknown as jest.Mock).mockResolvedValue(mockOtgToken);
 (callPdvMatchingApi as unknown as jest.Mock).mockResolvedValue(mockPdvRes);
 (handleResponseAndSaveAttempt as unknown as jest.Mock).mockResolvedValue(true);
@@ -126,7 +127,7 @@ describe("nino-check handler", () => {
     expect(writeCompletedCheck).toHaveBeenCalledWith(
       mockDynamoClient,
       mockFunctionConfig.tableNames,
-      mockSessionId,
+      mockSession,
       mockNino
     );
   });
@@ -150,7 +151,7 @@ describe("nino-check handler", () => {
   });
 
   it("handles a too-many-attempts scenario correctly", async () => {
-    (retrieveAttempts as unknown as jest.Mock).mockResolvedValueOnce(2);
+    (countAttempts as unknown as jest.Mock).mockResolvedValueOnce(2);
 
     const response = await handler(...handlerInput);
 
@@ -162,9 +163,9 @@ describe("nino-check handler", () => {
     expect(mockLogger.appendKeys).toHaveBeenCalledWith({
       govuk_signin_journey_id: mockSession.clientSessionId,
     });
-    expect(retrieveAttempts).toHaveBeenCalled();
+    expect(countAttempts).toHaveBeenCalled();
     expect(captureMetric).toHaveBeenCalledWith("AttemptsExceededMetric");
-    expect(retrievePersonIdentity).not.toHaveBeenCalled();
+    expect(getRecordBySessionId).not.toHaveBeenCalled();
   });
 
   it("handles a problem with the PDV function correctly", async () => {
@@ -195,8 +196,8 @@ describe("nino-check handler", () => {
     expect(captureMetric).toHaveBeenCalledWith("RetryAttemptsSentMetric");
   });
 
-  it("should return 200 if nino match is false but its the final attempt", async () => {
-    (retrieveAttempts as unknown as jest.Mock).mockResolvedValueOnce(1);
+  it("should return 200 if nino match is false but it's the final attempt", async () => {
+    (countAttempts as unknown as jest.Mock).mockResolvedValueOnce(1);
     (handleResponseAndSaveAttempt as unknown as jest.Mock).mockReturnValueOnce(false);
 
     const response = await handler(...handlerInput);

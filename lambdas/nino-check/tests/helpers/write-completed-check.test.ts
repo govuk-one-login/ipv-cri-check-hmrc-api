@@ -1,9 +1,10 @@
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { writeCompletedCheck } from "../../src/helpers/write-completed-check";
-import { mockSaveRes, mockTableNames } from "../mocks/mockConfig";
+import { mockSaveRes } from "../mocks/mockConfig";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
-import { mockNino, mockSessionId } from "../mocks/mockData";
+import { mockNino, mockSession, mockSessionId } from "../../../common/tests/mocks/mockData";
+import { mockTableNames } from "../../../common/tests/mocks/mockConfig";
 jest.mock("../../../common/src/util/logger");
 
 const mockDynamoClient = mockClient(DynamoDBClient);
@@ -12,7 +13,7 @@ mockDynamoClient.on(UpdateItemCommand).resolves(mockSaveRes);
 
 describe("writeCompletedCheck()", () => {
   it(`saves entities to Dynamo as expected`, async () => {
-    await writeCompletedCheck(mockDynamoClient as unknown as DynamoDBClient, mockTableNames, mockSessionId, mockNino);
+    await writeCompletedCheck(mockDynamoClient as unknown as DynamoDBClient, mockTableNames, mockSession, mockNino);
 
     expect(mockDynamoClient).toHaveReceivedCommandWith(UpdateItemCommand, {
       TableName: mockTableNames.sessionTable,
@@ -34,6 +35,9 @@ describe("writeCompletedCheck()", () => {
         },
         nino: {
           S: mockNino,
+        },
+        ttl: {
+          N: mockSession.expiryDate.toString(),
         },
       },
     });

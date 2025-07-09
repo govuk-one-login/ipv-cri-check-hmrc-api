@@ -59,8 +59,13 @@ describe("abandon-handler", () => {
     expect(ddbMock).toHaveReceivedCommandWith(QueryCommand, {
       ExpressionAttributeValues: {
         ":value": { S: "session-123" },
+        ":expiry": { N: expect.stringMatching(/\d+/) },
       },
       KeyConditionExpression: "sessionId = :value",
+      FilterExpression: "#expiry > :expiry",
+      ExpressionAttributeNames: {
+        "#expiry": "expiryDate",
+      },
       TableName: "session-table",
     });
     expect(ddbMock).toHaveReceivedCommandWith(UpdateItemCommand, {
