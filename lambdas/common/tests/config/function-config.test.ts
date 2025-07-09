@@ -1,6 +1,6 @@
 import { BaseFunctionConfig } from "../../src/config/base-function-config";
 
-const originalProcessEnv = JSON.parse(JSON.stringify(process.env));
+const originalProcessEnv = { ...process.env };
 
 const validEnvVars = {
   SESSION_TABLE: "session-table",
