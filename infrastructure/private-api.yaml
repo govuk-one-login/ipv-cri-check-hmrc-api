@@ -108,7 +108,7 @@ paths:
         contentHandling: "CONVERT_TO_TEXT"
         type: "aws_proxy"
 
-  /check-test:
+  /check:
     post:
       summary: "IP address of the client."
       parameters:
