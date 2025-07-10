@@ -138,6 +138,7 @@ paths:
         passthroughBehavior: "when_no_match"
         contentHandling: "CONVERT_TO_TEXT"
         type: "aws_proxy"
+
   /abandon:
     post:
       summary: "IP address of the client."
