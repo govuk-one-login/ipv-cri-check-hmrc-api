@@ -67,7 +67,7 @@ describe("Given the session and NINO is invalid", () => {
       },
       NINO
     );
-    expect(check.status).toEqual(500);
+    expect(check.status).toEqual(400);
   });
 
   it("should 500 when provided with JS as a nino", async () => {
