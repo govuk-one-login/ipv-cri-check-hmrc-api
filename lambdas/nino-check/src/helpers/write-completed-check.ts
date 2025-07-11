@@ -1,15 +1,16 @@
 import { randomUUID } from "crypto";
 import { TimeUnits, toEpochSecondsFromNow } from "../utils/date-time";
-import { TableNames } from "../types/input";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
-import { NinoUser } from "../types/nino-user";
+import { NinoUser } from "../../../common/src/types/nino-user";
 import { logger } from "../../../common/src/util/logger";
+import { NinoSessionItem } from "../../../common/src/types/nino-session-item";
+import { TableNames } from "../../../common/src/config/base-function-config";
 
 export async function writeCompletedCheck(
   dynamoClient: DynamoDBClient,
   { sessionTable, ninoUserTable }: TableNames,
-  sessionId: string,
+  session: NinoSessionItem,
   nino: string
 ) {
   const authCode = randomUUID();
@@ -17,7 +18,7 @@ export async function writeCompletedCheck(
 
   const authCodeCmd = new UpdateItemCommand({
     TableName: sessionTable,
-    Key: marshall({ sessionId }),
+    Key: marshall({ sessionId: session.sessionId }),
     UpdateExpression: `SET authorizationCode=:authCode, authorizationCodeExpiryDate=:authCodeExpiry`,
     ExpressionAttributeValues: marshall({
       ":authCode": authCode,
@@ -30,8 +31,9 @@ export async function writeCompletedCheck(
   logger.info(`Saved auth code: ${authCodeRes.$metadata.httpStatusCode}`);
 
   const newNinoUser: NinoUser = {
-    sessionId,
+    sessionId: session.sessionId,
     nino,
+    ttl: session.expiryDate,
   };
 
   const putNinoUserCmd = new PutItemCommand({
