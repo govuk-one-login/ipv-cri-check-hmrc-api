@@ -31,9 +31,14 @@ describe("abandon-dynamo-service", () => {
       expect(sessionItem.clientSessionId).toBe("gov-123");
       expect(ddbMock).toHaveReceivedCommandWith(QueryCommand, {
         ExpressionAttributeValues: {
+          ":expiry": { N: expect.stringMatching(/\d+/) },
           ":value": { S: "session-123" },
         },
         KeyConditionExpression: "sessionId = :value",
+        FilterExpression: "#expiry > :expiry",
+        ExpressionAttributeNames: {
+          "#expiry": "expiryDate",
+        },
         TableName: "session-table",
       });
     });
@@ -51,28 +56,6 @@ describe("abandon-dynamo-service", () => {
       } catch (err) {
         expect(err).toBeInstanceOf(CriError);
         expect((err as CriError).message).toBe("Session not found");
-        expect((err as CriError).status).toBe(400);
-      }
-    });
-
-    it("should throw when Session expired", async () => {
-      expect.assertions(3);
-
-      ddbMock.on(QueryCommand).resolves({
-        Items: [
-          {
-            sessionId: { S: "session-123" },
-            expiryDate: { N: "1" },
-          },
-        ],
-        Count: 1,
-      });
-
-      try {
-        await retrieveSessionRecord("session-table", "session-123");
-      } catch (err) {
-        expect(err).toBeInstanceOf(CriError);
-        expect((err as CriError).message).toBe("Session expired");
         expect((err as CriError).status).toBe(400);
       }
     });

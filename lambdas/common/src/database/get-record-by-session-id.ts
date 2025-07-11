@@ -1,52 +1,52 @@
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { withRetry } from "../util/retry";
-import { isRecordExpired, RecordWithExpiry } from "./util/is-record-expired";
-import { RecordExpiredError, RecordNotFoundError, TooManyRecordsError } from "./exceptions/errors";
-import { Logger } from "@aws-lambda-powertools/logger";
+import { RecordNotFoundError, TooManyRecordsError } from "./exceptions/errors";
+import { UnixSecondsTimestamp } from "../types/brands";
+import { logger } from "../util/logger";
 
-export type SessionIdRecord = { sessionId: string } & RecordWithExpiry;
+export type SessionIdRecord = { sessionId: string; expiryDate?: UnixSecondsTimestamp };
 
 /**
  * Retrieves a record from DynamoDB, given a table name and session ID.
- * Handles retries and expiry validation, and returns an array of valid entries.
- * The array will usually have length 1, but it's possible that multiple rows will be returned.
+ * Handles retries and expiry validation, and returns a single valid entry.
  *
  * Use a type parameter to set the type of the entity that will be returned.
  */
 export async function getRecordBySessionId<
   /** The type that will be returned by the function. Must include sessionId key. */
   ReturnType extends SessionIdRecord,
->(
-  /** The name of the table in DynamoDB. Probably looks like "some-table-some-stack". */
-  tableName: string,
-  /** The session ID to search for. */
-  sessionId: string,
-  logger: Logger,
-  opts?: { allowNoEntries?: boolean; allowMultipleEntries?: boolean },
-  dynamoClient = new DynamoDBClient()
-) {
-  const allowNoEntries = opts?.allowNoEntries ?? false;
-  const allowMultipleEntries = opts?.allowMultipleEntries ?? false;
-
+>(dynamoClient: DynamoDBClient, tableName: string, sessionId: string, expiryColumn: keyof ReturnType) {
   async function queryRecord() {
+    // Use ExpressionAttributeNames as it's possible the expiry column name is a reserved word.
+    // Notably, 'ttl' is a reserved word.
+    // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ReservedWords.html
+    // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.ExpressionAttributeNames.html
+
     const command = new QueryCommand({
       TableName: tableName,
-      KeyConditionExpression: "sessionId = :value",
+      KeyConditionExpression: `sessionId = :value`,
+      FilterExpression: `#expiry > :expiry`,
+      ExpressionAttributeNames: {
+        "#expiry": String(expiryColumn),
+      },
       ExpressionAttributeValues: {
         ":value": {
           S: sessionId,
+        },
+        ":expiry": {
+          N: Math.floor(Date.now() / 1000).toString(),
         },
       },
     });
 
     const result = await dynamoClient.send(command);
 
-    if (!allowNoEntries && (result.Count === 0 || !result.Items)) {
+    if (result.Count === 0 || !result.Items) {
       throw new RecordNotFoundError(tableName, sessionId);
     }
 
-    return result.Items ?? [];
+    return result.Items;
   }
 
   const queryResult = await withRetry(queryRecord, logger, {
@@ -54,21 +54,9 @@ export async function getRecordBySessionId<
     baseDelay: 300,
   });
 
-  const retrievedRecords = queryResult.map((v) => unmarshall(v)) as ReturnType[];
-
-  const validRecords = retrievedRecords.filter((v) => !isRecordExpired(v));
-
-  if (retrievedRecords.length > 0 && validRecords.length === 0) {
-    throw new RecordExpiredError(
-      tableName,
-      sessionId,
-      retrievedRecords.map((v) => v.expiryDate ?? v.ttl ?? -1)
-    );
+  if (queryResult.length > 1) {
+    throw new TooManyRecordsError(tableName, sessionId, queryResult.length);
   }
 
-  if (!allowMultipleEntries && validRecords.length > 1) {
-    throw new TooManyRecordsError(tableName, sessionId, validRecords.length);
-  }
-
-  return validRecords;
+  return unmarshall(queryResult[0]) as ReturnType;
 }

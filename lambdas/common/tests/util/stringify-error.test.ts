@@ -1,6 +1,10 @@
 import { safeStringifyError } from "../../src/util/stringify-error";
 
 describe("safeStringifyError", () => {
+  beforeEach(() => {
+    process.env.LOG_FULL_ERRORS = undefined;
+  });
+
   it("handles Error classes correctly", () => {
     const res = safeStringifyError(new Error("this better not get logged dude"));
 
@@ -35,5 +39,25 @@ describe("safeStringifyError", () => {
     const teapot = 418;
     const res3 = safeStringifyError(teapot);
     expect(res3).toEqual("number");
+  });
+
+  it("logs the full error when LOG_FULL_ERRORS=true", () => {
+    process.env.LOG_FULL_ERRORS = "true";
+    const funkyError = new Error("too much funk!");
+    expect(safeStringifyError(funkyError)).toEqual(expect.stringMatching(/Error.+too much funk!/));
+  });
+
+  it("does not log the full error for any other value of LOG_FULL_ERRORS", () => {
+    process.env.LOG_FULL_ERRORS = "yes!!!";
+    const vibesError = new Error("too many vibes!");
+    expect(safeStringifyError(vibesError)).not.toEqual(expect.stringContaining("too many vibes!"));
+
+    process.env.LOG_FULL_ERRORS = undefined;
+    const beansError = new Error("beans were too cool!");
+    expect(safeStringifyError(beansError)).not.toEqual(expect.stringContaining("beans were too cool!"));
+
+    process.env.LOG_FULL_ERRORS = "false";
+    const jazzError = new Error("jazz too smooth!");
+    expect(safeStringifyError(jazzError)).not.toEqual(expect.stringContaining("jazz too smooth!"));
   });
 });
