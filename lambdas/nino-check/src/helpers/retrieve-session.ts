@@ -1,6 +1,6 @@
 import { getRecordBySessionId } from "../../../common/src/database/get-record-by-session-id";
-import { NinoSessionItem } from "../types/nino-session-item";
-import { RecordExpiredError, RecordNotFoundError } from "../../../common/src/database/exceptions/errors";
+import { NinoSessionItem } from "../../../common/src/types/nino-session-item";
+import { RecordNotFoundError } from "../../../common/src/database/exceptions/errors";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { logger } from "../../../common/src/util/logger";
 import { CriError } from "../../../common/src/errors/cri-error";
@@ -13,21 +13,17 @@ export async function retrieveSession(
   sessionId: string
 ): Promise<NinoSessionItem> {
   try {
-    const [session] = await getRecordBySessionId<NinoSessionItem>(
+    const session = await getRecordBySessionId<NinoSessionItem>(
+      dynamoClient,
       sessionTableName,
       sessionId,
-      logger,
-      {},
-      dynamoClient
+      "expiryDate"
     );
 
     return session;
   } catch (error) {
     captureMetric(`InvalidSessionErrorMetric`);
-    if (error instanceof RecordExpiredError) {
-      logger.info(`Expired record in session table (expiry: ${error.expiryDates.join(", ")})`);
-      throw new CriError(400, "Failed to find a valid session record for the given session ID.");
-    } else if (error instanceof RecordNotFoundError) {
+    if (error instanceof RecordNotFoundError) {
       throw new CriError(400, `No valid session entry found for the given id`);
     }
 

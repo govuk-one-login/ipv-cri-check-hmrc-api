@@ -1,7 +1,7 @@
 import { getRecordBySessionId } from "../../../common/src/database/get-record-by-session-id";
 import { SessionItem } from "../../../common/src/database/types/session-item";
 import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
-import { RecordExpiredError, RecordNotFoundError } from "../../../common/src/database/exceptions/errors";
+import { RecordNotFoundError } from "../../../common/src/database/exceptions/errors";
 import { CriError } from "../../../common/src/errors/cri-error";
 import { logger } from "../../../common/src/util/logger";
 
@@ -9,20 +9,16 @@ const dynamoClient = new DynamoDBClient();
 
 export async function retrieveSessionRecord(sessionTableName: string, sessionId: string) {
   try {
-    const [sessionItem] = await getRecordBySessionId<SessionItem>(
+    const sessionItem = await getRecordBySessionId<SessionItem>(
+      dynamoClient,
       sessionTableName,
       sessionId,
-      logger,
-      {},
-      dynamoClient
+      "expiryDate"
     );
     return sessionItem;
   } catch (error: unknown) {
     if (error instanceof RecordNotFoundError) {
       throw new CriError(400, "Session not found");
-    }
-    if (error instanceof RecordExpiredError) {
-      throw new CriError(400, "Session expired");
     }
     throw error;
   }

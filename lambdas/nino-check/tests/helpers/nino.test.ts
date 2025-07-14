@@ -6,7 +6,8 @@ import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../../src/helpers/nino";
-import { mockPdvDeceasedRes, mockPdvErrorRes, mockPdvInvalidCredsRes, mockPdvRes, mockSession, mockSessionId, mockTxn } from "../mocks/mockData";
+import { mockPdvDeceasedRes, mockPdvErrorRes, mockPdvInvalidCredsRes, mockPdvRes } from "../mocks/mockData";
+import { mockSession, mockSessionId, mockTxn } from "../../../common/tests/mocks/mockData";
 import { captureMetric } from "../../../common/src/util/metrics";
 import { logger } from "../../../common/src/util/logger";
 
@@ -122,12 +123,17 @@ describe("handleResponseAndSaveAttempt()", () => {
   });
 
   it("handles a deceased response correctly", async () => {
-    const match = await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, mockPdvDeceasedRes);
+    const match = await handleResponseAndSaveAttempt(
+      mockDynamoClient,
+      attemptTableName,
+      mockSession,
+      mockPdvDeceasedRes
+    );
 
     expect(match).toEqual(false);
 
     expect(captureMetric).toHaveBeenCalledWith("DeceasedUserMetric");
-       expect(ddbMock).toHaveReceivedCommandWith(PutItemCommand, {
+    expect(ddbMock).toHaveReceivedCommandWith(PutItemCommand, {
       TableName: attemptTableName,
       Item: {
         sessionId: {
@@ -182,7 +188,12 @@ describe("handleResponseAndSaveAttempt()", () => {
     } as const;
 
     try {
-      const match = await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, mockPdvInvalidCredsRes);
+      const match = await handleResponseAndSaveAttempt(
+        mockDynamoClient,
+        attemptTableName,
+        mockSession,
+        mockPdvInvalidCredsRes
+      );
     } catch (error) {
       thrown = true;
 
@@ -198,7 +209,10 @@ describe("handleResponseAndSaveAttempt()", () => {
     let thrown = false;
 
     try {
-      await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, { ...mockPdvRes, httpStatus: 999 });
+      await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, {
+        ...mockPdvRes,
+        httpStatus: 999,
+      });
     } catch (error) {
       thrown = true;
 

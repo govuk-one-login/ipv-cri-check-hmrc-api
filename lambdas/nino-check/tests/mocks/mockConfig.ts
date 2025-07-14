@@ -1,20 +1,8 @@
-import { AuditConfig, HmrcEnvVars, TableNames } from "../../src/types/input";
-import { HmrcApiConfig, NinoCheckFunctionConfig } from "../../src/helpers/function-config";
-
-export const mockTableNames: TableNames = {
-  sessionTable: "session-table",
-  personIdentityTable: "person-identity-table",
-  attemptTable: "attempt-table",
-  ninoUserTable: "nino-user-table",
-};
+import { HmrcEnvVars, NinoCheckFunctionConfig } from "../../src/helpers/function-config";
+import { HmrcApiConfig } from "../../src/helpers/nino";
+import { mockTableNames, mockAuditConfig } from "../../../common/tests/mocks/mockConfig";
 
 export const mockDeviceInformationHeader = "big-device-time";
-
-export const mockAuditConfig: AuditConfig = {
-  eventBus: "audit-event-bus",
-  source: "audit-source",
-  issuer: "audit-issuer",
-};
 
 export const mockHmrcEnvVars: HmrcEnvVars = {
   pdvUserAgentParamName: "user-agent-param",

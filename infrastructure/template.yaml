@@ -58,10 +58,12 @@ Conditions:
   UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, ""]]
   IsDevEnvironment: !Equals [!Ref Environment, dev]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
+  IsIntEnvironment: !Equals [!Ref Environment, integration]
   IsProdEnvironment: !Equals [!Ref Environment, production]
   IsDevLikeEnvironment: !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
+  IsIntOrProdEnvironment: !Or [!Condition IsIntEnvironment, !Condition IsProdEnvironment]
   UseCanaryDeploymentAlarms: !Or
     - !Not [!Equals [!Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE]]
     - !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
@@ -839,6 +841,7 @@ Resources:
           ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
           EVENT_BUS_NAME: !Ref CheckHmrcEventBus
           EVENT_BUS_SOURCE: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+          LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
@@ -1417,6 +1420,7 @@ Resources:
           AUDIT_EVENT_BUS: !Ref CheckHmrcEventBus
           AUDIT_SOURCE: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
           AUDIT_ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
+          LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
 
   NinoCheckFunctionLogGroup:
     Type: AWS::Logs::LogGroup

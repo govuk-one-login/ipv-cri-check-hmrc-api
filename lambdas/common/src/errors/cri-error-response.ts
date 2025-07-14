@@ -1,5 +1,6 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import { CriError } from "./cri-error";
+import { safeStringifyError } from "../util/stringify-error";
 
 export function handleErrorResponse(err: unknown, logger: Logger) {
   if (err instanceof CriError) {
@@ -8,11 +9,10 @@ export function handleErrorResponse(err: unknown, logger: Logger) {
       return formatResponse(err.status, "Internal server error");
     }
     return formatResponse(err.status, err.message);
-  } else if (err instanceof Error) {
-    logger.error("Error thrown: " + err.name);
   } else {
-    logger.error("Unknown error thrown");
+    logger.error("Error thrown: " + safeStringifyError(err));
   }
+
   return formatResponse(500, "Internal server error");
 }
 

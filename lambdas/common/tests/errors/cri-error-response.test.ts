@@ -30,6 +30,6 @@ describe("cri-error-response", () => {
   it("returns 500 on null error", () => {
     const result = handleErrorResponse(null, logger);
     expect(result).toEqual({ body: '{"message":"Internal server error"}', statusCode: 500 });
-    expect(logger.error).toHaveBeenCalledWith("Unknown error thrown");
+    expect(logger.error).toHaveBeenCalledWith("Error thrown: object");
   });
 });
