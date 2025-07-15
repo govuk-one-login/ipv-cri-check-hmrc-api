@@ -522,45 +522,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref JwtSignerFunctionLogGroup
 
-  OTGFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/otg-api/src/otg-api-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
-      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-OTG"
-
-  OTGFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
-      RetentionInDays: 30
-
-  OTGFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref OTGFunctionLogGroup
-
-  OTGFunctionFatalErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref OTGFunctionLogGroup
-      FilterPattern: '{ $.level = "FATAL" || $.message = "Unhandled Exception:*" }'
-      MetricTransformations:
-        - MetricValue: "1"
-          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
-          MetricName: "OTGFunction-Fatalerror"
-
   SessionLambdaFailedToVerifyJWTWarningAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: DeployAlarms
@@ -2058,33 +2019,6 @@ Resources:
           Value: !Ref AbandonFunction
         - Name: ExecutedVersion
           Value: !GetAtt AbandonFunction.Version.Version
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  OTGFunctionCanaryErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the OTGFunction Lambda."
-      MetricName: Errors
-      Dimensions:
-        - Name: Resource
-          Value: !Sub "${AWS::StackName}-OTGLookupFunction:live"
-        - Name: FunctionName
-          Value: !Ref OTGFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt OTGFunction.Version.Version
       Namespace: AWS/Lambda
       Statistic: Sum
       Unit: Count
