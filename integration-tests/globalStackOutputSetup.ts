@@ -8,7 +8,6 @@ let outputs: Partial<{
   UserAttemptsTable: string;
 
   CheckSessionStateMachineArn: string;
-  NinoCheckStateMachineArn: string;
   NinoIssueCredentialStateMachineArn: string;
   TxMaAuditEventRule: string;
   TxMaAuditEventRuleArn: string;
@@ -51,7 +50,6 @@ export default async function globalSetup() {
 
     process.env.CHECK_SESSION_STATE_MACHINE_ARN =
       outputs.CheckSessionStateMachineArn;
-    process.env.NINO_CHECK_STATE_MACHINE_ARN = outputs.NinoCheckStateMachineArn;
     process.env.NINO_CREDENTIAL_STATE_MACHINE_ARN =
       outputs.NinoIssueCredentialStateMachineArn;
     process.env.TXMA_AUDIT_EVENT_RULE_ENV = outputs.TxMaAuditEventRule;
