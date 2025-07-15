@@ -1451,16 +1451,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref PIIRedactedNinoCheckStateMachineLogGroup
 
-  NinoCheckStateMachineFailedMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{$.type = "ExecutionFailed"}'
-      MetricTransformations:
-        - MetricValue: "1"
-          MetricName: "NinoCheckStateMachine-Error"
-          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
-
   NinoCheckStateMachineAlarm:
     Type: "AWS::CloudWatch::Alarm"
     Condition: DeployAlarms
@@ -2504,85 +2494,6 @@ Resources:
   #  Metrics                                                         #
   #                                                                  #
   ####################################################################
-  SuccessfulNinoCheckMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Store Successful Attempt")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: SuccessfulFirstAttemptMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  RetryAttemptsSentMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Send Retry")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: RetryAttemptsSentMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  FailedHMRCAuthMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Err: Failed Auth")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: FailedHMRCAuthMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  HMRCAPIErrorMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Err: API Error")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: HMRCAPIErrorMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  MatchingLambdaErrorMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Err: Matching Lambda Exception")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: MatchingLambdaErrorMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  DeceasedUserMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Store Deceased Attempt")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: DeceasedUserMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  AttemptsExceededMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Err: Attempts exceeded")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: AttemptsExceededMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  InvalidSessionErrorMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Err: Invalid Session")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: InvalidSessionErrorMetric
-          MetricNamespace: !Ref CriIdentifier
 
   CIRaisedMetric:
     Type: AWS::Logs::MetricFilter
