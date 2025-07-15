@@ -522,45 +522,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref JwtSignerFunctionLogGroup
 
-  OTGFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/otg-api/src/otg-api-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
-      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-OTG"
-
-  OTGFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/OTGFunction
-      RetentionInDays: 30
-
-  OTGFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref OTGFunctionLogGroup
-
-  OTGFunctionFatalErrorMetricFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref OTGFunctionLogGroup
-      FilterPattern: '{ $.level = "FATAL" || $.message = "Unhandled Exception:*" }'
-      MetricTransformations:
-        - MetricValue: "1"
-          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
-          MetricName: "OTGFunction-Fatalerror"
-
   SessionLambdaFailedToVerifyJWTWarningAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: DeployAlarms
@@ -870,35 +831,6 @@ Resources:
       DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref AbandonFunctionLogGroup
-
-  MatchingFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/matching/src/matching-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
-      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Matching"
-
-  MatchingFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
-      RetentionInDays: 30
-
-  MatchingFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref MatchingFunctionLogGroup
 
   SsmParametersFunction:
     Type: AWS::Serverless::Function
@@ -1443,152 +1375,6 @@ Resources:
       FunctionName: !Ref NinoCheckFunction.Alias
       Principal: apigateway.amazonaws.com
 
-  NinoCheckStateMachine:
-    Type: AWS::Serverless::StateMachine
-    Properties:
-      AutoPublishAlias: live
-      DeploymentPreference:
-        Type: !Ref StepFunctionsDeploymentPreference
-        Interval: !If [IsProdEnvironment, 15, 5]
-        Percentage: !If [IsProdEnvironment, 10, 50]
-        Alarms: !If
-          - UseCanaryDeploymentAlarms
-          - - !Ref OTGFunctionCanaryErrors
-            - !Ref TimeFunctionCanaryErrors
-            - !Ref MatchingFunctionCanaryErrors
-            - !Ref SsmParametersFunctionCanaryErrors
-            - !Ref NinoCheckStateMachineFailedCanary
-            - !Ref NinoCheckStateMachineCanary5xxErrors
-          - !Ref AWS::NoValue
-        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoCheckStateMachine}:live"
-      Type: EXPRESS
-      DefinitionUri: ../step-functions/nino_check.asl.json
-      DefinitionSubstitutions:
-        AuditEventPrefix: !Ref AuditEventNamePrefix
-        CheckSessionStateMachineArn: !Sub ${CheckSessionStateMachine}:live
-        TimeFunctionArn: !Ref TimeFunction.Version
-        MatchingFunctionArn: !Ref MatchingFunction.Version
-        UserAttemptsTable: !Ref UserAttemptsTable
-        NinoUsersTable: !Ref NinoUsersTable
-        UserAgent: !Ref UserAgent
-        BearerTokenName: !Ref BearerTokenName
-        CommonStackName: !Ref CommonStackName
-        SsmParametersFunction: !Ref SsmParametersFunction.Version
-        OTGFunction: !Ref OTGFunction.Version
-        CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-        AuditEventNameResponseReceived: !FindInMap [Audit, EventName, ResponseReceived]
-        AuditEventNameRequestSent: !FindInMap [Audit, EventName, RequestSent]
-      Logging:
-        Destinations:
-          - CloudWatchLogsLogGroup:
-              LogGroupArn: !GetAtt NinoCheckStateMachineLogGroup.Arn
-        IncludeExecutionData: True
-        Level: ALL
-      Policies:
-        - LambdaInvokePolicy:
-            FunctionName: !Ref OTGFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref SsmParametersFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref TimeFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref MatchingFunction
-        - DynamoDBReadPolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-        - DynamoDBWritePolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-        - DynamoDBWritePolicy:
-            TableName: !Ref UserAttemptsTable
-        - DynamoDBReadPolicy:
-            TableName: !Ref UserAttemptsTable
-        - DynamoDBReadPolicy:
-            TableName: !Ref NinoUsersTable
-        - DynamoDBWritePolicy:
-            TableName: !Ref NinoUsersTable
-        - DynamoDBReadPolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${BearerTokenName}-??????
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref CheckHmrcEventBus
-        - Statement:
-            Effect: Allow
-            Action:
-              - states:StartSyncExecution
-              - states:StartExecution
-            Resource:
-              - !Ref CheckSessionStateMachine
-        - Statement:
-            Effect: Allow
-            Action:
-              - ssm:GetParameters
-              - ssm:GetParameter
-            Resource:
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/NinoCheckUrl/*"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${UserAgent}"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName"
-        - Statement:
-            Effect: Allow
-            Action: logs:*
-            Resource: "*"
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-
-  NinoCheckStateMachineLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs"
-      RetentionInDays: 30
-
-  PIIRedactedNinoCheckStateMachineLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedNinoCheckStateMachineLogGroup
-
-  NinoCheckStateMachineFailedMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{$.type = "ExecutionFailed"}'
-      MetricTransformations:
-        - MetricValue: "1"
-          MetricName: "NinoCheckStateMachine-Error"
-          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
-
-  NinoCheckStateMachineAlarm:
-    Type: "AWS::CloudWatch::Alarm"
-    Condition: DeployAlarms
-    Properties:
-      OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-critical-alert-topic
-      AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-critical-alert-topic
-      AlarmDescription: !Sub
-        - "${NinoCheckStateMachine} failed 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
-        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachine-ExecutionsFailed-alarm"
-      MetricName: "ExecutionsFailed"
-      Namespace: AWS/States
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Sum
-      DatapointsToAlarm: 1
-      EvaluationPeriods: 1
-      Period: 3600
-      Threshold: 3
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: StateMachineArn
-          Value: !Ref NinoCheckStateMachine
-
   NinoIssueCredentialStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -2105,31 +1891,6 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  NinoCheckStateMachineFailedCanary:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the NinoCheckStateMachine"
-      MetricName: ExecutionsFailed
-      Dimensions:
-        - Name: StateMachineArn
-          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoCheckStateMachine}"
-        - Name: Alias
-          Value: "live"
-      Namespace: AWS/States
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   NinoIssueCredentialStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -2210,36 +1971,6 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  NinoCheckStateMachineCanary5xxErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: "NinoCheckStateMachine returning 5xx response."
-      Namespace: AWS/ApiGateway
-      MetricName: 5XXError
-      Dimensions:
-        - Name: ApiName
-          Value: !Sub "${AWS::StackName}-private"
-        - Name: Method
-          Value: POST
-        - Name: Stage
-          Value: !Ref Environment
-        - Name: Resource
-          Value: /check
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 3
-      DatapointsToAlarm: 2
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   NinoIssueCredentialStateMachineCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -2288,60 +2019,6 @@ Resources:
           Value: !Ref AbandonFunction
         - Name: ExecutedVersion
           Value: !GetAtt AbandonFunction.Version.Version
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  OTGFunctionCanaryErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the OTGFunction Lambda."
-      MetricName: Errors
-      Dimensions:
-        - Name: Resource
-          Value: !Sub "${AWS::StackName}-OTGLookupFunction:live"
-        - Name: FunctionName
-          Value: !Ref OTGFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt OTGFunction.Version.Version
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  MatchingFunctionCanaryErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the MatchingFunction Lambda."
-      MetricName: Errors
-      Dimensions:
-        - Name: Resource
-          Value: !Sub "${AWS::StackName}-MatchingLookupFunction:live"
-        - Name: FunctionName
-          Value: !Ref MatchingFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt MatchingFunction.Version.Version
       Namespace: AWS/Lambda
       Statistic: Sum
       Unit: Count
@@ -2605,85 +2282,6 @@ Resources:
   #  Metrics                                                         #
   #                                                                  #
   ####################################################################
-  SuccessfulNinoCheckMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Store Successful Attempt")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: SuccessfulFirstAttemptMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  RetryAttemptsSentMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Send Retry")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: RetryAttemptsSentMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  FailedHMRCAuthMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Err: Failed Auth")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: FailedHMRCAuthMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  HMRCAPIErrorMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Err: API Error")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: HMRCAPIErrorMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  MatchingLambdaErrorMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Err: Matching Lambda Exception")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: MatchingLambdaErrorMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  DeceasedUserMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Store Deceased Attempt")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: DeceasedUserMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  AttemptsExceededMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Err: Attempts exceeded")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: AttemptsExceededMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  InvalidSessionErrorMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-      FilterPattern: '{($.details.name = "Err: Invalid Session")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: InvalidSessionErrorMetric
-          MetricNamespace: !Ref CriIdentifier
 
   CIRaisedMetric:
     Type: AWS::Logs::MetricFilter
@@ -2710,12 +2308,6 @@ Resources:
   # Log Groups for Slunk (PII Redacted)                              #
   #                                                                  #
   ####################################################################
-
-  PIIRedactedNinoCheckStateMachineLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs-pii-redacted"
-      RetentionInDays: 30
 
   PIIRedactedNinoIssueCredentialLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2796,15 +2388,6 @@ Resources:
       Principal: !Join [".", ["logs", !Ref "AWS::Region", "amazonaws.com"]]
       SourceAccount: !Ref AWS::AccountId
 
-  NinoCheckStateMachineLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
-    Properties:
-      FilterName: "PII Redaction"
-      DestinationArn: !Ref PIIRedactFunction.Alias
-      FilterPattern: ""
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
-
   NinoIssueCredentialLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
@@ -2878,9 +2461,6 @@ Outputs:
     Value: !Ref PrivateNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-PrivateApiGatewayId
-  NinoCheckStateMachineArn:
-    Description: Nino Check state machine ARN
-    Value: !Ref NinoCheckStateMachine
   CheckSessionStateMachineArn:
     Description: Session Check state machine ARN
     Value: !Ref CheckSessionStateMachine

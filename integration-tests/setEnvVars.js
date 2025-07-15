@@ -7,8 +7,6 @@ process.env.AWS_SESSION_TOKEN = "local";
 
 process.env.STATE_MACHINE_ARN =
   "arn:aws:states:eu-west-2:404250751813:stateMachine:pdv-matching-NinoCheck";
-process.env.STATE_MACHINE_ROLE =
-  "arn:aws:iam::404250751813:role/pdv-matching-NinoCheckStateMachineRole-F6BSBWOOSN15";
 
 process.env.NINO_ATTEMPTS_TABLE = "pdv-matching-nino-attempts";
 process.env.NINO_USERS_TABLE = "pdv-matching-nino-users";
