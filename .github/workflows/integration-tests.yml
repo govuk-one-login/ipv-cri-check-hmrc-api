@@ -51,7 +51,7 @@ jobs:
   eventbridge-nino-check-tests:
     name: EVN Nino tests
     needs: deploy
-    uses: ./.github/workflows/run-evn-nino-tests.yml
+    uses: ./.github/workflows/run-evn-nino-tests-lambda.yml
     permissions:
       id-token: write
       contents: read
