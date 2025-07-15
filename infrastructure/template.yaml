@@ -871,35 +871,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref AbandonFunctionLogGroup
 
-  MatchingFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/matching/src/matching-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
-      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Matching"
-
-  MatchingFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/MatchingFunction
-      RetentionInDays: 30
-
-  MatchingFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref MatchingFunctionLogGroup
-
   SsmParametersFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -2114,33 +2085,6 @@ Resources:
           Value: !Ref OTGFunction
         - Name: ExecutedVersion
           Value: !GetAtt OTGFunction.Version.Version
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  MatchingFunctionCanaryErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the MatchingFunction Lambda."
-      MetricName: Errors
-      Dimensions:
-        - Name: Resource
-          Value: !Sub "${AWS::StackName}-MatchingLookupFunction:live"
-        - Name: FunctionName
-          Value: !Ref MatchingFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt MatchingFunction.Version.Version
       Namespace: AWS/Lambda
       Statistic: Sum
       Unit: Count
