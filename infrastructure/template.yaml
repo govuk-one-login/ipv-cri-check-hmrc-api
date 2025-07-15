@@ -1220,82 +1220,6 @@ Resources:
         AttributeName: ttl
         Enabled: true
 
-  CheckSessionStateMachine:
-    Type: AWS::Serverless::StateMachine
-    Properties:
-      AutoPublishAlias: live
-      DeploymentPreference:
-        Type: !Ref StepFunctionsDeploymentPreference
-        Interval: !If [IsProdEnvironment, 15, 5]
-        Percentage: !If [IsProdEnvironment, 10, 50]
-        Alarms: !If
-          - UseCanaryDeploymentAlarms
-          - - !Ref TimeFunctionCanaryErrors
-            - !Ref CheckSessionStateMachineFailedCanary
-          - !Ref AWS::NoValue
-        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${CheckSessionStateMachine}:live"
-      Type: EXPRESS
-      DefinitionUri: ../step-functions/check_session.asl.json
-      DefinitionSubstitutions:
-        TimeFunctionArn: !Ref TimeFunction.Version
-        CommonStackName: !Ref CommonStackName
-      Logging:
-        Destinations:
-          - CloudWatchLogsLogGroup:
-              LogGroupArn: !GetAtt CheckSessionStateMachineLogGroup.Arn
-        IncludeExecutionData: True
-        Level: ALL
-      Policies:
-        - LambdaInvokePolicy:
-            FunctionName: !Ref TimeFunction
-        - DynamoDBReadPolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-        - Statement:
-            Effect: Allow
-            Action: logs:*
-            Resource: "*"
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-
-  CheckSessionStateMachineFailedMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref CheckSessionStateMachineLogGroup
-      FilterPattern: '{($.type = "ExecutionFailed")}'
-      MetricTransformations:
-        - MetricValue: "1"
-          MetricName: "CheckSessionStateMachine-Error"
-          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
-
-  CheckSessionStateMachineAlarm:
-    Type: "AWS::CloudWatch::Alarm"
-    Condition: DeployAlarms
-    Properties:
-      OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-critical-alert-topic
-      AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-critical-alert-topic
-      AlarmDescription: !Sub
-        - "${CheckSessionStateMachine} failed 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
-        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckSessionStateMachine-alarm"
-      MetricName: "ExecutionsFailed"
-      Namespace: AWS/States
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Sum
-      DatapointsToAlarm: 1
-      EvaluationPeriods: 1
-      Period: 3600
-      Threshold: 3
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: StateMachineArn
-          Value: !Ref CheckSessionStateMachine
-
   NinoCheckFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -1516,20 +1440,6 @@ Resources:
       Dimensions:
         - Name: StateMachineArn
           Value: !Ref NinoIssueCredentialStateMachine
-
-  CheckSessionStateMachineLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs"
-      RetentionInDays: 30
-
-  PIIRedactedCheckSessionStateMachineLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedCheckSessionStateMachineLogGroup
 
   CheckHmrcEventBus:
     Type: AWS::Events::EventBus
@@ -1865,31 +1775,6 @@ Resources:
   #                                                                  #
   ####################################################################
   #Step function alarms
-
-  CheckSessionStateMachineFailedCanary:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the CheckSessionStateMachine"
-      MetricName: ExecutionsFailed
-      Dimensions:
-        - Name: StateMachineArn
-          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${CheckSessionStateMachine}"
-        - Name: Alias
-          Value: "live"
-      Namespace: AWS/States
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
 
   NinoIssueCredentialStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
@@ -2315,12 +2200,6 @@ Resources:
       LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs-pii-redacted"
       RetentionInDays: 30
 
-  PIIRedactedCheckSessionStateMachineLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-CheckSession-state-machine-logs-pii-redacted"
-      RetentionInDays: 30
-
   PIIRedactedAuditEventStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -2397,15 +2276,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref NinoIssueCredentialLogGroup
 
-  CheckSessionStateMachineLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
-    Properties:
-      FilterName: "PII Redaction"
-      DestinationArn: !Ref PIIRedactFunction.Alias
-      FilterPattern: ""
-      LogGroupName: !Ref CheckSessionStateMachineLogGroup
-
   AuditEventStateMachineLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
@@ -2461,9 +2331,6 @@ Outputs:
     Value: !Ref PrivateNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-PrivateApiGatewayId
-  CheckSessionStateMachineArn:
-    Description: Session Check state machine ARN
-    Value: !Ref CheckSessionStateMachine
   NinoIssueCredentialStateMachineArn:
     Description: Nino Issue Credential state machine ARN
     Value: !Ref NinoIssueCredentialStateMachine

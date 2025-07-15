@@ -376,7 +376,7 @@ describe("Audit events", () => {
         source: "review-hc.localdev.account.gov.uk",
         detail: {
           auditPrefix: "AUDIT_EVENT_PREFIX",
-          deviceInformation: "{}", // default returned by the CheckSession State machine when the header
+          deviceInformation: "{}",
           user,
           issuer: "https://review-hc.dev.account.gov.uk",
         },

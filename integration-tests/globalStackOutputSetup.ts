@@ -7,7 +7,6 @@ let outputs: Partial<{
   NinoUsersTable: string;
   UserAttemptsTable: string;
 
-  CheckSessionStateMachineArn: string;
   NinoIssueCredentialStateMachineArn: string;
   TxMaAuditEventRule: string;
   TxMaAuditEventRuleArn: string;
@@ -48,8 +47,6 @@ export default async function globalSetup() {
     process.env.SESSION_TABLE =
       `session-${outputs.CommonStackName}` || "session-common-cri-api";
 
-    process.env.CHECK_SESSION_STATE_MACHINE_ARN =
-      outputs.CheckSessionStateMachineArn;
     process.env.NINO_CREDENTIAL_STATE_MACHINE_ARN =
       outputs.NinoIssueCredentialStateMachineArn;
     process.env.TXMA_AUDIT_EVENT_RULE_ENV = outputs.TxMaAuditEventRule;
