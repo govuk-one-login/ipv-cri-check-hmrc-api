@@ -1443,33 +1443,6 @@ Resources:
       FunctionName: !Ref NinoCheckFunction.Alias
       Principal: apigateway.amazonaws.com
 
-  NinoCheckStateMachineAlarm:
-    Type: "AWS::CloudWatch::Alarm"
-    Condition: DeployAlarms
-    Properties:
-      OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-critical-alert-topic
-      AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-critical-alert-topic
-      AlarmDescription: !Sub
-        - "${NinoCheckStateMachine} failed 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
-        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachine-ExecutionsFailed-alarm"
-      MetricName: "ExecutionsFailed"
-      Namespace: AWS/States
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Sum
-      DatapointsToAlarm: 1
-      EvaluationPeriods: 1
-      Period: 3600
-      Threshold: 3
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: StateMachineArn
-          Value: !Ref NinoCheckStateMachine
-
   NinoIssueCredentialStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -1986,31 +1959,6 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  NinoCheckStateMachineFailedCanary:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the NinoCheckStateMachine"
-      MetricName: ExecutionsFailed
-      Dimensions:
-        - Name: StateMachineArn
-          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoCheckStateMachine}"
-        - Name: Alias
-          Value: "live"
-      Namespace: AWS/States
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   NinoIssueCredentialStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -2082,36 +2030,6 @@ Resources:
           Value: !Ref Environment
         - Name: Resource
           Value: /abandon
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 3
-      DatapointsToAlarm: 2
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  NinoCheckStateMachineCanary5xxErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: "NinoCheckStateMachine returning 5xx response."
-      Namespace: AWS/ApiGateway
-      MetricName: 5XXError
-      Dimensions:
-        - Name: ApiName
-          Value: !Sub "${AWS::StackName}-private"
-        - Name: Method
-          Value: POST
-        - Name: Stage
-          Value: !Ref Environment
-        - Name: Resource
-          Value: /check
       Statistic: Sum
       Unit: Count
       Period: 60
