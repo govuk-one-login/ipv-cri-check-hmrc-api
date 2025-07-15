@@ -2583,9 +2583,6 @@ Outputs:
     Value: !Ref PrivateNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-PrivateApiGatewayId
-  NinoCheckStateMachineArn:
-    Description: Nino Check state machine ARN
-    Value: !Ref NinoCheckStateMachine
   CheckSessionStateMachineArn:
     Description: Session Check state machine ARN
     Value: !Ref CheckSessionStateMachine
