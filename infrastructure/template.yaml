@@ -1443,14 +1443,6 @@ Resources:
       FunctionName: !Ref NinoCheckFunction.Alias
       Principal: apigateway.amazonaws.com
 
-  PIIRedactedNinoCheckStateMachineLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedNinoCheckStateMachineLogGroup
-
   NinoCheckStateMachineAlarm:
     Type: "AWS::CloudWatch::Alarm"
     Condition: DeployAlarms
@@ -2521,12 +2513,6 @@ Resources:
   #                                                                  #
   ####################################################################
 
-  PIIRedactedNinoCheckStateMachineLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoCheck-state-machine-logs-pii-redacted"
-      RetentionInDays: 30
-
   PIIRedactedNinoIssueCredentialLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -2605,15 +2591,6 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: !Join [".", ["logs", !Ref "AWS::Region", "amazonaws.com"]]
       SourceAccount: !Ref AWS::AccountId
-
-  NinoCheckStateMachineLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
-    Properties:
-      FilterName: "PII Redaction"
-      DestinationArn: !Ref PIIRedactFunction.Alias
-      FilterPattern: ""
-      LogGroupName: !Ref NinoCheckStateMachineLogGroup
 
   NinoIssueCredentialLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
