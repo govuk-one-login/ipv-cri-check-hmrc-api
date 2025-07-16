@@ -114,7 +114,7 @@ export class JweDecrypter {
     }
   }
 
-  private async decryptKeyWithKms(
+  public async decryptKeyWithKms(
     encryptedContentEncKey: Uint8Array,
     kmsKeyIdOrAlias: string
   ): Promise<Uint8Array | undefined> {

@@ -7,7 +7,6 @@ export const CLIENT_ID = process.env.CLIENTID || "ipv-core-stub-aws-headless";
 export const AUDIENCE = process.env.AUDIENCE || "https://review-hc.dev.account.gov.uk";
 export const CLIENT_URL = process.env.CLIENT_URL || "https://test-resources.review-hc.dev.account.gov.uk";
 
-export const CHECK_CRI_STACK_NAME = process.env.STACK_NAME || "check-hmrc-cri-api";
 export const CORE_INFRASTRUCTURE = process.env.CORE_INFRASTRUCTURE || "core-infrastructure";
 
 export const REDIRECT_URL = new URL("callback", CLIENT_URL).toString();
