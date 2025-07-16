@@ -5,12 +5,13 @@ import { CriError } from "../../common/src/errors/cri-error";
 import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { logger } from "../../common/src/util/logger";
-import { retrieveSessionByAccessToken } from "./helpers/retrieve-session-by-access-token";
+import { retrieveSessionIdByAccessToken } from "./helpers/retrieve-session-by-access-token";
 import { metrics } from "../../common/src/util/metrics";
 import { countAttempts } from "../../common/src/database/count-attempts";
 import { retrieveNinoUser } from "./helpers/retrieve-nino-user";
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import { getRecordBySessionId } from "../../common/src/database/get-record-by-session-id";
+import { SessionItem } from "../../common/src/database/types/session-item";
 
 initOpenTelemetry();
 
@@ -29,10 +30,17 @@ class IssueCredentialHandler implements LambdaInterface {
 
       if (!accessToken) throw new CriError(400, "You must provide a valid access token");
 
-      const session = await retrieveSessionByAccessToken(
+      const sessionId = await retrieveSessionIdByAccessToken(
         functionConfig.tableNames.sessionTable,
         dynamoClient,
         accessToken
+      );
+
+      const session = await getRecordBySessionId<SessionItem>(
+        dynamoClient,
+        functionConfig.tableNames.sessionTable,
+        sessionId,
+        "expiryDate"
       );
 
       logger.appendKeys({

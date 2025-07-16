@@ -13,11 +13,17 @@ import { BaseFunctionConfig } from "../../common/src/config/base-function-config
 (BaseFunctionConfig as unknown as jest.Mock).mockReturnValue(mockFunctionConfig);
 
 import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
-import { mockAccessToken, mockNinoUser, mockPersonIdentity, mockSession } from "../../common/tests/mocks/mockData";
+import {
+  mockAccessToken,
+  mockNinoUser,
+  mockPersonIdentity,
+  mockSession,
+  mockSessionId,
+} from "../../common/tests/mocks/mockData";
 import { APIGatewayProxyEvent, Context } from "aws-lambda";
 import { mockLogger } from "../../common/tests/logger";
 import { handler } from "../src/handler";
-import { retrieveSessionByAccessToken } from "../src/helpers/retrieve-session-by-access-token";
+import { retrieveSessionIdByAccessToken } from "../src/helpers/retrieve-session-by-access-token";
 import { countAttempts } from "../../common/src/database/count-attempts";
 import { retrieveNinoUser } from "../src/helpers/retrieve-nino-user";
 import { getRecordBySessionId } from "../../common/src/database/get-record-by-session-id";
@@ -58,9 +64,10 @@ const handlerInput: Parameters<typeof handler> = [
   mockContext,
 ];
 
-(retrieveSessionByAccessToken as unknown as jest.Mock).mockResolvedValue(mockSession);
+(retrieveSessionIdByAccessToken as unknown as jest.Mock).mockResolvedValue(mockSessionId);
 (countAttempts as unknown as jest.Mock).mockResolvedValue(0);
-(getRecordBySessionId as unknown as jest.Mock).mockResolvedValue(mockPersonIdentity);
+(getRecordBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockSession);
+(getRecordBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockPersonIdentity);
 (retrieveNinoUser as unknown as jest.Mock).mockResolvedValue(mockNinoUser);
 
 describe("issue-credential handler", () => {
@@ -86,7 +93,7 @@ describe("issue-credential handler", () => {
   });
 
   it("handles application errors correctly", async () => {
-    (retrieveSessionByAccessToken as unknown as jest.Mock).mockImplementationOnce(() => {
+    (retrieveSessionIdByAccessToken as unknown as jest.Mock).mockImplementationOnce(() => {
       throw new Error("nooooooo!!!");
     });
 
@@ -94,7 +101,7 @@ describe("issue-credential handler", () => {
 
     expect(response).toStrictEqual(internalServerError);
 
-    expect(retrieveSessionByAccessToken).toHaveBeenCalledWith(
+    expect(retrieveSessionIdByAccessToken).toHaveBeenCalledWith(
       mockFunctionConfig.tableNames.sessionTable,
       mockDynamoClient,
       `Bearer ${mockAccessToken}`
@@ -130,6 +137,6 @@ describe("issue-credential handler", () => {
     );
     expect(response5).toStrictEqual(badRequest);
 
-    expect(retrieveSessionByAccessToken).not.toHaveBeenCalled();
+    expect(retrieveSessionIdByAccessToken).not.toHaveBeenCalled();
   });
 });

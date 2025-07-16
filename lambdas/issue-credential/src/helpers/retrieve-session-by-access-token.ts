@@ -1,43 +1,48 @@
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
-import { NinoSessionItem } from "../../../common/src/types/nino-session-item";
+import { AccessTokenIndexSessionItem } from "../../../common/src/types/access-token-index-session-item";
 import { logger } from "../../../common/src/util/logger";
 import { CriError } from "../../../common/src/errors/cri-error";
 import { safeStringifyError } from "../../../common/src/util/stringify-error";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
+import { withRetry } from "../../../common/src/util/retry";
 
-export async function retrieveSessionByAccessToken(
+export async function retrieveSessionIdByAccessToken(
   sessionTableName: string,
   dynamoClient: DynamoDBClient,
   accessToken: string
-): Promise<NinoSessionItem> {
+): Promise<string> {
   try {
-    const command = new QueryCommand({
-      TableName: sessionTableName,
-      KeyConditionExpression: "accessToken = :value",
-      FilterExpression: "expiryDate > :expiry",
-      ExpressionAttributeValues: {
-        ":value": {
-          S: accessToken,
+    async function sendQueryCommand() {
+      const command = new QueryCommand({
+        TableName: sessionTableName,
+        IndexName: "access-token-index",
+        KeyConditionExpression: "accessToken = :value",
+        ExpressionAttributeValues: {
+          ":value": {
+            S: accessToken,
+          },
         },
-        ":expiry": {
-          N: Math.floor(Date.now() / 1000).toString(),
-        },
-      },
+      });
+
+      const result = await dynamoClient.send(command);
+
+      if (result.Count === 0 || !result.Items) {
+        throw new CriError(400, `No session entry found for the given access token`);
+      }
+
+      const retrievedRecords = result.Items.map((v) => unmarshall(v)) as AccessTokenIndexSessionItem[];
+
+      if (retrievedRecords.length > 1) {
+        throw new CriError(500, `Found ${retrievedRecords.length} session records but was only expecting 1.`);
+      }
+
+      return retrievedRecords[0].sessionId;
+    }
+
+    return await withRetry(sendQueryCommand, logger, {
+      maxRetries: 3,
+      baseDelay: 300,
     });
-
-    const result = await dynamoClient.send(command);
-
-    if (result.Count === 0 || !result.Items) {
-      throw new CriError(400, `No session entry found for the given access token`);
-    }
-
-    const retrievedRecords = result.Items.map((v) => unmarshall(v)) as NinoSessionItem[];
-
-    if (retrievedRecords.length > 1) {
-      throw new CriError(500, `Found ${retrievedRecords.length} session records but was only expecting 1.`);
-    }
-
-    return retrievedRecords[0];
   } catch (error) {
     if (error instanceof CriError) throw error;
 

@@ -1,7 +1,7 @@
 import { logger } from "../../../common/src/util/logger";
-import { retrieveSessionByAccessToken } from "../../src/helpers/retrieve-session-by-access-token";
+import { retrieveSessionIdByAccessToken } from "../../src/helpers/retrieve-session-by-access-token";
 import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
-import { mockSession, mockAccessToken } from "../../../common/tests/mocks/mockData";
+import { mockAccessToken, mockSessionFromIndex } from "../../../common/tests/mocks/mockData";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { QueryCommand } from "@aws-sdk/client-dynamodb";
 jest.mock("../../../common/src/util/logger");
@@ -16,10 +16,6 @@ jest.mock("@aws-sdk/client-dynamodb", () => ({
 }));
 
 const mockSendFunction = mockDynamoClient.send as jest.Mock;
-mockSendFunction.mockResolvedValue({
-  Items: [marshall(mockSession)],
-  Count: 1,
-});
 
 const sessionTableName = "my-session-zone";
 
@@ -29,29 +25,31 @@ describe("retrieveSessionByAccessToken()", () => {
   });
 
   it("returns as expected for some valid input", async () => {
-    const result = await retrieveSessionByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
+    mockSendFunction.mockResolvedValueOnce({
+      Items: [marshall(mockSessionFromIndex)],
+      Count: 1,
+    });
+
+    const result = await retrieveSessionIdByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
 
     expect(mockDynamoClient.send).toHaveBeenCalledWith(
       new QueryCommand({
         TableName: sessionTableName,
+        IndexName: "access-token-index",
         KeyConditionExpression: "accessToken = :value",
-        FilterExpression: "expiryDate > :expiry",
         ExpressionAttributeValues: {
           ":value": {
             S: mockAccessToken,
-          },
-          ":expiry": {
-            N: Math.floor(Date.now() / 1000).toString(),
           },
         },
       })
     );
 
-    expect(result).toEqual(mockSession);
+    expect(result).toEqual(mockSessionFromIndex.sessionId);
   });
 
   it("handles a missing record correctly", async () => {
-    mockSendFunction.mockResolvedValueOnce({
+    mockSendFunction.mockResolvedValue({
       Items: [],
       Count: 0,
     });
@@ -59,7 +57,7 @@ describe("retrieveSessionByAccessToken()", () => {
     let thrown = false;
 
     try {
-      await retrieveSessionByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
+      await retrieveSessionIdByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
     } catch (error) {
       thrown = true;
       expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 400 }));
@@ -69,15 +67,15 @@ describe("retrieveSessionByAccessToken()", () => {
   });
 
   it("handles too many records correctly", async () => {
-    mockSendFunction.mockResolvedValueOnce({
-      Items: [marshall(mockSession), marshall(mockSession)],
+    mockSendFunction.mockResolvedValue({
+      Items: [marshall(mockSessionFromIndex), marshall(mockSessionFromIndex)],
       Count: 2,
     });
 
     let thrown = false;
 
     try {
-      await retrieveSessionByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
+      await retrieveSessionIdByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
     } catch (error) {
       thrown = true;
       expect(error).toEqual(
@@ -89,14 +87,14 @@ describe("retrieveSessionByAccessToken()", () => {
   });
 
   it("handles an unrecognised error correctly", async () => {
-    mockSendFunction.mockImplementationOnce(() => {
+    mockSendFunction.mockImplementation(() => {
       throw new Error("illegal");
     });
 
     let thrown = false;
 
     try {
-      await retrieveSessionByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
+      await retrieveSessionIdByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
     } catch (error) {
       thrown = true;
       expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 500 }));
@@ -104,5 +102,21 @@ describe("retrieveSessionByAccessToken()", () => {
 
     expect(thrown).toEqual(true);
     expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("Error"));
+  });
+
+  it("should retry if a query fails", async () => {
+    mockSendFunction.mockResolvedValueOnce({
+      Items: [],
+      Count: 0,
+    });
+    mockSendFunction.mockResolvedValueOnce({
+      Items: [marshall(mockSessionFromIndex)],
+      Count: 1,
+    });
+
+    const result = await retrieveSessionIdByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
+
+    expect(result).toEqual(mockSessionFromIndex.sessionId);
+    expect(mockSendFunction).toHaveBeenCalledTimes(2);
   });
 });

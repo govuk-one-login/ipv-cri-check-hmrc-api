@@ -3,6 +3,7 @@ import { ISO8601DateString, UnixSecondsTimestamp } from "../../../common/src/typ
 import { AttemptItem } from "../../../common/src/types/attempt";
 import { NinoSessionItem } from "../../../common/src/types/nino-session-item";
 import { NinoUser } from "../../../common/src/types/nino-user";
+import { AccessTokenIndexSessionItem } from "../../src/types/access-token-index-session-item";
 
 export const mockTxn = "very good";
 
@@ -24,6 +25,12 @@ export const mockSession: NinoSessionItem = {
   clientIpAddress: "127.0.0.1",
   subject: "yarp",
   txn: "narp",
+};
+
+export const mockSessionFromIndex: AccessTokenIndexSessionItem = {
+  sessionId: mockSessionId,
+  accessToken: mockAccessToken,
+  subject: "yarp",
 };
 
 export const mockAttempt: AttemptItem = {
