@@ -120,7 +120,7 @@ describe("time-handler generates epoch second, millisecond and / or expiry when 
       });
     });
   });
-  describe("example context Audit Event / Check Session StateMachine - Get EpochTime task / Fetch Current Time", () => {
+  describe("example context Audit Event - Get EpochTime task / Fetch Current Time", () => {
     describe("generates epoch seconds and milliseconds", () => {
       it("returns time in epoch milliseconds and seconds", async () => {
         const result = await timeHandler.handler(
