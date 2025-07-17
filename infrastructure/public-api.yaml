@@ -75,7 +75,7 @@ paths:
       x-amazon-apigateway-integration:
         httpMethod: "GET"
         credentials:
-          Fn::GetAtt: [ "JWKSBucketRole", "Arn" ]
+          Fn::GetAtt: ["JWKSBucketRole", "Arn"]
         uri:
           Fn::Sub:
             - "arn:aws:apigateway:${AWS::Region}:s3:path/govuk-one-login-hmrc-check-published-keys-${env}/jwks.json"

@@ -67,6 +67,7 @@ Conditions:
   UseCanaryDeploymentAlarms: !Or
     - !Not [!Equals [!Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE]]
     - !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
+  CanaryAlarmsAndDevLikeEnvironment: !And [!Condition IsDevLikeEnvironment, !Condition UseCanaryDeploymentAlarms]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
@@ -1299,6 +1300,63 @@ Resources:
       FunctionName: !Ref NinoCheckFunction.Alias
       Principal: apigateway.amazonaws.com
 
+  IssueCredentialFunction:
+    Condition: IsDevLikeEnvironment
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      DeploymentPreference:
+        Type: !Ref LambdaDeploymentPreference
+        Alarms: !If
+          - CanaryAlarmsAndDevLikeEnvironment
+          - [!Ref IssueCredentialFunctionCanaryErrors]
+          - [!Ref AWS::NoValue]
+        Role: !GetAtt CodeDeployServiceRole.Arn
+      Handler: lambdas/issue-credential/src/handler.handler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/IssueCredentialFunction
+      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+        - DynamoDBReadPolicy:
+            TableName: !Ref UserAttemptsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref NinoUsersTable
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-IssueCredentialFunction"
+          SESSION_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+          PERSON_IDENTITY_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+          ATTEMPT_TABLE: !Ref UserAttemptsTable
+          NINO_USER_TABLE: !Ref NinoUsersTable
+          AUDIT_EVENT_BUS: !Ref CheckHmrcEventBus
+          AUDIT_SOURCE: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+          AUDIT_ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
+          LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
+
+  IssueCredentialFunctionLogGroup:
+    Condition: IsDevLikeEnvironment
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/IssueCredentialFunction
+      RetentionInDays: 30
+
+  IssueCredentialFunctionPermission:
+    Condition: IsDevLikeEnvironment
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref IssueCredentialFunction.Alias
+      Principal: apigateway.amazonaws.com
+
   NinoIssueCredentialStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -2093,6 +2151,33 @@ Resources:
           Value: !Ref NinoCheckFunction
         - Name: ExecutedVersion
           Value: !GetAtt NinoCheckFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  IssueCredentialFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CanaryAlarmsAndDevLikeEnvironment
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Errors returned from the IssueCredentialFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-IssueCredentialFunction:live"
+        - Name: FunctionName
+          Value: !Ref NinoCheckFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt IssueCredentialFunction.Version.Version
       Namespace: AWS/Lambda
       Statistic: Sum
       Unit: Count
