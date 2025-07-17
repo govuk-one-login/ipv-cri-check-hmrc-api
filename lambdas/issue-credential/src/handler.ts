@@ -32,13 +32,14 @@ class IssueCredentialHandler implements LambdaInterface {
         dynamoDBClient,
         accessToken
       );
+      logger.info("Successfully retrieved the session id.");
 
       const session = await getSessionBySessionId(functionConfig.tableNames.sessionTable, sessionId);
 
       logger.appendKeys({
         govuk_signin_journey_id: session.clientSessionId,
       });
-      logger.info(`Identified government journey id: ${session.clientSessionId}`);
+      logger.info("Successfully retrieved the session record.");
 
       const failedAttemptCount = await countAttempts(
         functionConfig.tableNames.attemptTable,
@@ -54,14 +55,14 @@ class IssueCredentialHandler implements LambdaInterface {
         session.sessionId,
         "expiryDate"
       );
-      logger.info(`Retrieved person identity.`);
+      logger.info("Successfully retrieved the person identity record.");
 
       const ninoUser = await retrieveNinoUser(
         functionConfig.tableNames.ninoUserTable,
         dynamoDBClient,
         session.sessionId
       );
-      logger.info(`Retrieved NINo-user entry.`);
+      logger.info("Successfully retrieved the nino user record.");
 
       return {
         statusCode: 200,
