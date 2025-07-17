@@ -3,19 +3,16 @@ import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { BaseFunctionConfig } from "../../common/src/config/base-function-config";
 import { CriError } from "../../common/src/errors/cri-error";
 import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { logger } from "../../common/src/util/logger";
 import { retrieveSessionIdByAccessToken } from "./helpers/retrieve-session-by-access-token";
 import { metrics } from "../../common/src/util/metrics";
 import { countAttempts } from "../../common/src/database/count-attempts";
 import { retrieveNinoUser } from "./helpers/retrieve-nino-user";
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
-import { getRecordBySessionId } from "../../common/src/database/get-record-by-session-id";
-import { SessionItem } from "../../common/src/database/types/session-item";
+import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
+import { dynamoDBClient } from "../../common/src/util/dynamo";
 
 initOpenTelemetry();
-
-const dynamoClient = new DynamoDBClient();
 
 const functionConfig = new BaseFunctionConfig();
 
@@ -32,40 +29,40 @@ class IssueCredentialHandler implements LambdaInterface {
 
       const sessionId = await retrieveSessionIdByAccessToken(
         functionConfig.tableNames.sessionTable,
-        dynamoClient,
+        dynamoDBClient,
         accessToken
       );
+      logger.info("Successfully retrieved the session id.");
 
-      const session = await getRecordBySessionId<SessionItem>(
-        dynamoClient,
-        functionConfig.tableNames.sessionTable,
-        sessionId,
-        "expiryDate"
-      );
+      const session = await getSessionBySessionId(functionConfig.tableNames.sessionTable, sessionId);
 
       logger.appendKeys({
         govuk_signin_journey_id: session.clientSessionId,
       });
-      logger.info(`Identified government journey id: ${session.clientSessionId}`);
+      logger.info("Successfully retrieved the session record.");
 
       const failedAttemptCount = await countAttempts(
         functionConfig.tableNames.attemptTable,
-        dynamoClient,
+        dynamoDBClient,
         session.sessionId,
         "FAIL"
       );
       logger.info(`Identified ${failedAttemptCount} failed attempts.`);
 
       const personIdentity = await getRecordBySessionId(
-        dynamoClient,
+        dynamoDBClient,
         functionConfig.tableNames.personIdentityTable,
         session.sessionId,
         "expiryDate"
       );
-      logger.info(`Retrieved person identity.`);
+      logger.info("Successfully retrieved the person identity record.");
 
-      const ninoUser = await retrieveNinoUser(functionConfig.tableNames.ninoUserTable, dynamoClient, session.sessionId);
-      logger.info(`Retrieved NINo-user entry.`);
+      const ninoUser = await retrieveNinoUser(
+        functionConfig.tableNames.ninoUserTable,
+        dynamoDBClient,
+        session.sessionId
+      );
+      logger.info("Successfully retrieved the nino user record.");
 
       return {
         statusCode: 200,

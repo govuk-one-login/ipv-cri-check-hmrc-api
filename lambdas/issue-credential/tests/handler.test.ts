@@ -26,7 +26,7 @@ import { handler } from "../src/handler";
 import { retrieveSessionIdByAccessToken } from "../src/helpers/retrieve-session-by-access-token";
 import { countAttempts } from "../../common/src/database/count-attempts";
 import { retrieveNinoUser } from "../src/helpers/retrieve-nino-user";
-import { getRecordBySessionId } from "../../common/src/database/get-record-by-session-id";
+import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 
 const mockContext: Context = {
   awsRequestId: "",
@@ -66,7 +66,7 @@ const handlerInput: Parameters<typeof handler> = [
 
 (retrieveSessionIdByAccessToken as unknown as jest.Mock).mockResolvedValue(mockSessionId);
 (countAttempts as unknown as jest.Mock).mockResolvedValue(0);
-(getRecordBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockSession);
+(getSessionBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockSession);
 (getRecordBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockPersonIdentity);
 (retrieveNinoUser as unknown as jest.Mock).mockResolvedValue(mockNinoUser);
 

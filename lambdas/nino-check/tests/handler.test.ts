@@ -7,7 +7,6 @@ jest.mock("../src/helpers/function-config");
 jest.mock("../src/helpers/nino");
 jest.mock("../../common/src/database/count-attempts");
 jest.mock("../../common/src/database/get-record-by-session-id");
-jest.mock("../src/helpers/retrieve-session");
 jest.mock("../src/hmrc-apis/pdv");
 jest.mock("../src/hmrc-apis/otg");
 jest.mock("../../common/src/util/metrics");
@@ -20,7 +19,6 @@ import { mockDeviceInformationHeader, mockFunctionConfig, mockHmrcConfig } from 
 import { mockLogger } from "../../common/tests/logger";
 
 import { handler } from "../src/handler";
-import { retrieveSession } from "../src/helpers/retrieve-session";
 import { NinoCheckFunctionConfig } from "../src/helpers/function-config";
 import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../src/helpers/nino";
 import { sendRequestSentEvent, sendResponseReceivedEvent } from "../src/helpers/audit";
@@ -31,7 +29,7 @@ import { buildPdvInput } from "../src/helpers/build-pdv-input";
 import { captureMetric } from "../../common/src/util/metrics";
 import { CriError } from "../../common/src/errors/cri-error";
 import { countAttempts } from "../../common/src/database/count-attempts";
-import { getRecordBySessionId } from "../../common/src/database/get-record-by-session-id";
+import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 
 const mockContext: Context = {
   awsRequestId: "",
@@ -69,7 +67,7 @@ const handlerInput: Parameters<typeof handler> = [
 ];
 
 (NinoCheckFunctionConfig as unknown as jest.Mock).mockReturnValue(mockFunctionConfig);
-(retrieveSession as unknown as jest.Mock).mockResolvedValue(mockSession);
+(getSessionBySessionId as unknown as jest.Mock).mockResolvedValue(mockSession);
 (getHmrcConfig as unknown as jest.Mock).mockResolvedValue(mockHmrcConfig);
 (countAttempts as unknown as jest.Mock).mockResolvedValue(0);
 (getRecordBySessionId as unknown as jest.Mock).mockResolvedValue(mockPersonIdentity);
@@ -133,7 +131,7 @@ describe("nino-check handler", () => {
   });
 
   it("handles application errors correctly", async () => {
-    (retrieveSession as unknown as jest.Mock).mockImplementationOnce(() => {
+    (getSessionBySessionId as unknown as jest.Mock).mockImplementationOnce(() => {
       throw new Error("nooooooo!!!");
     });
 
@@ -142,11 +140,7 @@ describe("nino-check handler", () => {
     expect(response).toStrictEqual(internalServerError);
 
     expect(NinoCheckFunctionConfig).toHaveBeenCalled();
-    expect(retrieveSession).toHaveBeenCalledWith(
-      mockFunctionConfig.tableNames.sessionTable,
-      mockDynamoClient,
-      mockSessionId
-    );
+    expect(getSessionBySessionId).toHaveBeenCalledWith(mockFunctionConfig.tableNames.sessionTable, mockSessionId, true);
     expect(getHmrcConfig).not.toHaveBeenCalled();
   });
 

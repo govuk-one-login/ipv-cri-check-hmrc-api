@@ -5,9 +5,8 @@ import { NinoCheckFunctionConfig } from "./helpers/function-config";
 import { getHmrcConfig, saveTxn, handleResponseAndSaveAttempt } from "./helpers/nino";
 import { CriError } from "../../common/src/errors/cri-error";
 import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { dynamoDBClient } from "../../common/src/util/dynamo";
 import { logger } from "../../common/src/util/logger";
-import { retrieveSession } from "./helpers/retrieve-session";
 import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { captureMetric, metrics } from "../../common/src/util/metrics";
 import { getTokenFromOtg } from "./hmrc-apis/otg";
@@ -17,12 +16,10 @@ import { safeStringifyError } from "../../common/src/util/stringify-error";
 import { buildPdvInput } from "./helpers/build-pdv-input";
 import { ParsedPdvMatchResponse } from "./hmrc-apis/types/pdv";
 import { countAttempts } from "../../common/src/database/count-attempts";
-import { getRecordBySessionId } from "../../common/src/database/get-record-by-session-id";
+import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { PersonIdentityItem } from "../../common/src/database/types/person-identity";
 
 initOpenTelemetry();
-
-const dynamoClient = new DynamoDBClient();
 
 const MAX_PAST_ATTEMPTS = 1;
 
@@ -45,7 +42,7 @@ class NinoCheckHandler implements LambdaInterface {
 
       logger.info(`Function initialised. Retrieving session...`);
 
-      const session = await retrieveSession(functionConfig.tableNames.sessionTable, dynamoClient, sessionId);
+      const session = await getSessionBySessionId(functionConfig.tableNames.sessionTable, sessionId, true);
 
       logger.appendKeys({
         govuk_signin_journey_id: session.clientSessionId,
@@ -56,7 +53,7 @@ class NinoCheckHandler implements LambdaInterface {
 
       logger.info(`HMRC config retrieved from SSM.`);
 
-      const pastAttemptCount = await countAttempts(functionConfig.tableNames.attemptTable, dynamoClient, sessionId);
+      const pastAttemptCount = await countAttempts(functionConfig.tableNames.attemptTable, dynamoDBClient, sessionId);
       if (pastAttemptCount > MAX_PAST_ATTEMPTS) {
         captureMetric(`AttemptsExceededMetric`);
         logger.info(`Too many attempts. Returning requestRetry: false.`);
@@ -68,7 +65,7 @@ class NinoCheckHandler implements LambdaInterface {
       logger.info(`User has ${pastAttemptCount} past attempts. Retrieving person identity...`);
 
       const personIdentity = await getRecordBySessionId<PersonIdentityItem>(
-        dynamoClient,
+        dynamoDBClient,
         functionConfig.tableNames.personIdentityTable,
         sessionId,
         "expiryDate"
@@ -102,7 +99,7 @@ class NinoCheckHandler implements LambdaInterface {
 
       logger.info(`Called matching API successfully. Saving txn against user session...`);
 
-      await saveTxn(dynamoClient, functionConfig.tableNames.sessionTable, sessionId, parsedPdvMatchResponse.txn);
+      await saveTxn(dynamoDBClient, functionConfig.tableNames.sessionTable, sessionId, parsedPdvMatchResponse.txn);
 
       logger.info(`Saved txn.`);
 
@@ -116,7 +113,7 @@ class NinoCheckHandler implements LambdaInterface {
       logger.info(`RESPONSE_RECEIVED event fired.`);
 
       const ninoMatch = await handleResponseAndSaveAttempt(
-        dynamoClient,
+        dynamoDBClient,
         functionConfig.tableNames.attemptTable,
         session,
         parsedPdvMatchResponse
@@ -132,7 +129,7 @@ class NinoCheckHandler implements LambdaInterface {
 
       logger.info(`No need for further retries. Issuing authorization code...`);
 
-      await writeCompletedCheck(dynamoClient, functionConfig.tableNames, session, nino);
+      await writeCompletedCheck(dynamoDBClient, functionConfig.tableNames, session, nino);
 
       logger.info(`Authorization code saved. Returning...`);
 

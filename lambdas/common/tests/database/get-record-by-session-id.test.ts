@@ -1,68 +1,72 @@
 jest.mock("../../src/util/logger");
+import { mockClient } from "aws-sdk-client-mock";
+import "aws-sdk-client-mock-jest";
 import { DynamoDBClient, QueryCommand, QueryCommandOutput } from "@aws-sdk/client-dynamodb";
 import { PersonIdentityItem } from "../../src/database/types/person-identity";
 import { RecordNotFoundError, TooManyRecordsError } from "../../src/database/exceptions/errors";
 import { SessionItem } from "../../src/database/types/session-item";
 import { UnixSecondsTimestamp } from "../../src/types/brands";
-import { getRecordBySessionId } from "../../src/database/get-record-by-session-id";
+import { getRecordBySessionId, getSessionBySessionId } from "../../src/database/get-record-by-session-id";
 import { NinoUser } from "../../src/types/nino-user";
-
-const tableName = "some-table-some-stack";
-
-jest.mock("@aws-sdk/client-dynamodb", () => ({
-  QueryCommand: jest.fn().mockImplementation((input) => ({
-    type: "QueryCommandInstance",
-    input,
-  })),
-  DynamoDBClient: jest.fn().mockImplementation(() => ({
-    send: jest.fn(),
-  })),
-}));
-
-const dynamoClient = new DynamoDBClient();
-
-const noMatchResponse: QueryCommandOutput = {
-  Items: [],
-  Count: 0,
-  $metadata: {},
-};
-
-const now = Math.round(Date.now() / 1000);
-
-const anHourFromNow = (now + 60 * 60) as UnixSecondsTimestamp;
-
-const mockSessionEntity = {
-  sessionId: { S: "12345678" },
-  addresses: { L: [] },
-  names: { L: [] },
-  birthDates: { L: [] },
-  expiryDate: { N: String(anHourFromNow) },
-  socialSecurityRecord: { L: [] },
-};
-
-const validPersonIdentityResult: QueryCommandOutput = {
-  Count: 1,
-  Items: [mockSessionEntity],
-  $metadata: {},
-};
-
-const validPersonIdentityOutput: PersonIdentityItem = {
-  sessionId: "12345678",
-  addresses: [],
-  names: [],
-  birthDates: [],
-  expiryDate: anHourFromNow,
-  socialSecurityRecord: [],
-};
-
-// @ts-expect-error - we need to override setTimeout to speed up execution of the tests
-global.setTimeout = jest.fn((callback) => callback());
-
-const dummyNow = 999999 as UnixSecondsTimestamp;
-
-Date.now = jest.fn().mockReturnValue(dummyNow * 1000);
+import { CriError } from "../../src/errors/cri-error";
+import { captureMetric, metrics } from "../../src/util/metrics";
 
 describe("getRecordBySessionId()", () => {
+  const tableName = "some-table-some-stack";
+
+  jest.mock("@aws-sdk/client-dynamodb", () => ({
+    QueryCommand: jest.fn().mockImplementation((input) => ({
+      type: "QueryCommandInstance",
+      input,
+    })),
+    DynamoDBClient: jest.fn().mockImplementation(() => ({
+      send: jest.fn(),
+    })),
+  }));
+
+  const dynamoClient = new DynamoDBClient();
+
+  const noMatchResponse: QueryCommandOutput = {
+    Items: [],
+    Count: 0,
+    $metadata: {},
+  };
+
+  const now = Math.round(Date.now() / 1000);
+
+  const anHourFromNow = (now + 60 * 60) as UnixSecondsTimestamp;
+
+  const mockSessionEntity = {
+    sessionId: { S: "12345678" },
+    addresses: { L: [] },
+    names: { L: [] },
+    birthDates: { L: [] },
+    expiryDate: { N: String(anHourFromNow) },
+    socialSecurityRecord: { L: [] },
+  };
+
+  const validPersonIdentityResult: QueryCommandOutput = {
+    Count: 1,
+    Items: [mockSessionEntity],
+    $metadata: {},
+  };
+
+  const validPersonIdentityOutput: PersonIdentityItem = {
+    sessionId: "12345678",
+    addresses: [],
+    names: [],
+    birthDates: [],
+    expiryDate: anHourFromNow,
+    socialSecurityRecord: [],
+  };
+
+  // @ts-expect-error - we need to override setTimeout to speed up execution of the tests
+  global.setTimeout = jest.fn((callback) => callback());
+
+  const dummyNow = 999999 as UnixSecondsTimestamp;
+
+  Date.now = jest.fn().mockReturnValue(dummyNow * 1000);
+
   afterEach(() => {
     jest.clearAllMocks();
   });
@@ -74,22 +78,25 @@ describe("getRecordBySessionId()", () => {
 
     expect(result).toEqual(validPersonIdentityOutput);
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
+    expect(dynamoClient.send).toHaveBeenCalledWith(expect.any(QueryCommand));
     expect(dynamoClient.send).toHaveBeenCalledWith(
-      new QueryCommand({
-        TableName: tableName,
-        KeyConditionExpression: "sessionId = :value",
-        FilterExpression: `#expiry > :expiry`,
-        ExpressionAttributeNames: {
-          "#expiry": "expiryDate",
-        },
-        ExpressionAttributeValues: {
-          ":expiry": {
-            N: String(dummyNow),
+      expect.objectContaining({
+        input: expect.objectContaining({
+          TableName: tableName,
+          KeyConditionExpression: "sessionId = :value",
+          FilterExpression: `#expiry > :expiry`,
+          ExpressionAttributeNames: {
+            "#expiry": "expiryDate",
           },
-          ":value": {
-            S: "12345678",
+          ExpressionAttributeValues: {
+            ":expiry": {
+              N: String(dummyNow),
+            },
+            ":value": {
+              S: "12345678",
+            },
           },
-        },
+        }),
       })
     );
   });
@@ -223,5 +230,79 @@ describe("getRecordBySessionId()", () => {
       subject: "dummy",
     });
     expect(dynamoClient.send).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("getSessionBySessionId()", () => {
+  jest.mock("../../src/util/metrics");
+
+  const ddbMock = mockClient(DynamoDBClient);
+  const now = Math.round(Date.now() / 1000);
+  const anHourFromNow = now + 60 * 60;
+
+  beforeEach(() => {
+    ddbMock.reset();
+  });
+
+  it("should successfully return a SessionItem", async () => {
+    ddbMock.on(QueryCommand).resolves({
+      Items: [
+        {
+          sessionId: { S: "session-123" },
+          clientSessionId: { S: "gov-123" },
+          expiryDate: { N: anHourFromNow.toString() },
+        },
+      ],
+      Count: 1,
+    });
+
+    const sessionItem = await getSessionBySessionId("session-table", "session-123");
+    expect(sessionItem.sessionId).toBe("session-123");
+    expect(sessionItem.clientSessionId).toBe("gov-123");
+    expect(ddbMock).toHaveReceivedCommandWith(QueryCommand, {
+      ExpressionAttributeValues: {
+        ":expiry": { N: expect.stringMatching(/\d+/) },
+        ":value": { S: "session-123" },
+      },
+      KeyConditionExpression: "sessionId = :value",
+      FilterExpression: "#expiry > :expiry",
+      ExpressionAttributeNames: {
+        "#expiry": "expiryDate",
+      },
+      TableName: "session-table",
+    });
+  });
+
+  it("should throw when Session not found", async () => {
+    expect.assertions(3);
+
+    ddbMock.on(QueryCommand).resolves({
+      Items: [],
+      Count: 0,
+    });
+
+    try {
+      await getSessionBySessionId("session-table", "session-123");
+    } catch (err) {
+      expect(err).toBeInstanceOf(CriError);
+      expect((err as CriError).message).toBe("Session not found");
+      expect((err as CriError).status).toBe(400);
+    }
+  });
+
+  it("should throw an exception and publish metric", async () => {
+    const spy = jest.spyOn(metrics, "addMetric");
+    ddbMock.on(QueryCommand).rejects();
+
+    await expect(getSessionBySessionId("session-table", "session-123")).rejects.toThrow(Error);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("should throw an exception when it errors retrievings a record", async () => {
+    const spy = jest.spyOn(metrics, "addMetric");
+    ddbMock.on(QueryCommand).rejects();
+
+    await expect(getSessionBySessionId("session-table", "session-123", true)).rejects.toThrow(Error);
+    expect(spy).toHaveBeenCalledWith("InvalidSessionErrorMetric", "Count", 1);
   });
 });
