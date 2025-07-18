@@ -1,8 +1,8 @@
 import { createSendCommand } from "./aws-helper";
 import { KMSClient, GetPublicKeyCommand } from "@aws-sdk/client-kms";
-const sendCommand = createSendCommand(() => new KMSClient());
+const kmsClient = new KMSClient();
+const sendCommand = createSendCommand(() => kmsClient);
 
+export { kmsClient };
 export const getPublicKey = (kid: string) =>
-  sendCommand(GetPublicKeyCommand, { KeyId: kid }).then(
-    (result) => result.PublicKey
-  );
+  sendCommand(GetPublicKeyCommand, { KeyId: kid }).then((result) => result.PublicKey);

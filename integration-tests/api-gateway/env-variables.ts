@@ -4,21 +4,18 @@ export type EvidenceRequest = {
 };
 
 export const CLIENT_ID = process.env.CLIENTID || "ipv-core-stub-aws-headless";
-export const AUDIENCE =
-  process.env.AUDIENCE || "https://review-hc.dev.account.gov.uk";
-export const CLIENT_URL =
-  process.env.CLIENT_URL ||
-  "https://test-resources.review-hc.dev.account.gov.uk";
+export const AUDIENCE = process.env.AUDIENCE || "https://review-hc.dev.account.gov.uk";
+export const CLIENT_URL = process.env.CLIENT_URL || "https://test-resources.review-hc.dev.account.gov.uk";
+
+export const CORE_INFRASTRUCTURE = process.env.CORE_INFRASTRUCTURE || "core-infrastructure";
 
 export const REDIRECT_URL = new URL("callback", CLIENT_URL).toString();
 
 export const NINO = "AA123456C";
-export const CLIENT_ASSERTION_TYPE =
-  "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
+export const CLIENT_ASSERTION_TYPE = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 export const GRANT_TYPE = "authorization_code";
 export const environment = process.env.Environment || "localdev";
-export const testResourcesStack =
-  process.env.TEST_RESOURCES || "test-resources";
+export const testResourcesStack = process.env.TEST_RESOURCES || "test-resources";
 
 export const getClaimSet = async () => {
   const data = {
