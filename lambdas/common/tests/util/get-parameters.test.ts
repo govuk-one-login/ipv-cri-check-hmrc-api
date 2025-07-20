@@ -28,8 +28,8 @@ describe("getParametersValues", () => {
       { maxAge: 300, throwOnError: false }
     );
     expect(result).toEqual({
-      audience,
-      issuer: "mock-issuer",
+      "/mock-common-prefix/clients/mock-client-id/jwtAuthentication/audience": audience,
+      "/mock-common-prefix/clients/mock-client-id/jwtAuthentication/issuer": issuer,
     });
   });
   it("returns parameter values when calling getParametersByName ttl override and resolves successfully", async () => {
@@ -55,8 +55,8 @@ describe("getParametersValues", () => {
       { maxAge: 500, throwOnError: false }
     );
     expect(result).toEqual({
-      audience,
-      issuer: "mock-issuer",
+      "/mock-common-prefix/clients/mock-client-id/jwtAuthentication/audience": "my-audience",
+      "/mock-common-prefix/clients/mock-client-id/jwtAuthentication/issuer": "mock-issuer",
     });
   });
 

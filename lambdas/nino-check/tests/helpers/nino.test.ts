@@ -1,15 +1,16 @@
 jest.mock("../../../common/src/util/logger");
 jest.mock("../../../common/src/util/metrics");
 import { mockSaveRes } from "../mocks/mockConfig";
-import * as ssmModule from "@aws-lambda-powertools/parameters/ssm";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../../src/helpers/nino";
+import * as GetParameters from "../../../common/src/util/get-parameters";
 import { mockPdvDeceasedRes, mockPdvErrorRes, mockPdvInvalidCredsRes, mockPdvRes } from "../mocks/mockData";
 import { mockSession, mockSessionId, mockTxn } from "../../../common/tests/mocks/mockData";
 import { captureMetric } from "../../../common/src/util/metrics";
 import { logger } from "../../../common/src/util/logger";
+import { CriError } from "../../../common/src/errors/cri-error";
 
 const ddbMock = mockClient(DynamoDBClient);
 ddbMock.on(PutItemCommand).resolves(mockSaveRes);
@@ -27,24 +28,19 @@ describe("getHmrcConfig()", () => {
     [pdvParamName]: "billybob",
   };
 
-  const getParametersByName = jest.spyOn(ssmModule, "getParametersByName");
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it("behaves as expected when the SSM fetch works", async () => {
-    getParametersByName.mockResolvedValue(ssmRes);
+    const paramSpy = jest.spyOn(GetParameters, "getParametersValues").mockResolvedValueOnce(ssmRes);
 
     const config = await getHmrcConfig(mockClientId, pdvParamName);
 
-    expect(getParametersByName).toHaveBeenCalledWith(
-      {
-        [`/check-hmrc-cri-api/OtgUrl/${mockClientId}`]: {},
-        [`/check-hmrc-cri-api/NinoCheckUrl/${mockClientId}`]: {},
-        [pdvParamName]: {},
-      },
-      { maxAge: 300, throwOnError: false }
+    expect(paramSpy).toHaveBeenCalledWith(
+      ["/check-hmrc-cri-api/OtgUrl/my-cool-client", "/check-hmrc-cri-api/NinoCheckUrl/my-cool-client", "big-ssm-param"],
+      300
     );
 
     expect(config).toEqual({
@@ -59,9 +55,20 @@ describe("getHmrcConfig()", () => {
   });
 
   it("throws an error when the SSM fetch returns errors", async () => {
-    getParametersByName.mockResolvedValue({ ...ssmRes, _errors: ["ssm", "machine", "broke"] });
+    jest
+      .spyOn(GetParameters, "getParametersValues")
+      .mockRejectedValueOnce(
+        new Error(
+          "Following SSM parameters do not exist: [/check-hmrc-cri-api/OtgUrl/my-cool-client, /check-hmrc-cri-api/NinoCheckUrl/my-cool-client, big-ssm-param]"
+        )
+      );
 
-    await expect(() => getHmrcConfig(mockClientId, pdvParamName)).rejects.toThrow("ssm, machine, broke");
+    await expect(() => getHmrcConfig(mockClientId, pdvParamName)).rejects.toThrow(
+      new CriError(
+        500,
+        "Failed to load HMRC config: Following SSM parameters do not exist: [/check-hmrc-cri-api/OtgUrl/my-cool-client, /check-hmrc-cri-api/NinoCheckUrl/my-cool-client, big-ssm-param]"
+      )
+    );
   });
 });
 

@@ -1,5 +1,9 @@
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 
+/**
+ * Retrieves parameter values from SSM using the full parameter paths.
+ * Returns an object where the keys are the full parameter paths and the values are the parameter values.
+ */
 export const getParametersValues = async (
   parameterPaths: string[],
   cacheTtlInSeconds = 300
@@ -16,7 +20,8 @@ export const getParametersValues = async (
 
   return Object.fromEntries(
     parameterPaths.map((path) => {
-      return [path.split("/").pop()!, String(parameters[path])];
+      // Always use the full path as the key instead of extracting the last part
+      return [path, String(parameters[path])];
     })
   );
 };

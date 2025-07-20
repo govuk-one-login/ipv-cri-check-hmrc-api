@@ -1,4 +1,3 @@
-import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 import { ISO8601DateString } from "../../../common/src/types/brands";
 import { PdvApiErrorJSON, PdvApiErrorBody, ParsedPdvMatchResponse, PdvConfig } from "../hmrc-apis/types/pdv";
 import { marshall } from "@aws-sdk/util-dynamodb";
@@ -9,7 +8,7 @@ import { logger } from "../../../common/src/util/logger";
 import { NinoSessionItem } from "../../../common/src/types/nino-session-item";
 import { captureMetric } from "../../../common/src/util/metrics";
 import { OtgConfig } from "../hmrc-apis/types/otg";
-
+import { getParametersValues } from "../../../common/src/util/get-parameters";
 export type HmrcApiConfig = {
   otg: OtgConfig;
   pdv: PdvConfig;
@@ -28,32 +27,24 @@ const cacheTtlInSeconds = Number(process.env.POWERTOOLS_PARAMETERS_MAX_AGE) || 3
 export async function getHmrcConfig(clientId: string, pdvUserAgentParamName: string): Promise<HmrcApiConfig> {
   const otgParamName = `/check-hmrc-cri-api/OtgUrl/${clientId}`;
   const pdvParamName = `/check-hmrc-cri-api/NinoCheckUrl/${clientId}`;
+  const paramPaths = [otgParamName, pdvParamName, pdvUserAgentParamName];
 
-  const { _errors: errors, ...ssmParams } = await getParametersByName<string>(
-    {
-      [otgParamName]: {},
-      [pdvParamName]: {},
-      [pdvUserAgentParamName]: {},
-    },
-    { maxAge: cacheTtlInSeconds, throwOnError: false }
-  );
+  try {
+    const ssmParams = await getParametersValues(paramPaths, cacheTtlInSeconds);
 
-  if (errors?.length) {
-    const errorMessage = `Following SSM parameters do not exist: ${errors.join(", ")}`;
-    throw new CriError(500, errorMessage);
+    return {
+      otg: {
+        apiUrl: ssmParams[otgParamName],
+      },
+      pdv: {
+        apiUrl: ssmParams[pdvParamName],
+        userAgent: ssmParams[pdvUserAgentParamName],
+      },
+    };
+  } catch (err) {
+    throw new CriError(500, `Failed to load HMRC config: ${(err as Error).message}`);
   }
-
-  return {
-    otg: {
-      apiUrl: ssmParams[otgParamName],
-    },
-    pdv: {
-      apiUrl: ssmParams[pdvParamName],
-      userAgent: ssmParams[pdvUserAgentParamName],
-    },
-  };
 }
-
 export async function saveTxn(dynamoClient: DynamoDBClient, sessionTableName: string, sessionId: string, txn: string) {
   const txnCmd = new UpdateItemCommand({
     TableName: sessionTableName,
