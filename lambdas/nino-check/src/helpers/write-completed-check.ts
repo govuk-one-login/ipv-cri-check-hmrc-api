@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { TimeUnits, toEpochSecondsFromNow } from "../utils/date-time";
+import { TimeUnits, toEpochSecondsFromNow } from "../../../common/src/util/date-time";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { NinoUser } from "../../../common/src/types/nino-user";
