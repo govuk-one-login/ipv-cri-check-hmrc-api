@@ -24,10 +24,10 @@ export const buildVerifiableCredential = (
   };
 
   const hasUserFailedCheck = failedAttempts.count >= 2;
-  const hasDataCheck = !session.evidenceRequest;
+  const isRecordCheck = !session.evidenceRequest;
 
   const checkDetail: CheckDetail = { checkMethod: CHECK_METHOD };
-  if (hasDataCheck) {
+  if (isRecordCheck) {
     checkDetail.dataCheck = DATA_CHECK;
   }
 

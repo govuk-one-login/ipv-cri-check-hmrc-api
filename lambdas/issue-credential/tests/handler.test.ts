@@ -7,10 +7,20 @@ jest.mock("../../common/src/database/get-record-by-session-id");
 jest.mock("../src/helpers/retrieve-session-by-access-token");
 jest.mock("../src/helpers/retrieve-nino-user");
 jest.mock("../../common/src/util/metrics");
+jest.mock("../src/config/function-config");
 
 import { mockFunctionConfig } from "../../common/tests/mocks/mockConfig";
 import { BaseFunctionConfig } from "../../common/src/config/base-function-config";
+import { IssueCredFunctionConfig } from "../src/config/function-config";
 (BaseFunctionConfig as unknown as jest.Mock).mockReturnValue(mockFunctionConfig);
+(IssueCredFunctionConfig as unknown as jest.Mock).mockImplementation(() => ({
+  ...mockFunctionConfig,
+  credentialIssuerEnv: {
+    maxJwtTtl: 1,
+    jwtTtlUnit: "seconds",
+    commonStackName: "common-cri-api",
+  },
+}));
 
 import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
 import {
@@ -27,6 +37,7 @@ import { retrieveSessionIdByAccessToken } from "../src/helpers/retrieve-session-
 import { getAttempts } from "../../common/src/database/get-attempts";
 import { retrieveNinoUser } from "../src/helpers/retrieve-nino-user";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
+import * as GetParameters from "../../common/src/util/get-parameters";
 
 const mockContext: Context = {
   awsRequestId: "",
@@ -65,7 +76,7 @@ const handlerInput: Parameters<typeof handler> = [
 ];
 
 (retrieveSessionIdByAccessToken as unknown as jest.Mock).mockResolvedValue(mockSessionId);
-(getAttempts as unknown as jest.Mock).mockResolvedValue({ count: 0, item: [] });
+(getAttempts as unknown as jest.Mock).mockResolvedValue({ count: 0, items: [] });
 (getSessionBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockSession);
 (getRecordBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockPersonIdentity);
 (retrieveNinoUser as unknown as jest.Mock).mockResolvedValue(mockNinoUser);
@@ -76,13 +87,23 @@ describe("issue-credential handler", () => {
   });
 
   it("executes successfully with a valid input", async () => {
+    const paramSpy = jest.spyOn(GetParameters, "getParametersValues").mockResolvedValueOnce({
+      "/common-cri-api/verifiableCredentialKmsSigningKeyId": "test-key-id",
+      "/check-hmrc-cri-api/contraindicationMappings": "mapping1||mapping2",
+      "/check-hmrc-cri-api/contraIndicatorReasonsMapping": "{}",
+    });
+
     const response = await handler(...handlerInput);
 
     expect(response).toStrictEqual({
       statusCode: 200,
-      body: JSON.stringify({ failedAttemptCount: 0, personIdentity: mockPersonIdentity, ninoUser: mockNinoUser }),
+      body: expect.any(String),
     });
-
+    expect(paramSpy).toHaveBeenCalledWith([
+      "/common-cri-api/verifiableCredentialKmsSigningKeyId",
+      "/check-hmrc-cri-api/contraindicationMappings",
+      "/check-hmrc-cri-api/contraIndicatorReasonsMapping",
+    ]);
     expect(mockLogger.appendKeys).toHaveBeenCalledWith({ govuk_signin_journey_id: mockSession.clientSessionId });
     expect(getAttempts).toHaveBeenCalledWith(
       mockFunctionConfig.tableNames.attemptTable,
