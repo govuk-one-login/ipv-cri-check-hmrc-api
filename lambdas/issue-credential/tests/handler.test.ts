@@ -2,7 +2,7 @@ jest.mock("../../common/src/util/logger", () => ({
   logger: mockLogger,
 }));
 jest.mock("../../common/src/config/base-function-config");
-jest.mock("../../common/src/database/count-attempts");
+jest.mock("../../common/src/database/get-attempts");
 jest.mock("../../common/src/database/get-record-by-session-id");
 jest.mock("../src/helpers/retrieve-session-by-access-token");
 jest.mock("../src/helpers/retrieve-nino-user");
@@ -24,7 +24,7 @@ import { APIGatewayProxyEvent, Context } from "aws-lambda";
 import { mockLogger } from "../../common/tests/logger";
 import { handler } from "../src/handler";
 import { retrieveSessionIdByAccessToken } from "../src/helpers/retrieve-session-by-access-token";
-import { countAttempts } from "../../common/src/database/count-attempts";
+import { getAttempts } from "../../common/src/database/get-attempts";
 import { retrieveNinoUser } from "../src/helpers/retrieve-nino-user";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 
@@ -65,7 +65,7 @@ const handlerInput: Parameters<typeof handler> = [
 ];
 
 (retrieveSessionIdByAccessToken as unknown as jest.Mock).mockResolvedValue(mockSessionId);
-(countAttempts as unknown as jest.Mock).mockResolvedValue(0);
+(getAttempts as unknown as jest.Mock).mockResolvedValue({ count: 0, item: [] });
 (getSessionBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockSession);
 (getRecordBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockPersonIdentity);
 (retrieveNinoUser as unknown as jest.Mock).mockResolvedValue(mockNinoUser);
@@ -84,7 +84,7 @@ describe("issue-credential handler", () => {
     });
 
     expect(mockLogger.appendKeys).toHaveBeenCalledWith({ govuk_signin_journey_id: mockSession.clientSessionId });
-    expect(countAttempts).toHaveBeenCalledWith(
+    expect(getAttempts).toHaveBeenCalledWith(
       mockFunctionConfig.tableNames.attemptTable,
       mockDynamoClient,
       mockSession.sessionId,
@@ -106,7 +106,7 @@ describe("issue-credential handler", () => {
       mockDynamoClient,
       `Bearer ${mockAccessToken}`
     );
-    expect(countAttempts).not.toHaveBeenCalled();
+    expect(getAttempts).not.toHaveBeenCalled();
   });
 
   it("handles a missing or malformed access token", async () => {

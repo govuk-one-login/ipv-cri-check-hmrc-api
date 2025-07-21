@@ -1,11 +1,13 @@
 import { DynamoDBClient, QueryCommand, QueryCommandInput } from "@aws-sdk/client-dynamodb";
+import { unmarshall } from "@aws-sdk/util-dynamodb";
+import { AttemptItem, AttemptsResult } from "../types/attempt";
 
-export async function countAttempts(
+export async function getAttempts(
   attemptTable: string,
   dynamoClient: DynamoDBClient,
   sessionId: string,
   status?: "PASS" | "FAIL"
-): Promise<number> {
+): Promise<AttemptsResult> {
   const statusQueryString = status ? [`attempt = :status`] : "";
   const statusAttribute: QueryCommandInput["ExpressionAttributeValues"] = status ? { ":status": { S: status } } : {};
 
@@ -15,7 +17,6 @@ export async function countAttempts(
 
   const command = new QueryCommand({
     TableName: attemptTable,
-    Select: "COUNT",
     KeyConditionExpression: "sessionId = :value",
     FilterExpression: ["#ttl > :ttl", ...statusQueryString].join(" and "),
     ExpressionAttributeNames: { "#ttl": "ttl" },
@@ -32,5 +33,8 @@ export async function countAttempts(
 
   const result = await dynamoClient.send(command);
 
-  return result.Count ?? 0;
+  return {
+    count: result.Count ?? 0,
+    items: (result.Items ?? []).map((item) => unmarshall(item) as AttemptItem),
+  };
 }

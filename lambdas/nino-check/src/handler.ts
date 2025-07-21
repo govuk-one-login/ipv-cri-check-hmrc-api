@@ -15,9 +15,9 @@ import { callPdvMatchingApi } from "./hmrc-apis/pdv";
 import { safeStringifyError } from "../../common/src/util/stringify-error";
 import { buildPdvInput } from "./helpers/build-pdv-input";
 import { ParsedPdvMatchResponse } from "./hmrc-apis/types/pdv";
-import { countAttempts } from "../../common/src/database/count-attempts";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { PersonIdentityItem } from "../../common/src/database/types/person-identity";
+import { getAttempts } from "../../common/src/database/get-attempts";
 
 initOpenTelemetry();
 
@@ -53,7 +53,11 @@ class NinoCheckHandler implements LambdaInterface {
 
       logger.info(`HMRC config retrieved from SSM.`);
 
-      const pastAttemptCount = await countAttempts(functionConfig.tableNames.attemptTable, dynamoDBClient, sessionId);
+      const { count: pastAttemptCount } = await getAttempts(
+        functionConfig.tableNames.attemptTable,
+        dynamoDBClient,
+        sessionId
+      );
       if (pastAttemptCount > MAX_PAST_ATTEMPTS) {
         captureMetric(`AttemptsExceededMetric`);
         logger.info(`Too many attempts. Returning requestRetry: false.`);
