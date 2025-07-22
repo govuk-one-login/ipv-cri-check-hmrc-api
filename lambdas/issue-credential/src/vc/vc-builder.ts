@@ -1,17 +1,17 @@
 import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
 import { NinoUser } from "../../../common/src/types/nino-user";
 import { VerifiableIdentityCredential, VC_CONTEXT, VC_TYPE, JwtClass } from "../types/verifiable-credential";
-import { NinoIssueSessionItem } from "../../../common/src/types/nino-issue-session-item";
 import { CHECK_METHOD, CheckDetail, DATA_CHECK, Evidence, EVIDENCE_TYPE } from "../types/evidence";
 import { CredentialSubject } from "../types/credential-subject";
 import { AttemptsResult } from "../../../common/src/types/attempt";
 import { ContraIndicator } from "./contraIndicator/ci-mapping-util";
+import { EvidenceRequest, SessionItem } from "../../../common/src/database/types/session-item";
 
 export const buildVerifiableCredential = (
   failedAttempts: AttemptsResult,
   personIdentity: Partial<PersonIdentityItem>,
   ninoUser: Partial<NinoUser>,
-  session: Partial<NinoIssueSessionItem>,
+  session: Partial<SessionItem>,
   jwtClaims: JwtClass,
   funcContraIndicator?: () => ContraIndicator[]
 ): VerifiableIdentityCredential => {
@@ -24,13 +24,25 @@ export const buildVerifiableCredential = (
   };
 
   const hasUserFailedCheck = failedAttempts.count >= 2;
-  const isRecordCheck = !session.evidenceRequest;
+  const checkDetail: CheckDetail = getCheckDetail(session.evidenceRequest);
 
-  const checkDetail: CheckDetail = { checkMethod: CHECK_METHOD };
-  if (isRecordCheck) {
-    checkDetail.dataCheck = DATA_CHECK;
-  }
+  return {
+    ...jwtClaims,
+    vc: {
+      "@context": VC_CONTEXT,
+      credentialSubject,
+      type: VC_TYPE,
+      evidence: [getEvidence(session, hasUserFailedCheck, checkDetail, funcContraIndicator)],
+    },
+  };
+};
 
+const getEvidence = (
+  session: Partial<SessionItem>,
+  hasUserFailedCheck: boolean,
+  checkDetail: CheckDetail,
+  funcContraIndicator?: () => ContraIndicator[]
+) => {
   const evidence: Evidence = { txn: session.txn as string, type: EVIDENCE_TYPE };
   if (hasUserFailedCheck) {
     evidence.failedCheckDetails = [checkDetail];
@@ -49,9 +61,10 @@ export const buildVerifiableCredential = (
       ];
     }
   }
-
-  return {
-    ...jwtClaims,
-    vc: { "@context": VC_CONTEXT, credentialSubject, type: VC_TYPE, evidence: [evidence] },
-  };
+  return evidence;
 };
+
+const getCheckDetail = (evidenceRequest?: EvidenceRequest): CheckDetail => ({
+  checkMethod: CHECK_METHOD,
+  ...(!evidenceRequest && { dataCheck: DATA_CHECK }),
+});

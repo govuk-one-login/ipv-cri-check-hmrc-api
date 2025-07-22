@@ -1,15 +1,15 @@
 import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge";
-import { NinoSessionItem } from "../../../common/src/types/nino-session-item";
 import { AuditUser } from "./nino";
 import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { AuditConfig } from "../../../common/src/config/base-function-config";
+import { SessionItem } from "../../../common/src/database/types/session-item";
 
 const eventsClient = new EventBridgeClient();
 
 const auditPrefix = "IPV_HMRC_RECORD_CHECK_CRI";
 
-function buildAuditUser(session: NinoSessionItem): AuditUser {
+function buildAuditUser(session: SessionItem): AuditUser {
   return {
     govuk_signin_journey_id: session.clientSessionId,
     ip_address: session.clientIpAddress,
@@ -21,7 +21,7 @@ function buildAuditUser(session: NinoSessionItem): AuditUser {
 
 export async function sendRequestSentEvent(
   auditConfig: AuditConfig,
-  session: NinoSessionItem,
+  session: SessionItem,
   personIdentity: PersonIdentityItem,
   nino: string,
   deviceInformation?: string
@@ -52,7 +52,7 @@ export async function sendRequestSentEvent(
 
 export async function sendResponseReceivedEvent(
   auditConfig: AuditConfig,
-  session: NinoSessionItem,
+  session: SessionItem,
   txn: string,
   deviceInformation?: string
 ) {

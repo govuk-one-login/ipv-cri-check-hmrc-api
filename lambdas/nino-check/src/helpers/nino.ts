@@ -5,10 +5,10 @@ import { CriError } from "../../../common/src/errors/cri-error";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { AttemptItem } from "../../../common/src/types/attempt";
 import { logger } from "../../../common/src/util/logger";
-import { NinoSessionItem } from "../../../common/src/types/nino-session-item";
 import { captureMetric } from "../../../common/src/util/metrics";
 import { OtgConfig } from "../hmrc-apis/types/otg";
 import { getParametersValues } from "../../../common/src/util/get-parameters";
+import { SessionItem } from "../../../common/src/database/types/session-item";
 export type HmrcApiConfig = {
   otg: OtgConfig;
   pdv: PdvConfig;
@@ -61,7 +61,7 @@ export async function saveTxn(dynamoClient: DynamoDBClient, sessionTableName: st
 async function saveAttempt(
   dynamoClient: DynamoDBClient,
   attemptTableName: string,
-  session: NinoSessionItem,
+  session: SessionItem,
   matchOutcome: "PASS" | "FAIL",
   status: number,
   error?: string
@@ -88,7 +88,7 @@ async function saveAttempt(
 export async function handleResponseAndSaveAttempt(
   dynamoClient: DynamoDBClient,
   attemptTableName: string,
-  session: NinoSessionItem,
+  session: SessionItem,
   pdvMatchResponse: ParsedPdvMatchResponse
 ): Promise<boolean> {
   const responseHttpStatus = pdvMatchResponse.httpStatus;

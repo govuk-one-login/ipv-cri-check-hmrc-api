@@ -1,11 +1,11 @@
 import { buildVerifiableCredential } from "../../src/vc/vc-builder";
 import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
 import { NinoUser } from "../../../common/src/types/nino-user";
-import { NinoIssueSessionItem } from "../../../common/src/types/nino-issue-session-item";
 import { VerifiableIdentityCredential, VerifiableCredential } from "../../src/types/verifiable-credential";
 import { AttemptItem } from "../../../common/src/types/attempt";
 import { CiMappings } from "../../src/vc/contraIndicator/types/ci-mappings";
 import { getHmrcContraIndicators } from "../../src/vc/contraIndicator";
+import { SessionItem } from "../../../common/src/database/types/session-item";
 
 describe("vc-builder", () => {
   const sessionId = "test-session";
@@ -52,11 +52,11 @@ describe("vc-builder", () => {
         strengthScore: 2,
       };
       it("creates VC with checkDetails when user has passed with score 2 and strength 2", () => {
-        const session: NinoIssueSessionItem = {
+        const session: SessionItem = {
           sessionId: "test-session",
           txn: "mock-txn",
           evidenceRequest,
-        } as NinoIssueSessionItem;
+        } as SessionItem;
 
         const result = buildVerifiableCredential(
           passedAttempt,
@@ -103,11 +103,11 @@ describe("vc-builder", () => {
         });
       });
       it("creates VC with failedCheckDetails and ci non-existent, when user has failed with score 0 and strength 2", () => {
-        const session: NinoIssueSessionItem = {
+        const session: SessionItem = {
           sessionId: "test-session",
           txn: "mock-txn",
           evidenceRequest,
-        } as NinoIssueSessionItem;
+        } as SessionItem;
 
         const result = buildVerifiableCredential(
           failedAttempt,
@@ -156,11 +156,11 @@ describe("vc-builder", () => {
       });
 
       it("creates VC with failedCheckDetails and ci with values, when user has failed with score 0 and strength 2", () => {
-        const session: NinoIssueSessionItem = {
+        const session: SessionItem = {
           sessionId: "test-session",
           txn: "mock-txn",
           evidenceRequest,
-        } as NinoIssueSessionItem;
+        } as SessionItem;
         const contraIndicationMapping = [
           '"An error description, with a comma", aaaa:ci_1',
           '"A second one with, a comma", bbbb,cccc,dddd:ci_2',
@@ -227,10 +227,10 @@ describe("vc-builder", () => {
 
     describe("Record Check", () => {
       it("creates VC with checkDetails and dataCheck exists with record_check value when user has passed without any scores", () => {
-        const session: NinoIssueSessionItem = {
+        const session: SessionItem = {
           sessionId: "test-session",
           txn: "mock-txn",
-        } as NinoIssueSessionItem;
+        } as SessionItem;
 
         const result = buildVerifiableCredential(
           passedAttempt,
@@ -275,10 +275,10 @@ describe("vc-builder", () => {
         });
       });
       it("creates VC with failedCheckDetails and dataCheck exists with record_check and no scores and no ci when user failed", () => {
-        const session: NinoIssueSessionItem = {
+        const session: SessionItem = {
           sessionId: "test-session",
           txn: "mock-txn",
-        } as NinoIssueSessionItem;
+        } as SessionItem;
 
         const result = buildVerifiableCredential(
           failedAttempt,
@@ -325,10 +325,10 @@ describe("vc-builder", () => {
     });
 
     it("preserves JWT claims in the result", () => {
-      const session: NinoIssueSessionItem = {
+      const session: SessionItem = {
         sessionId: "test-session",
         txn: "mock-txn",
-      } as NinoIssueSessionItem;
+      } as SessionItem;
 
       const result = buildVerifiableCredential(passedAttempt, mockPersonIdentity, mockNinoUser, session, mockJwtClaims);
 

@@ -11,7 +11,6 @@ import { LambdaInterface } from "@aws-lambda-powertools/commons";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { dynamoDBClient } from "../../common/src/util/dynamo";
 import { NinoUser } from "../../common/src/types/nino-user";
-import { NinoIssueSessionItem } from "../../common/src/types/nino-issue-session-item";
 import { buildVerifiableCredential } from "./vc/vc-builder";
 import { randomUUID } from "crypto";
 import { PersonIdentityItem } from "../../common/src/database/types/person-identity";
@@ -22,6 +21,7 @@ import { IssueCredFunctionConfig } from "./config/function-config";
 import { CiMappings } from "./vc/contraIndicator/types/ci-mappings";
 import { getHmrcContraIndicators } from "./vc/contraIndicator";
 import { AttemptItem } from "../../common/src/types/attempt";
+import { SessionItem } from "../../common/src/database/types/session-item";
 
 initOpenTelemetry();
 
@@ -85,10 +85,7 @@ class IssueCredentialHandler implements LambdaInterface {
     );
     logger.info("Successfully retrieved the session id.");
 
-    const session: NinoIssueSessionItem = await getSessionBySessionId(
-      functionConfig.tableNames.sessionTable,
-      sessionId
-    );
+    const session: SessionItem = await getSessionBySessionId(functionConfig.tableNames.sessionTable, sessionId);
 
     logger.appendKeys({
       govuk_signin_journey_id: session.clientSessionId,

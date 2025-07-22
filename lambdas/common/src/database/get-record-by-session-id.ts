@@ -6,8 +6,8 @@ import { UnixSecondsTimestamp } from "../types/brands";
 import { logger } from "../util/logger";
 import { dynamoDBClient } from "../util/dynamo";
 import { CriError } from "../errors/cri-error";
-import { NinoIssueSessionItem } from "../types/nino-issue-session-item";
 import { captureMetric } from "../util/metrics";
+import { SessionItem } from "./types/session-item";
 
 export type SessionIdRecord = { sessionId: string; expiryDate?: UnixSecondsTimestamp };
 
@@ -67,7 +67,7 @@ export async function getRecordBySessionId<
 
 export async function getSessionBySessionId(tableName: string, sessionId: string, publishMetric = false) {
   try {
-    return await getRecordBySessionId<NinoIssueSessionItem>(dynamoDBClient, tableName, sessionId, "expiryDate");
+    return await getRecordBySessionId<SessionItem>(dynamoDBClient, tableName, sessionId, "expiryDate");
   } catch (error: unknown) {
     if (publishMetric) {
       captureMetric(`InvalidSessionErrorMetric`);

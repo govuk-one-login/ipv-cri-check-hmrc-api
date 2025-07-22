@@ -13,4 +13,14 @@ export interface SessionItem {
   clientIpAddress: string;
   subject: string;
   persistentSessionId?: string;
+  txn?: string;
+  evidenceRequest?: EvidenceRequest;
 }
+export type EvidenceRequest = {
+  scoringPolicy?: string;
+  strengthScore?: number;
+  validityScore?: number;
+  verificationScore?: number;
+  activityHistoryScore?: number;
+  identityFraudScore?: number;
+};

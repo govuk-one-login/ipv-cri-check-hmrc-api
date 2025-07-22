@@ -1,9 +1,9 @@
 import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
 import { ISO8601DateString, UnixSecondsTimestamp } from "../../../common/src/types/brands";
 import { AttemptItem } from "../../../common/src/types/attempt";
-import { NinoSessionItem } from "../../../common/src/types/nino-session-item";
 import { NinoUser } from "../../../common/src/types/nino-user";
 import { AccessTokenIndexSessionItem } from "../../src/types/access-token-index-session-item";
+import { SessionItem } from "../../src/database/types/session-item";
 
 export const mockTxn = "very good";
 
@@ -13,7 +13,7 @@ export const mockNino = "AA123456B";
 
 const expiryDate = 9999999999 as UnixSecondsTimestamp;
 
-export const mockSession: NinoSessionItem = {
+export const mockSession: SessionItem = {
   sessionId: mockSessionId,
   expiryDate,
   clientId: "magic",
