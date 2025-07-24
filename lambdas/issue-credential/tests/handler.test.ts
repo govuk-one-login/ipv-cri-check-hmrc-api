@@ -1,3 +1,6 @@
+import { mockLogger } from "../../common/tests/logger";
+import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
+
 jest.mock("../../common/src/util/logger", () => ({
   logger: mockLogger,
 }));
@@ -6,12 +9,27 @@ jest.mock("../../common/src/database/get-attempts");
 jest.mock("../../common/src/database/get-record-by-session-id");
 jest.mock("../src/helpers/retrieve-session-by-access-token");
 jest.mock("../src/helpers/retrieve-nino-user");
-jest.mock("../../common/src/util/metrics");
+jest.mock("../../common/src/util/metrics", () => ({
+  metrics: {
+    logMetrics: jest.fn(() => () => {}),
+  },
+}));
 jest.mock("../src/config/function-config");
-
+jest.mock("../src/vc/vc-builder");
+jest.mock("crypto", () => ({
+  randomUUID: jest.fn(() => "mock-uuid-123"),
+}));
+jest.mock("../src/vc/contraIndicator");
+jest.mock("../../common/src/util/date-time", () => ({
+  toEpochSecondsFromNow: jest.fn(() => 1234567890),
+}));
+jest.mock("../../common/src/util/dynamo", () => ({
+  dynamoDBClient: mockDynamoClient,
+}));
 import { mockFunctionConfig } from "../../common/tests/mocks/mockConfig";
 import { BaseFunctionConfig } from "../../common/src/config/base-function-config";
 import { IssueCredFunctionConfig } from "../src/config/function-config";
+import * as VcConfig from "../src/config/function-config";
 (BaseFunctionConfig as unknown as jest.Mock).mockReturnValue(mockFunctionConfig);
 (IssueCredFunctionConfig as unknown as jest.Mock).mockImplementation(() => ({
   ...mockFunctionConfig,
@@ -22,7 +40,6 @@ import { IssueCredFunctionConfig } from "../src/config/function-config";
   },
 }));
 
-import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
 import {
   mockAccessToken,
   mockNinoUser,
@@ -31,13 +48,16 @@ import {
   mockSessionId,
 } from "../../common/tests/mocks/mockData";
 import { APIGatewayProxyEvent, Context } from "aws-lambda";
-import { mockLogger } from "../../common/tests/logger";
 import { handler } from "../src/handler";
 import { retrieveSessionIdByAccessToken } from "../src/helpers/retrieve-session-by-access-token";
 import { getAttempts } from "../../common/src/database/get-attempts";
 import { retrieveNinoUser } from "../src/helpers/retrieve-nino-user";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
-import * as GetParameters from "../../common/src/util/get-parameters";
+import { buildVerifiableCredential } from "../src/vc/vc-builder";
+import { getHmrcContraIndicators } from "../src/vc/contraIndicator";
+
+(buildVerifiableCredential as unknown as jest.Mock).mockReturnValue({ mockVc: "credential" });
+(getHmrcContraIndicators as unknown as jest.Mock).mockReturnValue([]);
 
 const mockContext: Context = {
   awsRequestId: "",
@@ -87,10 +107,12 @@ describe("issue-credential handler", () => {
   });
 
   it("executes successfully with a valid input", async () => {
-    const paramSpy = jest.spyOn(GetParameters, "getParametersValues").mockResolvedValueOnce({
-      "/common-cri-api/verifiableCredentialKmsSigningKeyId": "test-key-id",
-      "/check-hmrc-cri-api/contraindicationMappings": "mapping1||mapping2",
-      "/check-hmrc-cri-api/contraIndicatorReasonsMapping": "{}",
+    const spyVcConfig = jest.spyOn(VcConfig, "getVcConfig").mockResolvedValueOnce({
+      contraIndicator: {
+        errorMapping: ["mapping1", "mapping2"],
+        reasonsMapping: "{}",
+      },
+      kms: { signingKeyId: "some-key-id" },
     });
 
     const response = await handler(...handlerInput);
@@ -99,11 +121,7 @@ describe("issue-credential handler", () => {
       statusCode: 200,
       body: expect.any(String),
     });
-    expect(paramSpy).toHaveBeenCalledWith([
-      "/common-cri-api/verifiableCredentialKmsSigningKeyId",
-      "/check-hmrc-cri-api/contraindicationMappings",
-      "/check-hmrc-cri-api/contraIndicatorReasonsMapping",
-    ]);
+    expect(spyVcConfig).toHaveBeenCalledWith("common-cri-api");
     expect(mockLogger.appendKeys).toHaveBeenCalledWith({ govuk_signin_journey_id: mockSession.clientSessionId });
     expect(getAttempts).toHaveBeenCalledWith(
       mockFunctionConfig.tableNames.attemptTable,

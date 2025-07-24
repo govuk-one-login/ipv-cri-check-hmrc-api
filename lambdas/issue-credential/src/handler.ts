@@ -14,10 +14,9 @@ import { NinoUser } from "../../common/src/types/nino-user";
 import { buildVerifiableCredential } from "./vc/vc-builder";
 import { randomUUID } from "crypto";
 import { PersonIdentityItem } from "../../common/src/database/types/person-identity";
-import { getParametersValues } from "../../common/src/util/get-parameters";
 import { JwtClass } from "./types/verifiable-credential";
 import { TimeUnits, toEpochSecondsFromNow } from "../../common/src/util/date-time";
-import { IssueCredFunctionConfig } from "./config/function-config";
+import { getVcConfig, IssueCredFunctionConfig, VcCheckConfig } from "./config/function-config";
 import { CiMappings } from "./vc/contraIndicator/types/ci-mappings";
 import { getHmrcContraIndicators } from "./vc/contraIndicator";
 import { AttemptItem } from "../../common/src/types/attempt";
@@ -33,21 +32,16 @@ class IssueCredentialHandler implements LambdaInterface {
   public async handler({ headers }: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
     try {
       logger.info(`${context.functionName} invoked.`);
-
       const accessToken = (headers["Authorization"]?.match(/^Bearer [a-zA-Z0-9_-]+$/) ?? [])[0];
 
       if (!accessToken) throw new CriError(400, "You must provide a valid access token");
 
       const { failedAttempts, personIdentity, ninoUser, session } = await this.getCheckedUserData(accessToken);
 
-      const ssmParams = await getParametersValues([
-        `/${functionConfig.credentialIssuerEnv.commonStackName}/verifiableCredentialKmsSigningKeyId`,
-        "/check-hmrc-cri-api/contraindicationMappings",
-        "/check-hmrc-cri-api/contraIndicatorReasonsMapping",
-      ]);
-      logger.info("Successfully retrieved the ssm params.");
+      const vcConfig = await getVcConfig(functionConfig.credentialIssuerEnv.commonStackName);
+      logger.info("Successfully retrieved Verifiable Credential config.");
 
-      const ciMapping: CiMappings = this.getCiMappings(ssmParams, failedAttempts.items);
+      const ciMapping: CiMappings = this.getCiMappings(vcConfig, failedAttempts.items);
 
       logger.info("Building verifiable Credential");
       const vcClaimSet = buildVerifiableCredential(
@@ -68,11 +62,11 @@ class IssueCredentialHandler implements LambdaInterface {
       return handleErrorResponse(error, logger);
     }
   }
-  private getCiMappings(ssmParams: Record<string, string>, failedAttempts: AttemptItem[]): CiMappings {
+  private getCiMappings(vcConfig: VcCheckConfig, failedAttempts: AttemptItem[]): CiMappings {
     logger.info("Generating contraIndicator mapping inputs.");
     return {
-      contraIndicationMapping: ssmParams["/check-hmrc-cri-api/contraindicationMappings"].split("||"),
-      contraIndicatorReasonsMapping: JSON.parse(ssmParams["/check-hmrc-cri-api/contraIndicatorReasonsMapping"]),
+      contraIndicationMapping: vcConfig.contraIndicator.errorMapping,
+      contraIndicatorReasonsMapping: vcConfig.contraIndicator.reasonsMapping,
       hmrcErrors: failedAttempts.map((item) => item.text),
     } as CiMappings;
   }

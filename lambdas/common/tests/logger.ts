@@ -1,7 +1,7 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 
 export const mockLogger = {
-  injectLambdaContext: jest.fn(),
+  injectLambdaContext: jest.fn(() => () => {}),
   addContext: jest.fn(),
   resetKeys: jest.fn(),
   appendKeys: jest.fn(),
