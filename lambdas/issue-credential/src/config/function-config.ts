@@ -26,7 +26,7 @@ export const getVcConfig = async (commonStackName: string) => {
   const reasonsMapping = "/check-hmrc-cri-api/contraIndicatorReasonsMapping";
   try {
     const ssmParams = await getParametersValues([vcSigningKeyId, errorMapping, reasonsMapping], cacheTtlInSeconds);
-    logger.info("Retrieving Check Hmrc VC parameters.");
+    logger.info("Retrieved Check Hmrc VC parameters.");
     return {
       kms: { signingKeyId: ssmParams[vcSigningKeyId] },
       contraIndicator: {

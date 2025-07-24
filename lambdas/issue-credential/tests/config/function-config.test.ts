@@ -126,7 +126,7 @@ describe("function config", () => {
 
         await getVcConfig(mockCommonStackName);
 
-        expect(logger.info).toHaveBeenCalledWith("Retrieving Check Hmrc VC parameters.");
+        expect(logger.info).toHaveBeenCalledWith("Retrieved Check Hmrc VC parameters.");
         expect(logger.info).toHaveBeenCalledTimes(1);
       });
 

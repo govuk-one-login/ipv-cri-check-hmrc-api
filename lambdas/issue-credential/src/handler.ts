@@ -18,7 +18,6 @@ import { JwtClass } from "./types/verifiable-credential";
 import { TimeUnits, toEpochSecondsFromNow } from "../../common/src/util/date-time";
 import { getVcConfig, IssueCredFunctionConfig, VcCheckConfig } from "./config/function-config";
 import { CiMappings } from "./vc/contraIndicator/types/ci-mappings";
-import { getHmrcContraIndicators } from "./vc/contraIndicator";
 import { AttemptItem } from "../../common/src/types/attempt";
 import { SessionItem } from "../../common/src/database/types/session-item";
 
@@ -36,21 +35,21 @@ class IssueCredentialHandler implements LambdaInterface {
 
       if (!accessToken) throw new CriError(400, "You must provide a valid access token");
 
-      const { failedAttempts, personIdentity, ninoUser, session } = await this.getCheckedUserData(accessToken);
+      const { attempts, personIdentity, ninoUser, session } = await this.getCheckedUserData(accessToken);
 
-      const vcConfig = await getVcConfig(functionConfig.credentialIssuerEnv.commonStackName);
+      const vcConfig: VcCheckConfig = await getVcConfig(functionConfig.credentialIssuerEnv.commonStackName);
       logger.info("Successfully retrieved Verifiable Credential config.");
 
-      const ciMapping: CiMappings = this.getCiMappings(vcConfig, failedAttempts.items);
+      const ciMapping: CiMappings = this.getCiMappings(vcConfig, attempts.items);
 
       logger.info("Building verifiable Credential");
       const vcClaimSet = buildVerifiableCredential(
-        failedAttempts,
+        attempts,
         personIdentity,
         ninoUser,
         session,
         await this.generateJwtClaims(session.subject),
-        () => getHmrcContraIndicators(ciMapping)
+        ciMapping
       );
       logger.info("Verifiable Credential Structure generated successfully.");
 
@@ -86,13 +85,8 @@ class IssueCredentialHandler implements LambdaInterface {
     });
     logger.info("Successfully retrieved the session record.");
 
-    const failedAttempts = await getAttempts(
-      functionConfig.tableNames.attemptTable,
-      dynamoDBClient,
-      session.sessionId,
-      "FAIL"
-    );
-    logger.info(`Identified ${failedAttempts.count} failed attempts.`);
+    const attempts = await getAttempts(functionConfig.tableNames.attemptTable, dynamoDBClient, session.sessionId);
+    logger.info(`Identified ${attempts.failedCount} failed attempts.`);
 
     const personIdentity: PersonIdentityItem = await getRecordBySessionId(
       dynamoDBClient,
@@ -109,7 +103,7 @@ class IssueCredentialHandler implements LambdaInterface {
     );
     logger.info("Successfully retrieved the nino user record.");
 
-    return { failedAttempts, session, personIdentity, ninoUser };
+    return { attempts, session, personIdentity, ninoUser };
   }
 
   private async generateJwtClaims(subject: string): Promise<JwtClass> {

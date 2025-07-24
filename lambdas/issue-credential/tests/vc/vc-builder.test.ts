@@ -2,22 +2,29 @@ import { buildVerifiableCredential } from "../../src/vc/vc-builder";
 import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
 import { NinoUser } from "../../../common/src/types/nino-user";
 import { VerifiableIdentityCredential, VerifiableCredential } from "../../src/types/verifiable-credential";
-import { AttemptItem } from "../../../common/src/types/attempt";
+import { AttemptItem, AttemptsResult } from "../../../common/src/types/attempt";
 import { CiMappings } from "../../src/vc/contraIndicator/types/ci-mappings";
-import { getHmrcContraIndicators } from "../../src/vc/contraIndicator";
 import { SessionItem } from "../../../common/src/database/types/session-item";
 
 describe("vc-builder", () => {
   const sessionId = "test-session";
-  const passedAttempt = { count: 1, items: [{ sessionId, attempt: "PASS", status: 200 } as unknown as AttemptItem] };
+  const passedAttempt: AttemptsResult = {
+    count: 1,
+    items: [{ sessionId, attempt: "PASS", status: "200" } as AttemptItem],
+    passedItems: [{ sessionId, attempt: "PASS", status: "200" } as AttemptItem],
+  };
   const failedAttempt = {
     count: 2,
     items: [
       { sessionId, attempt: "FAIL", text: "failed check 1, failed check 2" } as AttemptItem,
       { sessionId, attempt: "FAIL", text: "failed check 1, failed check 2" } as AttemptItem,
     ],
+    failedItems: [
+      { sessionId, attempt: "FAIL", text: "failed check 1, failed check 2" } as AttemptItem,
+      { sessionId, attempt: "FAIL", text: "failed check 1, failed check 2" } as AttemptItem,
+    ],
   };
-  const mockPersonIdentity: Partial<PersonIdentityItem> = {
+  const mockPersonIdentity: PersonIdentityItem = {
     sessionId,
     socialSecurityRecord: [{ personalNumber: "AA000003D" }],
     names: [
@@ -29,12 +36,12 @@ describe("vc-builder", () => {
       },
     ],
     birthDates: [{ value: "1948-04-23" }],
-  };
+  } as PersonIdentityItem;
 
-  const mockNinoUser: Partial<NinoUser> = {
+  const mockNinoUser: NinoUser = {
     sessionId,
     nino: "AA000003D",
-  };
+  } as NinoUser;
 
   const mockJwtClaims: VerifiableIdentityCredential = {
     iss: "https://review-hc.dev.account.gov.uk",
@@ -183,7 +190,7 @@ describe("vc-builder", () => {
           mockNinoUser,
           session,
           mockJwtClaims,
-          () => getHmrcContraIndicators(ciMapping as CiMappings)
+          ciMapping as CiMappings
         );
 
         expect(result).toEqual({

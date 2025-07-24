@@ -32,9 +32,16 @@ export async function getAttempts(
   });
 
   const result = await dynamoClient.send(command);
+  const items: AttemptItem[] = (result.Items ?? []).map((item) => unmarshall(item) as AttemptItem);
+  const failedAttempts = items.filter((i) => i.attempt === "FAIL");
+  const passAttempts = items.filter((i) => i.attempt === "PASS");
 
   return {
+    items,
     count: result.Count ?? 0,
-    items: (result.Items ?? []).map((item) => unmarshall(item) as AttemptItem),
+    failedCount: failedAttempts.length,
+    failedItems: failedAttempts,
+    successCount: passAttempts.length,
+    passedItems: passAttempts,
   };
 }

@@ -126,8 +126,7 @@ describe("issue-credential handler", () => {
     expect(getAttempts).toHaveBeenCalledWith(
       mockFunctionConfig.tableNames.attemptTable,
       mockDynamoClient,
-      mockSession.sessionId,
-      "FAIL"
+      mockSession.sessionId
     );
   });
 
