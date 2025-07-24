@@ -1,5 +1,5 @@
-import { countAttempts } from "../../src/database/count-attempts";
-import { mockSessionId } from "../../../common/tests/mocks/mockData";
+import { getAttempts } from "../../src/database/get-attempts";
+import { mockSessionId } from "../mocks/mockData";
 import { QueryCommand } from "@aws-sdk/client-dynamodb";
 import { UnixSecondsTimestamp } from "../../src/types/brands";
 import { mockDynamoClient } from "../mocks/mockDynamoClient";
@@ -22,7 +22,6 @@ Date.now = jest.fn().mockReturnValue(mockTtl * 1000);
 
 const queryCommand = new QueryCommand({
   TableName: attemptTableName,
-  Select: "COUNT",
   KeyConditionExpression: "sessionId = :value",
   FilterExpression: "#ttl > :ttl",
   ExpressionAttributeNames: {
@@ -38,56 +37,62 @@ const queryCommand = new QueryCommand({
   },
 });
 
-describe("countAttempts()", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+describe("getAttempts()", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("returns the attempt count and items correctly", async () => {
+    mockSendFunction.mockResolvedValueOnce({ Count: 0, Items: [] });
+
+    const result0 = await getAttempts(attemptTableName, mockDynamoClient, mockSessionId);
+
+    expect(mockDynamoClient.send).toHaveBeenCalledWith(queryCommand);
+    expect(result0.count).toBe(0);
+    expect(result0.items).toEqual([]);
+
+    mockSendFunction.mockResolvedValueOnce({
+      Count: 1,
+      Items: [{ sessionId: { S: mockSessionId }, attempt: { S: "PASS" } }],
+    });
+
+    const result1 = await getAttempts(attemptTableName, mockDynamoClient, mockSessionId);
+
+    expect(mockDynamoClient.send).toHaveBeenCalledWith(queryCommand);
+    expect(result1.count).toBe(1);
+    expect(result1.items).toHaveLength(1);
+
+    mockSendFunction.mockResolvedValueOnce({
+      Count: 2,
+      Items: [
+        { sessionId: { S: mockSessionId }, attempt: { S: "PASS" } },
+        { sessionId: { S: mockSessionId }, attempt: { S: "PASS" } },
+      ],
+    });
+
+    const result2 = await getAttempts(attemptTableName, mockDynamoClient, mockSessionId);
+
+    expect(mockDynamoClient.send).toHaveBeenCalledWith(queryCommand);
+    expect(result2.count).toBe(2);
+    expect(result2.items).toHaveLength(2);
   });
 
-  it("returns the attempt count correctly", async () => {
-    mockSendFunction.mockResolvedValue({ Count: 0 });
+  it("returns 0 and empty array if result.Count is unset", async () => {
+    mockSendFunction.mockResolvedValueOnce({});
 
-    const count0 = await countAttempts(attemptTableName, mockDynamoClient, mockSessionId);
-
-    expect(mockDynamoClient.send).toHaveBeenCalledWith(queryCommand);
-    expect(count0).toBe(0);
-
-    mockSendFunction.mockReset();
-
-    mockSendFunction.mockResolvedValue({ Count: 1 });
-
-    const count1 = await countAttempts(attemptTableName, mockDynamoClient, mockSessionId);
+    const result = await getAttempts(attemptTableName, mockDynamoClient, mockSessionId);
 
     expect(mockDynamoClient.send).toHaveBeenCalledWith(queryCommand);
-    expect(count1).toBe(1);
-
-    mockSendFunction.mockReset();
-
-    mockSendFunction.mockResolvedValue({ Count: 2 });
-
-    const count2 = await countAttempts(attemptTableName, mockDynamoClient, mockSessionId);
-
-    expect(mockDynamoClient.send).toHaveBeenCalledWith(queryCommand);
-    expect(count2).toBe(2);
-  });
-
-  it("returns 0 if result.Count is unset", async () => {
-    mockSendFunction.mockResolvedValue({});
-
-    const count = await countAttempts(attemptTableName, mockDynamoClient, mockSessionId);
-
-    expect(mockDynamoClient.send).toHaveBeenCalledWith(queryCommand);
-    expect(count).toBe(0);
+    expect(result.count).toBe(0);
+    expect(result.items).toEqual([]);
   });
 
   it("returns correctly when PASS / FAIL statuses are passed down", async () => {
-    mockSendFunction.mockResolvedValue({ Count: 1 });
+    mockSendFunction.mockResolvedValueOnce({ Count: 1, Items: [] });
 
-    const count1 = await countAttempts(attemptTableName, mockDynamoClient, mockSessionId, "PASS");
+    const result1 = await getAttempts(attemptTableName, mockDynamoClient, mockSessionId, "PASS");
 
     expect(mockDynamoClient.send).toHaveBeenCalledWith(
       new QueryCommand({
         TableName: attemptTableName,
-        Select: "COUNT",
         KeyConditionExpression: "sessionId = :value",
         FilterExpression: "#ttl > :ttl and attempt = :status",
         ExpressionAttributeNames: {
@@ -106,17 +111,15 @@ describe("countAttempts()", () => {
         },
       })
     );
-    expect(count1).toBe(1);
+    expect(result1.count).toBe(1);
 
-    mockSendFunction.mockClear();
-    mockSendFunction.mockResolvedValue({ Count: 5 });
+    mockSendFunction.mockResolvedValueOnce({ Count: 5, Items: [] });
 
-    const count5 = await countAttempts(attemptTableName, mockDynamoClient, mockSessionId, "FAIL");
+    const result5 = await getAttempts(attemptTableName, mockDynamoClient, mockSessionId, "FAIL");
 
     expect(mockDynamoClient.send).toHaveBeenCalledWith(
       new QueryCommand({
         TableName: attemptTableName,
-        Select: "COUNT",
         KeyConditionExpression: "sessionId = :value",
         FilterExpression: "#ttl > :ttl and attempt = :status",
         ExpressionAttributeNames: {
@@ -135,6 +138,6 @@ describe("countAttempts()", () => {
         },
       })
     );
-    expect(count5).toBe(5);
+    expect(result5.count).toBe(5);
   });
 });

@@ -8,3 +8,8 @@ export type AttemptItem = {
   attempt: "PASS" | "FAIL";
   ttl: UnixSecondsTimestamp;
 };
+
+export type AttemptsResult = {
+  count: number;
+  items: AttemptItem[];
+};

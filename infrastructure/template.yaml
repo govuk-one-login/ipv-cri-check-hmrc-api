@@ -1330,6 +1330,12 @@ Resources:
             TableName: !Ref NinoUsersTable
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref CheckHmrcEventBus
+        - SSMParameterReadPolicy:
+            ParameterName: check-hmrc-cri-api/contraindicationMappings
+        - SSMParameterReadPolicy:
+            ParameterName: check-hmrc-cri-api/contraIndicatorReasonsMapping
+        - SSMParameterReadPolicy:
+            ParameterName: !Sub ${CommonStackName}/verifiableCredentialKmsSigningKeyId
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-IssueCredentialFunction"
@@ -1340,7 +1346,10 @@ Resources:
           AUDIT_EVENT_BUS: !Ref CheckHmrcEventBus
           AUDIT_SOURCE: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
           AUDIT_ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
+          MAX_JWT_TTL: !FindInMap [MaxJwtTtl, Environment, !Ref Environment]
+          JWT_TTL_UNIT: !FindInMap [JwtTtlUnit, Environment, !Ref Environment]
           LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
+          COMMON_STACK_NAME: !Sub ${CommonStackName}
 
   IssueCredentialFunctionLogGroup:
     Condition: IsDevLikeEnvironment

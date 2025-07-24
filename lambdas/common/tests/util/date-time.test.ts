@@ -1,4 +1,4 @@
-import { TimeUnits, toEpochSecondsFromNow } from "../../src/utils/date-time";
+import { TimeUnits, toEpochSecondsFromNow } from "../../../common/src/util/date-time";
 
 const monday31st2021InMilliseconds = 1622502000000;
 const monday31st2021InSeconds = 1622502000;
