@@ -12,8 +12,7 @@ describe("evidence-creator", () => {
   } as AttemptsResult;
   const failedAttempt = {
     count: 2,
-    failedCount: 2,
-    failedItems: [
+    items: [
       {
         sessionId,
         attempt: "FAIL",
@@ -41,7 +40,7 @@ describe("evidence-creator", () => {
           evidenceRequest,
         } as SessionItem;
 
-        const result = getEvidence(session, passedAttempt, getCheckDetail(evidenceRequest));
+        const result = getEvidence(session, passedAttempt, getCheckDetail(evidenceRequest), []);
 
         expect(result).toEqual({
           checkDetails: [{ checkMethod: "data" }],
@@ -59,7 +58,7 @@ describe("evidence-creator", () => {
           evidenceRequest,
         };
 
-        const result = getEvidence(session, failedAttempt, getCheckDetail(evidenceRequest));
+        const result = getEvidence(session, failedAttempt, getCheckDetail(evidenceRequest), []);
 
         expect(result).toEqual({
           ci: [],
@@ -77,23 +76,13 @@ describe("evidence-creator", () => {
           txn: "mock-txn",
           evidenceRequest,
         };
-        const contraIndicationMapping = [
-          '"An error description, with a comma", aaaa:ci_1',
-          '"A second one with, a comma", bbbb,cccc,dddd:ci_2',
-          '"Another error, description", eeee,ffff,gggg:ci_3',
-        ];
-        const contraIndicatorReasonsMapping = [
-          { ci: "ci_1", reason: "ci_1 reason" },
-          { ci: "ci_2", reason: "ci_2 reason" },
-          { ci: "ci_3", reason: "ci_3 reason" },
-        ];
-        const ciMapping = {
-          contraIndicationMapping,
-          hmrcErrors: ["eeee", "ffff"],
-          contraIndicatorReasonsMapping,
-        };
 
-        const result = getEvidence(session, failedAttempt, getCheckDetail(evidenceRequest), ciMapping);
+        const result = getEvidence(session, failedAttempt, getCheckDetail(evidenceRequest), [
+          {
+            ci: "ci_3",
+            reason: "ci_3 reason",
+          },
+        ]);
 
         expect(result).toEqual({
           ci: ["ci_3"],
@@ -113,7 +102,7 @@ describe("evidence-creator", () => {
           txn: "mock-txn",
         };
 
-        const result = getEvidence(session, passedAttempt, getCheckDetail());
+        const result = getEvidence(session, passedAttempt, getCheckDetail(), []);
 
         expect(result).toEqual({
           checkDetails: [{ checkMethod: "data", dataCheck: "record_check" }],
@@ -128,7 +117,7 @@ describe("evidence-creator", () => {
           txn: "mock-txn",
         };
 
-        const result = getEvidence(session, failedAttempt, getCheckDetail());
+        const result = getEvidence(session, failedAttempt, getCheckDetail(), []);
 
         expect(result).toEqual({
           failedCheckDetails: [{ checkMethod: "data", dataCheck: "record_check" }],
@@ -153,7 +142,7 @@ describe("evidence-creator", () => {
           evidenceRequest,
         };
 
-        const result = getAuditEvidence(session, passedAttempt, getCheckDetail(evidenceRequest));
+        const result = getAuditEvidence(session, passedAttempt, getCheckDetail(evidenceRequest), []);
 
         expect(result).toEqual({
           attemptNum: 1,
@@ -171,23 +160,13 @@ describe("evidence-creator", () => {
           txn: "mock-txn",
           evidenceRequest,
         };
-        const contraIndicationMapping = [
-          '"An error description, with a comma", aaaa:ci_1',
-          '"A second one with, a comma", bbbb,cccc,dddd:ci_2',
-          '"Another error, description", eeee,ffff,gggg:ci_3',
-        ];
-        const contraIndicatorReasonsMapping = [
-          { ci: "ci_1", reason: "ci_1 reason" },
-          { ci: "ci_2", reason: "ci_2 reason" },
-          { ci: "ci_3", reason: "ci_3 reason" },
-        ];
-        const ciMapping = {
-          contraIndicationMapping,
-          hmrcErrors: ["eeee", "ffff"],
-          contraIndicatorReasonsMapping,
-        };
 
-        const result = getAuditEvidence(session, failedAttempt, getCheckDetail(evidenceRequest), ciMapping);
+        const result = getAuditEvidence(session, failedAttempt, getCheckDetail(evidenceRequest), [
+          {
+            ci: "ci_3",
+            reason: "ci_3 reason",
+          },
+        ]);
 
         expect(result).toEqual({
           attemptNum: 2,
@@ -209,7 +188,7 @@ describe("evidence-creator", () => {
           txn: "mock-txn",
         };
 
-        const result = getAuditEvidence(session, passedAttempt, getCheckDetail());
+        const result = getAuditEvidence(session, passedAttempt, getCheckDetail(), []);
 
         expect(result).toEqual({
           checkDetails: [{ checkMethod: "data", dataCheck: "record_check" }],

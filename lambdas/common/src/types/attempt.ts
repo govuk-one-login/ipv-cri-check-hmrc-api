@@ -12,8 +12,4 @@ export type AttemptItem = {
 export type AttemptsResult = {
   count: number;
   items: AttemptItem[];
-  failedCount?: number;
-  failedItems?: AttemptItem[];
-  successCount?: number;
-  passedItems?: AttemptItem[];
 };

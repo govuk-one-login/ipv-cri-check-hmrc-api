@@ -5,7 +5,7 @@ import { CredentialSubject } from "../types/credential-subject";
 import { AttemptsResult } from "../../../common/src/types/attempt";
 import { SessionItem } from "../../../common/src/database/types/session-item";
 import { getCheckDetail, getEvidence } from "../evidence/evidence-creator";
-import { CiMappings } from "./contraIndicator/types/ci-mappings";
+import { ContraIndicator } from "./contraIndicator/ci-mapping-util";
 
 export const buildVerifiableCredential = (
   attempts: AttemptsResult,
@@ -13,7 +13,7 @@ export const buildVerifiableCredential = (
   ninoUser: NinoUser,
   session: SessionItem,
   jwtClaims: JwtClass,
-  ciMappings?: CiMappings
+  contraIndicators: ContraIndicator[]
 ): VerifiableIdentityCredential => {
   const credentialSubject: CredentialSubject = {
     name: personIdentity.names,
@@ -29,7 +29,7 @@ export const buildVerifiableCredential = (
       "@context": VC_CONTEXT,
       credentialSubject,
       type: VC_TYPE,
-      evidence: [getEvidence(session, attempts, getCheckDetail(session.evidenceRequest), ciMappings)],
+      evidence: [getEvidence(session, attempts, getCheckDetail(session.evidenceRequest), contraIndicators)],
     },
   };
 };

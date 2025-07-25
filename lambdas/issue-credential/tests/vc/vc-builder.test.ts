@@ -3,7 +3,6 @@ import { PersonIdentityItem } from "../../../common/src/database/types/person-id
 import { NinoUser } from "../../../common/src/types/nino-user";
 import { VerifiableIdentityCredential, VerifiableCredential } from "../../src/types/verifiable-credential";
 import { AttemptItem, AttemptsResult } from "../../../common/src/types/attempt";
-import { CiMappings } from "../../src/vc/contraIndicator/types/ci-mappings";
 import { SessionItem } from "../../../common/src/database/types/session-item";
 
 describe("vc-builder", () => {
@@ -11,7 +10,6 @@ describe("vc-builder", () => {
   const passedAttempt: AttemptsResult = {
     count: 1,
     items: [{ sessionId, attempt: "PASS", status: "200" } as AttemptItem],
-    passedItems: [{ sessionId, attempt: "PASS", status: "200" } as AttemptItem],
   };
   const failedAttempt = {
     count: 2,
@@ -70,7 +68,8 @@ describe("vc-builder", () => {
           mockPersonIdentity as PersonIdentityItem,
           mockNinoUser as NinoUser,
           session,
-          mockJwtClaims
+          mockJwtClaims,
+          []
         );
 
         expect(result).toEqual({
@@ -121,7 +120,8 @@ describe("vc-builder", () => {
           mockPersonIdentity,
           mockNinoUser,
           session,
-          mockJwtClaims
+          mockJwtClaims,
+          []
         );
 
         expect(result).toEqual({
@@ -168,21 +168,6 @@ describe("vc-builder", () => {
           txn: "mock-txn",
           evidenceRequest,
         } as SessionItem;
-        const contraIndicationMapping = [
-          '"An error description, with a comma", aaaa:ci_1',
-          '"A second one with, a comma", bbbb,cccc,dddd:ci_2',
-          '"Another error, description", eeee,ffff,gggg:ci_3',
-        ];
-        const contraIndicatorReasonsMapping = [
-          { ci: "ci_1", reason: "ci_1 reason" },
-          { ci: "ci_2", reason: "ci_2 reason" },
-          { ci: "ci_3", reason: "ci_3 reason" },
-        ];
-        const ciMapping = {
-          contraIndicationMapping,
-          hmrcErrors: ["eeee", "ffff"],
-          contraIndicatorReasonsMapping,
-        } as unknown as CiMappings;
 
         const result = buildVerifiableCredential(
           failedAttempt,
@@ -190,7 +175,7 @@ describe("vc-builder", () => {
           mockNinoUser,
           session,
           mockJwtClaims,
-          ciMapping as CiMappings
+          [{ ci: "ci_3", reason: "ci_3 reason" }]
         );
 
         expect(result).toEqual({
@@ -244,7 +229,8 @@ describe("vc-builder", () => {
           mockPersonIdentity,
           mockNinoUser,
           session,
-          mockJwtClaims
+          mockJwtClaims,
+          []
         );
 
         expect(result).toEqual({
@@ -292,7 +278,8 @@ describe("vc-builder", () => {
           mockPersonIdentity,
           mockNinoUser,
           session,
-          mockJwtClaims
+          mockJwtClaims,
+          []
         );
 
         expect(result).toEqual({
@@ -337,7 +324,14 @@ describe("vc-builder", () => {
         txn: "mock-txn",
       } as SessionItem;
 
-      const result = buildVerifiableCredential(passedAttempt, mockPersonIdentity, mockNinoUser, session, mockJwtClaims);
+      const result = buildVerifiableCredential(
+        passedAttempt,
+        mockPersonIdentity,
+        mockNinoUser,
+        session,
+        mockJwtClaims,
+        []
+      );
 
       expect(result.iss).toBe(mockJwtClaims.iss);
       expect(result.jti).toBe(mockJwtClaims.jti);

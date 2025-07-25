@@ -17,9 +17,10 @@ import { PersonIdentityItem } from "../../common/src/database/types/person-ident
 import { JwtClass } from "./types/verifiable-credential";
 import { TimeUnits, toEpochSecondsFromNow } from "../../common/src/util/date-time";
 import { getVcConfig, IssueCredFunctionConfig, VcCheckConfig } from "./config/function-config";
-import { CiMappings } from "./vc/contraIndicator/types/ci-mappings";
 import { AttemptItem } from "../../common/src/types/attempt";
 import { SessionItem } from "../../common/src/database/types/session-item";
+import { ContraIndicator } from "./vc/contraIndicator/ci-mapping-util";
+import { getHmrcContraIndicators } from "./vc/contraIndicator";
 
 initOpenTelemetry();
 
@@ -37,10 +38,13 @@ class IssueCredentialHandler implements LambdaInterface {
 
       const { attempts, personIdentity, ninoUser, session } = await this.getCheckedUserData(accessToken);
 
-      const vcConfig: VcCheckConfig = await getVcConfig(functionConfig.credentialIssuerEnv.commonStackName);
+      const vcConfig = await getVcConfig(functionConfig.credentialIssuerEnv.commonStackName);
       logger.info("Successfully retrieved Verifiable Credential config.");
 
-      const ciMapping: CiMappings = this.getCiMappings(vcConfig, attempts.items);
+      const contraIndicators = this.getContraIndicators(
+        vcConfig,
+        attempts.items.filter((i) => i.attempt === "FAIL")
+      );
 
       logger.info("Building verifiable Credential");
       const vcClaimSet = buildVerifiableCredential(
@@ -49,7 +53,7 @@ class IssueCredentialHandler implements LambdaInterface {
         ninoUser,
         session,
         await this.generateJwtClaims(session.subject),
-        ciMapping
+        contraIndicators
       );
       logger.info("Verifiable Credential Structure generated successfully.");
 
@@ -61,13 +65,13 @@ class IssueCredentialHandler implements LambdaInterface {
       return handleErrorResponse(error, logger);
     }
   }
-  private getCiMappings(vcConfig: VcCheckConfig, failedAttempts: AttemptItem[]): CiMappings {
+  private getContraIndicators(vcConfig: VcCheckConfig, failedAttempts: AttemptItem[]): ContraIndicator[] {
     logger.info("Generating contraIndicator mapping inputs.");
-    return {
+    return getHmrcContraIndicators({
       contraIndicationMapping: vcConfig.contraIndicator.errorMapping,
       contraIndicatorReasonsMapping: vcConfig.contraIndicator.reasonsMapping,
-      hmrcErrors: failedAttempts.map((item) => item.text),
-    } as CiMappings;
+      hmrcErrors: failedAttempts.map((item) => item.text ?? ""),
+    });
   }
 
   private async getCheckedUserData(accessToken: string) {
@@ -86,7 +90,7 @@ class IssueCredentialHandler implements LambdaInterface {
     logger.info("Successfully retrieved the session record.");
 
     const attempts = await getAttempts(functionConfig.tableNames.attemptTable, dynamoDBClient, session.sessionId);
-    logger.info(`Identified ${attempts.failedCount} failed attempts.`);
+    logger.info(`Identified ${attempts.items.filter((i) => i.attempt === "FAIL").length} failed attempts.`);
 
     const personIdentity: PersonIdentityItem = await getRecordBySessionId(
       dynamoDBClient,

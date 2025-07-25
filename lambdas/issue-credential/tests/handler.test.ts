@@ -110,7 +110,7 @@ describe("issue-credential handler", () => {
     const spyVcConfig = jest.spyOn(VcConfig, "getVcConfig").mockResolvedValueOnce({
       contraIndicator: {
         errorMapping: ["mapping1", "mapping2"],
-        reasonsMapping: "{}",
+        reasonsMapping: [],
       },
       kms: { signingKeyId: "some-key-id" },
     });
