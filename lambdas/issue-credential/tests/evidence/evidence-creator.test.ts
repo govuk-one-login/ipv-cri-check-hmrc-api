@@ -1,3 +1,4 @@
+import { SessionItem } from "../../../common/src/database/types/session-item";
 import { AttemptItem, AttemptsResult } from "../../../common/src/types/attempt";
 import { getEvidence, getAuditEvidence, getCheckDetail } from "../../src/evidence/evidence-creator";
 
@@ -38,7 +39,7 @@ describe("evidence-creator", () => {
           sessionId: "test-session",
           txn: "mock-txn",
           evidenceRequest,
-        };
+        } as SessionItem;
 
         const result = getEvidence(session, passedAttempt, getCheckDetail(evidenceRequest));
 

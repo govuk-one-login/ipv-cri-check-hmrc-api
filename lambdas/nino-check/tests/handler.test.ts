@@ -10,6 +10,7 @@ jest.mock("../../common/src/database/get-record-by-session-id");
 jest.mock("../src/hmrc-apis/pdv");
 jest.mock("../src/hmrc-apis/otg");
 jest.mock("../../common/src/util/metrics");
+jest.mock("../../common/src/util/audit");
 
 import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
 import { mockOtgToken, mockPdvRes } from "./mocks/mockData";
@@ -21,7 +22,6 @@ import { mockLogger } from "../../common/tests/logger";
 import { handler } from "../src/handler";
 import { NinoCheckFunctionConfig } from "../src/helpers/function-config";
 import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../src/helpers/nino";
-import { sendRequestSentEvent, sendResponseReceivedEvent } from "../src/helpers/audit";
 import { callPdvMatchingApi } from "../src/hmrc-apis/pdv";
 import { writeCompletedCheck } from "../src/helpers/write-completed-check";
 import { getTokenFromOtg } from "../src/hmrc-apis/otg";
@@ -30,6 +30,7 @@ import { captureMetric } from "../../common/src/util/metrics";
 import { CriError } from "../../common/src/errors/cri-error";
 import { getAttempts as attempts } from "../../common/src/database/get-attempts";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
+import { sendRequestSentEvent, sendResponseReceivedEvent } from "../src/helpers/audit";
 
 const mockContext: Context = {
   awsRequestId: "",
@@ -76,9 +77,7 @@ const handlerInput: Parameters<typeof handler> = [
 (handleResponseAndSaveAttempt as unknown as jest.Mock).mockResolvedValue(true);
 
 describe("nino-check handler", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+  beforeEach(() => jest.clearAllMocks());
 
   it("executes successfully with a valid input", async () => {
     const response = await handler(...handlerInput);

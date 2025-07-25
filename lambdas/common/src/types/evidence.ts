@@ -1,4 +1,4 @@
-import { CiReasonsMapping } from "../vc/contraIndicator/ci-mappings-validator";
+import { CiReasonsMapping } from "../../../issue-credential/src/vc/contraIndicator/ci-mappings-validator";
 
 export const CHECK_METHOD = "data" as const;
 export const DATA_CHECK = "record_check" as const;

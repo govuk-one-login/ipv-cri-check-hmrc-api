@@ -1,79 +1,36 @@
-import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge";
-import { AuditUser } from "./nino";
 import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
-import { marshall } from "@aws-sdk/util-dynamodb";
 import { AuditConfig } from "../../../common/src/config/base-function-config";
 import { SessionItem } from "../../../common/src/database/types/session-item";
+import { sendAuditEvent } from "../../../common/src/util/audit";
+import { REQUEST_SENT, RESPONSE_RECEIVED } from "../../../common/src/types/audit";
+import { Evidence } from "../../../common/src/types/evidence";
 
-const eventsClient = new EventBridgeClient();
-
-const auditPrefix = "IPV_HMRC_RECORD_CHECK_CRI";
-
-function buildAuditUser(session: SessionItem): AuditUser {
-  return {
-    govuk_signin_journey_id: session.clientSessionId,
-    ip_address: session.clientIpAddress,
-    session_id: session.sessionId,
-    user_id: session.subject,
-    persistent_session_id: session.persistentSessionId,
-  };
-}
-
-export async function sendRequestSentEvent(
+export const sendRequestSentEvent = async (
   auditConfig: AuditConfig,
   session: SessionItem,
   personIdentity: PersonIdentityItem,
   nino: string,
   deviceInformation?: string
-) {
-  const user = buildAuditUser(session);
+) => {
+  await sendAuditEvent(REQUEST_SENT, {
+    auditConfig,
+    session,
+    personIdentity,
+    nino,
+    deviceInformation,
+  });
+};
 
-  await eventsClient.send(
-    new PutEventsCommand({
-      Entries: [
-        {
-          DetailType: "REQUEST_SENT",
-          EventBusName: auditConfig.eventBus,
-          Source: auditConfig.source,
-          Detail: JSON.stringify({
-            auditPrefix,
-            user,
-            deviceInformation: deviceInformation,
-            issuer: auditConfig.issuer,
-            nino,
-            // marshall the person identity for consistency with the step function that came before this Lambda
-            userInfoEvent: { Items: [marshall(personIdentity)], Count: 1 },
-          }),
-        },
-      ],
-    })
-  );
-}
-
-export async function sendResponseReceivedEvent(
+export const sendResponseReceivedEvent = async (
   auditConfig: AuditConfig,
   session: SessionItem,
   txn: string,
   deviceInformation?: string
-) {
-  const user = buildAuditUser(session);
-
-  await eventsClient.send(
-    new PutEventsCommand({
-      Entries: [
-        {
-          DetailType: "RESPONSE_RECEIVED",
-          EventBusName: auditConfig.eventBus,
-          Source: auditConfig.source,
-          Detail: JSON.stringify({
-            auditPrefix,
-            user,
-            deviceInformation: deviceInformation,
-            issuer: auditConfig.issuer,
-            evidence: [{ txn }],
-          }),
-        },
-      ],
-    })
-  );
-}
+) => {
+  await sendAuditEvent(RESPONSE_RECEIVED, {
+    auditConfig,
+    session,
+    deviceInformation,
+    evidence: { txn } as Evidence,
+  });
+};

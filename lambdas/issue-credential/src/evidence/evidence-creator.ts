@@ -1,4 +1,4 @@
-import { CHECK_METHOD, CheckDetail, DATA_CHECK, Evidence, EVIDENCE_TYPE } from "../types/evidence";
+import { CHECK_METHOD, CheckDetail, DATA_CHECK, Evidence, EVIDENCE_TYPE } from "../../../common/src/types/evidence";
 import { ContraIndicator } from "../vc/contraIndicator/ci-mapping-util";
 import { EvidenceRequest, SessionItem } from "../../../common/src/database/types/session-item";
 import { CiReasonsMapping } from "../vc/contraIndicator/types/ci-reasons-mapping";
