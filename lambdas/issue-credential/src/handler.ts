@@ -22,7 +22,6 @@ import { getHmrcContraIndicators } from "./vc/contraIndicator";
 import { AttemptItem } from "../../common/src/types/attempt";
 import { SessionItem } from "../../common/src/database/types/session-item";
 import { SignerPayLoad, signJwt } from "./jwt-signer";
-import { JWTHeaderParameters } from "jose";
 
 initOpenTelemetry();
 
