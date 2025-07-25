@@ -5,6 +5,7 @@ import { AuditConfig } from "../config/base-function-config";
 import { SessionItem } from "../database/types/session-item";
 import { AUDIT_PREFIX, AUDIT_EVENT_TYPE } from "../types/audit";
 import { Evidence } from "../types/evidence";
+import { logger } from "./logger";
 
 export type AuditUser = {
   govuk_signin_journey_id: string;
@@ -39,7 +40,8 @@ export async function sendAuditEvent(
   const { auditConfig, session, personIdentity, nino, deviceInformation, evidence } = payload;
   const user = buildAuditUser(session);
 
-  await eventsClient.send(
+  logger.info(`Sending ${eventType} audit event ...`);
+  const response = await eventsClient.send(
     new PutEventsCommand({
       Entries: [
         {
@@ -59,4 +61,9 @@ export async function sendAuditEvent(
       ],
     })
   );
+  if (response.FailedEntryCount && response.FailedEntryCount > 0) {
+    logger.error(`Failed to send ${eventType} audit event: EventBridge Response included failed entries`);
+  } else {
+    logger.info(`${eventType} audit event sent successfully`);
+  }
 }

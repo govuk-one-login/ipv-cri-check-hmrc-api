@@ -1,5 +1,5 @@
 const mockEventBridgeClient = {
-  send: jest.fn(),
+  send: jest.fn().mockResolvedValue({ FailedEntryCount: 0 }),
 };
 const mockPutEventsCommand = jest.fn().mockImplementation((input: PutEventsCommandInput) => ({ op: "put", input }));
 jest.mock("@aws-sdk/client-eventbridge", () => ({

@@ -4,7 +4,7 @@ import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { AbandonHandlerConfig } from "./config/abandon-handler-config";
 import { removeAuthCodeFromSessionRecord } from "./services/abandon-dynamo-service";
 import { CriError } from "../../common/src/errors/cri-error";
-import { createUserAuditInfo, sendAuditEvent } from "./services/abandon-audit-service";
+import { sendAbandonedAuditEvent } from "./services/abandon-audit-service";
 import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
 import { logger } from "../../common/src/util/logger";
 import { getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
@@ -38,9 +38,7 @@ export class AbandonHandler implements LambdaInterface {
 
       await removeAuthCodeFromSessionRecord(this.config.sessionTableName, sessionId);
 
-      const userAuditInfo = createUserAuditInfo(sessionItem);
-
-      await sendAuditEvent(this.config, userAuditInfo, txmaAuditHeader);
+      await sendAbandonedAuditEvent(this.config, sessionItem, txmaAuditHeader);
 
       return {
         statusCode: 200,
