@@ -1,20 +1,21 @@
 import { DynamoDBClient, QueryCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
-import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
 import { AbandonHandler } from "../src/abandon-handler";
 import { APIGatewayProxyEvent, APIGatewayProxyEventHeaders, Context } from "aws-lambda";
 
+jest.mock("../../common/src/util/audit");
+import { sendAuditEvent } from "../../common/src/util/audit";
+
 describe("abandon-handler", () => {
   const ddbMock = mockClient(DynamoDBClient);
-  const ebMock = mockClient(EventBridgeClient);
 
   const now = Math.round(Date.now() / 1000);
   const anHourFromNow = now + 60 * 60;
 
   beforeEach(() => {
     ddbMock.reset();
-    ebMock.reset();
+    jest.clearAllMocks();
   });
 
   it("should successfully return 200", async () => {
@@ -38,11 +39,6 @@ describe("abandon-handler", () => {
     });
 
     ddbMock.on(UpdateItemCommand).resolves({});
-
-    ebMock.on(PutEventsCommand).resolves({
-      Entries: [],
-      FailedEntryCount: 0,
-    });
 
     const event = {
       body: JSON.stringify({}),
@@ -74,17 +70,26 @@ describe("abandon-handler", () => {
       TableName: "session-table",
       UpdateExpression: "SET authorizationCodeExpiryDate = :expiry REMOVE authorizationCode",
     });
-    const receivedCommand = ebMock.calls()[0].args[0] as PutEventsCommand;
-    expect(receivedCommand.input).toEqual({
-      Entries: [
-        {
-          Detail:
-            '{"auditPrefix":"IPV_HMRC_RECORD_CHECK_CRI","user":{"govuk_signin_journey_id":"gov-123","ip_address":"192.0.0.1","session_id":"session-123","user_id":"user-id","persistent_session_id":"persisent-id"},"deviceInformation":"txmaAuditHeader","issuer":"issuer"}',
-          DetailType: "ABANDONED",
-          EventBusName: "bus-name",
-          Source: "bus-source",
-        },
-      ],
+    expect(sendAuditEvent).toHaveBeenCalledWith("ABANDONED", {
+      auditConfig: {
+        eventBus: "bus-name",
+        source: "bus-source",
+        issuer: "issuer",
+      },
+      session: {
+        sessionId: "session-123",
+        clientSessionId: "gov-123",
+        expiryDate: anHourFromNow,
+        clientId: "dummy",
+        authorizationCodeExpiryDate: 0,
+        redirectUri: "dummy",
+        accessToken: "dummy",
+        accessTokenExpiryDate: anHourFromNow,
+        clientIpAddress: "192.0.0.1",
+        subject: "user-id",
+        persistentSessionId: "persisent-id",
+      },
+      deviceInformation: "txmaAuditHeader",
     });
   });
 
@@ -110,11 +115,6 @@ describe("abandon-handler", () => {
 
     ddbMock.on(UpdateItemCommand).resolves({});
 
-    ebMock.on(PutEventsCommand).resolves({
-      Entries: [],
-      FailedEntryCount: 0,
-    });
-
     const event = {
       body: JSON.stringify({}),
       headers: {
@@ -126,17 +126,26 @@ describe("abandon-handler", () => {
     const result = await abandonHandler.handler(event, {} as Context);
 
     expect(result.statusCode).toEqual(200);
-    const receivedCommand = ebMock.calls()[0].args[0] as PutEventsCommand;
-    expect(receivedCommand.input).toEqual({
-      Entries: [
-        {
-          Detail:
-            '{"auditPrefix":"IPV_HMRC_RECORD_CHECK_CRI","user":{"govuk_signin_journey_id":"gov-123","ip_address":"192.0.0.1","session_id":"session-123","user_id":"user-id","persistent_session_id":"persisent-id"},"issuer":"issuer"}',
-          DetailType: "ABANDONED",
-          EventBusName: "bus-name",
-          Source: "bus-source",
-        },
-      ],
+    expect(sendAuditEvent).toHaveBeenCalledWith("ABANDONED", {
+      auditConfig: {
+        eventBus: "bus-name",
+        source: "bus-source",
+        issuer: "issuer",
+      },
+      session: {
+        sessionId: "session-123",
+        clientSessionId: "gov-123",
+        expiryDate: anHourFromNow,
+        clientId: "dummy",
+        authorizationCodeExpiryDate: 0,
+        redirectUri: "dummy",
+        accessToken: "dummy",
+        accessTokenExpiryDate: anHourFromNow,
+        clientIpAddress: "192.0.0.1",
+        subject: "user-id",
+        persistentSessionId: "persisent-id",
+      },
+      deviceInformation: undefined,
     });
   });
 
@@ -253,7 +262,7 @@ describe("abandon-handler", () => {
       Count: 1,
     });
     ddbMock.on(UpdateItemCommand).resolves({});
-    ebMock.on(PutEventsCommand).rejects();
+    (sendAuditEvent as jest.Mock).mockRejectedValue(new Error("Audit failed"));
 
     const event = {
       body: JSON.stringify({}),

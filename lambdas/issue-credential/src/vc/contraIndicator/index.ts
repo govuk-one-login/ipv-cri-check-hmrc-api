@@ -9,6 +9,7 @@ export const getHmrcContraIndicators = (ciMappings: CiMappings): Array<ContraInd
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     if (message === HMRC_ERRORS_ABSENT) {
+      logger.info(`Found no HMRC errors.`);
       return [];
     }
     logger.error({ message: "An unexpected Error has occurred getting HMRC errors", error: message });

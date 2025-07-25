@@ -1,5 +1,5 @@
 import { CredentialSubject } from "./credential-subject";
-import { Evidence } from "./evidence";
+import { Evidence } from "../../../common/src/types/evidence";
 
 export const VC_CONTEXT = [
   "https://www.w3.org/2018/credentials/v1",

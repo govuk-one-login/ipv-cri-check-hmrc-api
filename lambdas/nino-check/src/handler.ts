@@ -10,7 +10,6 @@ import { logger } from "../../common/src/util/logger";
 import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { captureMetric, metrics } from "../../common/src/util/metrics";
 import { getTokenFromOtg } from "./hmrc-apis/otg";
-import { sendRequestSentEvent, sendResponseReceivedEvent } from "./helpers/audit";
 import { callPdvMatchingApi } from "./hmrc-apis/pdv";
 import { safeStringifyError } from "../../common/src/util/stringify-error";
 import { buildPdvInput } from "./helpers/build-pdv-input";
@@ -18,6 +17,7 @@ import { ParsedPdvMatchResponse } from "./hmrc-apis/types/pdv";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { PersonIdentityItem } from "../../common/src/database/types/person-identity";
 import { getAttempts } from "../../common/src/database/get-attempts";
+import { sendRequestSentEvent, sendResponseReceivedEvent } from "./helpers/audit";
 
 initOpenTelemetry();
 
