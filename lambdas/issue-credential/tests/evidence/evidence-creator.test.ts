@@ -136,13 +136,18 @@ describe("evidence-creator", () => {
       };
 
       it("creates audit evidence with checkDetails when user has passed", () => {
-        const session = {
-          sessionId: "test-session",
-          txn: "mock-txn",
-          evidenceRequest,
-        };
+        const evidence = getEvidence(
+          {
+            sessionId: "test-session",
+            txn: "mock-txn",
+            evidenceRequest,
+          },
+          passedAttempt,
+          getCheckDetail(evidenceRequest),
+          []
+        );
 
-        const result = getAuditEvidence(session, passedAttempt, getCheckDetail(evidenceRequest), []);
+        const result = getAuditEvidence(passedAttempt, [], evidence);
 
         expect(result).toEqual({
           attemptNum: 1,
@@ -155,18 +160,24 @@ describe("evidence-creator", () => {
       });
 
       it("creates audit evidence with failedCheckDetails and ciReasons when user has failed", () => {
-        const session = {
-          sessionId: "test-session",
-          txn: "mock-txn",
-          evidenceRequest,
-        };
-
-        const result = getAuditEvidence(session, failedAttempt, getCheckDetail(evidenceRequest), [
+        const contraIndicators = [
           {
             ci: "ci_3",
             reason: "ci_3 reason",
           },
-        ]);
+        ];
+        const evidence = getEvidence(
+          {
+            sessionId: "test-session",
+            txn: "mock-txn",
+            evidenceRequest,
+          },
+          failedAttempt,
+          getCheckDetail(evidenceRequest),
+          contraIndicators
+        );
+
+        const result = getAuditEvidence(failedAttempt, contraIndicators, evidence);
 
         expect(result).toEqual({
           attemptNum: 2,
@@ -183,14 +194,20 @@ describe("evidence-creator", () => {
 
     describe("Record Check", () => {
       it("creates audit evidence with checkDetails without scores when user has passed", () => {
-        const session = {
-          sessionId: "test-session",
-          txn: "mock-txn",
-        };
+        const evidence = getEvidence(
+          {
+            sessionId: "test-session",
+            txn: "mock-txn",
+          },
+          passedAttempt,
+          getCheckDetail(),
+          []
+        );
 
-        const result = getAuditEvidence(session, passedAttempt, getCheckDetail(), []);
+        const result = getAuditEvidence(passedAttempt, [], evidence);
 
         expect(result).toEqual({
+          attemptNum: 1,
           checkDetails: [{ checkMethod: "data", dataCheck: "record_check" }],
           txn: "mock-txn",
           type: "IdentityCheck",

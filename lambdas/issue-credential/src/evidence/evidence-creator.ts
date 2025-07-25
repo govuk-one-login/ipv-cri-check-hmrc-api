@@ -30,26 +30,22 @@ export const getEvidence = (
 };
 
 export const getAuditEvidence = (
-  session: Partial<SessionItem>,
   attempts: AttemptsResult,
-  checkDetail: CheckDetail,
-  contraIndicators: ContraIndicator[]
+  contraIndicators: ContraIndicator[],
+  vcEvidence: Evidence
 ) => {
-  const evidence: Evidence = getEvidence(session, attempts, checkDetail, contraIndicators);
-  if (session.evidenceRequest) {
-    if (evidence.ci?.length) {
-      const validContraIndicators = contraIndicators.filter(isValidContraIndicator);
-      evidence.ciReasons = [
-        ...new Map(
-          validContraIndicators.map((item) => [`${item.ci}@${item.reason}`, { ci: item.ci, reason: item.reason }])
-        ).values(),
-      ];
-      evidence.attemptNum = attempts.items.filter((i) => i.attempt === "FAIL").length;
-      return evidence;
-    }
-    evidence.attemptNum = attempts.items.filter((i) => i.attempt === "PASS").length;
+  if (vcEvidence.ci?.length) {
+    const validContraIndicators = contraIndicators.filter(isValidContraIndicator);
+    vcEvidence.ciReasons = [
+      ...new Map(
+        validContraIndicators.map((item) => [`${item.ci}@${item.reason}`, { ci: item.ci, reason: item.reason }])
+      ).values(),
+    ];
+    vcEvidence.attemptNum = attempts.items.filter((i) => i.attempt === "FAIL").length;
+    return vcEvidence;
   }
-  return evidence;
+  vcEvidence.attemptNum = attempts.items.filter((i) => i.attempt === "PASS").length;
+  return vcEvidence;
 };
 
 export const getCheckDetail = (evidenceRequest?: EvidenceRequest): CheckDetail => ({

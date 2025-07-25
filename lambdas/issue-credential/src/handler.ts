@@ -56,7 +56,6 @@ class IssueCredentialHandler implements LambdaInterface {
         contraIndicators
       );
       logger.info("Verifiable Credential Structure generated successfully.");
-
       return {
         statusCode: 200,
         body: JSON.stringify(vcClaimSet),
