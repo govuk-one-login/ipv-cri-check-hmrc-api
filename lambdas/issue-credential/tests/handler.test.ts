@@ -55,6 +55,7 @@ import { retrieveNinoUser } from "../src/helpers/retrieve-nino-user";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { buildVerifiableCredential } from "../src/vc/vc-builder";
 import { getHmrcContraIndicators } from "../src/vc/contraIndicator";
+import { JwtSigner } from "../src/jwt-signer/jwt-signer";
 
 (buildVerifiableCredential as unknown as jest.Mock).mockReturnValue({ mockVc: "credential" });
 (getHmrcContraIndicators as unknown as jest.Mock).mockReturnValue([]);
@@ -101,8 +102,12 @@ const handlerInput: Parameters<typeof handler> = [
 (getRecordBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockPersonIdentity);
 (retrieveNinoUser as unknown as jest.Mock).mockResolvedValue(mockNinoUser);
 
+const signJwtSpy = jest.spyOn(JwtSigner.prototype, "signJwt");
+const expectedJwt = "header.payload.signature";
 describe("issue-credential handler", () => {
   beforeEach(() => {
+    signJwtSpy.mockResolvedValueOnce(expectedJwt);
+
     jest.clearAllMocks();
   });
 

@@ -21,6 +21,8 @@ import { CiMappings } from "./vc/contraIndicator/types/ci-mappings";
 import { getHmrcContraIndicators } from "./vc/contraIndicator";
 import { AttemptItem } from "../../common/src/types/attempt";
 import { SessionItem } from "../../common/src/database/types/session-item";
+import { SignerPayLoad, signJwt } from "./jwt-signer";
+import { JWTHeaderParameters } from "jose";
 
 initOpenTelemetry();
 
@@ -54,9 +56,15 @@ class IssueCredentialHandler implements LambdaInterface {
       );
       logger.info("Verifiable Credential Structure generated successfully.");
 
+      const payload: SignerPayLoad = {
+        kid: vcConfig.kms.signingKeyId,
+        header: JSON.stringify({ alg: "ES256", typ: "JWT" }),
+        claimsSet: JSON.stringify(vcClaimSet),
+      };
+
       return {
         statusCode: 200,
-        body: JSON.stringify(vcClaimSet),
+        body: JSON.stringify(await signJwt(payload)),
       };
     } catch (error) {
       return handleErrorResponse(error, logger);
