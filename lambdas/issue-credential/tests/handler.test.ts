@@ -13,6 +13,7 @@ jest.mock("../../common/src/util/metrics", () => ({
   metrics: {
     logMetrics: jest.fn(() => () => {}),
   },
+  captureMetric: jest.fn(),
 }));
 jest.mock("../src/config/function-config");
 jest.mock("../src/vc/vc-builder");
@@ -20,6 +21,7 @@ jest.mock("crypto", () => ({
   randomUUID: jest.fn(() => "mock-uuid-123"),
 }));
 jest.mock("../src/vc/contraIndicator");
+jest.mock("../src/evidence/evidence-creator");
 jest.mock("../../common/src/util/date-time", () => ({
   toEpochSecondsFromNow: jest.fn(() => 1234567890),
 }));
@@ -29,7 +31,7 @@ jest.mock("../../common/src/util/dynamo", () => ({
 import { mockFunctionConfig } from "../../common/tests/mocks/mockConfig";
 import { BaseFunctionConfig } from "../../common/src/config/base-function-config";
 import { IssueCredFunctionConfig } from "../src/config/function-config";
-import * as VcConfig from "../src/config/function-config";
+import * as VcConfig from "../src/config/vc-config";
 (BaseFunctionConfig as unknown as jest.Mock).mockReturnValue(mockFunctionConfig);
 (IssueCredFunctionConfig as unknown as jest.Mock).mockImplementation(() => ({
   ...mockFunctionConfig,
@@ -55,9 +57,14 @@ import { retrieveNinoUser } from "../src/helpers/retrieve-nino-user";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { buildVerifiableCredential } from "../src/vc/vc-builder";
 import { getHmrcContraIndicators } from "../src/vc/contraIndicator";
+import { jwtSigner } from "../src/kms-signer/index";
+import * as AuditUtils from "../../common/src/util/audit";
+import * as MetricsUtils from "../../common/src/util/metrics";
+import { getAuditEvidence } from "../src/evidence/evidence-creator";
 
 (buildVerifiableCredential as unknown as jest.Mock).mockReturnValue({ mockVc: "credential" });
 (getHmrcContraIndicators as unknown as jest.Mock).mockReturnValue([]);
+(getAuditEvidence as unknown as jest.Mock).mockReturnValue({ txn: "test-txn", type: "IdentityCheck" });
 
 const mockContext: Context = {
   awsRequestId: "",
@@ -101,13 +108,24 @@ const handlerInput: Parameters<typeof handler> = [
 (getRecordBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockPersonIdentity);
 (retrieveNinoUser as unknown as jest.Mock).mockResolvedValue(mockNinoUser);
 
+const sendAuditEventSpy = jest.spyOn(AuditUtils, "sendAuditEvent");
+const signJwtSpy = jest.spyOn(jwtSigner, "signJwt");
+const captureMetricSpy = jest.spyOn(MetricsUtils, "captureMetric");
+const expectedJwt = "header.payload.signature";
 describe("issue-credential handler", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    signJwtSpy.mockResolvedValueOnce(expectedJwt);
+    sendAuditEventSpy.mockResolvedValueOnce(undefined).mockResolvedValueOnce(undefined);
+    (buildVerifiableCredential as unknown as jest.Mock).mockReturnValueOnce({
+      vc: {
+        evidence: [{ txn: "test-txn", type: "IdentityCheck" }],
+      },
+    });
   });
 
   it("executes successfully with a valid input", async () => {
-    const spyVcConfig = jest.spyOn(VcConfig, "getVcConfig").mockResolvedValueOnce({
+    const spyVcConfig = jest.spyOn(VcConfig, "getVcConfig").mockResolvedValue({
       contraIndicator: {
         errorMapping: ["mapping1", "mapping2"],
         reasonsMapping: [],
@@ -128,6 +146,27 @@ describe("issue-credential handler", () => {
       mockDynamoClient,
       mockSession.sessionId
     );
+    expect(sendAuditEventSpy).toHaveBeenCalledTimes(2);
+    expect(sendAuditEventSpy).toHaveBeenNthCalledWith(
+      1,
+      "VC_ISSUED",
+      expect.objectContaining({
+        auditConfig: mockFunctionConfig.audit,
+        session: mockSession,
+        personIdentity: mockPersonIdentity,
+        nino: mockNinoUser.nino,
+        evidence: expect.any(Object),
+      })
+    );
+    expect(sendAuditEventSpy).toHaveBeenNthCalledWith(
+      2,
+      "END",
+      expect.objectContaining({
+        auditConfig: mockFunctionConfig.audit,
+        session: mockSession,
+      })
+    );
+    expect(captureMetricSpy).toHaveBeenCalledWith("check_hmrc_credentials_issued");
   });
 
   it("handles application errors correctly", async () => {
