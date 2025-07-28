@@ -1336,6 +1336,10 @@ Resources:
             ParameterName: check-hmrc-cri-api/contraIndicatorReasonsMapping
         - SSMParameterReadPolicy:
             ParameterName: !Sub ${CommonStackName}/verifiableCredentialKmsSigningKeyId
+        - Statement:
+            Effect: Allow
+            Action: kms:Sign
+            Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-IssueCredentialFunction"
