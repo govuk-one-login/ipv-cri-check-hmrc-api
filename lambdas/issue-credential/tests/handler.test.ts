@@ -57,10 +57,10 @@ import { retrieveNinoUser } from "../src/helpers/retrieve-nino-user";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { buildVerifiableCredential } from "../src/vc/vc-builder";
 import { getHmrcContraIndicators } from "../src/vc/contraIndicator";
-import { jwtSigner } from "../src/kms-signer/index";
 import * as AuditUtils from "../../common/src/util/audit";
 import * as MetricsUtils from "../../common/src/util/metrics";
 import { getAuditEvidence } from "../src/evidence/evidence-creator";
+import { jwtSigner } from "../src/kms-signer/kms-signer";
 
 (buildVerifiableCredential as unknown as jest.Mock).mockReturnValue({ mockVc: "credential" });
 (getHmrcContraIndicators as unknown as jest.Mock).mockReturnValue([]);
@@ -166,7 +166,7 @@ describe("issue-credential handler", () => {
         session: mockSession,
       })
     );
-    expect(captureMetricSpy).toHaveBeenCalledWith("check_hmrc_credentials_issued");
+    expect(captureMetricSpy).toHaveBeenCalledWith("VCIssuedMetric");
   });
 
   it("handles application errors correctly", async () => {

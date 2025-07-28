@@ -17,17 +17,15 @@ import { PersonIdentityItem } from "../../common/src/database/types/person-ident
 import { JwtClass } from "./types/verifiable-credential";
 import { TimeUnits, toEpochSecondsFromNow } from "../../common/src/util/date-time";
 
-import { AttemptItem } from "../../common/src/types/attempt";
 import { SessionItem } from "../../common/src/database/types/session-item";
-import { ContraIndicator } from "./vc/contraIndicator/ci-mapping-util";
 import { getHmrcContraIndicators } from "./vc/contraIndicator";
-import { jwtSigner } from "./kms-signer/index";
 
 import { END, VC_ISSUED } from "../../common/src/types/audit";
 import { sendAuditEvent } from "../../common/src/util/audit";
 import { getAuditEvidence } from "./evidence/evidence-creator";
 import { IssueCredFunctionConfig } from "./config/function-config";
 import { VcCheckConfig, getVcConfig } from "./config/vc-config";
+import { jwtSigner } from "./kms-signer/kms-signer";
 
 initOpenTelemetry();
 
@@ -41,16 +39,17 @@ class IssueCredentialHandler implements LambdaInterface {
     try {
       logger.info(`${context.functionName} invoked.`);
       const accessToken = (headers["Authorization"]?.match(/^Bearer [a-zA-Z0-9_-]+$/) ?? [])[0];
-
       if (!accessToken) throw new CriError(400, "You must provide a valid access token");
 
       const { attempts, personIdentity, ninoUser, session } = await this.getCheckedUserData(accessToken);
 
-      logger.info("Successfully retrieved Verifiable Credential config.");
+      vcConfig ??= await getVcConfig(functionConfig.credentialIssuerEnv.commonStackName);
+      const contraIndicators = getHmrcContraIndicators({
+        contraIndicationMapping: vcConfig.contraIndicator.errorMapping,
+        contraIndicatorReasonsMapping: vcConfig.contraIndicator.reasonsMapping,
+        hmrcErrors: attempts.items.filter((i) => i.attempt === "FAIL").map((item) => item.text ?? ""),
+      });
 
-      const contraIndicators = await this.getContraIndicators(attempts.items.filter((i) => i.attempt === "FAIL"));
-
-      logger.info("Building verifiable Credential");
       const vcClaimSet = buildVerifiableCredential(
         attempts,
         personIdentity,
@@ -59,7 +58,6 @@ class IssueCredentialHandler implements LambdaInterface {
         await this.generateJwtClaims(session.subject),
         contraIndicators
       );
-      logger.info("Verifiable Credential Structure generated successfully.");
 
       const signedJwt = await jwtSigner.signJwt({
         kid: vcConfig.kms.signingKeyId,
@@ -76,7 +74,7 @@ class IssueCredentialHandler implements LambdaInterface {
         evidence: getAuditEvidence(attempts, contraIndicators, vcEvidence),
       });
 
-      captureMetric("check_hmrc_credentials_issued");
+      captureMetric("VCIssuedMetric");
       await sendAuditEvent(END, {
         auditConfig: functionConfig.audit,
         session,
@@ -90,31 +88,19 @@ class IssueCredentialHandler implements LambdaInterface {
       return handleErrorResponse(error, logger);
     }
   }
-  private async getContraIndicators(failedAttempts: AttemptItem[]): Promise<ContraIndicator[]> {
-    vcConfig ??= await getVcConfig(functionConfig.credentialIssuerEnv.commonStackName);
-
-    logger.info("Generating contraIndicator mapping inputs.");
-    return getHmrcContraIndicators({
-      contraIndicationMapping: vcConfig.contraIndicator.errorMapping,
-      contraIndicatorReasonsMapping: vcConfig.contraIndicator.reasonsMapping,
-      hmrcErrors: failedAttempts.map((item) => item.text ?? ""),
-    });
-  }
-
   private async getCheckedUserData(accessToken: string) {
     const sessionId = await retrieveSessionIdByAccessToken(
       functionConfig.tableNames.sessionTable,
       dynamoDBClient,
       accessToken
     );
-    logger.info("Successfully retrieved the session id.");
 
+    logger.info(`Function initialized. Retrieving session...`);
     const session: SessionItem = await getSessionBySessionId(functionConfig.tableNames.sessionTable, sessionId);
-
     logger.appendKeys({
       govuk_signin_journey_id: session.clientSessionId,
     });
-    logger.info("Successfully retrieved the session record.");
+    logger.info(`Identified government journey id: ${session.clientSessionId}. Retrieving attempts ...`);
 
     const attempts = await getAttempts(functionConfig.tableNames.attemptTable, dynamoDBClient, session.sessionId);
     logger.info(`Identified ${attempts.items.filter((i) => i.attempt === "FAIL").length} failed attempts.`);

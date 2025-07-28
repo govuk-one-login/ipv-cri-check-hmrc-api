@@ -4,6 +4,7 @@ import { SignerPayLoad, SignerHeader } from "./types/signer-payload";
 import { SignageType } from "./types/signage-type";
 import { base64url } from "jose";
 import { KMSClient, MessageType, SignCommand, SigningAlgorithmSpec } from "@aws-sdk/client-kms";
+import { fromEnv } from "@aws-sdk/credential-providers";
 
 const hashInput = (input: Buffer): Uint8Array => createHash("sha256").update(input).digest();
 
@@ -62,4 +63,9 @@ export const signJwt = async (kmsClient: KMSClient, payload: SignerPayLoad): Pro
   const signature = sigFormatter.derToJose(Buffer.from(response).toString("base64"), "ES256");
 
   return `${header}.${claimsSet}.${signature}`;
+};
+
+export const jwtSigner = {
+  signJwt: (payload: SignerPayLoad) =>
+    signJwt(new KMSClient({ region: process.env.AWS_REGION, credentials: fromEnv() }), payload),
 };

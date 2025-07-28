@@ -1,5 +1,4 @@
 import { KMSClient } from "@aws-sdk/client-kms";
-import { signJwt } from "../../src/kms-signer/kms-signer";
 import sigFormatter from "ecdsa-sig-formatter";
 import { SignerPayLoad } from "../../src/kms-signer/types/signer-payload";
 import {
@@ -11,6 +10,7 @@ import {
   jwtHeader,
   largeClaimsSet,
 } from "./test-data";
+import { signJwt } from "../../src/kms-signer/kms-signer";
 
 const kmsClient = jest.mocked(KMSClient).prototype;
 

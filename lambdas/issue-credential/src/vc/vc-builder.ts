@@ -6,6 +6,7 @@ import { AttemptsResult } from "../../../common/src/types/attempt";
 import { SessionItem } from "../../../common/src/database/types/session-item";
 import { getCheckDetail, getEvidence } from "../evidence/evidence-creator";
 import { ContraIndicator } from "./contraIndicator/ci-mapping-util";
+import { logger } from "../../../common/src/util/logger";
 
 export const buildVerifiableCredential = (
   attempts: AttemptsResult,
@@ -15,6 +16,7 @@ export const buildVerifiableCredential = (
   jwtClaims: JwtClass,
   contraIndicators: ContraIndicator[]
 ): VerifiableIdentityCredential => {
+  logger.info("Building verifiable Credential");
   const credentialSubject: CredentialSubject = {
     name: personIdentity.names,
     birthDate: personIdentity.birthDates,
@@ -23,7 +25,7 @@ export const buildVerifiableCredential = (
     }),
   };
 
-  return {
+  const verifiableCredential = {
     ...jwtClaims,
     vc: {
       "@context": VC_CONTEXT,
@@ -32,4 +34,6 @@ export const buildVerifiableCredential = (
       evidence: [getEvidence(session, attempts, getCheckDetail(session.evidenceRequest), contraIndicators)],
     },
   };
+  logger.info("Verifiable Credential Structure generated successfully.");
+  return verifiableCredential;
 };
