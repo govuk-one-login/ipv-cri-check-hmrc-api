@@ -14,14 +14,6 @@ export type HmrcApiConfig = {
   pdv: PdvConfig;
 };
 
-export type AuditUser = {
-  govuk_signin_journey_id: string;
-  ip_address: string;
-  session_id: string;
-  user_id: string;
-  persistent_session_id?: string;
-};
-
 const cacheTtlInSeconds = Number(process.env.POWERTOOLS_PARAMETERS_MAX_AGE) || 300;
 
 export async function getHmrcConfig(clientId: string, pdvUserAgentParamName: string): Promise<HmrcApiConfig> {

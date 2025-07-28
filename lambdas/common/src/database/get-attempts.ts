@@ -32,9 +32,10 @@ export async function getAttempts(
   });
 
   const result = await dynamoClient.send(command);
+  const items: AttemptItem[] = (result.Items ?? []).map((item) => unmarshall(item) as AttemptItem);
 
   return {
+    items,
     count: result.Count ?? 0,
-    items: (result.Items ?? []).map((item) => unmarshall(item) as AttemptItem),
   };
 }
