@@ -128,7 +128,7 @@ describe("End to end happy path journey", () => {
     expect(tokenResponse.status).toEqual(200);
     const accessToken = token.access_token;
 
-    const credIssApiURL = `https://${publicApi}.execute-api.eu-west-2.amazonaws.com/${environment}/credential/issue`;
+    const credIssApiURL = `https://${publicApi}.execute-api.eu-west-2.amazonaws.com/${environment}/credential/issue-test`;
     const credIssResponse = await fetch(credIssApiURL, {
       method: "POST",
       headers: {
