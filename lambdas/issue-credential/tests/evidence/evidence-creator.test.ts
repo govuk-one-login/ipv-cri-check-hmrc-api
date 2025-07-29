@@ -1,6 +1,7 @@
 import { SessionItem } from "../../../common/src/database/types/session-item";
 import { AttemptItem, AttemptsResult } from "../../../common/src/types/attempt";
 import { getEvidence, getAuditEvidence, getCheckDetail } from "../../src/evidence/evidence-creator";
+import * as MetricsUtils from "../../../common/src/util/metrics";
 
 describe("evidence-creator", () => {
   const sessionId = "test-session";
@@ -160,6 +161,7 @@ describe("evidence-creator", () => {
       });
 
       it("creates audit evidence with failedCheckDetails and ciReasons when user has failed", () => {
+        const captureMetricSpy = jest.spyOn(MetricsUtils, "captureMetric");
         const contraIndicators = [
           {
             ci: "ci_3",
@@ -189,6 +191,7 @@ describe("evidence-creator", () => {
           type: "IdentityCheck",
           validityScore: 0,
         });
+        expect(captureMetricSpy).toHaveBeenCalledWith("CIRaisedMetric");
       });
     });
 

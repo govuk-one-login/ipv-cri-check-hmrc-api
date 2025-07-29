@@ -3,6 +3,7 @@ import { ContraIndicator } from "../vc/contraIndicator/ci-mapping-util";
 import { EvidenceRequest, SessionItem } from "../../../common/src/database/types/session-item";
 import { CiReasonsMapping } from "../vc/contraIndicator/types/ci-reasons-mapping";
 import { AttemptsResult } from "../../../common/src/types/attempt";
+import { captureMetric } from "../../../common/src/util/metrics";
 
 export const getEvidence = (
   session: Partial<SessionItem>,
@@ -24,6 +25,7 @@ export const getEvidence = (
     if (hasUserFailedCheck(attempts)) {
       const validContraIndicators = contraIndicators.filter(isValidContraIndicator);
       evidence.ci = [...new Set(validContraIndicators.map((item) => item.ci))];
+      captureMetric("CIRaisedMetric");
     }
   }
   return evidence;
