@@ -4,7 +4,7 @@ import { CriError } from "../../common/src/errors/cri-error";
 import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
 import { logger } from "../../common/src/util/logger";
 import { retrieveSessionIdByAccessToken } from "./helpers/retrieve-session-by-access-token";
-import { metrics } from "../../common/src/util/metrics";
+import { captureMetric, metrics } from "../../common/src/util/metrics";
 import { getAttempts } from "../../common/src/database/get-attempts";
 import { retrieveNinoUser } from "./helpers/retrieve-nino-user";
 import { LambdaInterface } from "@aws-lambda-powertools/commons";
@@ -16,15 +16,21 @@ import { randomUUID } from "crypto";
 import { PersonIdentityItem } from "../../common/src/database/types/person-identity";
 import { JwtClass } from "./types/verifiable-credential";
 import { TimeUnits, toEpochSecondsFromNow } from "../../common/src/util/date-time";
-import { getVcConfig, IssueCredFunctionConfig, VcCheckConfig } from "./config/function-config";
-import { AttemptItem } from "../../common/src/types/attempt";
+
 import { SessionItem } from "../../common/src/database/types/session-item";
-import { ContraIndicator } from "./vc/contraIndicator/ci-mapping-util";
 import { getHmrcContraIndicators } from "./vc/contraIndicator";
+
+import { END, VC_ISSUED } from "../../common/src/types/audit";
+import { sendAuditEvent } from "../../common/src/util/audit";
+import { getAuditEvidence } from "./evidence/evidence-creator";
+import { IssueCredFunctionConfig } from "./config/function-config";
+import { VcCheckConfig, getVcConfig } from "./config/vc-config";
+import { jwtSigner } from "./kms-signer/kms-signer";
 
 initOpenTelemetry();
 
 const functionConfig = new IssueCredFunctionConfig();
+let vcConfig: VcCheckConfig;
 
 class IssueCredentialHandler implements LambdaInterface {
   @logger.injectLambdaContext({ resetKeys: true })
@@ -33,20 +39,17 @@ class IssueCredentialHandler implements LambdaInterface {
     try {
       logger.info(`${context.functionName} invoked.`);
       const accessToken = (headers["Authorization"]?.match(/^Bearer [a-zA-Z0-9_-]+$/) ?? [])[0];
-
       if (!accessToken) throw new CriError(400, "You must provide a valid access token");
 
       const { attempts, personIdentity, ninoUser, session } = await this.getCheckedUserData(accessToken);
 
-      const vcConfig = await getVcConfig(functionConfig.credentialIssuerEnv.commonStackName);
-      logger.info("Successfully retrieved Verifiable Credential config.");
+      vcConfig ??= await getVcConfig(functionConfig.credentialIssuerEnv.commonStackName);
+      const contraIndicators = getHmrcContraIndicators({
+        contraIndicationMapping: vcConfig.contraIndicator.errorMapping,
+        contraIndicatorReasonsMapping: vcConfig.contraIndicator.reasonsMapping,
+        hmrcErrors: attempts.items.filter((i) => i.attempt === "FAIL").map((item) => item.text ?? ""),
+      });
 
-      const contraIndicators = this.getContraIndicators(
-        vcConfig,
-        attempts.items.filter((i) => i.attempt === "FAIL")
-      );
-
-      logger.info("Building verifiable Credential");
       const vcClaimSet = buildVerifiableCredential(
         attempts,
         personIdentity,
@@ -55,38 +58,49 @@ class IssueCredentialHandler implements LambdaInterface {
         await this.generateJwtClaims(session.subject),
         contraIndicators
       );
-      logger.info("Verifiable Credential Structure generated successfully.");
+
+      const signedJwt = await jwtSigner.signJwt({
+        kid: vcConfig.kms.signingKeyId,
+        header: JSON.stringify({ alg: "ES256", typ: "JWT", kid: vcConfig.kms.signingKeyId }),
+        claimsSet: JSON.stringify(vcClaimSet),
+      });
+
+      const [vcEvidence] = vcClaimSet.vc.evidence || [];
+      await sendAuditEvent(VC_ISSUED, {
+        auditConfig: functionConfig.audit,
+        session,
+        personIdentity,
+        nino: ninoUser.nino,
+        evidence: getAuditEvidence(attempts, contraIndicators, vcEvidence),
+      });
+
+      captureMetric("VCIssuedMetric");
+      await sendAuditEvent(END, {
+        auditConfig: functionConfig.audit,
+        session,
+      });
+
       return {
         statusCode: 200,
-        body: JSON.stringify(vcClaimSet),
+        body: JSON.stringify(signedJwt),
       };
-    } catch (error) {
+    } catch (error: unknown) {
       return handleErrorResponse(error, logger);
     }
   }
-  private getContraIndicators(vcConfig: VcCheckConfig, failedAttempts: AttemptItem[]): ContraIndicator[] {
-    logger.info("Generating contraIndicator mapping inputs.");
-    return getHmrcContraIndicators({
-      contraIndicationMapping: vcConfig.contraIndicator.errorMapping,
-      contraIndicatorReasonsMapping: vcConfig.contraIndicator.reasonsMapping,
-      hmrcErrors: failedAttempts.map((item) => item.text ?? ""),
-    });
-  }
-
   private async getCheckedUserData(accessToken: string) {
     const sessionId = await retrieveSessionIdByAccessToken(
       functionConfig.tableNames.sessionTable,
       dynamoDBClient,
       accessToken
     );
-    logger.info("Successfully retrieved the session id.");
 
+    logger.info(`Function initialized. Retrieving session...`);
     const session: SessionItem = await getSessionBySessionId(functionConfig.tableNames.sessionTable, sessionId);
-
     logger.appendKeys({
       govuk_signin_journey_id: session.clientSessionId,
     });
-    logger.info("Successfully retrieved the session record.");
+    logger.info(`Identified government journey id: ${session.clientSessionId}. Retrieving attempts ...`);
 
     const attempts = await getAttempts(functionConfig.tableNames.attemptTable, dynamoDBClient, session.sessionId);
     logger.info(`Identified ${attempts.items.filter((i) => i.attempt === "FAIL").length} failed attempts.`);
