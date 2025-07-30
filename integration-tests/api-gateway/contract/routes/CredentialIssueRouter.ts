@@ -33,7 +33,11 @@ credentialIssueRouter.post("/", async (req, res) => {
   );
 
   const responseBody = await response.text();
-  const body = (response.status === 200) ? formatJwtForPactTest(responseBody) : responseBody;
+  logger.debug(`/credential/issue Response body: ${responseBody}`);
+
+  const body = response.status === 200 ? formatJwtForPactTest(responseBody) : responseBody;
+
+  logger.debug(`formatJwtForPactTest: ${body}`);
 
   for (const [key, value] of response.headers.entries()) {
     res.setHeader(key, value);
@@ -42,9 +46,7 @@ credentialIssueRouter.post("/", async (req, res) => {
   res.send(body);
 });
 
-const convertExpressHeadersToFetchHeaders = (
-  incomingHeaders: IncomingHttpHeaders
-) => {
+const convertExpressHeadersToFetchHeaders = (incomingHeaders: IncomingHttpHeaders) => {
   const headers = new Headers();
   for (const [key, value] of Object.entries(incomingHeaders)) {
     if (key !== "transfer-encoding") {

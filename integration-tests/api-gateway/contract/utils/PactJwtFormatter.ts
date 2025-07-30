@@ -9,9 +9,7 @@ export const formatJwtForPactTest = (body: string) => {
   const vcWithReplacedFields = replaceDynamicVcFieldsIfPresent(parseVc);
   const reorderedVc = reorderVc(vcWithReplacedFields);
 
-  return `${getJwtHeader(body)}.${base64url.encode(
-    JSON.stringify(reorderedVc)
-  )}.`;
+  return `${getJwtHeader(body)}.${base64url.encode(JSON.stringify(reorderedVc))}.`;
 };
 
 const replaceDynamicVcFieldsIfPresent = (parseVc: JWTClaimsSet) => {

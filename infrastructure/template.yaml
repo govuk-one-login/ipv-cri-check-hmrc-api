@@ -1353,6 +1353,8 @@ Resources:
           JWT_TTL_UNIT: !FindInMap [JwtTtlUnit, Environment, !Ref Environment]
           LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
           COMMON_STACK_NAME: !Sub ${CommonStackName}
+          DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+
 
   IssueCredentialFunctionLogGroup:
     Type: AWS::Logs::LogGroup

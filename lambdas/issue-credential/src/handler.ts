@@ -39,6 +39,8 @@ class IssueCredentialHandler implements LambdaInterface {
     try {
       logger.info(`${context.functionName} invoked.`);
       const accessToken = (headers["Authorization"]?.match(/^Bearer [a-zA-Z0-9_-]+$/) ?? [])[0];
+      logger.info(`Access Token: ${accessToken}`);
+
       if (!accessToken) throw new CriError(400, "You must provide a valid access token");
 
       const { attempts, personIdentity, ninoUser, session } = await this.getCheckedUserData(accessToken);
