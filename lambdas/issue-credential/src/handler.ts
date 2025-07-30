@@ -82,7 +82,10 @@ class IssueCredentialHandler implements LambdaInterface {
 
       return {
         statusCode: 200,
-        body: JSON.stringify(signedJwt),
+        headers: {
+          "Content-Type": "application/jwt",
+        },
+        body: signedJwt,
       };
     } catch (error: unknown) {
       return handleErrorResponse(error, logger);

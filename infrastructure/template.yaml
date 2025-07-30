@@ -1301,7 +1301,6 @@ Resources:
       Principal: apigateway.amazonaws.com
 
   IssueCredentialFunction:
-    Condition: IsDevLikeEnvironment
     Type: AWS::Serverless::Function
     Metadata:
       BuildMethod: esbuild
@@ -1356,14 +1355,12 @@ Resources:
           COMMON_STACK_NAME: !Sub ${CommonStackName}
 
   IssueCredentialFunctionLogGroup:
-    Condition: IsDevLikeEnvironment
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/IssueCredentialFunction
       RetentionInDays: 30
 
   IssueCredentialFunctionPermission:
-    Condition: IsDevLikeEnvironment
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction

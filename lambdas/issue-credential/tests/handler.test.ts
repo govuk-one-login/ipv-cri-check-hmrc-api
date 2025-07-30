@@ -137,7 +137,10 @@ describe("issue-credential handler", () => {
 
     expect(response).toStrictEqual({
       statusCode: 200,
-      body: expect.any(String),
+      headers: {
+        "Content-Type": "application/jwt",
+      },
+      body: expectedJwt,
     });
     expect(spyVcConfig).toHaveBeenCalledWith("common-cri-api");
     expect(mockLogger.appendKeys).toHaveBeenCalledWith({ govuk_signin_journey_id: mockSession.clientSessionId });
