@@ -1,8 +1,4 @@
-import {
-  clearAttemptsTable,
-  clearItemsFromTables,
-  populateTables,
-} from "../../../resources/dynamodb-helper";
+import { clearAttemptsTable, clearItemsFromTables, populateTables } from "../../../resources/dynamodb-helper";
 
 type EvidenceRequest = {
   scoringPolicy: string;
@@ -65,6 +61,8 @@ export const clearContractTestsFromDatabase = async () => {
   await clearData("contract-issue-credential-identity-failed");
 };
 
+const expiryDate = 9999999999;
+
 const ninoCheckPassedData = async (
   input: {
     sessionId: string;
@@ -77,6 +75,7 @@ const ninoCheckPassedData = async (
     {
       tableName: `${process.env.NINO_USERS_TABLE}`,
       items: {
+        ttl: expiryDate,
         sessionId: input.sessionId,
         nino: input.nino,
       },
@@ -85,6 +84,7 @@ const ninoCheckPassedData = async (
       tableName: `${process.env.PERSON_IDENTITY_TABLE}`,
       items: {
         sessionId: input.sessionId,
+        expiryDate,
         nino: input.nino,
         birthDates: [{ value: testUser.dob }],
         names: [
@@ -111,6 +111,7 @@ const ninoCheckPassedData = async (
       tableName: `${process.env.USERS_ATTEMPTS_TABLE}`,
       items: {
         sessionId: input.sessionId,
+        ttl: expiryDate,
         timestamp: Date.now().toString(),
         attempts: 1,
         outcome: "PASS",
@@ -131,6 +132,7 @@ const ninoCheckFailedData = async (
     {
       tableName: `${process.env.NINO_USERS_TABLE}`,
       items: {
+        ttl: expiryDate,
         sessionId: input.sessionId,
         nino: input.nino,
       },
@@ -139,6 +141,7 @@ const ninoCheckFailedData = async (
       tableName: `${process.env.PERSON_IDENTITY_TABLE}`,
       items: {
         sessionId: input.sessionId,
+        expiryDate,
         nino: input.nino,
         birthDates: [{ value: testUser.dob }],
         names: [
@@ -165,6 +168,7 @@ const ninoCheckFailedData = async (
       tableName: `${process.env.USERS_ATTEMPTS_TABLE}`,
       items: {
         sessionId: input.sessionId,
+        ttl: expiryDate,
         timestamp: Date.now().toString() + 1,
         attempt: "FAIL",
         status: 200,
@@ -175,6 +179,7 @@ const ninoCheckFailedData = async (
       tableName: `${process.env.USERS_ATTEMPTS_TABLE}`,
       items: {
         sessionId: input.sessionId,
+        ttl: expiryDate,
         timestamp: Date.now().toString(),
         attempt: "FAIL",
         status: 200,
@@ -198,7 +203,7 @@ const getSessionItem = (
   accessToken: accessToken,
   authorizationCode: "cd8ff974-d3bc-4422-9b38-a3e5eb24adc0",
   authorizationCodeExpiryDate: "1698925598",
-  expiryDate: "9999999999",
+  expiryDate,
   subject: "test",
   clientId: "exampleClientId",
   clientIpAddress: "00.100.8.20",
