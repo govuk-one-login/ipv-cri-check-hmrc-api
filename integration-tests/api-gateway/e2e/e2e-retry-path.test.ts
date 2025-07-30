@@ -9,16 +9,8 @@ import {
   AUDIENCE,
 } from "../env-variables";
 import { decodeJwt, JWK } from "jose";
-import {
-  clearAttemptsTable,
-  clearItemsFromTables,
-} from "../../resources/dynamodb-helper";
-import {
-  authorizationEndpoint,
-  checkEndpoint,
-  createSession,
-  getJarAuthorization,
-} from "../endpoints";
+import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamodb-helper";
+import { authorizationEndpoint, checkEndpoint, createSession, getJarAuthorization } from "../endpoints";
 import { generatePrivateJwtParams } from "../crypto/private-key-jwt-helper";
 
 let sessionData: Response;
@@ -40,11 +32,7 @@ describe("Retry Scenario Path Tests", () => {
 
     sessionTableName = `${process.env.SESSION_TABLE}`;
 
-    privateSigningKey = JSON.parse(
-      `${await getSSMParameter(
-        `/${testResourcesStack}/${CLIENT_ID}/privateSigningKey`
-      )}`
-    );
+    privateSigningKey = JSON.parse(`${await getSSMParameter(`/${testResourcesStack}/${CLIENT_ID}/privateSigningKey`)}`);
   });
 
   beforeEach(async () => {
@@ -87,11 +75,7 @@ describe("Retry Scenario Path Tests", () => {
   });
 
   it("Should generate a CI when failing the nino check", async () => {
-    let checkRetryResponse = await checkEndpoint(
-      privateApi,
-      { "session-id": sessionId },
-      NINO
-    );
+    let checkRetryResponse = await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
 
     const checkData = checkRetryResponse.status;
     const checkBody = JSON.parse(await checkRetryResponse.text());
@@ -101,11 +85,7 @@ describe("Retry Scenario Path Tests", () => {
       requestRetry: true,
     });
 
-    checkRetryResponse = await checkEndpoint(
-      privateApi,
-      { "session-id": sessionId },
-      NINO
-    );
+    checkRetryResponse = await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
 
     const checkResponseBody = JSON.parse(await checkRetryResponse.text());
 
@@ -114,13 +94,7 @@ describe("Retry Scenario Path Tests", () => {
       requestRetry: false,
     });
 
-    const authResponse = await authorizationEndpoint(
-      privateApi,
-      sessionId,
-      CLIENT_ID,
-      REDIRECT_URL,
-      state
-    );
+    const authResponse = await authorizationEndpoint(privateApi, sessionId, CLIENT_ID, REDIRECT_URL, state);
 
     const authData = await authResponse.json();
     expect(authResponse.status).toEqual(200);
@@ -155,9 +129,12 @@ describe("Retry Scenario Path Tests", () => {
         Authorization: `Bearer ${accessToken}`,
       },
     });
-    expect(credIssResponse.status).toEqual(200);
+
+    expect(credIssResponse.status).toBe(200);
 
     const VC = await credIssResponse.text();
+
+    expect(credIssResponse.headers.get("Content-Type")).toBe("application/jwt");
     expect(VC).toBeDefined();
 
     const decodedVc = decodeJwt(VC);

@@ -9,16 +9,8 @@ import {
   AUDIENCE,
 } from "../env-variables";
 import { decodeJwt, JWK } from "jose";
-import {
-  clearAttemptsTable,
-  clearItemsFromTables,
-} from "../../resources/dynamodb-helper";
-import {
-  authorizationEndpoint,
-  checkEndpoint,
-  createSession,
-  getJarAuthorization,
-} from "../endpoints";
+import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamodb-helper";
+import { authorizationEndpoint, checkEndpoint, createSession, getJarAuthorization } from "../endpoints";
 import { generatePrivateJwtParams } from "../crypto/private-key-jwt-helper";
 
 let sessionData: Response;
@@ -35,11 +27,7 @@ describe("End to end happy path journey", () => {
   let privateSigningKey: JWK | undefined;
 
   beforeAll(async () => {
-    privateSigningKey = JSON.parse(
-      `${await getSSMParameter(
-        `/${testResourcesStack}/${CLIENT_ID}/privateSigningKey`
-      )}`
-    );
+    privateSigningKey = JSON.parse(`${await getSSMParameter(`/${testResourcesStack}/${CLIENT_ID}/privateSigningKey`)}`);
   });
 
   beforeEach(async () => {
@@ -83,11 +71,7 @@ describe("End to end happy path journey", () => {
   });
 
   it("Should receive a successful VC when valid name and NINO are entered", async () => {
-    const checkRetryResponse = await checkEndpoint(
-      privateApi,
-      { "session-id": sessionId },
-      NINO
-    );
+    const checkRetryResponse = await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
 
     const checkData = checkRetryResponse.status;
     const checkBody = JSON.parse(await checkRetryResponse.text());
@@ -96,13 +80,7 @@ describe("End to end happy path journey", () => {
       requestRetry: false,
     });
 
-    const authResponse = await authorizationEndpoint(
-      privateApi,
-      sessionId,
-      CLIENT_ID,
-      REDIRECT_URL,
-      state
-    );
+    const authResponse = await authorizationEndpoint(privateApi, sessionId, CLIENT_ID, REDIRECT_URL, state);
 
     const authData = await authResponse.json();
     expect(authResponse.status).toEqual(200);
@@ -136,9 +114,10 @@ describe("End to end happy path journey", () => {
         Authorization: `Bearer ${accessToken}`,
       },
     });
-    expect(credIssResponse.status).toEqual(200);
+    expect(credIssResponse.status).toBe(200);
 
     const VC = await credIssResponse.text();
+    expect(credIssResponse.headers.get("Content-Type")).toBe("application/jwt");
     expect(VC).toBeDefined();
 
     const decodedVc = decodeJwt(VC);
