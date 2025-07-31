@@ -39,6 +39,7 @@ class IssueCredentialHandler implements LambdaInterface {
     try {
       logger.info(`${context.functionName} invoked.`);
       const accessToken = (headers["Authorization"]?.match(/^Bearer [a-zA-Z0-9_-]+$/) ?? [])[0];
+
       if (!accessToken) throw new CriError(400, "You must provide a valid access token");
 
       const { attempts, personIdentity, ninoUser, session } = await this.getCheckedUserData(accessToken);
@@ -61,7 +62,7 @@ class IssueCredentialHandler implements LambdaInterface {
 
       const signedJwt = await jwtSigner.signJwt({
         kid: vcConfig.kms.signingKeyId,
-        header: JSON.stringify({ alg: "ES256", typ: "JWT", kid: vcConfig.kms.signingKeyId }),
+        header: JSON.stringify({ typ: "JWT", alg: "ES256", kid: vcConfig.kms.signingKeyId }),
         claimsSet: JSON.stringify(vcClaimSet),
       });
 
@@ -128,14 +129,14 @@ class IssueCredentialHandler implements LambdaInterface {
 
   private async generateJwtClaims(subject: string): Promise<JwtClass> {
     return {
-      iss: functionConfig.audit.issuer,
-      jti: `urn:uuid:${randomUUID().toString()}`,
+      sub: subject,
       nbf: toEpochSecondsFromNow(),
+      iss: functionConfig.audit.issuer,
       exp: toEpochSecondsFromNow(
         functionConfig.credentialIssuerEnv.maxJwtTtl,
         functionConfig.credentialIssuerEnv.jwtTtlUnit as TimeUnits
       ),
-      sub: subject,
+      jti: `urn:uuid:${randomUUID().toString()}`,
     };
   }
 }
