@@ -1,20 +1,41 @@
-const mockEventBridgeClient = {
-  send: jest.fn().mockResolvedValue({ FailedEntryCount: 0 }),
+const mockSqsClient = {
+  send: jest.fn().mockResolvedValue({ $metadata: { httpStatusCode: 200 } }),
 };
-const mockPutEventsCommand = jest.fn().mockImplementation((input: PutEventsCommandInput) => ({ op: "put", input }));
-jest.mock("@aws-sdk/client-eventbridge", () => ({
-  EventBridgeClient: jest.fn().mockImplementation(() => mockEventBridgeClient),
-  PutEventsCommand: mockPutEventsCommand,
+const mockSendMessageCommand = jest
+  .fn()
+  .mockImplementation((input: SendMessageCommandInput) => ({ op: "send", input }));
+jest.mock("@aws-sdk/client-sqs", () => ({
+  SQSClient: jest.fn().mockImplementation(() => mockSqsClient),
+  SendMessageCommand: mockSendMessageCommand,
 }));
 
-import { PutEventsCommandInput } from "@aws-sdk/client-eventbridge";
 import { mockDeviceInformationHeader } from "../../../nino-check/tests/mocks/mockConfig";
-import { mockNino, mockPersonIdentity, mockSession, mockTxn } from "../mocks/mockData";
-import { marshall } from "@aws-sdk/util-dynamodb";
+import { mockSession, mockTxn } from "../mocks/mockData";
 import { mockAuditConfig } from "../mocks/mockConfig";
-import { AUDIT_PREFIX, REQUEST_SENT, RESPONSE_RECEIVED } from "../../src/types/audit";
+import { AUDIT_PREFIX, AuditEvent, AuditUser, REQUEST_SENT } from "../../src/types/audit";
 import { sendAuditEvent } from "../../src/util/audit";
-import { Evidence } from "../../src/types/evidence";
+import { SendMessageCommand, SendMessageCommandInput } from "@aws-sdk/client-sqs";
+import { UnixMillisecondsTimestamp, UnixSecondsTimestamp } from "../../src/types/brands";
+
+Date.now = jest.fn().mockReturnValue(9090909);
+
+const mockAuditUser: AuditUser = {
+  govuk_signin_journey_id: mockSession.clientSessionId,
+  ip_address: mockSession.clientIpAddress,
+  session_id: mockSession.sessionId,
+  user_id: mockSession.subject,
+  persistent_session_id: mockSession.persistentSessionId,
+};
+
+const validBaseEvent: AuditEvent = {
+  client_id: mockSession.clientId,
+  component_id: mockAuditConfig.componentId,
+  event_name: `${AUDIT_PREFIX}_${REQUEST_SENT}`,
+  event_timestamp_ms: 9090909 as UnixMillisecondsTimestamp,
+  timestamp: 9091 as UnixSecondsTimestamp,
+  user: mockAuditUser,
+};
+
 describe("sendAuditEvent()", () => {
   describe("using as sendRequestSentEvent()", () => {
     beforeEach(() => {
@@ -22,141 +43,31 @@ describe("sendAuditEvent()", () => {
     });
 
     it("sends the event correctly given valid input", async () => {
-      await sendAuditEvent(REQUEST_SENT, {
-        auditConfig: mockAuditConfig,
-        session: mockSession,
-        personIdentity: mockPersonIdentity,
-        nino: mockNino,
-        deviceInformation: mockDeviceInformationHeader,
-      });
+      const context = {
+        restricted: { device_information: { encoded: mockDeviceInformationHeader } },
+        extensions: { evidence: { txn: mockTxn } },
+      };
 
-      expect(mockEventBridgeClient.send).toHaveBeenCalledWith(
-        new mockPutEventsCommand({
-          Entries: [
-            {
-              DetailType: REQUEST_SENT,
-              EventBusName: mockAuditConfig.eventBus,
-              Source: mockAuditConfig.source,
-              Detail: JSON.stringify({
-                auditPrefix: AUDIT_PREFIX,
-                user: {
-                  govuk_signin_journey_id: mockSession.clientSessionId,
-                  ip_address: mockSession.clientIpAddress,
-                  session_id: mockSession.sessionId,
-                  user_id: mockSession.subject,
-                  persistent_session_id: mockSession.persistentSessionId,
-                },
-                deviceInformation: mockDeviceInformationHeader,
-                issuer: mockAuditConfig.issuer,
-                nino: mockNino,
-                userInfoEvent: { Items: [marshall(mockPersonIdentity)], Count: 1 },
-              }),
-            },
-          ],
+      await sendAuditEvent(REQUEST_SENT, mockAuditConfig, mockSession, context);
+
+      expect(mockSqsClient.send).toHaveBeenCalledWith(
+        new SendMessageCommand({
+          QueueUrl: mockAuditConfig.queueUrl,
+          MessageBody: JSON.stringify({
+            ...validBaseEvent,
+            ...context,
+          }),
         })
       );
     });
 
-    it("handles a missing device information header correctly", async () => {
-      await sendAuditEvent(REQUEST_SENT, {
-        auditConfig: mockAuditConfig,
-        session: mockSession,
-        personIdentity: mockPersonIdentity,
-        nino: mockNino,
-      });
+    it("works correctly when context parameter is unset", async () => {
+      await sendAuditEvent(REQUEST_SENT, mockAuditConfig, mockSession);
 
-      expect(mockEventBridgeClient.send).toHaveBeenCalledWith(
-        new mockPutEventsCommand({
-          Entries: [
-            {
-              DetailType: REQUEST_SENT,
-              EventBusName: mockAuditConfig.eventBus,
-              Source: mockAuditConfig.source,
-              Detail: JSON.stringify({
-                auditPrefix: AUDIT_PREFIX,
-                user: {
-                  govuk_signin_journey_id: mockSession.clientSessionId,
-                  ip_address: mockSession.clientIpAddress,
-                  session_id: mockSession.sessionId,
-                  user_id: mockSession.subject,
-                  persistent_session_id: mockSession.persistentSessionId,
-                },
-                issuer: mockAuditConfig.issuer,
-                nino: mockNino,
-                userInfoEvent: { Items: [marshall(mockPersonIdentity)], Count: 1 },
-              }),
-            },
-          ],
-        })
-      );
-    });
-  });
-
-  describe("using as sendResponseReceivedEvent()", () => {
-    beforeEach(() => jest.clearAllMocks());
-
-    it("sends the event correctly given valid input", async () => {
-      await sendAuditEvent(RESPONSE_RECEIVED, {
-        auditConfig: mockAuditConfig,
-        session: mockSession,
-        deviceInformation: mockDeviceInformationHeader,
-        evidence: { txn: mockTxn } as Evidence,
-      });
-
-      expect(mockEventBridgeClient.send).toHaveBeenCalledWith(
-        new mockPutEventsCommand({
-          Entries: [
-            {
-              DetailType: RESPONSE_RECEIVED,
-              EventBusName: mockAuditConfig.eventBus,
-              Source: mockAuditConfig.source,
-              Detail: JSON.stringify({
-                auditPrefix: AUDIT_PREFIX,
-                user: {
-                  govuk_signin_journey_id: mockSession.clientSessionId,
-                  ip_address: mockSession.clientIpAddress,
-                  session_id: mockSession.sessionId,
-                  user_id: mockSession.subject,
-                  persistent_session_id: mockSession.persistentSessionId,
-                },
-                deviceInformation: mockDeviceInformationHeader,
-                issuer: mockAuditConfig.issuer,
-                evidence: [{ txn: mockTxn }],
-              }),
-            },
-          ],
-        })
-      );
-    });
-
-    it("handles a missing device information header correctly", async () => {
-      await sendAuditEvent(RESPONSE_RECEIVED, {
-        auditConfig: mockAuditConfig,
-        session: mockSession,
-        evidence: { txn: mockTxn } as Evidence,
-      });
-
-      expect(mockEventBridgeClient.send).toHaveBeenCalledWith(
-        new mockPutEventsCommand({
-          Entries: [
-            {
-              DetailType: RESPONSE_RECEIVED,
-              EventBusName: mockAuditConfig.eventBus,
-              Source: mockAuditConfig.source,
-              Detail: JSON.stringify({
-                auditPrefix: AUDIT_PREFIX,
-                user: {
-                  govuk_signin_journey_id: mockSession.clientSessionId,
-                  ip_address: mockSession.clientIpAddress,
-                  session_id: mockSession.sessionId,
-                  user_id: mockSession.subject,
-                  persistent_session_id: mockSession.persistentSessionId,
-                },
-                issuer: mockAuditConfig.issuer,
-                evidence: [{ txn: mockTxn }],
-              }),
-            },
-          ],
+      expect(mockSqsClient.send).toHaveBeenCalledWith(
+        new SendMessageCommand({
+          QueueUrl: mockAuditConfig.queueUrl,
+          MessageBody: JSON.stringify(validBaseEvent),
         })
       );
     });

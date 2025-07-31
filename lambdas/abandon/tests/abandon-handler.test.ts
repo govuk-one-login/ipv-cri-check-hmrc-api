@@ -1,11 +1,21 @@
 import { DynamoDBClient, QueryCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
-import { AbandonHandler } from "../src/abandon-handler";
 import { APIGatewayProxyEvent, APIGatewayProxyEventHeaders, Context } from "aws-lambda";
+
+process.env.SESSION_TABLE = "session-table";
+process.env.ISSUER = "issuer";
+process.env.AUDIT_QUEUE_URL = "cool-queuez.com";
+process.env.AUDIT_COMPONENT_ID = "https://check-hmrc-time.account.gov.uk";
+import { AbandonHandler } from "../src/abandon-handler";
 
 jest.mock("../../common/src/util/audit");
 import { sendAuditEvent } from "../../common/src/util/audit";
+
+const auditConfig = {
+  queueUrl: "cool-queuez.com",
+  componentId: "https://check-hmrc-time.account.gov.uk",
+};
 
 describe("abandon-handler", () => {
   const ddbMock = mockClient(DynamoDBClient);
@@ -70,13 +80,10 @@ describe("abandon-handler", () => {
       TableName: "session-table",
       UpdateExpression: "SET authorizationCodeExpiryDate = :expiry REMOVE authorizationCode",
     });
-    expect(sendAuditEvent).toHaveBeenCalledWith("ABANDONED", {
-      auditConfig: {
-        eventBus: "bus-name",
-        source: "bus-source",
-        issuer: "issuer",
-      },
-      session: {
+    expect(sendAuditEvent).toHaveBeenCalledWith(
+      "ABANDONED",
+      auditConfig,
+      {
         sessionId: "session-123",
         clientSessionId: "gov-123",
         expiryDate: anHourFromNow,
@@ -89,8 +96,8 @@ describe("abandon-handler", () => {
         subject: "user-id",
         persistentSessionId: "persisent-id",
       },
-      deviceInformation: "txmaAuditHeader",
-    });
+      { restricted: { device_information: { encoded: "txmaAuditHeader" } } }
+    );
   });
 
   it("should successfully return 200 without txma-audit-encoded header", async () => {
@@ -126,13 +133,10 @@ describe("abandon-handler", () => {
     const result = await abandonHandler.handler(event, {} as Context);
 
     expect(result.statusCode).toEqual(200);
-    expect(sendAuditEvent).toHaveBeenCalledWith("ABANDONED", {
-      auditConfig: {
-        eventBus: "bus-name",
-        source: "bus-source",
-        issuer: "issuer",
-      },
-      session: {
+    expect(sendAuditEvent).toHaveBeenCalledWith(
+      "ABANDONED",
+      auditConfig,
+      {
         sessionId: "session-123",
         clientSessionId: "gov-123",
         expiryDate: anHourFromNow,
@@ -145,8 +149,8 @@ describe("abandon-handler", () => {
         subject: "user-id",
         persistentSessionId: "persisent-id",
       },
-      deviceInformation: undefined,
-    });
+      undefined
+    );
   });
 
   it("should return a 400 when no session-id header", async () => {

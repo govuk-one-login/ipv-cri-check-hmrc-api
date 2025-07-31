@@ -2,7 +2,6 @@ jest.mock("../../common/src/util/logger", () => ({
   logger: mockLogger,
 }));
 jest.mock("../src/helpers/write-completed-check");
-jest.mock("../src/helpers/audit");
 jest.mock("../src/helpers/function-config");
 jest.mock("../src/helpers/nino");
 jest.mock("../../common/src/database/get-attempts");
@@ -30,7 +29,8 @@ import { captureMetric } from "../../common/src/util/metrics";
 import { CriError } from "../../common/src/errors/cri-error";
 import { getAttempts as attempts } from "../../common/src/database/get-attempts";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
-import { sendRequestSentEvent, sendResponseReceivedEvent } from "../src/helpers/audit";
+import { sendAuditEvent } from "../../common/src/util/audit";
+import { REQUEST_SENT, RESPONSE_RECEIVED } from "../../common/src/types/audit";
 
 const mockContext: Context = {
   awsRequestId: "",
@@ -91,13 +91,16 @@ describe("nino-check handler", () => {
     expect(mockLogger.appendKeys).toHaveBeenCalledWith({
       govuk_signin_journey_id: mockSession.clientSessionId,
     });
-    expect(sendRequestSentEvent).toHaveBeenCalledWith(
-      mockFunctionConfig.audit,
-      mockSession,
-      mockPersonIdentity,
-      mockNino,
-      mockDeviceInformationHeader
-    );
+    expect(sendAuditEvent).toHaveBeenCalledWith(REQUEST_SENT, mockFunctionConfig.audit, mockSession, {
+      restricted: {
+        birthDate: mockPersonIdentity.birthDates,
+        name: mockPersonIdentity.names,
+        socialSecurityRecord: [{ personalNumber: mockNino }],
+        device_information: {
+          encoded: mockDeviceInformationHeader,
+        },
+      },
+    });
     expect(callPdvMatchingApi).toHaveBeenCalledWith(
       mockHmrcConfig.pdv,
       mockOtgToken,
@@ -109,12 +112,18 @@ describe("nino-check handler", () => {
       mockSessionId,
       mockPdvRes.txn
     );
-    expect(sendResponseReceivedEvent).toHaveBeenCalledWith(
-      mockFunctionConfig.audit,
-      mockSession,
-      mockPdvRes.txn,
-      mockDeviceInformationHeader
-    );
+    expect(sendAuditEvent).toHaveBeenCalledWith(RESPONSE_RECEIVED, mockFunctionConfig.audit, mockSession, {
+      restricted: {
+        device_information: {
+          encoded: mockDeviceInformationHeader,
+        },
+      },
+      extensions: {
+        evidence: {
+          txn: mockPdvRes.txn,
+        },
+      },
+    });
     expect(handleResponseAndSaveAttempt).toHaveBeenCalledWith(
       mockDynamoClient,
       mockFunctionConfig.tableNames.attemptTable,
@@ -178,7 +187,10 @@ describe("nino-check handler", () => {
   it("behaves correctly if ninoMatch is false", async () => {
     (handleResponseAndSaveAttempt as unknown as jest.Mock).mockReturnValueOnce(false);
 
-    const response = await handler(...handlerInput);
+    const response = await handler(
+      { ...handlerInput[0], headers: { ...handlerInput[0].headers, "txma-audit-encoded": undefined } },
+      handlerInput[1]
+    );
 
     expect(response).toStrictEqual({
       statusCode: 200,
