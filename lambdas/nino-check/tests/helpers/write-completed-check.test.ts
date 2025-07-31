@@ -1,10 +1,9 @@
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { writeCompletedCheck } from "../../src/helpers/write-completed-check";
-import { mockSaveRes } from "../mocks/mockConfig";
+import { mockSaveRes, mockTableNames } from "../mocks/mockConfig";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
 import { mockNino, mockSession, mockSessionId } from "../../../common/tests/mocks/mockData";
-import { mockTableNames } from "../../../common/tests/mocks/mockConfig";
 jest.mock("../../../common/src/util/logger");
 
 const mockDynamoClient = mockClient(DynamoDBClient);
