@@ -1,15 +1,9 @@
 import { clearAttemptsTable, clearItemsFromTables, populateTables } from "../../../resources/dynamodb-helper";
+import { testUser } from "../../user";
 
 type EvidenceRequest = {
   scoringPolicy: string;
   strengthScore: number;
-};
-
-const testUser = {
-  nino: "AA000003D",
-  dob: "1965-07-08",
-  firstName: "Kenneth",
-  lastName: "Decerqueira",
 };
 
 export const populateDatabaseForContractTests = async () => {

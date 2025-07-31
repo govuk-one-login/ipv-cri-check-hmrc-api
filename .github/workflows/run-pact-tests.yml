@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   run-pact-tests:
-    name: Contact Tests
+    name: Contract Tests
     runs-on: ubuntu-latest
     environment: development
     steps:
