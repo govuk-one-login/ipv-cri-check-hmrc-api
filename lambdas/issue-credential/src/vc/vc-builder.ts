@@ -8,6 +8,10 @@ import { getCheckDetail, getEvidence } from "../evidence/evidence-creator";
 import { ContraIndicator } from "./contraIndicator/ci-mapping-util";
 import { logger } from "../../../common/src/util/logger";
 
+/**
+ * Builds a Verifiable Credential (VC) need all fields to be in the order
+ * specified for PACT tests.
+ */
 export const buildVerifiableCredential = (
   attempts: AttemptsResult,
   personIdentity: PersonIdentityItem,
@@ -18,21 +22,25 @@ export const buildVerifiableCredential = (
 ): VerifiableIdentityCredential => {
   logger.info("Building verifiable Credential");
   const credentialSubject: CredentialSubject = {
-    name: personIdentity.names,
-    birthDate: personIdentity.birthDates,
     ...(ninoUser.nino && {
       socialSecurityRecord: [{ personalNumber: ninoUser.nino }],
     }),
+    birthDate: personIdentity.birthDates,
+    name: personIdentity.names,
   };
 
   const verifiableCredential = {
-    ...jwtClaims,
+    sub: jwtClaims.sub,
+    nbf: jwtClaims.nbf,
+    iss: jwtClaims.iss,
+    exp: jwtClaims.exp,
     vc: {
-      "@context": VC_CONTEXT,
+      evidence: [getEvidence(session, attempts, getCheckDetail(session.evidenceRequest), contraIndicators)],
       credentialSubject,
       type: VC_TYPE,
-      evidence: [getEvidence(session, attempts, getCheckDetail(session.evidenceRequest), contraIndicators)],
+      "@context": VC_CONTEXT,
     },
+    jti: jwtClaims.jti,
   };
   logger.info("Verifiable Credential Structure generated successfully.");
   return verifiableCredential;

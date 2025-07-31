@@ -1,4 +1,4 @@
-import { base64url, decodeJwt, decodeProtectedHeader, JWTPayload } from "jose";
+import { base64url, decodeJwt, decodeProtectedHeader } from "jose";
 import { JWTClaimsSet } from "../../types";
 
 export const formatJwtForPactTest = (body: string) => {
@@ -7,11 +7,7 @@ export const formatJwtForPactTest = (body: string) => {
   const parseVc = JSON.parse(stringifyVc);
 
   const vcWithReplacedFields = replaceDynamicVcFieldsIfPresent(parseVc);
-  const reorderedVc = reorderVc(vcWithReplacedFields);
-
-  return `${getJwtHeader(body)}.${base64url.encode(
-    JSON.stringify(reorderedVc)
-  )}.`;
+  return `${getJwtHeader(body)}.${base64url.encode(JSON.stringify(vcWithReplacedFields))}.`;
 };
 
 const replaceDynamicVcFieldsIfPresent = (parseVc: JWTClaimsSet) => {
@@ -21,17 +17,6 @@ const replaceDynamicVcFieldsIfPresent = (parseVc: JWTClaimsSet) => {
   parseVc.jti = parseVc.jti == null ? parseVc.jti : "dummyJti";
   return parseVc;
 };
-
-const reorderVc = (vc: JWTPayload) => ({
-  sub: vc.sub,
-  nbf: vc.nbf,
-  iss: vc.iss,
-  exp: vc.exp,
-  vc: vc.vc,
-  type: vc.type,
-  context: vc["@context"],
-  jti: vc.jti,
-});
 
 const getJwtHeader = (body: string) => {
   const jwtHeader = decodeProtectedHeader(body);

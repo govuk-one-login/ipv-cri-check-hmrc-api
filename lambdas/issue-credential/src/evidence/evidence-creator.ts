@@ -10,7 +10,7 @@ export const getEvidence = (
   attempts: AttemptsResult,
   checkDetail: CheckDetail,
   contraIndicators: ContraIndicator[]
-) => {
+): Evidence => {
   const evidence: Evidence = { txn: session.txn as string, type: EVIDENCE_TYPE };
   if (hasUserFailedCheck(attempts)) {
     evidence.failedCheckDetails = [checkDetail];
@@ -28,7 +28,16 @@ export const getEvidence = (
       captureMetric("CIRaisedMetric");
     }
   }
-  return evidence;
+  //PACT expects the evidence to be in this order
+  return {
+    type: EVIDENCE_TYPE,
+    strengthScore: evidence.strengthScore,
+    validityScore: evidence.validityScore,
+    failedCheckDetails: evidence.failedCheckDetails,
+    checkDetails: evidence.checkDetails,
+    ci: evidence.ci,
+    txn: evidence.txn,
+  };
 };
 
 export const getAuditEvidence = (
