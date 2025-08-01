@@ -1,13 +1,5 @@
 import { getSSMParameter } from "../../resources/ssm-param-helper";
-import {
-  NINO,
-  getClaimSet,
-  environment,
-  testResourcesStack,
-  CLIENT_ID,
-  REDIRECT_URL,
-  AUDIENCE,
-} from "../env-variables";
+import { NINO, claimSet, environment, CLIENT_ID, REDIRECT_URL, AUDIENCE } from "../env-variables";
 import { decodeJwt, JWK } from "jose";
 import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamodb-helper";
 import { authorizationEndpoint, checkEndpoint, createSession, getJarAuthorization } from "../endpoints";
@@ -21,6 +13,10 @@ let publicApi: string;
 
 jest.setTimeout(35_000);
 
+const retryClaimSet = JSON.parse(JSON.stringify(claimSet));
+retryClaimSet.shared_claims.name[0].nameParts[0].value = "Error";
+retryClaimSet.shared_claims.name[0].nameParts[1].value = "NoCidForNino";
+
 describe("Retry Scenario Path Tests", () => {
   let sessionId: string;
   let sessionTableName: string;
@@ -32,20 +28,15 @@ describe("Retry Scenario Path Tests", () => {
 
     sessionTableName = `${process.env.SESSION_TABLE}`;
 
-    privateSigningKey = JSON.parse(`${await getSSMParameter(`/${testResourcesStack}/${CLIENT_ID}/privateSigningKey`)}`);
+    privateSigningKey = JSON.parse(
+      `${await getSSMParameter(`/${process.env.TEST_RESOURCES_STACK_NAME}/${CLIENT_ID}/privateSigningKey`)}`
+    );
   });
 
   beforeEach(async () => {
-    const payload = await getClaimSet();
-    payload.shared_claims.name[0].nameParts[0].value = "Error";
-    payload.shared_claims.name[0].nameParts[1].value = "NoCidForNino";
-    payload.evidence_requested = {
-      scoringPolicy: "gpg45",
-      strengthScore: 2,
-    };
     const data = await getJarAuthorization({
-      claimsOverride: payload.shared_claims,
-      evidenceRequested: payload.evidence_requested,
+      claimsOverride: retryClaimSet.shared_claims,
+      evidenceRequested: retryClaimSet.evidence_requested,
     });
     const request = await data.json();
     sessionData = await createSession(privateApi, request);

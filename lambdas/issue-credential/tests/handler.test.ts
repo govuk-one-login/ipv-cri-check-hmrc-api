@@ -24,23 +24,15 @@ jest.mock("../src/vc/contraIndicator");
 jest.mock("../src/evidence/evidence-creator");
 jest.mock("../../common/src/util/date-time", () => ({
   toEpochSecondsFromNow: jest.fn(() => 1234567890),
+  TimeUnits: { Hours: "Hours" },
 }));
 jest.mock("../../common/src/util/dynamo", () => ({
   dynamoDBClient: mockDynamoClient,
 }));
-import { mockFunctionConfig } from "../../common/tests/mocks/mockConfig";
-import { BaseFunctionConfig } from "../../common/src/config/base-function-config";
 import { IssueCredFunctionConfig } from "../src/config/function-config";
 import * as VcConfig from "../src/config/vc-config";
-(BaseFunctionConfig as unknown as jest.Mock).mockReturnValue(mockFunctionConfig);
-(IssueCredFunctionConfig as unknown as jest.Mock).mockImplementation(() => ({
-  ...mockFunctionConfig,
-  credentialIssuerEnv: {
-    maxJwtTtl: 1,
-    jwtTtlUnit: "seconds",
-    commonStackName: "common-cri-api",
-  },
-}));
+import { mockFunctionConfig } from "./mocks/mockConfig";
+(IssueCredFunctionConfig as unknown as jest.Mock).mockReturnValue(mockFunctionConfig);
 
 import {
   mockAccessToken,
@@ -142,7 +134,7 @@ describe("issue-credential handler", () => {
       },
       body: expectedJwt,
     });
-    expect(spyVcConfig).toHaveBeenCalledWith("common-cri-api");
+    expect(spyVcConfig).toHaveBeenCalledWith("big-stack");
     expect(mockLogger.appendKeys).toHaveBeenCalledWith({ govuk_signin_journey_id: mockSession.clientSessionId });
     expect(getAttempts).toHaveBeenCalledWith(
       mockFunctionConfig.tableNames.attemptTable,
@@ -153,22 +145,24 @@ describe("issue-credential handler", () => {
     expect(sendAuditEventSpy).toHaveBeenNthCalledWith(
       1,
       "VC_ISSUED",
+      mockFunctionConfig.audit,
+      mockSession,
       expect.objectContaining({
-        auditConfig: mockFunctionConfig.audit,
-        session: mockSession,
-        personIdentity: mockPersonIdentity,
-        nino: mockNinoUser.nino,
-        evidence: expect.any(Object),
+        restricted: {
+          birthDate: mockPersonIdentity.birthDates,
+          name: mockPersonIdentity.names,
+          socialSecurityRecord: [
+            {
+              personalNumber: mockNinoUser.nino,
+            },
+          ],
+        },
+        extensions: {
+          evidence: expect.any(Object),
+        },
       })
     );
-    expect(sendAuditEventSpy).toHaveBeenNthCalledWith(
-      2,
-      "END",
-      expect.objectContaining({
-        auditConfig: mockFunctionConfig.audit,
-        session: mockSession,
-      })
-    );
+    expect(sendAuditEventSpy).toHaveBeenNthCalledWith(2, "END", mockFunctionConfig.audit, mockSession);
     expect(captureMetricSpy).toHaveBeenCalledWith("VCIssuedMetric");
   });
 

@@ -4,8 +4,8 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { NinoUser } from "../../../common/src/types/nino-user";
 import { logger } from "../../../common/src/util/logger";
-import { TableNames } from "../../../common/src/config/base-function-config";
 import { SessionItem } from "../../../common/src/database/types/session-item";
+import { TableNames } from "./function-config";
 
 export async function writeCompletedCheck(
   dynamoClient: DynamoDBClient,

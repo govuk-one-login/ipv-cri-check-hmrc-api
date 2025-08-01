@@ -45,18 +45,21 @@ export const getAuditEvidence = (
   contraIndicators: ContraIndicator[],
   vcEvidence: Evidence
 ) => {
+  let attemptNum: number;
+  let ciReasons: ContraIndicator[] | undefined;
   if (vcEvidence.ci?.length) {
     const validContraIndicators = contraIndicators.filter(isValidContraIndicator);
-    vcEvidence.ciReasons = [
+    ciReasons = [
       ...new Map(
         validContraIndicators.map((item) => [`${item.ci}@${item.reason}`, { ci: item.ci, reason: item.reason }])
       ).values(),
     ];
-    vcEvidence.attemptNum = attempts.items.filter((i) => i.attempt === "FAIL").length;
-    return vcEvidence;
+    attemptNum = attempts.items.filter((i) => i.attempt === "FAIL").length;
+  } else {
+    attemptNum = attempts.items.filter((i) => i.attempt === "PASS").length;
   }
-  vcEvidence.attemptNum = attempts.items.filter((i) => i.attempt === "PASS").length;
-  return vcEvidence;
+
+  return { ...vcEvidence, attemptNum, ciReasons };
 };
 
 export const getCheckDetail = (evidenceRequest?: EvidenceRequest): CheckDetail => ({
