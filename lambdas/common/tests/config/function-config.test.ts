@@ -7,11 +7,12 @@ const validEnvVars = {
   PERSON_IDENTITY_TABLE: "person-identity-table",
   ATTEMPT_TABLE: "attempt-table",
   NINO_USER_TABLE: "nino-user-table",
-  AUDIT_QUEUE_URL: "cool-queuez.com",
-  AUDIT_COMPONENT_ID: "https://check-hmrc-time.account.gov.uk",
+  AUDIT_EVENT_BUS: "audit-event-bus",
+  AUDIT_SOURCE: "audit-source",
+  AUDIT_ISSUER: "audit-issuer",
 };
 
-describe("NINo Check function config", () => {
+describe("NINo Check function getConfig()", () => {
   beforeEach(() => {
     process.env = {
       ...process.env,
@@ -27,16 +28,22 @@ describe("NINo Check function config", () => {
     const config = new BaseFunctionConfig();
 
     expect(config).toEqual({
+      tableNames: {
+        sessionTable: "session-table",
+        personIdentityTable: "person-identity-table",
+        attemptTable: "attempt-table",
+        ninoUserTable: "nino-user-table",
+      },
       audit: {
-        queueUrl: "cool-queuez.com",
-        componentId: "https://check-hmrc-time.account.gov.uk",
+        eventBus: "audit-event-bus",
+        source: "audit-source",
+        issuer: "audit-issuer",
       },
     });
-    expect(config.tableNames).toEqual({ sessionTable: "session-table" });
   });
 
   it("throws an error for a missing config value", () => {
-    process.env.SESSION_TABLE = "";
-    expect(() => new BaseFunctionConfig()).toThrow("SESSION_TABLE");
+    process.env.NINO_USER_TABLE = "";
+    expect(() => new BaseFunctionConfig()).toThrow("NINO_USER_TABLE");
   });
 });
