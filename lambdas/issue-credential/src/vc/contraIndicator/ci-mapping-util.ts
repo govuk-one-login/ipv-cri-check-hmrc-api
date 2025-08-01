@@ -1,7 +1,7 @@
 export type HmrcErrsCiRecord = Record<"mappedHmrcErrors" | "ciValue", string>;
 export type ContraIndicator = {
-  ci: string;
-  reason: string;
+  ci?: string;
+  reason?: string;
 };
 
 export const getHmrcErrsCiRecord = (pair: string): HmrcErrsCiRecord => {

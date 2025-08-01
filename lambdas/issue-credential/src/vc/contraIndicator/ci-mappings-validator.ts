@@ -50,7 +50,7 @@ export const getContraIndicatorWithReason = (
 ): ContraIndicator[] => {
   return contraIndicators.map((c) => ({
     ci: c.ci,
-    reason: ciReasons?.find((r) => areCIsEqual(r.ci, c.ci))?.reason ?? "",
+    reason: ciReasons?.find((r) => areCIsEqual(r.ci, c.ci))?.reason,
   }));
 };
 

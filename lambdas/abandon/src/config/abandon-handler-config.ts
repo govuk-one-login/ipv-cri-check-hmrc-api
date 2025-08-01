@@ -1,17 +1,34 @@
-import { BaseFunctionConfig } from "../../../common/src/config/base-function-config";
-
-const envVarNames = {
-  vcIssuer: "ISSUER",
-};
-
-export class AbandonHandlerConfig extends BaseFunctionConfig {
+export class AbandonHandlerConfig {
+  readonly sessionTableName;
   readonly issuer;
+  readonly eventBusName;
+  readonly eventBusSource;
 
   constructor() {
-    super();
+    const sessionTableName = process.env.SESSION_TABLE_NAME;
+    const issuer = process.env.ISSUER;
+    const eventBusName = process.env.EVENT_BUS_NAME;
+    const eventBusSource = process.env.EVENT_BUS_SOURCE;
 
-    Object.values(envVarNames).forEach(BaseFunctionConfig.checkEnvEntry);
+    if (!sessionTableName) {
+      throw new Error("SESSION_TABLE_NAME environment variable is required");
+    }
 
-    this.issuer = process.env[envVarNames.vcIssuer];
+    if (!issuer) {
+      throw new Error("ISSUER environment variable is required");
+    }
+
+    if (!eventBusName) {
+      throw new Error("EVENT_BUS_NAME environment variable is required");
+    }
+
+    if (!eventBusSource) {
+      throw new Error("EVENT_BUS_SOURCE environment variable is required");
+    }
+
+    this.sessionTableName = sessionTableName;
+    this.issuer = issuer;
+    this.eventBusName = eventBusName;
+    this.eventBusSource = eventBusSource;
   }
 }
