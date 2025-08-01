@@ -7,9 +7,9 @@ const validEnvVars = {
   PERSON_IDENTITY_TABLE: "person-identity-table",
   ATTEMPT_TABLE: "attempt-table",
   NINO_USER_TABLE: "nino-user-table",
-  AUDIT_EVENT_BUS: "audit-event-bus",
-  AUDIT_SOURCE: "audit-source",
-  AUDIT_ISSUER: "audit-issuer",
+  AUDIT_QUEUE_URL: "cool-queuez.com",
+  AUDIT_COMPONENT_ID: "https://check-hmrc-time.account.gov.uk",
+  ISSUER: "bob",
   MAX_JWT_TTL: "3600",
   JWT_TTL_UNIT: "seconds",
   COMMON_STACK_NAME: "common-stack",
@@ -32,22 +32,22 @@ describe("function config", () => {
       const config = new IssueCredFunctionConfig();
 
       expect(config).toEqual({
-        tableNames: {
-          sessionTable: "session-table",
-          personIdentityTable: "person-identity-table",
-          attemptTable: "attempt-table",
-          ninoUserTable: "nino-user-table",
-        },
         audit: {
-          eventBus: "audit-event-bus",
-          source: "audit-source",
-          issuer: "audit-issuer",
+          queueUrl: "cool-queuez.com",
+          componentId: "https://check-hmrc-time.account.gov.uk",
         },
         credentialIssuerEnv: {
+          issuer: "bob",
           maxJwtTtl: 3600,
           jwtTtlUnit: "seconds",
           commonStackName: "common-stack",
         },
+      });
+      expect(config.tableNames).toEqual({
+        sessionTable: "session-table",
+        personIdentityTable: "person-identity-table",
+        attemptTable: "attempt-table",
+        ninoUserTable: "nino-user-table",
       });
     });
 
