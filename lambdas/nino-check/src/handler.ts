@@ -17,8 +17,7 @@ import { ParsedPdvMatchResponse } from "./hmrc-apis/types/pdv";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { PersonIdentityItem } from "../../common/src/database/types/person-identity";
 import { getAttempts } from "../../common/src/database/get-attempts";
-import { sendAuditEvent } from "../../common/src/util/audit";
-import { REQUEST_SENT, RESPONSE_RECEIVED } from "../../common/src/types/audit";
+import { sendRequestSentEvent, sendResponseReceivedEvent } from "./helpers/audit";
 
 initOpenTelemetry();
 
@@ -84,26 +83,7 @@ class NinoCheckHandler implements LambdaInterface {
 
       logger.info(`Successfully retrieved OAuth token from HMRC. Proceeding with PDV request...`);
 
-      const auditDeviceInformation = deviceInformationHeader
-        ? {
-            device_information: {
-              encoded: deviceInformationHeader,
-            },
-          }
-        : undefined;
-
-      await sendAuditEvent(REQUEST_SENT, functionConfig.audit, session, {
-        restricted: {
-          birthDate: personIdentity.birthDates,
-          name: personIdentity.names,
-          socialSecurityRecord: [
-            {
-              personalNumber: nino,
-            },
-          ],
-          ...auditDeviceInformation,
-        },
-      });
+      await sendRequestSentEvent(functionConfig.audit, session, personIdentity, nino, deviceInformationHeader);
 
       logger.info(`REQUEST_SENT event fired.`);
 
@@ -127,10 +107,12 @@ class NinoCheckHandler implements LambdaInterface {
 
       logger.info(`Saved txn.`);
 
-      await sendAuditEvent(RESPONSE_RECEIVED, functionConfig.audit, session, {
-        restricted: auditDeviceInformation,
-        extensions: { evidence: { txn: parsedPdvMatchResponse.txn } },
-      });
+      await sendResponseReceivedEvent(
+        functionConfig.audit,
+        session,
+        parsedPdvMatchResponse.txn,
+        deviceInformationHeader
+      );
 
       logger.info(`RESPONSE_RECEIVED event fired.`);
 

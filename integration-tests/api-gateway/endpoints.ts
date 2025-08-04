@@ -1,4 +1,5 @@
-import { environment } from "./env-variables";
+import { environment, testResourcesStack } from "./env-variables";
+import { stackOutputs } from "../resources/cloudformation-helper";
 import { signedFetch } from "../resources/fetch";
 import { JWTClaimsSet } from "./types";
 
@@ -16,6 +17,8 @@ export const getJarAuthorization = async ({
   claimsOverride,
   evidenceRequested,
 }: JarAuthorizationOptions = {}) => {
+  const { TestHarnessExecuteUrl: testHarnessExecuteUrl } = await stackOutputs(testResourcesStack);
+
   const body = {
     aud,
     client_id: clientId,
@@ -24,7 +27,7 @@ export const getJarAuthorization = async ({
     evidence_requested: evidenceRequested,
   } as JWTClaimsSet;
 
-  return await signedFetch(new URL("start", process.env.TEST_HARNESS_EXECUTE_URL).toString(), {
+  return await signedFetch(new URL("start", testHarnessExecuteUrl).toString(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
