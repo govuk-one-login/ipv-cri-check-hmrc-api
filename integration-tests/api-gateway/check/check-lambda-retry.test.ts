@@ -1,6 +1,6 @@
 import { ninoCheckEndpoint, createSession, getJarAuthorization } from "../endpoints";
-import { clearAttemptsTable, clearItemsFromTables, queryItemsBySessionId } from "../../resources/dynamodb-helper";
-import { NINO } from "../env-variables";
+import { clearAttemptsTable, clearItemsFromTables, getItemByKey, queryItemsBySessionId } from "../../resources/dynamodb-helper";
+import { AUDIENCE, NINO } from "../env-variables";
 
 jest.setTimeout(30_000);
 
@@ -9,6 +9,7 @@ describe("check-lambda retry logic", () => {
   let sessionId: string;
   let sessionTableName: string;
   let privateApi: string;
+  let issuer: string | undefined;
 
   beforeEach(async () => {
     privateApi = `${process.env.PRIVATE_API}`;

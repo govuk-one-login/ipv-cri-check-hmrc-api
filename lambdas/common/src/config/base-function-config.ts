@@ -1,12 +1,26 @@
 import { AuditConfig } from "../types/audit";
 
+export { AuditConfig };
+
+export type TableNames = {
+  sessionTable: string;
+  personIdentityTable: string;
+  attemptTable: string;
+  ninoUserTable: string;
+};
+
 const envVarNames = {
   sessionTable: "SESSION_TABLE",
-  auditQueueUrl: "AUDIT_QUEUE_URL",
-  auditComponentId: "AUDIT_COMPONENT_ID",
+  personIdentityTable: "PERSON_IDENTITY_TABLE",
+  attemptTable: "ATTEMPT_TABLE",
+  ninoUserTable: "NINO_USER_TABLE",
+  auditEventBus: "AUDIT_EVENT_BUS",
+  auditSource: "AUDIT_SOURCE",
+  auditIssuer: "AUDIT_ISSUER",
 };
 
 export class BaseFunctionConfig {
+  public readonly tableNames: TableNames;
   public readonly audit: AuditConfig;
 
   public static checkEnvEntry(name: string) {
@@ -18,13 +32,16 @@ export class BaseFunctionConfig {
   constructor() {
     Object.values(envVarNames).forEach(BaseFunctionConfig.checkEnvEntry);
 
-    this.audit = {
-      queueUrl: process.env[envVarNames.auditQueueUrl] as string,
-      componentId: process.env[envVarNames.auditComponentId] as string,
+    this.tableNames = {
+      sessionTable: process.env[envVarNames.sessionTable] as string,
+      personIdentityTable: process.env[envVarNames.personIdentityTable] as string,
+      attemptTable: process.env[envVarNames.attemptTable] as string,
+      ninoUserTable: process.env[envVarNames.ninoUserTable] as string,
     };
-  }
-
-  public get tableNames(): { sessionTable: string } {
-    return { sessionTable: process.env[envVarNames.sessionTable] as string };
+    this.audit = {
+      eventBus: process.env[envVarNames.auditEventBus] as string,
+      source: process.env[envVarNames.auditSource] as string,
+      issuer: process.env[envVarNames.auditIssuer] as string,
+    };
   }
 }

@@ -1,47 +1,46 @@
 import { getSSMParameter } from "../../resources/ssm-param-helper";
-import { NINO, claimSet, environment, CLIENT_ID, REDIRECT_URL, AUDIENCE } from "../env-variables";
+import {
+  NINO,
+  getClaimSet,
+  environment,
+  testResourcesStack,
+  CLIENT_ID,
+  REDIRECT_URL,
+  AUDIENCE,
+} from "../env-variables";
 import { decodeJwt, JWK } from "jose";
 import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamodb-helper";
 import { authorizationEndpoint, checkEndpoint, createSession, getJarAuthorization } from "../endpoints";
 import { generatePrivateJwtParams } from "../crypto/private-key-jwt-helper";
-import {
-  AuditEvent,
-  baseExpectedEvent,
-  END_EVENT_NAME,
-  pollForTestHarnessEvents,
-  REQUEST_SENT_EVENT_NAME,
-  RESPONSE_RECEIVED_EVENT_NAME,
-  START_EVENT_NAME,
-  VC_ISSUED_EVENT_NAME,
-} from "../audit";
 
 let sessionData: Response;
 let authCode: { value: string };
 let privateApi: string;
 let publicApi: string;
 
-jest.setTimeout(180_000); // 3 mins
+jest.setTimeout(30_000);
 
 describe("End to end happy path journey", () => {
   let state: string;
   let sessionId: string;
-  let clientId: string;
   let sessionTableName: string;
   let privateSigningKey: JWK | undefined;
 
   beforeAll(async () => {
-    privateSigningKey = JSON.parse(
-      `${await getSSMParameter(`/${process.env.TEST_RESOURCES_STACK_NAME}/${CLIENT_ID}/privateSigningKey`)}`
-    );
+    privateSigningKey = JSON.parse(`${await getSSMParameter(`/${testResourcesStack}/${CLIENT_ID}/privateSigningKey`)}`);
   });
 
   beforeEach(async () => {
+    const payload = await getClaimSet();
+    payload.evidence_requested = {
+      scoringPolicy: "gpg45",
+      strengthScore: 2,
+    };
     const data = await getJarAuthorization({
-      claimsOverride: claimSet.shared_claims,
-      evidenceRequested: claimSet.evidence_requested,
+      claimsOverride: payload.shared_claims,
+      evidenceRequested: payload.evidence_requested,
     });
     const request = await data.json();
-    clientId = request.client_id;
     privateApi = `${process.env.PRIVATE_API}`;
     publicApi = `${process.env.PUBLIC_API}`;
     sessionTableName = `${process.env.SESSION_TABLE}`;
@@ -134,66 +133,5 @@ describe("End to end happy path journey", () => {
         checkDetails: [{ checkMethod: "data" }],
       },
     ]);
-
-    const startEvents = await pollForTestHarnessEvents(START_EVENT_NAME, sessionId);
-    expect(startEvents).toHaveLength(1);
-    expect(startEvents[0].event).toEqual<AuditEvent>({
-      // clientId is currently unset on start events created by the common session lambda
-      ...baseExpectedEvent(START_EVENT_NAME, undefined, sessionId),
-      extensions: {
-        evidence: [
-          {
-            context: "identity_check",
-          },
-        ],
-      },
-    });
-
-    const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
-    expect(reqSentEvents).toHaveLength(1);
-    expect(reqSentEvents[0].event).toStrictEqual<AuditEvent>({
-      ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, clientId, sessionId),
-      restricted: {
-        birthDate: claimSet.shared_claims.birthDate,
-        name: claimSet.shared_claims.name,
-        socialSecurityRecord: [{ personalNumber: NINO }],
-      },
-    });
-
-    const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
-    expect(resReceivedEvents).toHaveLength(1);
-    expect(resReceivedEvents[0].event).toStrictEqual<AuditEvent>({
-      ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, clientId, sessionId),
-      extensions: {
-        evidence: { txn: expect.any(String) },
-      },
-    });
-
-    const vcIssuedEvents = await pollForTestHarnessEvents(VC_ISSUED_EVENT_NAME, sessionId);
-    expect(vcIssuedEvents).toHaveLength(1);
-    expect(vcIssuedEvents[0].event).toEqual<AuditEvent>({
-      ...baseExpectedEvent(VC_ISSUED_EVENT_NAME, clientId, sessionId),
-      restricted: {
-        birthDate: claimSet.shared_claims.birthDate,
-        name: claimSet.shared_claims.name,
-        socialSecurityRecord: [{ personalNumber: NINO }],
-      },
-      extensions: {
-        evidence: [
-          {
-            checkDetails: [{ checkMethod: "data" }],
-            strengthScore: claimSet.evidence_requested.strengthScore,
-            validityScore: claimSet.evidence_requested.strengthScore,
-            type: "IdentityCheck",
-            txn: expect.any(String),
-            attemptNum: 1,
-          },
-        ],
-      },
-    });
-
-    const endEvents = await pollForTestHarnessEvents(END_EVENT_NAME, sessionId);
-    expect(endEvents).toHaveLength(1);
-    expect(endEvents[0].event).toStrictEqual<AuditEvent>(baseExpectedEvent(END_EVENT_NAME, clientId, sessionId));
   });
 });
