@@ -67,7 +67,6 @@ Conditions:
   UseCanaryDeploymentAlarms: !Or
     - !Not [!Equals [!Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE]]
     - !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
-  CanaryAlarmsAndDevLikeEnvironment: !And [!Condition IsDevLikeEnvironment, !Condition UseCanaryDeploymentAlarms]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
@@ -1326,7 +1325,7 @@ Resources:
       DeploymentPreference:
         Type: !Ref LambdaDeploymentPreference
         Alarms: !If
-          - CanaryAlarmsAndDevLikeEnvironment
+          - UseCanaryDeploymentAlarms
           - [!Ref IssueCredentialFunctionCanaryErrors, !Ref IssueCredentialFunction5xxCanaryErrors]
           - [!Ref AWS::NoValue]
         Role: !GetAtt CodeDeployServiceRole.Arn
@@ -2227,7 +2226,7 @@ Resources:
 
   IssueCredentialFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: CanaryAlarmsAndDevLikeEnvironment
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
