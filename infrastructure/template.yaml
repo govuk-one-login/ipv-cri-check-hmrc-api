@@ -67,7 +67,6 @@ Conditions:
   UseCanaryDeploymentAlarms: !Or
     - !Not [!Equals [!Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE]]
     - !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
-  CanaryAlarmsAndDevLikeEnvironment: !And [!Condition IsDevLikeEnvironment, !Condition UseCanaryDeploymentAlarms]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
@@ -1232,7 +1231,7 @@ Resources:
         Type: !Ref LambdaDeploymentPreference
         Alarms: !If
           - UseCanaryDeploymentAlarms
-          - [!Ref NinoCheckFunctionCanaryErrors]
+          - [!Ref NinoCheckFunctionCanaryErrors, !Ref NinoCheckFunction5xxCanaryErrors]
           - [!Ref AWS::NoValue]
         Role: !GetAtt CodeDeployServiceRole.Arn
       Handler: lambdas/nino-check/src/handler.handler
@@ -1310,8 +1309,8 @@ Resources:
       DeploymentPreference:
         Type: !Ref LambdaDeploymentPreference
         Alarms: !If
-          - CanaryAlarmsAndDevLikeEnvironment
-          - [!Ref IssueCredentialFunctionCanaryErrors]
+          - UseCanaryDeploymentAlarms
+          - [!Ref IssueCredentialFunctionCanaryErrors, !Ref IssueCredentialFunction5xxCanaryErrors]
           - [!Ref AWS::NoValue]
         Role: !GetAtt CodeDeployServiceRole.Arn
       Handler: lambdas/issue-credential/src/handler.handler
@@ -2172,9 +2171,40 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
+  NinoCheckFunction5xxCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Check HRMC NINO Check Lambda returning 5xx response."
+      AlarmName: !Sub ${AWS::StackName}-${Environment}-NinoCheckFunction5xxCanaryErrors
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${AWS::StackName}-public"
+        - Name: Method
+          Value: POST
+        - Name: Stage
+          Value: !Ref Environment
+        - Name: Resource
+          Value: /credential/issue
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
   IssueCredentialFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: CanaryAlarmsAndDevLikeEnvironment
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -2195,6 +2225,37 @@ Resources:
       Unit: Count
       Period: 60
       EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  IssueCredentialFunction5xxCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "Check HRMC Issue credential Lambda returning 5xx response."
+      AlarmName: !Sub ${AWS::StackName}-${Environment}-IssueCredentialFunction5xxCanaryErrors
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${AWS::StackName}-public"
+        - Name: Method
+          Value: POST
+        - Name: Resource
+          Value: /credential/issue
+        - Name: Stage
+          Value: !Ref Environment
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
