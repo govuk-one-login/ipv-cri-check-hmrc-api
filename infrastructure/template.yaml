@@ -187,6 +187,9 @@ Globals:
         DT_TENANT: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
+        AUDIT_QUEUE_URL:
+          Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueUrl
+        AUDIT_COMPONENT_ID: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
     AutoPublishAlias: live
     ProvisionedConcurrencyConfig: !If
       - AddProvisionedConcurrency
@@ -798,18 +801,25 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Abandon"
-          SESSION_TABLE_NAME: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+          SESSION_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
           ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
-          EVENT_BUS_NAME: !Ref CheckHmrcEventBus
-          EVENT_BUS_SOURCE: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
           LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBWritePolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref CheckHmrcEventBus
+        - SQSSendMessagePolicy:
+            QueueName:
+              Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
+        - Statement:
+            - Sid: auditEventQueueKmsEncryptionKeyPermission
+              Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey
+              Resource:
+                Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
 
   AbandonFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -1263,8 +1273,17 @@ Resources:
             TableName: !Ref NinoUsersTable
         - DynamoDBWritePolicy:
             TableName: !Ref NinoUsersTable
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref CheckHmrcEventBus
+        - SQSSendMessagePolicy:
+            QueueName:
+              Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
+        - Statement:
+            - Sid: auditEventQueueKmsEncryptionKeyPermission
+              Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey
+              Resource:
+                Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-NinoCheckFunction"
@@ -1273,9 +1292,6 @@ Resources:
           PERSON_IDENTITY_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
           ATTEMPT_TABLE: !Ref UserAttemptsTable
           NINO_USER_TABLE: !Ref NinoUsersTable
-          AUDIT_EVENT_BUS: !Ref CheckHmrcEventBus
-          AUDIT_SOURCE: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-          AUDIT_ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
           LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
 
   NinoCheckFunctionLogGroup:
@@ -1326,8 +1342,6 @@ Resources:
             TableName: !Ref UserAttemptsTable
         - DynamoDBReadPolicy:
             TableName: !Ref NinoUsersTable
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref CheckHmrcEventBus
         - SSMParameterReadPolicy:
             ParameterName: check-hmrc-cri-api/contraindicationMappings
         - SSMParameterReadPolicy:
@@ -1338,6 +1352,17 @@ Resources:
             Effect: Allow
             Action: kms:Sign
             Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
+        - SQSSendMessagePolicy:
+            QueueName:
+              Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
+        - Statement:
+            - Sid: auditEventQueueKmsEncryptionKeyPermission
+              Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey
+              Resource:
+                Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-IssueCredentialFunction"
@@ -1345,15 +1370,12 @@ Resources:
           PERSON_IDENTITY_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
           ATTEMPT_TABLE: !Ref UserAttemptsTable
           NINO_USER_TABLE: !Ref NinoUsersTable
-          AUDIT_EVENT_BUS: !Ref CheckHmrcEventBus
-          AUDIT_SOURCE: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-          AUDIT_ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
+          ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
           MAX_JWT_TTL: !FindInMap [MaxJwtTtl, Environment, !Ref Environment]
           JWT_TTL_UNIT: !FindInMap [JwtTtlUnit, Environment, !Ref Environment]
           LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
           COMMON_STACK_NAME: !Sub ${CommonStackName}
           DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-
 
   IssueCredentialFunctionLogGroup:
     Type: AWS::Logs::LogGroup

@@ -1,22 +1,15 @@
-import { AuditConfig, BaseFunctionConfig, TableNames } from "../../src/config/base-function-config";
-
-export const mockTableNames: TableNames = {
-  sessionTable: "session-table",
-  personIdentityTable: "person-identity-table",
-  attemptTable: "attempt-table",
-  ninoUserTable: "nino-user-table",
-};
+import { BaseFunctionConfig } from "../../src/config/base-function-config";
+import { AuditConfig } from "../../src/types/audit";
 
 export const mockDeviceInformationHeader = "big-device-time";
 
 export const mockAuditConfig: AuditConfig = {
-  eventBus: "audit-event-bus",
-  source: "audit-source",
-  issuer: "audit-issuer",
+  queueUrl: "cool-queuez.com",
+  componentId: "https://check-hmrc-time.account.gov.uk",
 };
 
 export const mockFunctionConfig: BaseFunctionConfig = {
-  tableNames: mockTableNames,
+  tableNames: { sessionTable: "session-table" },
   audit: mockAuditConfig,
 };
 
