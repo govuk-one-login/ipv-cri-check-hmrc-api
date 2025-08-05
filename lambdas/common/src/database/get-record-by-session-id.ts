@@ -6,7 +6,6 @@ import { UnixSecondsTimestamp } from "../types/brands";
 import { logger } from "../util/logger";
 import { dynamoDBClient } from "../util/dynamo";
 import { CriError } from "../errors/cri-error";
-import { captureMetric } from "../util/metrics";
 import { SessionItem } from "./types/session-item";
 
 export type SessionIdRecord = { sessionId: string; expiryDate?: UnixSecondsTimestamp };
@@ -65,13 +64,10 @@ export async function getRecordBySessionId<
   return unmarshall(queryResult[0]) as ReturnType;
 }
 
-export async function getSessionBySessionId(tableName: string, sessionId: string, publishMetric = false) {
+export async function getSessionBySessionId(tableName: string, sessionId: string) {
   try {
     return await getRecordBySessionId<SessionItem>(dynamoDBClient, tableName, sessionId, "expiryDate");
   } catch (error: unknown) {
-    if (publishMetric) {
-      captureMetric(`InvalidSessionErrorMetric`);
-    }
     if (error instanceof RecordNotFoundError) {
       throw new CriError(400, "Session not found");
     }

@@ -86,7 +86,6 @@ export async function handleResponseAndSaveAttempt(
   const responseHttpStatus = pdvMatchResponse.httpStatus;
 
   if (responseHttpStatus === 200) {
-    captureMetric(`SuccessfulFirstAttemptMetric`);
     await saveAttempt(dynamoClient, attemptTableName, session, "PASS", responseHttpStatus);
     return true;
   }
@@ -114,14 +113,12 @@ export async function handleResponseAndSaveAttempt(
   }
 
   if (isInvalidCredentialResponse(parsedErrorBody)) {
-    captureMetric(`FailedHMRCAuthMetric`);
     logger.info(
       `Failed to authenticate with HMRC API: response had a code of ${parsedErrorBody.errorMessage} & http status of ${responseHttpStatus}`
     );
     throw new CriError(500, "Failed to authenticate with HMRC API");
   }
 
-  captureMetric(`HMRCAPIErrorMetric`);
   logger.info(`Received an unexpected error response from the PDV API - status: ${responseHttpStatus}`);
   throw new CriError(500, "Unexpected error with the PDV API");
 }

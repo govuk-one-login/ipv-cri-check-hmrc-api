@@ -28,7 +28,6 @@ describe("getHmrcConfig()", () => {
     [pdvParamName]: "billybob",
   };
 
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -110,7 +109,6 @@ describe("handleResponseAndSaveAttempt()", () => {
     const match = await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, mockPdvRes);
 
     expect(match).toEqual(true);
-    expect(captureMetric).toHaveBeenCalledWith("SuccessfulFirstAttemptMetric");
     expect(ddbMock).toHaveReceivedCommandWith(PutItemCommand, {
       TableName: attemptTableName,
       Item: {
@@ -189,18 +187,8 @@ describe("handleResponseAndSaveAttempt()", () => {
   it("handles an invalid credentials response correctly", async () => {
     let thrown = false;
 
-    const body = {
-      code: "INVALID_CREDENTIALS",
-      message: "bruh",
-    } as const;
-
     try {
-      const match = await handleResponseAndSaveAttempt(
-        mockDynamoClient,
-        attemptTableName,
-        mockSession,
-        mockPdvInvalidCredsRes
-      );
+      await handleResponseAndSaveAttempt(mockDynamoClient, attemptTableName, mockSession, mockPdvInvalidCredsRes);
     } catch (error) {
       thrown = true;
 
@@ -208,7 +196,6 @@ describe("handleResponseAndSaveAttempt()", () => {
     }
 
     expect(thrown).toEqual(true);
-    expect(captureMetric).toHaveBeenCalledWith("FailedHMRCAuthMetric");
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("400"));
   });
 
@@ -227,7 +214,6 @@ describe("handleResponseAndSaveAttempt()", () => {
     }
 
     expect(thrown).toEqual(true);
-    expect(captureMetric).toHaveBeenCalledWith("HMRCAPIErrorMetric");
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("999"));
   });
 });

@@ -148,7 +148,7 @@ describe("nino-check handler", () => {
     expect(response).toStrictEqual(internalServerError);
 
     expect(NinoCheckFunctionConfig).toHaveBeenCalled();
-    expect(getSessionBySessionId).toHaveBeenCalledWith(mockFunctionConfig.tableNames.sessionTable, mockSessionId, true);
+    expect(getSessionBySessionId).toHaveBeenCalledWith(mockFunctionConfig.tableNames.sessionTable, mockSessionId);
     expect(getHmrcConfig).not.toHaveBeenCalled();
   });
 
@@ -179,7 +179,6 @@ describe("nino-check handler", () => {
 
     expect(response).toStrictEqual(internalServerError);
 
-    expect(captureMetric).toHaveBeenCalledWith("MatchingLambdaErrorMetric");
     expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("Error"));
     expect(saveTxn).not.toHaveBeenCalled();
   });
