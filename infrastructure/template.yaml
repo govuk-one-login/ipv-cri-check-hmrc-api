@@ -820,6 +820,8 @@ Resources:
                 - kms:GenerateDataKey
               Resource:
                 Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
 
   AbandonFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -1284,6 +1286,9 @@ Resources:
                 - kms:GenerateDataKey
               Resource:
                 Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
+
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-NinoCheckFunction"
@@ -1363,6 +1368,8 @@ Resources:
                 - kms:GenerateDataKey
               Resource:
                 Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref CheckHmrcEventBus
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-IssueCredentialFunction"
