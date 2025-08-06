@@ -43,7 +43,7 @@ class NinoCheckHandler implements LambdaInterface {
 
       logger.info(`Function initialised. Retrieving session...`);
 
-      const session = await getSessionBySessionId(functionConfig.tableNames.sessionTable, sessionId, true);
+      const session = await getSessionBySessionId(functionConfig.tableNames.sessionTable, sessionId);
 
       logger.appendKeys({
         govuk_signin_journey_id: session.clientSessionId,
@@ -116,7 +116,6 @@ class NinoCheckHandler implements LambdaInterface {
           buildPdvInput(personIdentity, nino)
         );
       } catch (error) {
-        captureMetric(`MatchingLambdaErrorMetric`);
         logger.error(`Error in ${context.functionName}: ${safeStringifyError(error)}`);
         throw new CriError(500, "Unexpected error when validating NINo");
       }

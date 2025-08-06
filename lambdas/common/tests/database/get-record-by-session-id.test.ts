@@ -9,7 +9,7 @@ import { UnixSecondsTimestamp } from "../../src/types/brands";
 import { getRecordBySessionId, getSessionBySessionId } from "../../src/database/get-record-by-session-id";
 import { NinoUser } from "../../src/types/nino-user";
 import { CriError } from "../../src/errors/cri-error";
-import { captureMetric, metrics } from "../../src/util/metrics";
+import { metrics } from "../../src/util/metrics";
 
 describe("getRecordBySessionId()", () => {
   const tableName = "some-table-some-stack";
@@ -299,10 +299,8 @@ describe("getSessionBySessionId()", () => {
   });
 
   it("should throw an exception when it errors retrievings a record", async () => {
-    const spy = jest.spyOn(metrics, "addMetric");
     ddbMock.on(QueryCommand).rejects();
 
-    await expect(getSessionBySessionId("session-table", "session-123", true)).rejects.toThrow(Error);
-    expect(spy).toHaveBeenCalledWith("InvalidSessionErrorMetric", "Count", 1);
+    await expect(getSessionBySessionId("session-table", "session-123")).rejects.toThrow(Error);
   });
 });
