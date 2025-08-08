@@ -1108,32 +1108,6 @@ Resources:
             Period: 300
             Stat: Sum
 
-  ExecuteStateMachineRole:
-    Type: AWS::IAM::Role
-    Properties:
-      Description: Role to allow API gateway to execute step function
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action: sts:AssumeRole
-            Principal:
-              Service: apigateway.amazonaws.com
-      Policies:
-        - PolicyName: AllowStateMachineInvoke
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Resource: "*"
-                Action:
-                  - states:StartExecution
-                  - states:StartSyncExecution
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-
   UserAttemptsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -1666,32 +1640,6 @@ Resources:
   # Canary Alarms                                                    #
   #                                                                  #
   ####################################################################
-  #Step function alarms
-
-  AuditEventStateMachineFailedCanary:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the AuditEventStateMachine"
-      MetricName: ExecutionsFailed
-      Dimensions:
-        - Name: StateMachineArn
-          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AuditEventStateMachine}"
-        - Name: Alias
-          Value: "live"
-      Namespace: AWS/States
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
 
   AbandonFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
@@ -1976,76 +1924,6 @@ Resources:
 
   ###############################################################################
 
-  AuditEventStateMachine:
-    Type: AWS::Serverless::StateMachine
-    Properties:
-      AutoPublishAlias: live
-      DeploymentPreference:
-        Type: !Ref StepFunctionsDeploymentPreference
-        Interval: !If [IsProdEnvironment, 15, 5]
-        Percentage: !If [IsProdEnvironment, 10, 50]
-        Alarms: !If
-          - UseCanaryDeploymentAlarms
-          - - !Ref CredentialSubjectFunctionCanaryErrors
-            - !Ref TimeFunctionCanaryErrors
-            - !Ref AuditEventStateMachineFailedCanary
-          - !Ref AWS::NoValue
-        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AuditEventStateMachine}:live"
-      Type: EXPRESS
-      DefinitionUri: ../step-functions/audit_event.asl.json
-      DefinitionSubstitutions:
-        CredentialSubjectFunctionArn: !Ref CredentialSubjectFunction.Version
-        TimeFunctionArn: !Ref TimeFunction.Version
-        CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-      Logging:
-        Destinations:
-          - CloudWatchLogsLogGroup:
-              LogGroupArn: !GetAtt AuditEventStateMachineLogGroup.Arn
-        IncludeExecutionData: True
-        Level: ALL
-      Policies:
-        - LambdaInvokePolicy:
-            FunctionName: !Ref CredentialSubjectFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref TimeFunction
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref CheckHmrcEventBus
-        - Statement:
-            Effect: Allow
-            Action: logs:*
-            Resource: "*"
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-
-  AuditEventStateMachineLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs
-      RetentionInDays: 30
-
-  PIIRedactedAuditEventStateMachineLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedAuditEventStateMachineLogGroup
-
-  ####################################################################
-  #                                                                  #
-  # Log Groups for Slunk (PII Redacted)                              #
-  #                                                                  #
-  ####################################################################
-
-  PIIRedactedAuditEventStateMachineLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs-pii-redacted
-      RetentionInDays: 30
-
   ####################################################################
   #                                                                  #
   # PIIRedactFunction SubscriptionFilter                             #
@@ -2106,15 +1984,6 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: !Join [".", ["logs", !Ref "AWS::Region", "amazonaws.com"]]
       SourceAccount: !Ref AWS::AccountId
-
-  AuditEventStateMachineLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
-    Properties:
-      FilterName: "PII Redaction"
-      DestinationArn: !Ref PIIRedactFunction.Alias
-      FilterPattern: ""
-      LogGroupName: !Ref AuditEventStateMachineLogGroup
 
   ####################################################################
   #                                                                  #
