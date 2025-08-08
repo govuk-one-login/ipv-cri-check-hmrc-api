@@ -114,14 +114,6 @@ Mappings:
       integration: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       production: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
 
-  Audit:
-    EventName:
-      ResponseReceived: RESPONSE_RECEIVED
-      RequestSent: REQUEST_SENT
-      VcIssued: VC_ISSUED
-      End: END
-      Abandoned: ABANDONED
-
   PlatformConfiguration:
     dev:
       CSLSEGRESS: arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython-2
@@ -432,35 +424,6 @@ Resources:
         AttributeName: expiryDate
         Enabled: true
 
-  CredentialSubjectFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/credential-subject/src/credential-subject-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
-      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-CredentialSubject"
-
-  CredentialSubjectFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CredentialSubjectFunction
-      RetentionInDays: 30
-
-  CredentialSubjectFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref CredentialSubjectFunctionLogGroup
-
   SessionLambdaFailedToVerifyJWTWarningAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: DeployAlarms
@@ -756,8 +719,6 @@ Resources:
                 - kms:GenerateDataKey
               Resource:
                 Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref CheckHmrcEventBus
 
   AbandonFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -811,35 +772,6 @@ Resources:
       DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref SsmParametersFunctionLogGroup
-
-  TimeFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/time-handler/src/time-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
-      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Time"
-
-  TimeFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
-      RetentionInDays: 30
-
-  TimeFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref TimeFunctionLogGroup
 
   UserAgent:
     Type: AWS::SSM::Parameter
@@ -1108,32 +1040,6 @@ Resources:
             Period: 300
             Stat: Sum
 
-  ExecuteStateMachineRole:
-    Type: AWS::IAM::Role
-    Properties:
-      Description: Role to allow API gateway to execute step function
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action: sts:AssumeRole
-            Principal:
-              Service: apigateway.amazonaws.com
-      Policies:
-        - PolicyName: AllowStateMachineInvoke
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Resource: "*"
-                Action:
-                  - states:StartExecution
-                  - states:StartSyncExecution
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-
   UserAttemptsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -1222,8 +1128,6 @@ Resources:
                 - kms:GenerateDataKey
               Resource:
                 Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref CheckHmrcEventBus
 
       Environment:
         Variables:
@@ -1304,8 +1208,6 @@ Resources:
                 - kms:GenerateDataKey
               Resource:
                 Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref CheckHmrcEventBus
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-IssueCredentialFunction"
@@ -1333,365 +1235,11 @@ Resources:
       FunctionName: !Ref IssueCredentialFunction.Alias
       Principal: apigateway.amazonaws.com
 
-  CheckHmrcEventBus:
-    Type: AWS::Events::EventBus
-    Properties:
-      Name: !Sub ${AWS::StackName}-CheckHmrcEventBus
-      KmsKeyIdentifier: !If
-        - IsDevLikeEnvironment
-        - !Ref AWS::NoValue
-        - Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
-
-  ##################################################################
-  #                                                                  #
-  # Nino Check Audit Event Consumer                                  #
-  #                                                                  #
-  ####################################################################
-  AuditEventResponseReceivedRule:
-    Type: AWS::Events::Rule
-    Properties:
-      EventBusName: !Ref CheckHmrcEventBus
-      Description: Capture the audit event RESPONSE_RECEIVED
-      State: ENABLED
-      EventPattern:
-        source:
-          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-        detail-type:
-          - !FindInMap [Audit, EventName, ResponseReceived]
-      Targets:
-        - Arn: !Sub ${AuditEventStateMachine}:live
-          Id: AuditEventStateMachineResponseReceivedTarget
-          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
-  AuditEventRequestSentRule:
-    Type: AWS::Events::Rule
-    Properties:
-      EventBusName: !Ref CheckHmrcEventBus
-      Description: Capture the audit event REQUEST_SENT
-      State: ENABLED
-      EventPattern:
-        source:
-          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-        detail-type:
-          - !FindInMap [Audit, EventName, RequestSent]
-      Targets:
-        - Arn: !Sub ${AuditEventStateMachine}:live
-          Id: AuditEventStateMachineRequestSentTarget
-          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
-  AuditEventVcIssuedRule:
-    Type: AWS::Events::Rule
-    Properties:
-      EventBusName: !Ref CheckHmrcEventBus
-      Description: Capture the audit event VC_ISSUED
-      State: ENABLED
-      EventPattern:
-        source:
-          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-        detail-type:
-          - !FindInMap [Audit, EventName, VcIssued]
-      Targets:
-        - Arn: !Sub ${AuditEventStateMachine}:live
-          Id: AuditEventStateMachineVcIssuedTarget
-          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
-  AuditEventEndRule:
-    Type: AWS::Events::Rule
-    Properties:
-      EventBusName: !Ref CheckHmrcEventBus
-      Description: Capture the END event
-      State: ENABLED
-      EventPattern:
-        source:
-          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-        detail-type:
-          - !FindInMap [Audit, EventName, End]
-      Targets:
-        - Arn: !Sub ${AuditEventStateMachine}:live
-          Id: AuditEventStateMachineEndTarget
-          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
-  AuditEventAbandonedRule:
-    Type: AWS::Events::Rule
-    Properties:
-      EventBusName: !Ref CheckHmrcEventBus
-      Description: Capture the ABANDONED event
-      State: ENABLED
-      EventPattern:
-        source:
-          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-        detail-type:
-          - !FindInMap [Audit, EventName, Abandoned]
-      Targets:
-        - Arn: !Sub ${AuditEventStateMachine}:live
-          Id: AuditEventStateMachineAbandonedTarget
-          RoleArn: !GetAtt EventBridgeStateMachineExecutionRole.Arn
-
-  TxMaAuditEventRule:
-    Type: AWS::Events::Rule
-    Properties:
-      EventBusName: !Ref CheckHmrcEventBus
-      Description: Publish all formatted events from AuditEvent Step Function to TxMA audit Queue
-      State: ENABLED
-      EventPattern:
-        source:
-          - !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-        detail:
-          timestamp: [{ "exists": true }]
-          event_timestamp_ms: [{ "exists": true }]
-      Targets:
-        - Arn: !Sub
-            - "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${auditEventQueueName}"
-            - auditEventQueueName:
-                Fn::ImportValue: !Sub "${TxmaStackName}-AuditEventQueueName"
-          Id: AuditEventQueue
-          InputPath: "$.detail"
-          DeadLetterConfig: !If
-            - IsDevLikeEnvironment
-            - !Ref AWS::NoValue
-            - Arn:
-                Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventDLQArn
-
-  EventBridgeStateMachineExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Action:
-              - sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service:
-                - events.amazonaws.com
-      Policies:
-        - PolicyName: EventBridgeStateMachineExecutionStartExecutionPolicy
-          PolicyDocument:
-            Statement:
-              - Action: states:StartExecution
-                Effect: Allow
-                Resource: !Ref AuditEventStateMachine
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-  ##################################################################
-  #                                                                  #
-  # Audit Event Consumer Rule Alarms                                 #
-  #                                                                  #
-  ####################################################################
-  TxMaAuditEventRuleAlarm:
-    Condition: DeployAlarms
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub
-        - "${TxMaAuditEventRule} (Failed Invocations) 4 or more requests in the last hour. ${SupportManualURL}"
-        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-TxMaAuditEventRule-FailedInvocations-alarm"
-      MetricName: "FailedInvocations"
-      Namespace: "AWS/Events"
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Sum
-      DatapointsToAlarm: 1
-      EvaluationPeriods: 1
-      Period: 3600
-      Threshold: 3
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: RuleName
-          Value: !Select [1, !Split ["|", !Ref TxMaAuditEventRule]]
-        - Name: EventBusName
-          Value: !Ref CheckHmrcEventBus
-
-  AuditEventRequestSentRuleAlarm:
-    Condition: DeployAlarms
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub
-        - "${AuditEventRequestSentRule} (Failed Invocations) 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
-        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventRequestSentRule-FailedInvocations-alarm"
-      MetricName: "FailedInvocations"
-      Namespace: "AWS/Events"
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Sum
-      DatapointsToAlarm: 1
-      EvaluationPeriods: 1
-      Period: 3600
-      Threshold: 3
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: RuleName
-          Value: !Select [1, !Split ["|", !Ref AuditEventRequestSentRule]]
-        - Name: EventBusName
-          Value: !Ref CheckHmrcEventBus
-
-  AuditEventResponseReceivedRuleAlarm:
-    Condition: DeployAlarms
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub
-        - "${AuditEventResponseReceivedRule} (Failed Invocations) 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
-        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventResponseReceivedRule-FailedInvocations-alarm"
-      MetricName: "FailedInvocations"
-      Namespace: "AWS/Events"
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Sum
-      DatapointsToAlarm: 1
-      EvaluationPeriods: 1
-      Period: 3600
-      Threshold: 3
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: RuleName
-          Value: !Select [1, !Split ["|", !Ref AuditEventResponseReceivedRule]]
-        - Name: EventBusName
-          Value: !Ref CheckHmrcEventBus
-
-  AuditEventVcIssuedRuleAlarm:
-    Condition: DeployAlarms
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub
-        - "${AuditEventVcIssuedRule} (Failed Invocations) 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
-        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventVcIssuedRule-FailedInvocations-alarm"
-      MetricName: "FailedInvocations"
-      Namespace: "AWS/Events"
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Sum
-      DatapointsToAlarm: 1
-      EvaluationPeriods: 1
-      Period: 3600
-      Threshold: 3
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: RuleName
-          Value: !Select [1, !Split ["|", !Ref AuditEventVcIssuedRule]]
-        - Name: EventBusName
-          Value: !Ref CheckHmrcEventBus
-
-  AuditEventEndRuleAlarm:
-    Condition: DeployAlarms
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub
-        - "${AuditEventEndRule} (Failed Invocations) 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
-        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventEndRule-FailedInvocations-alarm"
-      MetricName: "FailedInvocations"
-      Namespace: "AWS/Events"
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Sum
-      DatapointsToAlarm: 1
-      EvaluationPeriods: 1
-      Period: 3600
-      Threshold: 3
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: RuleName
-          Value: !Select [1, !Split ["|", !Ref AuditEventEndRule]]
-        - Name: EventBusName
-          Value: !Ref CheckHmrcEventBus
-
-  AuditEventAbandonedRuleAlarm:
-    Condition: DeployAlarms
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub
-        - "${AuditEventAbandonedRule} (Failed Invocations) 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
-        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-AuditEventAbandonedRule-FailedInvocations-alarm"
-      MetricName: "FailedInvocations"
-      Namespace: "AWS/Events"
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Sum
-      DatapointsToAlarm: 1
-      EvaluationPeriods: 1
-      Period: 3600
-      Threshold: 3
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: RuleName
-          Value: !Select [1, !Split ["|", !Ref AuditEventAbandonedRule]]
-        - Name: EventBusName
-          Value: !Ref CheckHmrcEventBus
-
-  CheckHmrcPutEventAlarm:
-    Condition: DeployAlarms
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: []
-      AlarmDescription: !Sub
-        - "${AWS::StackName}-${Environment} PutEvents (PutEvents Failed) 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
-        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckHmrcEventBus-PutEventsApproximateFailedCount-alarm"
-      MetricName: PutEventsApproximateFailedCount
-      ComparisonOperator: GreaterThanThreshold
-      Namespace: "AWS/Events"
-      Statistic: Sum
-      DatapointsToAlarm: 1
-      EvaluationPeriods: 1
-      Period: 3600
-      Threshold: 3
-      TreatMissingData: notBreaching
-
   ##################################################################
   #                                                                  #
   # Canary Alarms                                                    #
   #                                                                  #
   ####################################################################
-  #Step function alarms
-
-  AuditEventStateMachineFailedCanary:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the AuditEventStateMachine"
-      MetricName: ExecutionsFailed
-      Dimensions:
-        - Name: StateMachineArn
-          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AuditEventStateMachine}"
-        - Name: Alias
-          Value: "live"
-      Namespace: AWS/States
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
 
   AbandonFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
@@ -1768,60 +1316,6 @@ Resources:
           Value: !Ref SsmParametersFunction
         - Name: ExecutedVersion
           Value: !GetAtt SsmParametersFunction.Version.Version
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  TimeFunctionCanaryErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the TimeFunction Lambda."
-      MetricName: Errors
-      Dimensions:
-        - Name: Resource
-          Value: !Sub "${AWS::StackName}-TimeLookupFunction:live"
-        - Name: FunctionName
-          Value: !Ref TimeFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt TimeFunction.Version.Version
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  CredentialSubjectFunctionCanaryErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the CredentialSubjectFunction Lambda."
-      MetricName: Errors
-      Dimensions:
-        - Name: Resource
-          Value: !Sub "${AWS::StackName}-CredentialSubjectLookupFunction:live"
-        - Name: FunctionName
-          Value: !Ref CredentialSubjectFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt CredentialSubjectFunction.Version.Version
       Namespace: AWS/Lambda
       Statistic: Sum
       Unit: Count
@@ -1976,76 +1470,6 @@ Resources:
 
   ###############################################################################
 
-  AuditEventStateMachine:
-    Type: AWS::Serverless::StateMachine
-    Properties:
-      AutoPublishAlias: live
-      DeploymentPreference:
-        Type: !Ref StepFunctionsDeploymentPreference
-        Interval: !If [IsProdEnvironment, 15, 5]
-        Percentage: !If [IsProdEnvironment, 10, 50]
-        Alarms: !If
-          - UseCanaryDeploymentAlarms
-          - - !Ref CredentialSubjectFunctionCanaryErrors
-            - !Ref TimeFunctionCanaryErrors
-            - !Ref AuditEventStateMachineFailedCanary
-          - !Ref AWS::NoValue
-        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AuditEventStateMachine}:live"
-      Type: EXPRESS
-      DefinitionUri: ../step-functions/audit_event.asl.json
-      DefinitionSubstitutions:
-        CredentialSubjectFunctionArn: !Ref CredentialSubjectFunction.Version
-        TimeFunctionArn: !Ref TimeFunction.Version
-        CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-      Logging:
-        Destinations:
-          - CloudWatchLogsLogGroup:
-              LogGroupArn: !GetAtt AuditEventStateMachineLogGroup.Arn
-        IncludeExecutionData: True
-        Level: ALL
-      Policies:
-        - LambdaInvokePolicy:
-            FunctionName: !Ref CredentialSubjectFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref TimeFunction
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref CheckHmrcEventBus
-        - Statement:
-            Effect: Allow
-            Action: logs:*
-            Resource: "*"
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-
-  AuditEventStateMachineLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs
-      RetentionInDays: 30
-
-  PIIRedactedAuditEventStateMachineLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedAuditEventStateMachineLogGroup
-
-  ####################################################################
-  #                                                                  #
-  # Log Groups for Slunk (PII Redacted)                              #
-  #                                                                  #
-  ####################################################################
-
-  PIIRedactedAuditEventStateMachineLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-AuditEvent-state-machine-logs-pii-redacted
-      RetentionInDays: 30
-
   ####################################################################
   #                                                                  #
   # PIIRedactFunction SubscriptionFilter                             #
@@ -2107,15 +1531,6 @@ Resources:
       Principal: !Join [".", ["logs", !Ref "AWS::Region", "amazonaws.com"]]
       SourceAccount: !Ref AWS::AccountId
 
-  AuditEventStateMachineLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
-    Properties:
-      FilterName: "PII Redaction"
-      DestinationArn: !Ref PIIRedactFunction.Alias
-      FilterPattern: ""
-      LogGroupName: !Ref AuditEventStateMachineLogGroup
-
   ####################################################################
   #                                                                  #
   # Code Deploy Service Role                                       #
@@ -2171,39 +1586,3 @@ Outputs:
   NinoUsersTable:
     Description: NinoUsersTable table name
     Value: !Ref NinoUsersTable
-  AuditEventResponseReceivedRule:
-    Description: AuditEvent Response Received Rule
-    Value: !Ref AuditEventResponseReceivedRule
-  AuditEventResponseReceivedRuleArn:
-    Description: AuditEvent Response Received Rule Arn
-    Value: !GetAtt AuditEventResponseReceivedRule.Arn
-  AuditEventRequestSentRule:
-    Description: AuditEvent Request Sent Rule
-    Value: !Ref AuditEventRequestSentRule
-  AuditEventRequestSentRuleArn:
-    Description: AuditEvent Request Sent Rule Arn
-    Value: !GetAtt AuditEventRequestSentRule.Arn
-  AuditEventAbandonedRule:
-    Description: AuditEvent Abandon Rule
-    Value: !Ref AuditEventAbandonedRule
-  AuditEventAbandonedRuleArn:
-    Description: AuditEvent Abandon Rule Arn
-    Value: !GetAtt AuditEventAbandonedRule.Arn
-  AuditEventVcIssuedRule:
-    Description: AuditEvent VC Issued Rule
-    Value: !Ref AuditEventVcIssuedRule
-  AuditEventVcIssuedRuleArn:
-    Description: AuditEvent VC Issued Rule Arn
-    Value: !GetAtt AuditEventVcIssuedRule.Arn
-  AuditEventEndRule:
-    Description: AuditEvent End Rule
-    Value: !Ref AuditEventEndRule
-  AuditEventEndRuleArn:
-    Description: AuditEvent Rule Arn
-    Value: !GetAtt AuditEventEndRule.Arn
-  TxMaAuditEventRule:
-    Description: TxMaAuditEvent End Rule
-    Value: !Ref TxMaAuditEventRule
-  TxMaAuditEventRuleArn:
-    Description: TxMaAuditEvent Rule Arn
-    Value: !GetAtt TxMaAuditEventRule.Arn

@@ -3,9 +3,6 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test:sfn:all": "jest --runInBand",
-    "test:sfn:aws": "jest --silent --select-projects integration-tests/step-functions/aws --runInBand",
-    "test:sfn:mocked": "jest --silent --select-projects integration-tests/step-functions/mocked",
     "test:api": "jest --silent --select-projects integration-tests/api-gateway --testPathIgnorePatterns */contract/credential-contract.test.ts",
     "test:api:e2e": "jest --silent integration-tests/api-gateway --testPathIgnorePatterns */contract/credential-contract.test.ts",
     "start:contract": "cd api-gateway/contract && ts-node ./app.ts",
@@ -18,7 +15,6 @@
     "@aws-sdk/client-cloudformation": "3.828.0",
     "@aws-sdk/client-kms": "3.828.0",
     "@aws-sdk/client-secrets-manager": "3.828.0",
-    "@aws-sdk/client-sfn": "3.828.0",
     "@aws-sdk/client-sqs": "3.828.0",
     "@aws-sdk/client-ssm": "3.828.0",
     "@aws-sdk/lib-dynamodb": "3.828.0",
