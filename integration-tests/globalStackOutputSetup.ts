@@ -6,19 +6,6 @@ let outputs: Partial<{
   PublicApiGatewayId: string;
   NinoUsersTable: string;
   UserAttemptsTable: string;
-
-  TxMaAuditEventRule: string;
-  TxMaAuditEventRuleArn: string;
-  AuditEventAbandonedRule: string;
-  AuditEventAbandonedRuleArn: string;
-  AuditEventVcIssuedRule: string;
-  AuditEventVcIssuedRuleArn: string;
-  AuditEventEndRule: string;
-  AuditEventEndRuleArn: string;
-  AuditEventRequestSentRule: string;
-  AuditEventRequestSentRuleArn: string;
-  AuditEventResponseReceivedRule: string;
-  AuditEventResponseReceivedRuleArn: string;
 }>;
 
 export default async function globalSetup() {
