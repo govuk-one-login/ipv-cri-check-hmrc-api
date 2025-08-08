@@ -4,27 +4,7 @@ HMRC Check Credential Issuer API
 
 ## Integration Tests
 
-There are 3 types of Integration Tests: Mocked, AWS and API Gateway
-
-### Step Function AWS
-
-These tests run against the real state machine deployed in AWS.
-To run these tests the following environment variables are needed:
-
-- STACK_NAME
-- AWS_REGION
-- AWS_ACCESS_KEY_ID
-- AWS_SECRET_ACCESS_KEY
-- AWS_SESSION_TOKEN
-
-Temporary credentials can be found by going to the [AWS start page](https://uk-digital-identity.awsapps.com/start#/), selecting the account and clicking
-"Command line or programmatic access"
-
-To run the tests against a stack deployed in AWS, authenticate to the correct account and run
-
-`STACK_NAME=<stack-name> npm run test:sfn:aws --workspace integration-tests`
-
-_You can omit the `--workspace` parameter if the current working directory is `integration-tests`._
+There are 2 types of Integration Tests: Mocked and API Gateway
 
 ### Step Function Mocked
 

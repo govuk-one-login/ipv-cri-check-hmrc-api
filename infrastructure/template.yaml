@@ -432,35 +432,6 @@ Resources:
         AttributeName: expiryDate
         Enabled: true
 
-  CiMappingFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/ci-mapping/src/ci-mapping-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction
-      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-CiMapping"
-
-  CiMappingFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/CiMappingFunction
-      RetentionInDays: 30
-
-  CiMappingFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref CiMappingFunctionLogGroup
-
   CredentialSubjectFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -489,41 +460,6 @@ Resources:
       DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
       LogGroupName: !Ref CredentialSubjectFunctionLogGroup
-
-  JwtSignerFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/jwt-signer/src/jwt-signer-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction
-      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-      Policies:
-        - Statement:
-            Effect: Allow
-            Action: kms:Sign
-            Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-JwtSigner"
-          DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-
-  JwtSignerFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/JwtSignerFunction
-      RetentionInDays: 30
-
-  JwtSignerFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref JwtSignerFunctionLogGroup
 
   SessionLambdaFailedToVerifyJWTWarningAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -1397,148 +1333,6 @@ Resources:
       FunctionName: !Ref IssueCredentialFunction.Alias
       Principal: apigateway.amazonaws.com
 
-  NinoIssueCredentialStateMachine:
-    Type: AWS::Serverless::StateMachine
-    Properties:
-      AutoPublishAlias: live
-      DeploymentPreference:
-        Type: !Ref StepFunctionsDeploymentPreference
-        Interval: !If [IsProdEnvironment, 15, 5]
-        Percentage: !If [IsProdEnvironment, 10, 50]
-        Alarms: !If
-          - UseCanaryDeploymentAlarms
-          - - !Ref CiMappingFunctionCanaryErrors
-            - !Ref TimeFunctionCanaryErrors
-            - !Ref CredentialSubjectFunctionCanaryErrors
-            - !Ref JwtSignerFunctionCanaryErrors
-            - !Ref SsmParametersFunctionCanaryErrors
-            - !Ref NinoIssueCredentialStateMachineFailedCanary
-            - !Ref NinoIssueCredentialStateMachineCanary5xxErrors
-          - !Ref AWS::NoValue
-        StateMachineVersionArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoIssueCredentialStateMachine}:live"
-      Type: EXPRESS
-      DefinitionUri: ../step-functions/nino_issue_credential.asl.json
-      DefinitionSubstitutions:
-        AuditEventPrefix: !Ref AuditEventNamePrefix
-        CiMappingFunctionArn: !Ref CiMappingFunction.Version
-        TimeFunctionArn: !Ref TimeFunction.Version
-        CredentialSubjectFunctionArn: !Ref CredentialSubjectFunction.Version
-        UserAttemptsTable: !Ref UserAttemptsTable
-        MaxJwtTtlParameter: !Ref MaxJwtTtlParameter
-        JwtTtlUnitParameter: !Ref JwtTtlUnitParameter
-        CommonStackName: !Ref CommonStackName
-        NinoUsersTable: !Ref NinoUsersTable
-        JwtSignerFunction: !Ref JwtSignerFunction.Version
-        SsmParametersFunction: !Ref SsmParametersFunction.Version
-        CheckHmrcEventBus: !Ref CheckHmrcEventBus
-        CheckHmrcEventBusSource: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-        AuditEventNameVcIssued: !FindInMap [Audit, EventName, VcIssued]
-        AuditEventNameEnd: !FindInMap [Audit, EventName, End]
-      Logging:
-        Destinations:
-          - CloudWatchLogsLogGroup:
-              LogGroupArn: !GetAtt NinoIssueCredentialLogGroup.Arn
-        IncludeExecutionData: True
-        Level: ALL
-      Policies:
-        - LambdaInvokePolicy:
-            FunctionName: !Ref SsmParametersFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref CiMappingFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref TimeFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref CredentialSubjectFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref JwtSignerFunction
-        - DynamoDBReadPolicy:
-            TableName: !Ref UserAttemptsTable
-        - DynamoDBReadPolicy:
-            TableName: !Ref NinoUsersTable
-        - DynamoDBReadPolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-        - DynamoDBReadPolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
-        - EventBridgePutEventsPolicy:
-            EventBusName: !Ref CheckHmrcEventBus
-        - Statement:
-            Effect: Allow
-            Action:
-              - ssm:GetParameters
-              - ssm:GetParameter
-            Resource:
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${MaxJwtTtlParameter}"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${JwtTtlUnitParameter}"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/contraindicationMappings"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/check-hmrc-cri-api/contraIndicatorReasonsMapping"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/PersonIdentityTableName"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
-        - Statement:
-            Effect: Allow
-            Action: logs:*
-            Resource: "*"
-        - Statement:
-            Effect: Allow
-            Action: kms:Sign
-            Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-
-  NinoIssueCredentialLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs"
-      RetentionInDays: 30
-
-  PIIRedactedNinoIssueCredentialLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref PIIRedactedNinoIssueCredentialLogGroup
-
-  NinoIssueCredentialStateMachineFailedMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoIssueCredentialLogGroup
-      FilterPattern: '{$.type = "ExecutionFailed"}'
-      MetricTransformations:
-        - MetricValue: "1"
-          MetricName: "NinoIssueCredentialStateMachine}-Error"
-          MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
-
-  NinoIssueCredentialStateMachineAlarm:
-    Type: "AWS::CloudWatch::Alarm"
-    Condition: DeployAlarms
-    Properties:
-      OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-critical-alert-topic
-      AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
-        - !ImportValue platform-alarm-critical-alert-topic
-      AlarmDescription: !Sub
-        - "${NinoIssueCredentialStateMachine} failed 4 or more requests in the last hour. Runbook: ${SupportManualURL}"
-        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachine-ExecutionsFailed-alarm"
-      MetricName: "ExecutionsFailed"
-      Namespace: AWS/States
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Sum
-      DatapointsToAlarm: 1
-      EvaluationPeriods: 1
-      Period: 3600
-      Threshold: 3
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: StateMachineArn
-          Value: !Ref NinoIssueCredentialStateMachine
-
   CheckHmrcEventBus:
     Type: AWS::Events::EventBus
     Properties:
@@ -1874,31 +1668,6 @@ Resources:
   ####################################################################
   #Step function alarms
 
-  NinoIssueCredentialStateMachineFailedCanary:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the NinoIssueCredentialStateMachine"
-      MetricName: ExecutionsFailed
-      Dimensions:
-        - Name: StateMachineArn
-          Value: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${NinoIssueCredentialStateMachine"
-        - Name: Alias
-          Value: "live"
-      Namespace: AWS/States
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   AuditEventStateMachineFailedCanary:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1945,36 +1714,6 @@ Resources:
           Value: !Ref Environment
         - Name: Resource
           Value: /abandon
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 3
-      DatapointsToAlarm: 2
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  NinoIssueCredentialStateMachineCanary5xxErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: "NinoIssueCredentialStateMachine returning 5xx response."
-      Namespace: AWS/ApiGateway
-      MetricName: 5XXError
-      Dimensions:
-        - Name: ApiName
-          Value: !Sub "${AWS::StackName}-public"
-        - Name: Method
-          Value: POST
-        - Name: Stage
-          Value: !Ref Environment
-        - Name: Resource
-          Value: /credential/issue
       Statistic: Sum
       Unit: Count
       Period: 60
@@ -2038,33 +1777,6 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  CiMappingFunctionCanaryErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the CiMappingFunction Lambda."
-      MetricName: Errors
-      Dimensions:
-        - Name: Resource
-          Value: !Sub "${AWS::StackName}-CiMappingLookupFunction:live"
-        - Name: FunctionName
-          Value: !Ref CiMappingFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt CiMappingFunction.Version.Version
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   TimeFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -2110,33 +1822,6 @@ Resources:
           Value: !Ref CredentialSubjectFunction
         - Name: ExecutedVersion
           Value: !GetAtt CredentialSubjectFunction.Version.Version
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  JwtSignerFunctionCanaryErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the JwtSignerFunction Lambda."
-      MetricName: Errors
-      Dimensions:
-        - Name: Resource
-          Value: !Sub "${AWS::StackName}-JwtSignerLookupFunction:live"
-        - Name: FunctionName
-          Value: !Ref JwtSignerFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt JwtSignerFunction.Version.Version
       Namespace: AWS/Lambda
       Statistic: Sum
       Unit: Count
@@ -2351,41 +2036,9 @@ Resources:
 
   ####################################################################
   #                                                                  #
-  #  Metrics                                                         #
-  #                                                                  #
-  ####################################################################
-
-  CIRaisedMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoIssueCredentialLogGroup
-      FilterPattern: '{($.details.name = "Fetch CI")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: CIRaisedMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  VCIssuedMetric:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      LogGroupName: !Ref NinoIssueCredentialLogGroup
-      FilterPattern: '{($.details.name = "Create Signed JWT") && ($.type = "PassStateExited")}'
-      MetricTransformations:
-        - MetricValue: 1
-          MetricName: VCIssuedMetric
-          MetricNamespace: !Ref CriIdentifier
-
-  ####################################################################
-  #                                                                  #
   # Log Groups for Slunk (PII Redacted)                              #
   #                                                                  #
   ####################################################################
-
-  PIIRedactedNinoIssueCredentialLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/vendedlogs/states/${AWS::StackName}-NinoIssueCredential-state-machine-logs-pii-redacted"
-      RetentionInDays: 30
 
   PIIRedactedAuditEventStateMachineLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2454,15 +2107,6 @@ Resources:
       Principal: !Join [".", ["logs", !Ref "AWS::Region", "amazonaws.com"]]
       SourceAccount: !Ref AWS::AccountId
 
-  NinoIssueCredentialLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
-    Properties:
-      FilterName: "PII Redaction"
-      DestinationArn: !Ref PIIRedactFunction.Alias
-      FilterPattern: ""
-      LogGroupName: !Ref NinoIssueCredentialLogGroup
-
   AuditEventStateMachineLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn: PIIRedactFunctionCloudWatchAliasPermissions
@@ -2518,9 +2162,6 @@ Outputs:
     Value: !Ref PrivateNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-PrivateApiGatewayId
-  NinoIssueCredentialStateMachineArn:
-    Description: Nino Issue Credential state machine ARN
-    Value: !Ref NinoIssueCredentialStateMachine
   CommonStackName:
     Description: Common Stack Name
     Value: !Ref CommonStackName
