@@ -4,20 +4,6 @@ HMRC Check Credential Issuer API
 
 ## Integration Tests
 
-There are 2 types of Integration Tests: Mocked and API Gateway
-
-### Step Function Mocked
-
-In mocked tests, all AWS service integrations are mocked, and only the step function path flow is checked to verify all
-the paths through step function states. Tasks and mocked service integrations are wired to return the expected responses.
-
-These tests run locally on your system and need the Docker agent to be running in the background before the execution begins.
-
-To run the mocked step function tests run
-`npm run test:sfn:mocked --workspace integration-tests`
-
-_You can omit the `--workspace` parameter if the current working directory is `integration-tests`._
-
 ### API Gateway
 These tests run against API Gateway in AWS.
 To run these tests the following environment variables are needed:
