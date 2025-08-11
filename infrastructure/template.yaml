@@ -44,14 +44,6 @@ Parameters:
     Description: "Specifies the configuration to enable gradual Lambda deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'AllAtOnce'"
     Type: String
     Default: "AllAtOnce"
-  StepFunctionsDeploymentPreference:
-    Description: "Specifies the configuration to enable gradual StepFunction deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'ALL_AT_ONCE'"
-    Type: String
-    Default: "ALL_AT_ONCE"
-    AllowedValues:
-      - ALL_AT_ONCE
-      - CANARY
-      - LINEAR
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
@@ -64,9 +56,7 @@ Conditions:
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
   IsIntOrProdEnvironment: !Or [!Condition IsIntEnvironment, !Condition IsProdEnvironment]
-  UseCanaryDeploymentAlarms: !Or
-    - !Not [!Equals [!Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE]]
-    - !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
+  UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
@@ -726,38 +716,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref AbandonFunctionLogGroup
 
-  SsmParametersFunction:
-    Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Sourcemap: true
-    Properties:
-      Handler: lambdas/ssm-parameters/src/ssm-parameters-handler.lambdaHandler
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction
-      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
-      Policies:
-        - SSMParameterReadPolicy:
-            ParameterName: "*"
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-SsmParameters"
-
-  SsmParametersFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/SsmParametersFunction
-      RetentionInDays: 30
-
-  SsmParametersFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
-    Properties:
-      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
-      FilterPattern: ""
-      LogGroupName: !Ref SsmParametersFunctionLogGroup
-
   UserAgent:
     Type: AWS::SSM::Parameter
     Properties:
@@ -1291,33 +1249,6 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  SsmParametersFunctionCanaryErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the SsmParametersFunction Lambda."
-      MetricName: Errors
-      Dimensions:
-        - Name: Resource
-          Value: !Sub "${AWS::StackName}-SsmParametersLookupFunction:live"
-        - Name: FunctionName
-          Value: !Ref SsmParametersFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt SsmParametersFunction.Version.Version
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
   NinoCheckFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1462,9 +1393,6 @@ Resources:
 #                                                                  #
 ####################################################################
 Outputs:
-  SsmParametersFunctionArn:
-    Description: SsmParameters Lambda Function ARN
-    Value: !GetAtt SsmParametersFunction.Arn
   ApiGatewayId:
     Description: API GatewayID of the Nino Check HMRC CRI API
     Value: !Ref PublicNinoCheckApi

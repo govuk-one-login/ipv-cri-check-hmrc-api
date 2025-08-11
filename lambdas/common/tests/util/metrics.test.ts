@@ -12,7 +12,6 @@ const mockMetrics = {
 (Metrics as unknown as jest.Mock).mockReturnValue(mockMetrics);
 
 import { captureMetric, captureLatency } from "../../src/util/metrics";
-import { MetricDimensions, MetricNames } from "../../../logging/metric-types";
 
 performance.now = jest.fn();
 
@@ -47,9 +46,9 @@ describe("metrics functions", () => {
 
       expect(res).toStrictEqual(["good!", 141]);
 
-      expect(mockSingleMetric.addDimension).toHaveBeenCalledWith(MetricDimensions.HTTP, "zoomies");
+      expect(mockSingleMetric.addDimension).toHaveBeenCalledWith("HTTP", "zoomies");
       expect(mockSingleMetric.addMetric).toHaveBeenCalledWith(
-        MetricNames.ResponseLatency,
+        "ResponseLatency",
         MetricUnits.Milliseconds,
         141
       );
@@ -69,8 +68,8 @@ describe("metrics functions", () => {
 
       expect(res).toStrictEqual([{ blah: 9, go: true, success: "maybe", thing: { stuff: false } }, 4]);
 
-      expect(mockSingleMetric.addDimension).toHaveBeenCalledWith(MetricDimensions.HTTP, "big obj");
-      expect(mockSingleMetric.addMetric).toHaveBeenCalledWith(MetricNames.ResponseLatency, MetricUnits.Milliseconds, 4);
+      expect(mockSingleMetric.addDimension).toHaveBeenCalledWith("HTTP", "big obj");
+      expect(mockSingleMetric.addMetric).toHaveBeenCalledWith("ResponseLatency", MetricUnits.Milliseconds, 4);
     });
   });
 });
