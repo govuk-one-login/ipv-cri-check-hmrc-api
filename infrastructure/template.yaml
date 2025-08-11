@@ -1391,7 +1391,7 @@ Resources:
         - Name: Resource
           Value: !Sub "${AWS::StackName}-IssueCredentialFunction:live"
         - Name: FunctionName
-          Value: !Ref NinoCheckFunction
+          Value: !Ref IssueCredentialFunction
         - Name: ExecutedVersion
           Value: !GetAtt IssueCredentialFunction.Version.Version
       Namespace: AWS/Lambda
