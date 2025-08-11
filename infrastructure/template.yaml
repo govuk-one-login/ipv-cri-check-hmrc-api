@@ -44,14 +44,6 @@ Parameters:
     Description: "Specifies the configuration to enable gradual Lambda deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'AllAtOnce'"
     Type: String
     Default: "AllAtOnce"
-  StepFunctionsDeploymentPreference:
-    Description: "Specifies the configuration to enable gradual StepFunction deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'ALL_AT_ONCE'"
-    Type: String
-    Default: "ALL_AT_ONCE"
-    AllowedValues:
-      - ALL_AT_ONCE
-      - CANARY
-      - LINEAR
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
@@ -64,9 +56,7 @@ Conditions:
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
   IsIntOrProdEnvironment: !Or [!Condition IsIntEnvironment, !Condition IsProdEnvironment]
-  UseCanaryDeploymentAlarms: !Or
-    - !Not [!Equals [!Ref StepFunctionsDeploymentPreference, ALL_AT_ONCE]]
-    - !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
+  UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
