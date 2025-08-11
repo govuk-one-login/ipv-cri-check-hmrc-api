@@ -1213,6 +1213,14 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/IssueCredentialFunction
       RetentionInDays: 30
 
+  IssueCredentialFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevLikeEnvironment
+    Properties:
+      DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+      FilterPattern: ""
+      LogGroupName: !Ref IssueCredentialFunctionLogGroup
+
   IssueCredentialFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
