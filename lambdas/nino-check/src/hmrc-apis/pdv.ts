@@ -1,6 +1,6 @@
 import { PdvApiErrorBody, PdvApiErrorJSON, PdvApiInput, PdvConfig, ParsedPdvMatchResponse } from "./types/pdv";
 import { logger } from "../../../common/src/util/logger";
-import { captureLatency } from "../../../common/src/util/metrics";
+import { captureLatency, captureMetric } from "../../../common/src/util/metrics";
 import { safeStringifyError } from "../../../common/src/util/stringify-error";
 
 export async function callPdvMatchingApi(
@@ -27,6 +27,8 @@ export async function callPdvMatchingApi(
     latencyInMs: latency,
   });
 
+  captureMetric("pdv_api_duration", latency);
+
   const txn = response.headers.get("x-amz-cf-id") ?? "";
 
   let errorBody: PdvApiErrorBody = "";
@@ -45,6 +47,7 @@ async function parsePdvErrorBody(response: Response): Promise<PdvApiErrorBody> {
   const contentType = response.headers.get("content-type");
 
   if (response.status >= 500) {
+    captureMetric("pdv_api_server_error");
     // 5xx errors from HMRC sometimes contain PII
     return "Internal server error";
   }
