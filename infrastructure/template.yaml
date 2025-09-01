@@ -145,9 +145,8 @@ Globals:
         - !ImportValue cri-vpc-ProtectedSubnetIdA
         - !ImportValue cri-vpc-ProtectedSubnetIdB
     Layers:
-      - !Sub
-        - "{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}"
-        - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
+      # SEE https://github.com/govuk-one-login/observability-infrastructure/tree/main/lambdalayer
+      - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
     Environment:
       Variables:
         NODE_OPTIONS: --enable-source-maps
