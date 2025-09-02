@@ -25,6 +25,6 @@ describe("/.well-known/jwks.json", () => {
     expect(body.keys[0].n).toBeDefined();
     expect(body.keys[0].use).toEqual("enc");
     expect(body.keys[0].kid).toBeDefined();
-    expect(body.keys[0].alg).toEqual("RSA_OAEP_256");
+    expect(body.keys[0].alg).toEqual("RSA-OAEP-256");
   });
 });
