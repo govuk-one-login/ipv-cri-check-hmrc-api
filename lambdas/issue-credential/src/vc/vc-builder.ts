@@ -4,9 +4,10 @@ import { VerifiableIdentityCredential, VC_CONTEXT, VC_TYPE, JwtClass } from "../
 import { CredentialSubject } from "../types/credential-subject";
 import { AttemptsResult } from "../../../common/src/types/attempt";
 import { SessionItem } from "../../../common/src/database/types/session-item";
-import { getCheckDetail, getEvidence } from "../evidence/evidence-creator";
+import { getEvidence } from "../evidence/evidence-creator";
 import { ContraIndicator } from "./contraIndicator/ci-mapping-util";
 import { logger } from "../../../common/src/util/logger";
+import { CHECK_DETAIL } from "../../../common/src/types/evidence";
 
 /**
  * Builds a Verifiable Credential (VC) need all fields to be in the order
@@ -35,7 +36,7 @@ export const buildVerifiableCredential = (
     iss: jwtClaims.iss,
     exp: jwtClaims.exp,
     vc: {
-      evidence: [getEvidence(session, attempts, getCheckDetail(session.evidenceRequest), contraIndicators)],
+      evidence: [getEvidence(session, attempts, CHECK_DETAIL, contraIndicators)],
       credentialSubject,
       type: VC_TYPE,
       "@context": VC_CONTEXT,
