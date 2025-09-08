@@ -1,7 +1,8 @@
 import { SessionItem } from "../../../common/src/database/types/session-item";
 import { AttemptItem, AttemptsResult } from "../../../common/src/types/attempt";
-import { getEvidence, getAuditEvidence, getCheckDetail } from "../../src/evidence/evidence-creator";
+import { getEvidence, getAuditEvidence } from "../../src/evidence/evidence-creator";
 import * as MetricsUtils from "../../../common/src/util/metrics";
+import { CHECK_DETAIL } from "../../../common/src/types/evidence";
 
 describe("evidence-creator", () => {
   const sessionId = "test-session";
@@ -27,216 +28,131 @@ describe("evidence-creator", () => {
     ],
   } as AttemptsResult;
 
+  const evidenceRequest = {
+    scoringPolicy: "gpg45",
+    strengthScore: 2,
+  };
+
   describe("getEvidence", () => {
-    describe("Identity Check", () => {
-      const evidenceRequest = {
-        scoringPolicy: "gpg45",
+    it("creates evidence with checkDetails when user has passed with score 2 and strength 2", () => {
+      const session = {
+        sessionId: "test-session",
+        txn: "mock-txn",
+        evidenceRequest,
+      } as SessionItem;
+
+      const result = getEvidence(session, passedAttempt, CHECK_DETAIL, []);
+
+      expect(result).toEqual({
+        checkDetails: [{ checkMethod: "data" }],
         strengthScore: 2,
-      };
-
-      it("creates evidence with checkDetails when user has passed with score 2 and strength 2", () => {
-        const session = {
-          sessionId: "test-session",
-          txn: "mock-txn",
-          evidenceRequest,
-        } as SessionItem;
-
-        const result = getEvidence(session, passedAttempt, getCheckDetail(evidenceRequest), []);
-
-        expect(result).toEqual({
-          checkDetails: [{ checkMethod: "data" }],
-          strengthScore: 2,
-          txn: "mock-txn",
-          type: "IdentityCheck",
-          validityScore: 2,
-        });
-      });
-
-      it("creates evidence with failedCheckDetails and ci empty when user has failed with score 0 and strength 2", () => {
-        const session = {
-          sessionId: "test-session",
-          txn: "mock-txn",
-          evidenceRequest,
-        };
-
-        const result = getEvidence(session, failedAttempt, getCheckDetail(evidenceRequest), []);
-
-        expect(result).toEqual({
-          ci: [],
-          failedCheckDetails: [{ checkMethod: "data" }],
-          strengthScore: 2,
-          txn: "mock-txn",
-          type: "IdentityCheck",
-          validityScore: 0,
-        });
-      });
-
-      it("creates evidence with failedCheckDetails and ci with values when user has failed with score 0 and strength 2", () => {
-        const session = {
-          sessionId: "test-session",
-          txn: "mock-txn",
-          evidenceRequest,
-        };
-
-        const result = getEvidence(session, failedAttempt, getCheckDetail(evidenceRequest), [
-          {
-            ci: "ci_3",
-            reason: "ci_3 reason",
-          },
-        ]);
-
-        expect(result).toEqual({
-          ci: ["ci_3"],
-          failedCheckDetails: [{ checkMethod: "data" }],
-          strengthScore: 2,
-          txn: "mock-txn",
-          type: "IdentityCheck",
-          validityScore: 0,
-        });
+        txn: "mock-txn",
+        type: "IdentityCheck",
+        validityScore: 2,
       });
     });
 
-    describe("Record Check", () => {
-      it("creates evidence with checkDetails and dataCheck when user has passed without any scores", () => {
-        const session = {
-          sessionId: "test-session",
-          txn: "mock-txn",
-        };
+    it("creates evidence with failedCheckDetails and ci empty when user has failed with score 0 and strength 2", () => {
+      const session = {
+        sessionId: "test-session",
+        txn: "mock-txn",
+        evidenceRequest,
+      };
 
-        const result = getEvidence(session, passedAttempt, getCheckDetail(), []);
+      const result = getEvidence(session, failedAttempt, CHECK_DETAIL, []);
 
-        expect(result).toEqual({
-          checkDetails: [{ checkMethod: "data", dataCheck: "record_check" }],
-          txn: "mock-txn",
-          type: "IdentityCheck",
-        });
+      expect(result).toEqual({
+        ci: [],
+        failedCheckDetails: [{ checkMethod: "data" }],
+        strengthScore: 2,
+        txn: "mock-txn",
+        type: "IdentityCheck",
+        validityScore: 0,
       });
+    });
 
-      it("creates evidence with failedCheckDetails and dataCheck when user failed without any scores", () => {
-        const session = {
-          sessionId: "test-session",
-          txn: "mock-txn",
-        };
+    it("creates evidence with failedCheckDetails and ci with values when user has failed with score 0 and strength 2", () => {
+      const session = {
+        sessionId: "test-session",
+        txn: "mock-txn",
+        evidenceRequest,
+      };
 
-        const result = getEvidence(session, failedAttempt, getCheckDetail(), []);
+      const result = getEvidence(session, failedAttempt, CHECK_DETAIL, [
+        {
+          ci: "ci_3",
+          reason: "ci_3 reason",
+        },
+      ]);
 
-        expect(result).toEqual({
-          failedCheckDetails: [{ checkMethod: "data", dataCheck: "record_check" }],
-          txn: "mock-txn",
-          type: "IdentityCheck",
-        });
+      expect(result).toEqual({
+        ci: ["ci_3"],
+        failedCheckDetails: [{ checkMethod: "data" }],
+        strengthScore: 2,
+        txn: "mock-txn",
+        type: "IdentityCheck",
+        validityScore: 0,
       });
     });
   });
 
   describe("getAuditEvidence", () => {
-    describe("Identity Check", () => {
-      const evidenceRequest = {
-        scoringPolicy: "gpg45",
-        strengthScore: 2,
-      };
-
-      it("creates audit evidence with checkDetails when user has passed", () => {
-        const evidence = getEvidence(
-          {
-            sessionId: "test-session",
-            txn: "mock-txn",
-            evidenceRequest,
-          },
-          passedAttempt,
-          getCheckDetail(evidenceRequest),
-          []
-        );
-
-        const result = getAuditEvidence(passedAttempt, [], evidence);
-
-        expect(result).toEqual({
-          attemptNum: 1,
-          checkDetails: [{ checkMethod: "data" }],
-          strengthScore: 2,
+    it("creates audit evidence with checkDetails when user has passed", () => {
+      const evidence = getEvidence(
+        {
+          sessionId: "test-session",
           txn: "mock-txn",
-          type: "IdentityCheck",
-          validityScore: 2,
-        });
-      });
+          evidenceRequest,
+        },
+        passedAttempt,
+        CHECK_DETAIL,
+        []
+      );
 
-      it("creates audit evidence with failedCheckDetails and ciReasons when user has failed", () => {
-        const captureMetricSpy = jest.spyOn(MetricsUtils, "captureMetric");
-        const contraIndicators = [
-          {
-            ci: "ci_3",
-            reason: "ci_3 reason",
-          },
-        ];
-        const evidence = getEvidence(
-          {
-            sessionId: "test-session",
-            txn: "mock-txn",
-            evidenceRequest,
-          },
-          failedAttempt,
-          getCheckDetail(evidenceRequest),
-          contraIndicators
-        );
+      const result = getAuditEvidence(passedAttempt, [], evidence);
 
-        const result = getAuditEvidence(failedAttempt, contraIndicators, evidence);
-
-        expect(result).toEqual({
-          attemptNum: 2,
-          ci: ["ci_3"],
-          ciReasons: [{ ci: "ci_3", reason: "ci_3 reason" }],
-          failedCheckDetails: [{ checkMethod: "data" }],
-          strengthScore: 2,
-          txn: "mock-txn",
-          type: "IdentityCheck",
-          validityScore: 0,
-        });
-        expect(captureMetricSpy).toHaveBeenCalledWith("CIRaisedMetric");
-      });
-    });
-
-    describe("Record Check", () => {
-      it("creates audit evidence with checkDetails without scores when user has passed", () => {
-        const evidence = getEvidence(
-          {
-            sessionId: "test-session",
-            txn: "mock-txn",
-          },
-          passedAttempt,
-          getCheckDetail(),
-          []
-        );
-
-        const result = getAuditEvidence(passedAttempt, [], evidence);
-
-        expect(result).toEqual({
-          attemptNum: 1,
-          checkDetails: [{ checkMethod: "data", dataCheck: "record_check" }],
-          txn: "mock-txn",
-          type: "IdentityCheck",
-        });
-      });
-    });
-  });
-
-  describe("getCheckDetail", () => {
-    it("returns checkMethod data and dataCheck record_check when no evidenceRequest", () => {
-      const result = getCheckDetail();
       expect(result).toEqual({
-        checkMethod: "data",
-        dataCheck: "record_check",
+        attemptNum: 1,
+        checkDetails: [{ checkMethod: "data" }],
+        strengthScore: 2,
+        txn: "mock-txn",
+        type: "IdentityCheck",
+        validityScore: 2,
       });
     });
 
-    it("returns only checkMethod data when evidenceRequest exists", () => {
-      const evidenceRequest = {
-        scoringPolicy: "gpg45",
-        strengthScore: 2,
-      };
-      const result = getCheckDetail(evidenceRequest);
+    it("creates audit evidence with failedCheckDetails and ciReasons when user has failed", () => {
+      const captureMetricSpy = jest.spyOn(MetricsUtils, "captureMetric");
+      const contraIndicators = [
+        {
+          ci: "ci_3",
+          reason: "ci_3 reason",
+        },
+      ];
+      const evidence = getEvidence(
+        {
+          sessionId: "test-session",
+          txn: "mock-txn",
+          evidenceRequest,
+        },
+        failedAttempt,
+        CHECK_DETAIL,
+        contraIndicators
+      );
+
+      const result = getAuditEvidence(failedAttempt, contraIndicators, evidence);
+
       expect(result).toEqual({
-        checkMethod: "data",
+        attemptNum: 2,
+        ci: ["ci_3"],
+        ciReasons: [{ ci: "ci_3", reason: "ci_3 reason" }],
+        failedCheckDetails: [{ checkMethod: "data" }],
+        strengthScore: 2,
+        txn: "mock-txn",
+        type: "IdentityCheck",
+        validityScore: 0,
       });
+      expect(captureMetricSpy).toHaveBeenCalledWith("CIRaisedMetric");
     });
   });
 });
