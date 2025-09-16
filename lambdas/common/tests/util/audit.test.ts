@@ -28,7 +28,6 @@ const mockAuditUser: AuditUser = {
 };
 
 const validBaseEvent: AuditEvent = {
-  client_id: mockSession.clientId,
   component_id: mockAuditConfig.componentId,
   event_name: `${AUDIT_PREFIX}_${REQUEST_SENT}`,
   event_timestamp_ms: 9090909 as UnixMillisecondsTimestamp,
