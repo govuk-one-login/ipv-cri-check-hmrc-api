@@ -65,7 +65,7 @@ describe("Given the session is valid and expecting to abandon the journey", () =
     const events = await pollForTestHarnessEvents(ABANDONED_EVENT_NAME, sessionId);
 
     expect(events).toHaveLength(1);
-    expect(events[0].event).toStrictEqual<AuditEvent>(baseExpectedEvent(ABANDONED_EVENT_NAME, clientId, sessionId));
+    expect(events[0].event).toStrictEqual<AuditEvent>(baseExpectedEvent(ABANDONED_EVENT_NAME, sessionId));
   });
 
   it("Should receive a 200 response when /abandon endpoint is called with optional headers", async () => {
@@ -87,7 +87,7 @@ describe("Given the session is valid and expecting to abandon the journey", () =
 
     expect(events).toHaveLength(1);
     expect(events[0].event).toStrictEqual<AuditEvent>({
-      ...baseExpectedEvent(ABANDONED_EVENT_NAME, clientId, sessionId),
+      ...baseExpectedEvent(ABANDONED_EVENT_NAME, sessionId),
       restricted: { device_information: { encoded: "test encoded header" } },
     });
   });

@@ -15,7 +15,6 @@ jest.setTimeout(60_000); // 1 min
 describe("Given the session and NINO is valid", () => {
   let sessionId: string;
   let sessionData: { session_id: string };
-  let clientId: string;
   let sessionTableName: string;
   let privateApi: string;
   let issuer: string | undefined;
@@ -23,7 +22,6 @@ describe("Given the session and NINO is valid", () => {
   beforeEach(async () => {
     const data = await getJarAuthorization();
     const request = await data.json();
-    clientId = request.client_id;
     privateApi = `${process.env.PRIVATE_API}`;
     sessionTableName = `${process.env.SESSION_TABLE}`;
     const session = await createSession(privateApi, request);
@@ -61,7 +59,7 @@ describe("Given the session and NINO is valid", () => {
     const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
     expect(reqSentEvents[0].event).toStrictEqual<AuditEvent>({
-      ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, clientId, sessionId),
+      ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, sessionId),
       restricted: {
         birthDate: [{ value: testUser.dob }],
         name: testUser.formattedName,
@@ -72,7 +70,7 @@ describe("Given the session and NINO is valid", () => {
     const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
     expect(resReceivedEvents[0].event).toStrictEqual<AuditEvent>({
-      ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, clientId, sessionId),
+      ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, sessionId),
       extensions: {
         evidence: { txn: expect.any(String) },
       },
@@ -96,7 +94,7 @@ describe("Given the session and NINO is valid", () => {
     const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
     expect(reqSentEvents[0].event).toStrictEqual<AuditEvent>({
-      ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, clientId, sessionId),
+      ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, sessionId),
       restricted: {
         birthDate: [{ value: testUser.dob }],
         name: testUser.formattedName,
@@ -110,7 +108,7 @@ describe("Given the session and NINO is valid", () => {
     const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
     expect(resReceivedEvents[0].event).toStrictEqual<AuditEvent>({
-      ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, clientId, sessionId),
+      ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, sessionId),
       restricted: {
         device_information: {
           encoded: "test encoded header",
@@ -175,7 +173,7 @@ describe("Given the session and NINO is valid", () => {
     const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
     expect(reqSentEvents[0].event).toStrictEqual<AuditEvent>({
-      ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, clientId, sessionId),
+      ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, sessionId),
       restricted: {
         birthDate: deceasedPersonSession.birthDate,
         name: deceasedPersonSession.name,
@@ -189,7 +187,7 @@ describe("Given the session and NINO is valid", () => {
     const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
     expect(resReceivedEvents[0].event).toStrictEqual<AuditEvent>({
-      ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, clientId, sessionId),
+      ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, sessionId),
       restricted: {
         device_information: {
           encoded: "test encoded header",
@@ -256,7 +254,7 @@ describe("Given the session and NINO is valid", () => {
     const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
     expect(reqSentEvents[0].event).toStrictEqual<AuditEvent>({
-      ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, clientId, sessionId),
+      ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, sessionId),
       restricted: {
         birthDate: [{ value: "2000-02-02" }],
         name: multipleNamesSession.name,
@@ -267,7 +265,7 @@ describe("Given the session and NINO is valid", () => {
     const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
     expect(resReceivedEvents[0].event).toStrictEqual<AuditEvent>({
-      ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, clientId, sessionId),
+      ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, sessionId),
       extensions: {
         evidence: { txn: expect.any(String) },
       },
