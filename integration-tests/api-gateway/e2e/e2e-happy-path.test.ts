@@ -25,7 +25,6 @@ jest.setTimeout(180_000); // 3 mins
 describe("End to end happy path journey", () => {
   let state: string;
   let sessionId: string;
-  let clientId: string;
   let sessionTableName: string;
   let privateSigningKey: JWK | undefined;
 
@@ -41,7 +40,6 @@ describe("End to end happy path journey", () => {
       evidenceRequested: claimSet.evidence_requested,
     });
     const request = await data.json();
-    clientId = request.client_id;
     privateApi = `${process.env.PRIVATE_API}`;
     publicApi = `${process.env.PUBLIC_API}`;
     sessionTableName = `${process.env.SESSION_TABLE}`;
@@ -139,7 +137,7 @@ describe("End to end happy path journey", () => {
     expect(startEvents).toHaveLength(1);
     expect(startEvents[0].event).toEqual<AuditEvent>({
       // clientId is currently unset on start events created by the common session lambda
-      ...baseExpectedEvent(START_EVENT_NAME, undefined, sessionId),
+      ...baseExpectedEvent(START_EVENT_NAME, sessionId),
       extensions: {
         evidence: [
           {
@@ -152,7 +150,7 @@ describe("End to end happy path journey", () => {
     const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
     expect(reqSentEvents[0].event).toStrictEqual<AuditEvent>({
-      ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, clientId, sessionId),
+      ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, sessionId),
       restricted: {
         birthDate: claimSet.shared_claims.birthDate,
         name: claimSet.shared_claims.name,
@@ -163,7 +161,7 @@ describe("End to end happy path journey", () => {
     const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
     expect(resReceivedEvents[0].event).toStrictEqual<AuditEvent>({
-      ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, clientId, sessionId),
+      ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, sessionId),
       extensions: {
         evidence: { txn: expect.any(String) },
       },
@@ -172,7 +170,7 @@ describe("End to end happy path journey", () => {
     const vcIssuedEvents = await pollForTestHarnessEvents(VC_ISSUED_EVENT_NAME, sessionId);
     expect(vcIssuedEvents).toHaveLength(1);
     expect(vcIssuedEvents[0].event).toEqual<AuditEvent>({
-      ...baseExpectedEvent(VC_ISSUED_EVENT_NAME, clientId, sessionId),
+      ...baseExpectedEvent(VC_ISSUED_EVENT_NAME, sessionId),
       restricted: {
         birthDate: claimSet.shared_claims.birthDate,
         name: claimSet.shared_claims.name,
@@ -194,6 +192,6 @@ describe("End to end happy path journey", () => {
 
     const endEvents = await pollForTestHarnessEvents(END_EVENT_NAME, sessionId);
     expect(endEvents).toHaveLength(1);
-    expect(endEvents[0].event).toStrictEqual<AuditEvent>(baseExpectedEvent(END_EVENT_NAME, clientId, sessionId));
+    expect(endEvents[0].event).toStrictEqual<AuditEvent>(baseExpectedEvent(END_EVENT_NAME, sessionId));
   });
 });

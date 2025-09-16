@@ -53,9 +53,8 @@ export async function pollForTestHarnessEvents(eventName: string, sessionId: str
 
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-export function baseExpectedEvent(eventName: string, clientId: string | undefined, sessionId: string): AuditEvent {
+export function baseExpectedEvent(eventName: string, sessionId: string): AuditEvent {
   return {
-    ...(clientId ? { client_id: clientId } : {}),
     component_id: expect.stringMatching(/^https:\/\/.+\.account\.gov\.uk$/),
     event_name: eventName,
     event_timestamp_ms: expect.any(Number),

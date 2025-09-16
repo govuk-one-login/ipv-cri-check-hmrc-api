@@ -30,7 +30,6 @@ export async function sendAuditEvent(
   const secondsTimestamp = Math.round(timestamp / 1000) as UnixSecondsTimestamp;
 
   const auditEvent: AuditEvent = {
-    client_id: session.clientId,
     component_id: auditConfig.componentId,
     event_name: `${AUDIT_PREFIX}_${eventType}`,
     event_timestamp_ms: timestamp,
