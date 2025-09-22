@@ -715,30 +715,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref AbandonFunctionLogGroup
 
-  UserAgent:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Type: String
-      Name: !Sub /${AWS::StackName}/UserAgent
-      Value: govuk-one-login
-      Description: User agent for HMRC requests
-
-  MaxJwtTtlParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Type: String
-      Name: !Sub /${AWS::StackName}/MaxJwtTtl
-      Value: !FindInMap [MaxJwtTtl, Environment, !Ref Environment]
-      Description: Default time to live for an JWT in (seconds)
-
-  JwtTtlUnitParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Type: String
-      Name: !Sub /${AWS::StackName}/JwtTtlUnit
-      Value: !FindInMap [JwtTtlUnit, Environment, !Ref Environment]
-      Description: The unit for the time-to-live for an JWT e.g. (MONTHS)
-
   PublicNinoCheckApi:
     Type: AWS::Serverless::Api
     Properties:
