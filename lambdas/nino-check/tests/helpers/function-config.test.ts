@@ -32,7 +32,6 @@ describe("NINo Check function config", () => {
         queueUrl: "cool-queuez.com",
         componentId: "https://check-hmrc-time.account.gov.uk",
       },
-      hmrcApi: { pdvUserAgentParamName: "user-agent-param" },
     });
     expect(config.tableNames).toEqual({
       sessionTable: "session-table",

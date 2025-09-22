@@ -4,7 +4,7 @@ import { captureLatency } from "../../../common/src/util/metrics";
 import { safeStringifyError } from "../../../common/src/util/stringify-error";
 
 export async function callPdvMatchingApi(
-  { apiUrl, userAgent }: PdvConfig,
+  { apiUrl }: PdvConfig,
   oAuthToken: string,
   apiInput: PdvApiInput
 ): Promise<ParsedPdvMatchResponse> {
@@ -13,7 +13,7 @@ export async function callPdvMatchingApi(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "User-Agent": userAgent,
+        "User-Agent": "govuk-one-login",
         Authorization: `Bearer ${oAuthToken}`,
       },
       body: JSON.stringify(apiInput),

@@ -20,12 +20,10 @@ const mockDynamoClient = ddbMock as unknown as DynamoDBClient;
 
 describe("getHmrcConfig()", () => {
   const mockClientId = "my-cool-client";
-  const pdvParamName = "big-ssm-param";
 
   const ssmRes = {
     [`/check-hmrc-cri-api/OtgUrl/${mockClientId}`]: "https://otg.hmrc.gov.uk",
     [`/check-hmrc-cri-api/NinoCheckUrl/${mockClientId}`]: "https://pdv.hmrc.gov.uk",
-    [pdvParamName]: "billybob",
   };
 
   beforeEach(() => {
@@ -35,10 +33,10 @@ describe("getHmrcConfig()", () => {
   it("behaves as expected when the SSM fetch works", async () => {
     const paramSpy = jest.spyOn(GetParameters, "getParametersValues").mockResolvedValueOnce(ssmRes);
 
-    const config = await getHmrcConfig(mockClientId, pdvParamName);
+    const config = await getHmrcConfig(mockClientId);
 
     expect(paramSpy).toHaveBeenCalledWith(
-      ["/check-hmrc-cri-api/OtgUrl/my-cool-client", "/check-hmrc-cri-api/NinoCheckUrl/my-cool-client", "big-ssm-param"],
+      ["/check-hmrc-cri-api/OtgUrl/my-cool-client", "/check-hmrc-cri-api/NinoCheckUrl/my-cool-client"],
       300
     );
 
@@ -48,7 +46,6 @@ describe("getHmrcConfig()", () => {
       },
       pdv: {
         apiUrl: "https://pdv.hmrc.gov.uk",
-        userAgent: "billybob",
       },
     });
   });
@@ -58,14 +55,14 @@ describe("getHmrcConfig()", () => {
       .spyOn(GetParameters, "getParametersValues")
       .mockRejectedValueOnce(
         new Error(
-          "Following SSM parameters do not exist: [/check-hmrc-cri-api/OtgUrl/my-cool-client, /check-hmrc-cri-api/NinoCheckUrl/my-cool-client, big-ssm-param]"
+          "Following SSM parameters do not exist: [/check-hmrc-cri-api/OtgUrl/my-cool-client, /check-hmrc-cri-api/NinoCheckUrl/my-cool-client]"
         )
       );
 
-    await expect(() => getHmrcConfig(mockClientId, pdvParamName)).rejects.toThrow(
+    await expect(() => getHmrcConfig(mockClientId)).rejects.toThrow(
       new CriError(
         500,
-        "Failed to load HMRC config: Following SSM parameters do not exist: [/check-hmrc-cri-api/OtgUrl/my-cool-client, /check-hmrc-cri-api/NinoCheckUrl/my-cool-client, big-ssm-param]"
+        "Failed to load HMRC config: Following SSM parameters do not exist: [/check-hmrc-cri-api/OtgUrl/my-cool-client, /check-hmrc-cri-api/NinoCheckUrl/my-cool-client]"
       )
     );
   });
