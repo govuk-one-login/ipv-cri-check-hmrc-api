@@ -874,14 +874,24 @@ Resources:
       EndpointConfiguration:
         Type: !If [IsLocalDevEnvironment, REGIONAL, PRIVATE]
       Auth:
-        ResourcePolicy: !If
-          - IsLocalDevEnvironment
-          - !Ref AWS::NoValue
-          - CustomStatements:
-              - Effect: Allow
+        ResourcePolicy:
+          CustomStatements:
+            - Effect: Allow
+              Resource: execute-api:/*
+              Action: execute-api:Invoke
+              Principal: "*"
+            - !If
+              - IsLocalDevEnvironment
+              - !Ref AWS::NoValue
+              - Effect: Deny
                 Resource: execute-api:/*
                 Action: execute-api:Invoke
                 Principal: "*"
+                Condition:
+                  StringNotEquals:
+                    aws:SourceVpce:
+                      - !ImportValue cri-vpc-ApiGatewayVpcEndpointId
+                      - !ImportValue spoke-vpc-ExecuteApiGatewayEndpointId
 
   PrivateNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
