@@ -1039,10 +1039,6 @@ Resources:
             ParameterName: check-hmrc-cri-api/OtgUrl/*
         - SSMParameterReadPolicy:
             ParameterName: check-hmrc-cri-api/NinoCheckUrl/*
-        - SSMParameterReadPolicy:
-            # I would use !Ref UserAgent here, but this returns the name with leading slash.
-            # There is no easy native way to strip the first character of a string in CloudFormation syntax.
-            ParameterName: !Sub ${AWS::StackName}/UserAgent
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBWritePolicy:
@@ -1074,7 +1070,6 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-NinoCheckFunction"
-          PDV_USER_AGENT_PARAM_NAME: !Ref UserAgent
           SESSION_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
           PERSON_IDENTITY_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
           ATTEMPT_TABLE: !Ref UserAttemptsTable

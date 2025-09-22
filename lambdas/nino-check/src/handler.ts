@@ -50,7 +50,7 @@ class NinoCheckHandler implements LambdaInterface {
       });
       logger.info(`Identified government journey id: ${session.clientSessionId}. Retrieving HMRC config from SSM...`);
 
-      const hmrcApiConfig = await getHmrcConfig(session.clientId, functionConfig.hmrcApi.pdvUserAgentParamName);
+      const hmrcApiConfig = await getHmrcConfig(session.clientId);
 
       logger.info(`HMRC config retrieved from SSM.`);
 

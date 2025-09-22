@@ -16,10 +16,10 @@ export type HmrcApiConfig = {
 
 const cacheTtlInSeconds = Number(process.env.POWERTOOLS_PARAMETERS_MAX_AGE) || 300;
 
-export async function getHmrcConfig(clientId: string, pdvUserAgentParamName: string): Promise<HmrcApiConfig> {
+export async function getHmrcConfig(clientId: string): Promise<HmrcApiConfig> {
   const otgParamName = `/check-hmrc-cri-api/OtgUrl/${clientId}`;
   const pdvParamName = `/check-hmrc-cri-api/NinoCheckUrl/${clientId}`;
-  const paramPaths = [otgParamName, pdvParamName, pdvUserAgentParamName];
+  const paramPaths = [otgParamName, pdvParamName];
 
   try {
     const ssmParams = await getParametersValues(paramPaths, cacheTtlInSeconds);
@@ -30,7 +30,6 @@ export async function getHmrcConfig(clientId: string, pdvUserAgentParamName: str
       },
       pdv: {
         apiUrl: ssmParams[pdvParamName],
-        userAgent: ssmParams[pdvUserAgentParamName],
       },
     };
   } catch (err) {

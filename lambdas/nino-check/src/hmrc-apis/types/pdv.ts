@@ -18,4 +18,4 @@ export type ParsedPdvMatchResponse = {
   txn: string;
 };
 
-export type PdvConfig = { apiUrl: string; userAgent: string };
+export type PdvConfig = { apiUrl: string; };

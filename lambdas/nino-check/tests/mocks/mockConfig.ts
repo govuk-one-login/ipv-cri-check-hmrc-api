@@ -1,12 +1,8 @@
-import { HmrcEnvVars, NinoCheckFunctionConfig, TableNames } from "../../src/helpers/function-config";
+import { NinoCheckFunctionConfig, TableNames } from "../../src/helpers/function-config";
 import { HmrcApiConfig } from "../../src/helpers/nino";
 import { mockAuditConfig } from "../../../common/tests/mocks/mockConfig";
 
 export const mockDeviceInformationHeader = "big-device-time";
-
-export const mockHmrcEnvVars: HmrcEnvVars = {
-  pdvUserAgentParamName: "user-agent-param",
-};
 
 export const mockTableNames: TableNames = {
   sessionTable: "session-table",
@@ -21,14 +17,12 @@ export const mockHmrcConfig: HmrcApiConfig = {
   },
   pdv: {
     apiUrl: "https://pdv.hmrc.gov.uk",
-    userAgent: "billybob",
   },
 };
 
 export const mockFunctionConfig: NinoCheckFunctionConfig = {
   tableNames: mockTableNames,
-  audit: mockAuditConfig,
-  hmrcApi: mockHmrcEnvVars,
+  audit: mockAuditConfig
 };
 
 export const mockSaveRes = {
