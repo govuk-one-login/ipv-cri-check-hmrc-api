@@ -140,10 +140,11 @@ Globals:
     PermissionsBoundary: !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
     VpcConfig:
       SecurityGroupIds:
-        - !ImportValue cri-vpc-AWSServicesEndpointSecurityGroupId
+        - !ImportValue spoke-vpc-AWSServicesEndpointSecurityGroupId
       SubnetIds:
-        - !ImportValue cri-vpc-ProtectedSubnetIdA
-        - !ImportValue cri-vpc-ProtectedSubnetIdB
+        - !ImportValue spoke-vpc-ProtectedSubnetIdA
+        - !ImportValue spoke-vpc-ProtectedSubnetIdB
+        - !ImportValue spoke-vpc-ProtectedSubnetIdC
     Layers:
       # SEE https://github.com/govuk-one-login/observability-infrastructure/tree/main/lambdalayer
       - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
