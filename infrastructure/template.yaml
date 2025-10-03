@@ -1007,6 +1007,10 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: ttl
         Enabled: true
+      SSESpecification:
+        KMSMasterKeyId: !Ref DynamoTablesEncryptionKey
+        SSEEnabled: true
+        SSEType: KMS
 
   NinoUsersTable:
     Type: AWS::DynamoDB::Table
@@ -1022,6 +1026,10 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: ttl
         Enabled: true
+      SSESpecification:
+        KMSMasterKeyId: !Ref DynamoTablesEncryptionKey
+        SSEEnabled: true
+        SSEType: KMS
 
   NinoCheckFunction:
     Type: AWS::Serverless::Function
