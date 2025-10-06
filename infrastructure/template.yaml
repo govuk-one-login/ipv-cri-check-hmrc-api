@@ -56,6 +56,8 @@ Conditions:
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
   IsIntOrProdEnvironment: !Or [!Condition IsIntEnvironment, !Condition IsProdEnvironment]
+  IsNotIntOrProdEnvironment: !Not
+    - !Condition IsIntOrProdEnvironment
   UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
@@ -744,6 +746,7 @@ Resources:
       TracingEnabled: true
       Name: !Sub ${AWS::StackName}-public
       StageName: !Ref Environment
+      AlwaysDeploy: true
       DefinitionBody:
         openapi: 3.0.1
         Fn::Transform:
@@ -753,6 +756,9 @@ Resources:
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
+      Tags:
+        FMSRegionalPolicy: !If [IsNotIntOrProdEnvironment, "false", ""]
+        CustomPolicy: !If [IsNotIntOrProdEnvironment, "true", ""]
 
   PublicNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -836,6 +842,7 @@ Resources:
       TracingEnabled: true
       Name: !Sub ${AWS::StackName}-private
       StageName: !Ref Environment
+      AlwaysDeploy: true
       DefinitionBody:
         openapi: 3.0.1
         paths: # workaround to get `sam validate` to work
@@ -857,6 +864,9 @@ Resources:
                 Resource: execute-api:/*
                 Action: execute-api:Invoke
                 Principal: "*"
+      Tags:
+        FMSRegionalPolicy: !If [IsNotIntOrProdEnvironment, "false", ""]
+        CustomPolicy: !If [IsNotIntOrProdEnvironment, "true", ""]
 
   PrivateNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
