@@ -137,14 +137,7 @@ describe("End to end happy path journey", () => {
     expect(startEvents).toHaveLength(1);
     expect(startEvents[0].event).toEqual<AuditEvent>({
       // clientId is currently unset on start events created by the common session lambda
-      ...baseExpectedEvent(START_EVENT_NAME, sessionId),
-      extensions: {
-        evidence: [
-          {
-            context: "identity_check",
-          },
-        ],
-      },
+      ...baseExpectedEvent(START_EVENT_NAME, sessionId)
     });
 
     const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
