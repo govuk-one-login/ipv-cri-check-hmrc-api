@@ -44,6 +44,10 @@ Parameters:
     Description: "Specifies the configuration to enable gradual Lambda deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'AllAtOnce'"
     Type: String
     Default: "AllAtOnce"
+  ForceLambdaUpdate:
+    Type: String
+    Default: "initial"
+    Description: "For localdev only - used to force Lambda version updates"
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
@@ -155,6 +159,7 @@ Globals:
         AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
         DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: true
         POWERTOOLS_METRICS_NAMESPACE: !Ref CriIdentifier
+        FORCE_LAMBDA_UPDATE: !If [IsLocalDevEnvironment, !Ref ForceLambdaUpdate, !Ref AWS::NoValue]
         DT_CONNECTION_AUTH_TOKEN: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]

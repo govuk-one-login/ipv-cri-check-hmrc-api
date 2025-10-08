@@ -32,4 +32,5 @@ sam deploy --stack-name "$stack_name" \
   --parameter-overrides \
   ${common_stack_name:+CommonStackName=$common_stack_name} \
   ${txma_stack_name:+TxmaStackName=$txma_stack_name} \
-  Environment=localdev
+  Environment=localdev \
+  ForceLambdaUpdate="$(date +%s)"
