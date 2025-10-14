@@ -56,8 +56,6 @@ Conditions:
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
   IsIntOrProdEnvironment: !Or [!Condition IsIntEnvironment, !Condition IsProdEnvironment]
-  IsNotIntOrProdEnvironment: !Not
-    - !Condition IsIntOrProdEnvironment
   UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
@@ -757,8 +755,8 @@ Resources:
       EndpointConfiguration:
         Type: REGIONAL
       Tags:
-        FMSRegionalPolicy: !If [IsNotIntOrProdEnvironment, "false", ""]
-        CustomPolicy: !If [IsNotIntOrProdEnvironment, "true", ""]
+        FMSRegionalPolicy: "false"
+        CustomPolicy: "true"
 
   PublicNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -865,8 +863,8 @@ Resources:
                 Action: execute-api:Invoke
                 Principal: "*"
       Tags:
-        FMSRegionalPolicy: !If [IsNotIntOrProdEnvironment, "false", ""]
-        CustomPolicy: !If [IsNotIntOrProdEnvironment, "true", ""]
+        FMSRegionalPolicy: "false"
+        CustomPolicy: "true"
 
   PrivateNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
