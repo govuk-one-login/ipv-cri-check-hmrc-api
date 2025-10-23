@@ -684,6 +684,8 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBWritePolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - KMSDecryptPolicy:
+            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
         - SQSSendMessagePolicy:
             QueueName:
               Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
@@ -1082,6 +1084,8 @@ Resources:
             TableName: !Ref NinoUsersTable
         - KMSDecryptPolicy:
             KeyId: !Ref DynamoTablesEncryptionKey
+        - KMSDecryptPolicy:
+            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
         - SQSSendMessagePolicy:
             QueueName:
               Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
@@ -1153,6 +1157,8 @@ Resources:
             TableName: !Ref NinoUsersTable
         - KMSDecryptPolicy:
             KeyId: !Ref DynamoTablesEncryptionKey
+        - KMSDecryptPolicy:
+            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
         - SSMParameterReadPolicy:
             ParameterName: check-hmrc-cri-api/contraindicationMappings
         - SSMParameterReadPolicy:
