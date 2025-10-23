@@ -1,19 +1,20 @@
 import { Metrics, MetricUnits } from "@aws-lambda-powertools/metrics";
-jest.mock("@aws-lambda-powertools/metrics");
+import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
+vi.mock("@aws-lambda-powertools/metrics");
 
 const mockSingleMetric = {
-  addDimension: jest.fn(),
-  addMetric: jest.fn(),
+  addDimension: vi.fn(),
+  addMetric: vi.fn(),
 };
 const mockMetrics = {
-  addMetric: jest.fn(),
-  singleMetric: jest.fn().mockReturnValue(mockSingleMetric),
+  addMetric: vi.fn(),
+  singleMetric: vi.fn().mockReturnValue(mockSingleMetric),
 };
-(Metrics as unknown as jest.Mock).mockReturnValue(mockMetrics);
+(Metrics as unknown as Mock).mockReturnValue(mockMetrics);
 
 import { captureMetric, captureLatency } from "../../src/util/metrics";
 
-performance.now = jest.fn();
+performance.now = vi.fn();
 
 function waitBeforeReturning<T>(res: T, ms: number): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(res), ms));
@@ -21,7 +22,7 @@ function waitBeforeReturning<T>(res: T, ms: number): Promise<T> {
 
 describe("metrics functions", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("captureMetric()", () => {
@@ -40,22 +41,18 @@ describe("metrics functions", () => {
 
   describe("captureLatency()", () => {
     it("captures latency correctly", async () => {
-      (performance.now as unknown as jest.Mock).mockReturnValueOnce(1000).mockReturnValueOnce(1141.999);
+      (performance.now as unknown as Mock).mockReturnValueOnce(1000).mockReturnValueOnce(1141.999);
 
       const res = await captureLatency("zoomies", () => waitBeforeReturning("good!", 80));
 
       expect(res).toStrictEqual(["good!", 141]);
 
       expect(mockSingleMetric.addDimension).toHaveBeenCalledWith("HTTP", "zoomies");
-      expect(mockSingleMetric.addMetric).toHaveBeenCalledWith(
-        "ResponseLatency",
-        MetricUnits.Milliseconds,
-        141
-      );
+      expect(mockSingleMetric.addMetric).toHaveBeenCalledWith("ResponseLatency", MetricUnits.Milliseconds, 141);
     });
 
     it("handles generic return types correctly", async () => {
-      (performance.now as unknown as jest.Mock).mockReturnValueOnce(1).mockReturnValueOnce(5.999);
+      (performance.now as unknown as Mock).mockReturnValueOnce(1).mockReturnValueOnce(5.999);
 
       const theCoolback = () =>
         waitBeforeReturning({ blah: 9, go: true, success: "maybe", thing: { stuff: false } }, 50);

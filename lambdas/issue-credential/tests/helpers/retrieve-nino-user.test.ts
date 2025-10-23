@@ -4,17 +4,19 @@ import { logger } from "../../../common/src/util/logger";
 import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
 import { mockNinoUser, mockSessionId } from "../../../common/tests/mocks/mockData";
 import { retrieveNinoUser } from "../../src/helpers/retrieve-nino-user";
-jest.mock("../../../common/src/util/logger");
-jest.mock("../../../common/src/util/metrics");
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const getRecordBySessionId = jest.spyOn(getRecordModule, "getRecordBySessionId");
+vi.mock("../../../common/src/util/logger");
+vi.mock("../../../common/src/util/metrics");
+
+const getRecordBySessionId = vi.spyOn(getRecordModule, "getRecordBySessionId");
 getRecordBySessionId.mockResolvedValue(mockNinoUser);
 
 const ninoUserTableName = "nino-user-squad";
 
 describe("retrieveNinoUser()", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns as expected for some valid input", async () => {

@@ -1,10 +1,11 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import { CriError } from "../../src/errors/cri-error";
 import { handleErrorResponse } from "../../src/errors/cri-error-response";
+import { describe, expect, it, vi } from "vitest";
 
 describe("cri-error-response", () => {
   const logger = new Logger();
-  jest.spyOn(logger, "error");
+  vi.spyOn(logger, "error");
 
   it("returns error with message on 400 CriError", () => {
     const error = new CriError(400, "Custom error");

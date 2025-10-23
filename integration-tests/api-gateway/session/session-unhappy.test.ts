@@ -1,6 +1,5 @@
 import { createSession } from "../endpoints";
-jest.setTimeout(35_000);
-describe("Given the session is invalid", () => {
+describe\(".*", { timeout: 35_000 /* 35s */ }, \() => {
   let anInValidSession: Response;
 
   beforeEach(async () => {

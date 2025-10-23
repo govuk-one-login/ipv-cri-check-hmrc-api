@@ -1,15 +1,16 @@
-jest.mock("../../common/src/util/logger", () => ({
+import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
+vi.mock("../../common/src/util/logger", () => ({
   logger: mockLogger,
 }));
-jest.mock("../src/helpers/write-completed-check");
-jest.mock("../src/helpers/function-config");
-jest.mock("../src/helpers/nino");
-jest.mock("../../common/src/database/get-attempts");
-jest.mock("../../common/src/database/get-record-by-session-id");
-jest.mock("../src/hmrc-apis/pdv");
-jest.mock("../src/hmrc-apis/otg");
-jest.mock("../../common/src/util/metrics");
-jest.mock("../../common/src/util/audit");
+vi.mock("../src/helpers/write-completed-check");
+vi.mock("../src/helpers/function-config");
+vi.mock("../src/helpers/nino");
+vi.mock("../../common/src/database/get-attempts");
+vi.mock("../../common/src/database/get-record-by-session-id");
+vi.mock("../src/hmrc-apis/pdv");
+vi.mock("../src/hmrc-apis/otg");
+vi.mock("../../common/src/util/metrics");
+vi.mock("../../common/src/util/audit");
 
 import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
 import { mockOtgToken, mockPdvRes } from "./mocks/mockData";
@@ -67,17 +68,21 @@ const handlerInput: Parameters<typeof handler> = [
   mockContext,
 ];
 
-(NinoCheckFunctionConfig as unknown as jest.Mock).mockReturnValue(mockFunctionConfig);
-(getSessionBySessionId as unknown as jest.Mock).mockResolvedValue(mockSession);
-(getHmrcConfig as unknown as jest.Mock).mockResolvedValue(mockHmrcConfig);
-(attempts as unknown as jest.Mock).mockResolvedValue({ count: 0, items: [] });
-(getRecordBySessionId as unknown as jest.Mock).mockResolvedValue(mockPersonIdentity);
-(getTokenFromOtg as unknown as jest.Mock).mockResolvedValue(mockOtgToken);
-(callPdvMatchingApi as unknown as jest.Mock).mockResolvedValue(mockPdvRes);
-(handleResponseAndSaveAttempt as unknown as jest.Mock).mockResolvedValue(true);
+(NinoCheckFunctionConfig as unknown as Mock).mockImplementation(function () {
+  // class constructors must be mocked with function syntax, not arrow syntax
+  // https://vitest.dev/guide/migration.html#spyon-and-fn-support-constructors
+  return mockFunctionConfig;
+});
+(getSessionBySessionId as unknown as Mock).mockResolvedValue(mockSession);
+(getHmrcConfig as unknown as Mock).mockResolvedValue(mockHmrcConfig);
+(attempts as unknown as Mock).mockResolvedValue({ count: 0, items: [] });
+(getRecordBySessionId as unknown as Mock).mockResolvedValue(mockPersonIdentity);
+(getTokenFromOtg as unknown as Mock).mockResolvedValue(mockOtgToken);
+(callPdvMatchingApi as unknown as Mock).mockResolvedValue(mockPdvRes);
+(handleResponseAndSaveAttempt as unknown as Mock).mockResolvedValue(true);
 
 describe("nino-check handler", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it("executes successfully with a valid input", async () => {
     const response = await handler(...handlerInput);
@@ -139,7 +144,7 @@ describe("nino-check handler", () => {
   });
 
   it("handles application errors correctly", async () => {
-    (getSessionBySessionId as unknown as jest.Mock).mockImplementationOnce(() => {
+    (getSessionBySessionId as unknown as Mock).mockImplementationOnce(() => {
       throw new Error("nooooooo!!!");
     });
 
@@ -153,7 +158,7 @@ describe("nino-check handler", () => {
   });
 
   it("handles a too-many-attempts scenario correctly", async () => {
-    (attempts as unknown as jest.Mock).mockResolvedValueOnce({ count: 2, items: [{}, {}] });
+    (attempts as unknown as Mock).mockResolvedValueOnce({ count: 2, items: [{}, {}] });
 
     const response = await handler(...handlerInput);
 
@@ -171,7 +176,7 @@ describe("nino-check handler", () => {
   });
 
   it("handles a problem with the PDV function correctly", async () => {
-    (callPdvMatchingApi as unknown as jest.Mock).mockImplementationOnce(() => {
+    (callPdvMatchingApi as unknown as Mock).mockImplementationOnce(() => {
       throw new Error("broken!");
     });
 
@@ -184,7 +189,7 @@ describe("nino-check handler", () => {
   });
 
   it("behaves correctly if ninoMatch is false", async () => {
-    (handleResponseAndSaveAttempt as unknown as jest.Mock).mockReturnValueOnce(false);
+    (handleResponseAndSaveAttempt as unknown as Mock).mockReturnValueOnce(false);
 
     const response = await handler(
       { ...handlerInput[0], headers: { ...handlerInput[0].headers, "txma-audit-encoded": undefined } },
@@ -201,8 +206,8 @@ describe("nino-check handler", () => {
   });
 
   it("should return 200 if nino match is false but it's the final attempt", async () => {
-    (attempts as unknown as jest.Mock).mockResolvedValueOnce({ count: 1, items: [{}] });
-    (handleResponseAndSaveAttempt as unknown as jest.Mock).mockReturnValueOnce(false);
+    (attempts as unknown as Mock).mockResolvedValueOnce({ count: 1, items: [{}] });
+    (handleResponseAndSaveAttempt as unknown as Mock).mockReturnValueOnce(false);
 
     const response = await handler(...handlerInput);
 
@@ -213,7 +218,7 @@ describe("nino-check handler", () => {
   });
 
   it("should return 500 if unexpected Error recieved from PDV request", async () => {
-    (handleResponseAndSaveAttempt as unknown as jest.Mock).mockImplementationOnce(() => {
+    (handleResponseAndSaveAttempt as unknown as Mock).mockImplementationOnce(() => {
       throw new CriError(500, "Error");
     });
 

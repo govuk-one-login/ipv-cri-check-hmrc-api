@@ -1,5 +1,6 @@
 import { CiMappings } from "../../../src/vc/contraIndicator/types/ci-mappings";
 import { validateInputs, CiReasonsMapping } from "../../../src/vc/contraIndicator/ci-mappings-validator";
+import { describe, expect, it } from "vitest";
 
 describe("ci-mapping-validator", () => {
   describe("validateInputs", () => {

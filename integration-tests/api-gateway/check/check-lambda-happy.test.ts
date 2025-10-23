@@ -9,10 +9,9 @@ import {
   RESPONSE_RECEIVED_EVENT_NAME,
 } from "../audit";
 import { testUser } from "../user";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-jest.setTimeout(60_000); // 1 min
-
-describe("Given the session and NINO is valid", () => {
+describe("Given the session and NINO is valid", { timeout: 60_000 /* 1 min */ }, () => {
   let sessionId: string;
   let sessionData: { session_id: string };
   let sessionTableName: string;

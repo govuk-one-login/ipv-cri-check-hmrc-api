@@ -1,10 +1,11 @@
 {
   "name": "abandon",
   "description": "",
+  "type": "module",
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "unit": "export POWERTOOLS_DEV=true && jest --silent ",
+    "unit": "export POWERTOOLS_DEV=true && vitest run --silent=passed-only ",
     "test": "npm run unit --",
     "test:coverage": "npm run unit -- --coverage",
     "deploy": "../../deploy.sh",
@@ -12,6 +13,6 @@
   },
   "devDependencies": {
     "aws-sdk-client-mock": "4.1.0",
-    "aws-sdk-client-mock-jest": "4.1.0"
+    "aws-sdk-client-mock-vitest": "^6.2.1"
   }
 }

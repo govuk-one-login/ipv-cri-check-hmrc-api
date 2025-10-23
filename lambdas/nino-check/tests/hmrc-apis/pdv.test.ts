@@ -1,5 +1,6 @@
-jest.mock("../../../common/src/util/metrics");
-jest.mock("../../../common/src/util/logger");
+import { afterEach, describe, expect, it, Mock, vi } from "vitest";
+vi.mock("../../../common/src/util/metrics");
+vi.mock("../../../common/src/util/logger");
 import { PdvApiInput } from "../../src/hmrc-apis/types/pdv";
 import { logger } from "../../../common/src/util/logger";
 import { captureLatency } from "../../../common/src/util/metrics";
@@ -23,21 +24,21 @@ const mockInput = [pdvConfig, oAuthToken, pdvInput] as const;
 
 const latency = 1001;
 
-(captureLatency as unknown as jest.Mock).mockImplementation(async (_, callback) => [await callback(), latency]);
+(captureLatency as unknown as Mock).mockImplementation(async (_, callback) => [await callback(), latency]);
 
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe("matchUserDetailsWithPdv", () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should return a matching response for a given nino and user", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       headers: {
-        get: jest.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
+        get: vi.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
       },
-      text: jest.fn().mockResolvedValueOnce({
+      text: vi.fn().mockResolvedValueOnce({
         firstName: "Jim",
         lastName: "Ferguson",
         dateOfBirth: "1948-04-23",
@@ -61,11 +62,11 @@ describe("matchUserDetailsWithPdv", () => {
   });
 
   it("does not fail if x-amz-cf-id header is unset", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       headers: {
-        get: jest.fn().mockReturnValueOnce(undefined).mockReturnValueOnce("application/json"),
+        get: vi.fn().mockReturnValueOnce(undefined).mockReturnValueOnce("application/json"),
       },
-      text: jest.fn().mockResolvedValueOnce({
+      text: vi.fn().mockResolvedValueOnce({
         firstName: "Jim",
         lastName: "Ferguson",
         dateOfBirth: "1948-04-23",
@@ -81,11 +82,11 @@ describe("matchUserDetailsWithPdv", () => {
   });
 
   it("should return 500 with internal server error", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       headers: {
-        get: jest.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
+        get: vi.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
       },
-      text: jest.fn().mockResolvedValueOnce("dummy-error-message-containing-pii"),
+      text: vi.fn().mockResolvedValueOnce("dummy-error-message-containing-pii"),
       status: 500,
     });
 
@@ -97,11 +98,11 @@ describe("matchUserDetailsWithPdv", () => {
   });
 
   it("should return a valid response when the content-type is application/json and the body is not valid JSON", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       headers: {
-        get: jest.fn().mockReturnValueOnce("content-type").mockReturnValueOnce("application/json"),
+        get: vi.fn().mockReturnValueOnce("content-type").mockReturnValueOnce("application/json"),
       },
-      text: jest.fn().mockResolvedValueOnce("Request to create account for a deceased user"),
+      text: vi.fn().mockResolvedValueOnce("Request to create account for a deceased user"),
       status: 422,
     });
 
@@ -114,11 +115,11 @@ describe("matchUserDetailsWithPdv", () => {
   });
 
   it("should return text when content type is not json", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       headers: {
-        get: jest.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce(""),
+        get: vi.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce(""),
       },
-      text: jest.fn().mockResolvedValueOnce("Test Text"),
+      text: vi.fn().mockResolvedValueOnce("Test Text"),
       status: 200,
     });
 
@@ -130,11 +131,11 @@ describe("matchUserDetailsWithPdv", () => {
   });
 
   it("should log API latency, and push a metric", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       headers: {
-        get: jest.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce(""),
+        get: vi.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce(""),
       },
-      text: jest.fn().mockResolvedValueOnce("Test Text"),
+      text: vi.fn().mockResolvedValueOnce("Test Text"),
       status: 200,
     });
 
@@ -151,11 +152,11 @@ describe("matchUserDetailsWithPdv", () => {
   });
 
   it("should return parsed deceased response", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       headers: {
-        get: jest.fn().mockReturnValueOnce("mock-txn"),
+        get: vi.fn().mockReturnValueOnce("mock-txn"),
       },
-      text: jest.fn().mockResolvedValueOnce("Request to create account for a deceased user"),
+      text: vi.fn().mockResolvedValueOnce("Request to create account for a deceased user"),
       status: 424,
     });
 
@@ -166,12 +167,12 @@ describe("matchUserDetailsWithPdv", () => {
     expect(result.errorBody).toStrictEqual("Request to create account for a deceased user");
   });
 
-   it("should return parsed deceased response even with JSON contentt-type header", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+  it("should return parsed deceased response even with JSON contentt-type header", async () => {
+    (global.fetch as Mock).mockResolvedValueOnce({
       headers: {
-        get: jest.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
+        get: vi.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
       },
-      text: jest.fn().mockResolvedValueOnce("Request to create account for a deceased user"),
+      text: vi.fn().mockResolvedValueOnce("Request to create account for a deceased user"),
       status: 424,
     });
 
@@ -183,11 +184,11 @@ describe("matchUserDetailsWithPdv", () => {
   });
 
   it("should return parsed matching error response", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       headers: {
-        get: jest.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
+        get: vi.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
       },
-      text: jest.fn().mockResolvedValueOnce(JSON.stringify({ errors: "CID returned no record" })),
+      text: vi.fn().mockResolvedValueOnce(JSON.stringify({ errors: "CID returned no record" })),
       status: 401,
     });
 
@@ -202,11 +203,11 @@ describe("matchUserDetailsWithPdv", () => {
   });
 
   it("should return parsed invalid creds error response", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       headers: {
-        get: jest.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
+        get: vi.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
       },
-      text: jest.fn().mockResolvedValueOnce(JSON.stringify({ code: "INVALID_CREDENTIALS" })),
+      text: vi.fn().mockResolvedValueOnce(JSON.stringify({ code: "INVALID_CREDENTIALS" })),
       status: 401,
     });
 

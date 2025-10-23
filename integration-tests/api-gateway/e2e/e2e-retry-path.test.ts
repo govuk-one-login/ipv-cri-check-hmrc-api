@@ -4,6 +4,7 @@ import { decodeJwt, JWK } from "jose";
 import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamodb-helper";
 import { authorizationEndpoint, checkEndpoint, createSession, getJarAuthorization } from "../endpoints";
 import { generatePrivateJwtParams } from "../crypto/private-key-jwt-helper";
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 let sessionData: Response;
 let state: string;
@@ -11,13 +12,11 @@ let authCode: { value: string };
 let privateApi: string;
 let publicApi: string;
 
-jest.setTimeout(35_000);
-
 const retryClaimSet = JSON.parse(JSON.stringify(claimSet));
 retryClaimSet.shared_claims.name[0].nameParts[0].value = "Error";
 retryClaimSet.shared_claims.name[0].nameParts[1].value = "NoCidForNino";
 
-describe("Retry Scenario Path Tests", () => {
+describe("Retry Scenario Path Tests", { timeout: 35_000 /* 35s */ }, () => {
   let sessionId: string;
   let sessionTableName: string;
   let privateSigningKey: JWK | undefined;

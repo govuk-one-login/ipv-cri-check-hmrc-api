@@ -11,7 +11,9 @@ export class BaseFunctionConfig {
 
   public static checkEnvEntry(name: string) {
     if (!process.env[name]) {
-      throw new Error(`Missing required environment variable at init: ${name}`);
+      throw new Error(
+        `Missing required environment variable at init: ${name}. Env: ${JSON.stringify(process.env, undefined, 2)}`
+      );
     }
   }
 

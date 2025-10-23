@@ -1,11 +1,11 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 const mockSqsClient = {
-  send: jest.fn().mockResolvedValue({ $metadata: { httpStatusCode: 200 } }),
+  send: vi.fn().mockResolvedValue({ $metadata: { httpStatusCode: 200 } }),
 };
-const mockSendMessageCommand = jest
-  .fn()
-  .mockImplementation((input: SendMessageCommandInput) => ({ op: "send", input }));
-jest.mock("@aws-sdk/client-sqs", () => ({
-  SQSClient: jest.fn().mockImplementation(() => mockSqsClient),
+const mockSendMessageCommand = vi.fn().mockImplementation((input: SendMessageCommandInput) => ({ op: "send", input }));
+vi.mock("@aws-sdk/client-sqs", () => ({
+  SQSClient: vi.fn().mockImplementation(() => mockSqsClient),
   SendMessageCommand: mockSendMessageCommand,
 }));
 
@@ -17,7 +17,7 @@ import { sendAuditEvent } from "../../src/util/audit";
 import { SendMessageCommand, SendMessageCommandInput } from "@aws-sdk/client-sqs";
 import { UnixMillisecondsTimestamp, UnixSecondsTimestamp } from "../../src/types/brands";
 
-Date.now = jest.fn().mockReturnValue(9090909);
+Date.now = vi.fn().mockReturnValue(9090909);
 
 const mockAuditUser: AuditUser = {
   govuk_signin_journey_id: mockSession.clientSessionId,
@@ -38,7 +38,7 @@ const validBaseEvent: AuditEvent = {
 describe("sendAuditEvent()", () => {
   describe("using as sendRequestSentEvent()", () => {
     beforeEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     it("sends the event correctly given valid input", async () => {

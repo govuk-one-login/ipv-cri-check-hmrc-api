@@ -3,22 +3,23 @@ import { mockSessionId } from "../mocks/mockData";
 import { QueryCommand } from "@aws-sdk/client-dynamodb";
 import { UnixSecondsTimestamp } from "../../src/types/brands";
 import { mockDynamoClient } from "../mocks/mockDynamoClient";
+import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
-jest.mock("@aws-sdk/client-dynamodb", () => ({
-  QueryCommand: jest.fn().mockImplementation((input) => ({
+vi.mock("@aws-sdk/client-dynamodb", () => ({
+  QueryCommand: vi.fn().mockImplementation((input) => ({
     type: "QueryCommandInstance",
     input,
   })),
-  DynamoDBClient: jest.fn().mockImplementation(() => mockDynamoClient),
+  DynamoDBClient: vi.fn().mockImplementation(() => mockDynamoClient),
 }));
 
-const mockSendFunction = mockDynamoClient.send as unknown as jest.Mock;
+const mockSendFunction = mockDynamoClient.send as unknown as Mock;
 
 const attemptTableName = "attempt-club";
 
 const mockTtl = 999999 as UnixSecondsTimestamp;
 
-Date.now = jest.fn().mockReturnValue(mockTtl * 1000);
+Date.now = vi.fn().mockReturnValue(mockTtl * 1000);
 
 const queryCommand = new QueryCommand({
   TableName: attemptTableName,
@@ -38,7 +39,7 @@ const queryCommand = new QueryCommand({
 });
 
 describe("getAttempts()", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it("returns the attempt count and items correctly", async () => {
     mockSendFunction.mockResolvedValueOnce({ Count: 0, Items: [] });

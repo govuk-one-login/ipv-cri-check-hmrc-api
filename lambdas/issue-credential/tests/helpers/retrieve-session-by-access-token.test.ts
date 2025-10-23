@@ -1,27 +1,29 @@
 import { logger } from "../../../common/src/util/logger";
 import { retrieveSessionIdByAccessToken } from "../../src/helpers/retrieve-session-by-access-token";
-import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
+import { MockCommand, MockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
 import { mockAccessToken, mockSessionFromIndex } from "../../../common/tests/mocks/mockData";
 import { marshall } from "@aws-sdk/util-dynamodb";
-import { QueryCommand } from "@aws-sdk/client-dynamodb";
-jest.mock("../../../common/src/util/logger");
-jest.mock("../../../common/src/util/metrics");
+import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
-jest.mock("@aws-sdk/client-dynamodb", () => ({
-  QueryCommand: jest.fn().mockImplementation((input) => ({
-    type: "QueryCommandInstance",
-    input,
-  })),
-  DynamoDBClient: jest.fn().mockImplementation(() => mockDynamoClient),
+vi.mock("../../../common/src/util/logger");
+vi.mock("../../../common/src/util/metrics");
+
+vi.doMock("@aws-sdk/client-dynamodb", () => ({
+  QueryCommand: MockCommand,
+  DynamoDBClient: MockDynamoClient,
 }));
 
-const mockSendFunction = mockDynamoClient.send as jest.Mock;
+import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
+
+const mockDynamoClient = new DynamoDBClient();
+
+const mockSendFunction = mockDynamoClient.send as Mock;
 
 const sessionTableName = "my-session-zone";
 
 describe("retrieveSessionByAccessToken()", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns as expected for some valid input", async () => {
@@ -33,13 +35,15 @@ describe("retrieveSessionByAccessToken()", () => {
     const result = await retrieveSessionIdByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
 
     expect(mockDynamoClient.send).toHaveBeenCalledWith(
-      new QueryCommand({
-        TableName: sessionTableName,
-        IndexName: "access-token-index",
-        KeyConditionExpression: "accessToken = :value",
-        ExpressionAttributeValues: {
-          ":value": {
-            S: mockAccessToken,
+      expect.objectContaining({
+        input: {
+          TableName: sessionTableName,
+          IndexName: "access-token-index",
+          KeyConditionExpression: "accessToken = :value",
+          ExpressionAttributeValues: {
+            ":value": {
+              S: mockAccessToken,
+            },
           },
         },
       })

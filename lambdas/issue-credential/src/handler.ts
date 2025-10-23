@@ -92,6 +92,8 @@ class IssueCredentialHandler implements LambdaInterface {
         body: signedJwt,
       };
     } catch (error: unknown) {
+      console.log(error);
+
       return handleErrorResponse(error, logger);
     }
   }

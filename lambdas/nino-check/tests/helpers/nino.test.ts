@@ -1,8 +1,9 @@
-jest.mock("../../../common/src/util/logger");
-jest.mock("../../../common/src/util/metrics");
+import { beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("../../../common/src/util/logger");
+vi.mock("../../../common/src/util/metrics");
 import { mockSaveRes } from "../mocks/mockConfig";
 import { mockClient } from "aws-sdk-client-mock";
-import "aws-sdk-client-mock-jest";
+import "aws-sdk-client-mock-vitest/extend";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../../src/helpers/nino";
 import * as GetParameters from "../../../common/src/util/get-parameters";
@@ -27,11 +28,11 @@ describe("getHmrcConfig()", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("behaves as expected when the SSM fetch works", async () => {
-    const paramSpy = jest.spyOn(GetParameters, "getParametersValues").mockResolvedValueOnce(ssmRes);
+    const paramSpy = vi.spyOn(GetParameters, "getParametersValues").mockResolvedValueOnce(ssmRes);
 
     const config = await getHmrcConfig(mockClientId);
 
@@ -51,13 +52,11 @@ describe("getHmrcConfig()", () => {
   });
 
   it("throws an error when the SSM fetch returns errors", async () => {
-    jest
-      .spyOn(GetParameters, "getParametersValues")
-      .mockRejectedValueOnce(
-        new Error(
-          "Following SSM parameters do not exist: [/check-hmrc-cri-api/OtgUrl/my-cool-client, /check-hmrc-cri-api/NinoCheckUrl/my-cool-client]"
-        )
-      );
+    vi.spyOn(GetParameters, "getParametersValues").mockRejectedValueOnce(
+      new Error(
+        "Following SSM parameters do not exist: [/check-hmrc-cri-api/OtgUrl/my-cool-client, /check-hmrc-cri-api/NinoCheckUrl/my-cool-client]"
+      )
+    );
 
     await expect(() => getHmrcConfig(mockClientId)).rejects.toThrow(
       new CriError(
@@ -72,7 +71,7 @@ describe("saveTxn()", () => {
   const sessionTableName = "big-session-gang";
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("works correctly with valid input", async () => {
@@ -99,7 +98,7 @@ describe("handleResponseAndSaveAttempt()", () => {
   const attemptTableName = "attempt-zone";
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("handles a valid response correctly", async () => {
