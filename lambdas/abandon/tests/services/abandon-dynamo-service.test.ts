@@ -1,6 +1,7 @@
+import { beforeEach, describe, expect, it } from "vitest";
 import { mockClient } from "aws-sdk-client-mock";
-import "aws-sdk-client-mock-jest";
-import { DynamoDBClient, QueryCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
+import "aws-sdk-client-mock-vitest/extend";
+import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { removeAuthCodeFromSessionRecord } from "../../src/services/abandon-dynamo-service";
 
 describe("abandon-dynamo-service", () => {

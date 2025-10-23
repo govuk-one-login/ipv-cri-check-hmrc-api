@@ -1,5 +1,6 @@
-jest.mock("../../../common/src/util/logger");
-jest.mock("../../../common/src/util/metrics");
+import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
+vi.mock("../../../common/src/util/logger");
+vi.mock("../../../common/src/util/metrics");
 import { logger } from "../../../common/src/util/logger";
 import { captureLatency } from "../../../common/src/util/metrics";
 import { getTokenFromOtg } from "../../src/hmrc-apis/otg";
@@ -10,14 +11,14 @@ const mockParams = [{ apiUrl }] as const;
 
 const latency = 1001;
 
-(captureLatency as unknown as jest.Mock).mockImplementation(async (_, callback) => [await callback(), latency]);
+(captureLatency as unknown as Mock).mockImplementation(async (_, callback) => [await callback(), latency]);
 
 const mockToken = "goodToken";
 const mockExpiry = Date.now() + 600000;
 
-global.fetch = jest.fn();
-(global.fetch as jest.Mock).mockResolvedValueOnce({
-  json: jest.fn().mockResolvedValueOnce({
+global.fetch = vi.fn();
+(global.fetch as Mock).mockResolvedValueOnce({
+  json: vi.fn().mockResolvedValueOnce({
     token: mockToken,
     expiry: mockExpiry,
   }),
@@ -27,7 +28,7 @@ global.fetch = jest.fn();
 
 describe("getTokenFromOtg", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should return the token and log the outcome", async () => {
@@ -45,9 +46,9 @@ describe("getTokenFromOtg", () => {
   });
 
   it("should throw when an invalid response is returned from OTG", async () => {
-    global.fetch = jest.fn();
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      json: jest.fn().mockResolvedValueOnce({}),
+    global.fetch = vi.fn();
+    (global.fetch as Mock).mockResolvedValueOnce({
+      json: vi.fn().mockResolvedValueOnce({}),
       ok: false,
       status: 400,
       statusText: "Forbidden",
@@ -62,9 +63,9 @@ describe("getTokenFromOtg", () => {
     const mockToken = "goodToken";
     const mockExpiry = Date.now() - 600000;
 
-    global.fetch = jest.fn();
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      json: jest.fn().mockResolvedValueOnce({
+    global.fetch = vi.fn();
+    (global.fetch as Mock).mockResolvedValueOnce({
+      json: vi.fn().mockResolvedValueOnce({
         token: mockToken,
         expiry: mockExpiry,
       }),

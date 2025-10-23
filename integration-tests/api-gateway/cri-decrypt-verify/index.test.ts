@@ -8,6 +8,7 @@ import { base64url, JWTVerifyResult } from "jose";
 import { kmsClient } from "../../resources/kms-helper";
 import { createSession, getJarAuthorization } from "../endpoints";
 import { clearItemsFromTables } from "../../resources/dynamodb-helper";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 interface StartEndpointResponse {
   client_id: string;
@@ -70,7 +71,7 @@ describe.each([
       });
 
       it(`any KMS aliases succeeds in decryption ${description}`, async () => {
-        const decryptKeyWithKmsSpy = jest.spyOn(jweDecrypter, "decryptKeyWithKms");
+        const decryptKeyWithKmsSpy = vi.spyOn(jweDecrypter, "decryptKeyWithKms");
 
         await jweDecrypter.decryptJwe(jarRequest.request);
 
@@ -214,7 +215,7 @@ describe("Given there is a ./well-known/jwks with a key to encrypt claims - when
   });
 
   it("uses legacy KMS ID and throws error when decrypting JWE", async () => {
-    const decryptKeyWithKmsSpy = jest.spyOn(jweDecrypter, "decryptKeyWithKms");
+    const decryptKeyWithKmsSpy = vi.spyOn(jweDecrypter, "decryptKeyWithKms");
 
     await expect(jweDecrypter.decryptJwe(jarRequest.request)).rejects.toThrow(/Failed to decrypt with legacy key/);
 

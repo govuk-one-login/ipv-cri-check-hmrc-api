@@ -1,15 +1,17 @@
 import { DynamoDBClient, QueryCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
-import "aws-sdk-client-mock-jest";
+import "aws-sdk-client-mock-vitest";
 import { APIGatewayProxyEvent, APIGatewayProxyEventHeaders, Context } from "aws-lambda";
+import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
-process.env.SESSION_TABLE = "session-table";
-process.env.ISSUER = "issuer";
-process.env.AUDIT_QUEUE_URL = "cool-queuez.com";
-process.env.AUDIT_COMPONENT_ID = "https://check-hmrc-time.account.gov.uk";
+vi.stubEnv("SESSION_TABLE", "session-table");
+vi.stubEnv("ISSUER", "issuer");
+vi.stubEnv("AUDIT_QUEUE_URL", "cool-queuez.com");
+vi.stubEnv("AUDIT_COMPONENT_ID", "https://check-hmrc-time.account.gov.uk");
+
 import { AbandonHandler } from "../src/abandon-handler";
 
-jest.mock("../../common/src/util/audit");
+vi.mock("../../common/src/util/audit");
 import { sendAuditEvent } from "../../common/src/util/audit";
 
 const auditConfig = {
@@ -25,7 +27,7 @@ describe("abandon-handler", () => {
 
   beforeEach(() => {
     ddbMock.reset();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should successfully return 200", async () => {
@@ -266,7 +268,7 @@ describe("abandon-handler", () => {
       Count: 1,
     });
     ddbMock.on(UpdateItemCommand).resolves({});
-    (sendAuditEvent as jest.Mock).mockRejectedValue(new Error("Audit failed"));
+    (sendAuditEvent as Mock).mockRejectedValue(new Error("Audit failed"));
 
     const event = {
       body: JSON.stringify({}),

@@ -1,6 +1,7 @@
+import { beforeEach, describe, expect, it } from "vitest";
 import { createSession } from "../endpoints";
-jest.setTimeout(35_000);
-describe("Given the session is invalid", () => {
+
+describe("Given the session is valid", { timeout: 35_000 /* 35s */ }, () => {
   let anInValidSession: Response;
 
   beforeEach(async () => {

@@ -1,8 +1,8 @@
 import { createSession, getJarAuthorization } from "../endpoints";
 import { clearItemsFromTables } from "../../resources/dynamodb-helper";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-jest.setTimeout(30_000);
-describe("Given the session is valid", () => {
+describe("Given the session is valid", { timeout: 30_000 /* 30s */ }, () => {
   let sessionId: string;
   let sessionTableName: string;
   let jsonSession: { session_id: string };

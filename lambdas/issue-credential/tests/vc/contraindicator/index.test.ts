@@ -1,6 +1,7 @@
 import { getHmrcContraIndicators } from "../../../src/vc/contraIndicator/index";
 import { ContraIndicator } from "../../../src/vc/contraIndicator/ci-mapping-util";
 import { CiMappings } from "../../../src/vc/contraIndicator/types/ci-mappings";
+import { describe, expect, it } from "vitest";
 
 type TestCase = {
   inputHmrcErrors: string[];

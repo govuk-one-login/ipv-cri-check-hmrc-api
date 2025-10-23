@@ -3,6 +3,7 @@ import { AttemptItem, AttemptsResult } from "../../../common/src/types/attempt";
 import { getEvidence, getAuditEvidence } from "../../src/evidence/evidence-creator";
 import * as MetricsUtils from "../../../common/src/util/metrics";
 import { CHECK_DETAIL } from "../../../common/src/types/evidence";
+import { describe, expect, it, vi } from "vitest";
 
 describe("evidence-creator", () => {
   const sessionId = "test-session";
@@ -122,7 +123,7 @@ describe("evidence-creator", () => {
     });
 
     it("creates audit evidence with failedCheckDetails and ciReasons when user has failed", () => {
-      const captureMetricSpy = jest.spyOn(MetricsUtils, "captureMetric");
+      const captureMetricSpy = vi.spyOn(MetricsUtils, "captureMetric");
       const contraIndicators = [
         {
           ci: "ci_3",

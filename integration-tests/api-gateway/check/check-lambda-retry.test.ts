@@ -1,10 +1,9 @@
 import { ninoCheckEndpoint, createSession, getJarAuthorization } from "../endpoints";
 import { clearAttemptsTable, clearItemsFromTables, queryItemsBySessionId } from "../../resources/dynamodb-helper";
 import { NINO } from "../env-variables";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-jest.setTimeout(30_000);
-
-describe("check-lambda retry logic", () => {
+describe("check-lambda retry logic", { timeout: 30_000 /* 30s */ }, () => {
   const errorNino = "ER123456A";
   let sessionId: string;
   let sessionTableName: string;
@@ -80,7 +79,7 @@ describe("check-lambda retry logic", () => {
     expect(secondResBody).toStrictEqual({ requestRetry: false });
     const secondAttemptsItems = await queryItemsBySessionId(process.env.USERS_ATTEMPTS_TABLE!, sessionId);
     expect(secondAttemptsItems.Count).toEqual(2);
-    expect(secondAttemptsItems.Items!.some(item => item.attempt === 'PASS')).toBe(true);
-    expect(secondAttemptsItems.Items!.some(item => item.attempt === 'FAIL')).toBe(true);
+    expect(secondAttemptsItems.Items!.some((item) => item.attempt === "PASS")).toBe(true);
+    expect(secondAttemptsItems.Items!.some((item) => item.attempt === "FAIL")).toBe(true);
   });
 });

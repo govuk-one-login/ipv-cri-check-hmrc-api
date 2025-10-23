@@ -1,10 +1,9 @@
+import { beforeAll, describe, expect, it } from "vitest";
 import { environment } from "../env-variables";
 
 let endpointURL: string;
 
-jest.setTimeout(30_000);
-
-describe("/.well-known/jwks.json", () => {
+describe("/.well-known/jwks.json", { timeout: 30_000 /* 30s */ }, () => {
   beforeAll(async () => {
     endpointURL = `https://${process.env.PUBLIC_API}.execute-api.eu-west-2.amazonaws.com/${environment}/.well-known/jwks.json`;
   });

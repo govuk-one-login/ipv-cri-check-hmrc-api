@@ -2,9 +2,10 @@ import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/clie
 import { writeCompletedCheck } from "../../src/helpers/write-completed-check";
 import { mockSaveRes, mockTableNames } from "../mocks/mockConfig";
 import { mockClient } from "aws-sdk-client-mock";
-import "aws-sdk-client-mock-jest";
+import "aws-sdk-client-mock-vitest/extend";
 import { mockNino, mockSession, mockSessionId } from "../../../common/tests/mocks/mockData";
-jest.mock("../../../common/src/util/logger");
+import { describe, expect, it, vi } from "vitest";
+vi.mock("../../../common/src/util/logger");
 
 const mockDynamoClient = mockClient(DynamoDBClient);
 mockDynamoClient.on(PutItemCommand).resolves(mockSaveRes);

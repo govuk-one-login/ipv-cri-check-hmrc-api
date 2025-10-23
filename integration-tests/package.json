@@ -3,10 +3,10 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test:api": "jest --silent --select-projects integration-tests/api-gateway --testPathIgnorePatterns */contract/credential-contract.test.ts",
-    "test:api:e2e": "jest --silent integration-tests/api-gateway --testPathIgnorePatterns */contract/credential-contract.test.ts",
+    "test:api": "vitest run --silent=passed-only --select-projects integration-tests/api-gateway --testPathIgnorePatterns */contract/credential-contract.test.ts",
+    "test:api:e2e": "vitest run --silent=passed-only integration-tests/api-gateway --testPathIgnorePatterns */contract/credential-contract.test.ts",
     "start:contract": "cd api-gateway/contract && ts-node ./app.ts",
-    "test:contract": "wait-on tcp:127.0.0.1:3000; jest --silent */contract/credential-contract.test.ts --runInBand",
+    "test:contract": "wait-on tcp:127.0.0.1:3000; vitest run --silent=passed-only */contract/credential-contract.test.ts --runInBand",
     "test:contract:ci": "npm-run-all -p -r start:contract test:contract",
     "deploy": "../deploy.sh",
     "compile": "tsc"
