@@ -11,10 +11,10 @@
     "compile": "tsc"
   },
   "dependencies": {
-    "@aws-lambda-powertools/logger": "2.3.0",
-    "@aws-lambda-powertools/parameters": "2.21.0",
-    "@aws-sdk/client-dynamodb": "3.828.0",
-    "@aws-sdk/util-dynamodb": "3.828.0"
+    "@aws-lambda-powertools/logger": "2.28.1",
+    "@aws-lambda-powertools/parameters": "2.28.1",
+    "@aws-sdk/client-dynamodb": "3.916.0",
+    "@aws-sdk/util-dynamodb": "3.916.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.150",
