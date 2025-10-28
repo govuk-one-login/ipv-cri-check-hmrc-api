@@ -1,10 +1,9 @@
 import { ninoCheckEndpoint, createSession, getJarAuthorization } from "../endpoints";
 import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamodb-helper";
 import { NINO } from "../env-variables";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-jest.setTimeout(30_000);
-
-describe("Given the session and NINO is invalid", () => {
+describe("Given the session and NINO is invalid", { timeout: 30_000 /* 30s */ }, () => {
   let sessionId: string;
   let privateApi: string;
   let sessionTableName: string;

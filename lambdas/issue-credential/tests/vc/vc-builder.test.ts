@@ -4,6 +4,7 @@ import { NinoUser } from "../../../common/src/types/nino-user";
 import { VerifiableIdentityCredential, VerifiableCredential } from "../../src/types/verifiable-credential";
 import { AttemptItem, AttemptsResult } from "../../../common/src/types/attempt";
 import { SessionItem } from "../../../common/src/database/types/session-item";
+import { describe, expect, it } from "vitest";
 
 describe("vc-builder", () => {
   const sessionId = "test-session";

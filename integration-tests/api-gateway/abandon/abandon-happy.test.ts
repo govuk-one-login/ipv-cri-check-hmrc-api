@@ -8,10 +8,9 @@ import {
   getJarAuthorization,
 } from "../endpoints";
 import { CLIENT_ID, NINO, REDIRECT_URL } from "../env-variables";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-jest.setTimeout(60_000); // 1 min
-
-describe("Given the session is valid and expecting to abandon the journey", () => {
+describe("Given the session is valid and expecting to abandon the journey", { timeout: 60_000 /* 1 min */ }, () => {
   let sessionId: string;
   let clientId: string;
   let sessionTableName: string;

@@ -2,14 +2,10 @@ import { CriError } from "../../../common/src/errors/cri-error";
 import * as GetParameters from "../../../common/src/util/get-parameters";
 import { logger } from "../../../common/src/util/logger";
 import { VcCheckConfig, getVcConfig } from "../../src/config/vc-config";
-
-type spyGetParametersValues = jest.SpyInstance<
-  Promise<Record<string, string>>,
-  [parameterPaths: string[], cacheTtlInSeconds?: number]
->;
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 describe("getVcConfig", () => {
-  let getParametersValuesSpy: spyGetParametersValues;
+  let getParametersValuesSpy: Mock;
 
   const mockCommonStackName = "test-stack";
   const expectedVcSigningKeyId = `/${mockCommonStackName}/verifiableCredentialKmsSigningKeyId`;
@@ -26,11 +22,11 @@ describe("getVcConfig", () => {
   };
 
   beforeEach(() => {
-    getParametersValuesSpy = jest.spyOn(GetParameters, "getParametersValues");
-    jest.clearAllMocks();
+    getParametersValuesSpy = vi.spyOn(GetParameters, "getParametersValues");
+    vi.clearAllMocks();
   });
 
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => vi.restoreAllMocks());
 
   describe("successful configuration retrieval", () => {
     it("returns correctly typed VcCheckConfig with valid parameters", async () => {
@@ -64,7 +60,7 @@ describe("getVcConfig", () => {
 
     it("logs info message when retrieving parameters", async () => {
       getParametersValuesSpy.mockResolvedValueOnce(mockSsmParams);
-      jest.spyOn(logger, "info");
+      vi.spyOn(logger, "info");
 
       await getVcConfig(mockCommonStackName);
 

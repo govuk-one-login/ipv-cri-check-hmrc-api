@@ -1,4 +1,5 @@
 import { AbandonHandlerConfig } from "../../src/config/abandon-handler-config";
+import { beforeEach, describe, expect, it } from "vitest";
 
 describe("abandon-handler-config", () => {
   beforeEach(() => {

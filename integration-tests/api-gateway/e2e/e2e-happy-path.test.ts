@@ -14,15 +14,14 @@ import {
   START_EVENT_NAME,
   VC_ISSUED_EVENT_NAME,
 } from "../audit";
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 let sessionData: Response;
 let authCode: { value: string };
 let privateApi: string;
 let publicApi: string;
 
-jest.setTimeout(180_000); // 3 mins
-
-describe("End to end happy path journey", () => {
+describe("End to end happy path journey", { timeout: 180_000 /* 3 mins */ }, () => {
   let state: string;
   let sessionId: string;
   let sessionTableName: string;

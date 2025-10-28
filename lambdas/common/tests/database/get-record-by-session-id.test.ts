@@ -1,6 +1,7 @@
-jest.mock("../../src/util/logger");
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("../../src/util/logger");
 import { mockClient } from "aws-sdk-client-mock";
-import "aws-sdk-client-mock-jest";
+import "aws-sdk-client-mock-vitest";
 import { DynamoDBClient, QueryCommand, QueryCommandOutput } from "@aws-sdk/client-dynamodb";
 import { PersonIdentityItem } from "../../src/database/types/person-identity";
 import { RecordNotFoundError, TooManyRecordsError } from "../../src/database/exceptions/errors";
@@ -14,13 +15,13 @@ import { metrics } from "../../src/util/metrics";
 describe("getRecordBySessionId()", () => {
   const tableName = "some-table-some-stack";
 
-  jest.mock("@aws-sdk/client-dynamodb", () => ({
-    QueryCommand: jest.fn().mockImplementation((input) => ({
+  vi.mock("@aws-sdk/client-dynamodb", () => ({
+    QueryCommand: vi.fn().mockImplementation((input) => ({
       type: "QueryCommandInstance",
       input,
     })),
-    DynamoDBClient: jest.fn().mockImplementation(() => ({
-      send: jest.fn(),
+    DynamoDBClient: vi.fn().mockImplementation(() => ({
+      send: vi.fn(),
     })),
   }));
 
@@ -61,18 +62,18 @@ describe("getRecordBySessionId()", () => {
   };
 
   // @ts-expect-error - we need to override setTimeout to speed up execution of the tests
-  global.setTimeout = jest.fn((callback) => callback());
+  global.setTimeout = vi.fn((callback) => callback());
 
   const dummyNow = 999999 as UnixSecondsTimestamp;
 
-  Date.now = jest.fn().mockReturnValue(dummyNow * 1000);
+  Date.now = vi.fn().mockReturnValue(dummyNow * 1000);
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns a valid personIdentityItem given a valid session ID", async () => {
-    dynamoClient.send = jest.fn().mockResolvedValue(validPersonIdentityResult);
+    dynamoClient.send = vi.fn().mockResolvedValue(validPersonIdentityResult);
 
     const result = await getRecordBySessionId<PersonIdentityItem>(dynamoClient, tableName, "12345678", "expiryDate");
 
@@ -102,7 +103,7 @@ describe("getRecordBySessionId()", () => {
   });
 
   it("handles ttl column as well as expiryDate", async () => {
-    dynamoClient.send = jest.fn().mockResolvedValue({
+    dynamoClient.send = vi.fn().mockResolvedValue({
       Count: 1,
       Items: [
         {
@@ -137,7 +138,7 @@ describe("getRecordBySessionId()", () => {
       $metadata: {},
     };
 
-    dynamoClient.send = jest.fn().mockResolvedValue(multiplePersonIdentityResult);
+    dynamoClient.send = vi.fn().mockResolvedValue(multiplePersonIdentityResult);
 
     await expect(
       getRecordBySessionId<PersonIdentityItem>(dynamoClient, tableName, "12345678", "expiryDate")
@@ -146,7 +147,7 @@ describe("getRecordBySessionId()", () => {
   });
 
   it("behaves correctly if result.Items is undefined", async () => {
-    dynamoClient.send = jest.fn().mockResolvedValue({ Count: 0 });
+    dynamoClient.send = vi.fn().mockResolvedValue({ Count: 0 });
 
     await expect(
       getRecordBySessionId<PersonIdentityItem>(dynamoClient, tableName, "12345678", "expiryDate")
@@ -161,7 +162,7 @@ describe("getRecordBySessionId()", () => {
       $metadata: {},
     };
 
-    dynamoClient.send = jest
+    dynamoClient.send = vi
       .fn()
       .mockResolvedValueOnce(noMatchResponse)
       .mockResolvedValueOnce(noMatchResponse)
@@ -175,10 +176,7 @@ describe("getRecordBySessionId()", () => {
   });
 
   it("returns as soon as it gets a valid result from DynamoDB", async () => {
-    dynamoClient.send = jest
-      .fn()
-      .mockResolvedValueOnce(noMatchResponse)
-      .mockResolvedValueOnce(validPersonIdentityResult);
+    dynamoClient.send = vi.fn().mockResolvedValueOnce(noMatchResponse).mockResolvedValueOnce(validPersonIdentityResult);
 
     const result = await getRecordBySessionId<PersonIdentityItem>(dynamoClient, tableName, "12345678", "expiryDate");
 
@@ -187,7 +185,7 @@ describe("getRecordBySessionId()", () => {
   });
 
   it("throws a RecordNotFoundError if DynamoDB returns no records, after three retries", async () => {
-    dynamoClient.send = jest.fn().mockResolvedValue(noMatchResponse);
+    dynamoClient.send = vi.fn().mockResolvedValue(noMatchResponse);
 
     await expect(
       getRecordBySessionId<PersonIdentityItem>(dynamoClient, tableName, "12345678", "expiryDate")
@@ -197,7 +195,7 @@ describe("getRecordBySessionId()", () => {
 
   it("returns a record from the session table", async () => {
     const expiry = Date.now() + 1000000;
-    dynamoClient.send = jest.fn().mockResolvedValueOnce({
+    dynamoClient.send = vi.fn().mockResolvedValueOnce({
       Count: 1,
       Items: [
         {
@@ -234,7 +232,7 @@ describe("getRecordBySessionId()", () => {
 });
 
 describe("getSessionBySessionId()", () => {
-  jest.mock("../../src/util/metrics");
+  vi.mock("../../src/util/metrics");
 
   const ddbMock = mockClient(DynamoDBClient);
   const now = Math.round(Date.now() / 1000);
@@ -291,7 +289,7 @@ describe("getSessionBySessionId()", () => {
   });
 
   it("should throw an exception and publish metric", async () => {
-    const spy = jest.spyOn(metrics, "addMetric");
+    const spy = vi.spyOn(metrics, "addMetric");
     ddbMock.on(QueryCommand).rejects();
 
     await expect(getSessionBySessionId("session-table", "session-123")).rejects.toThrow(Error);

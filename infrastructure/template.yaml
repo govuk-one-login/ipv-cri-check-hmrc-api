@@ -659,7 +659,14 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        Format: esm
+        Target: es2022
         Sourcemap: true
+        OutExtension:
+          - .js=.mjs
+        Platform: node
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
     Properties:
       Handler: lambdas/abandon/src/abandon-handler.lambdaHandler
       DeploymentPreference:
@@ -1048,7 +1055,14 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        Format: esm
+        Target: es2022
         Sourcemap: true
+        OutExtension:
+          - .js=.mjs
+        Platform: node
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
     Properties:
       DeploymentPreference:
         Type: !Ref LambdaDeploymentPreference
@@ -1133,7 +1147,14 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        Format: esm
+        Target: es2022
         Sourcemap: true
+        OutExtension:
+          - .js=.mjs
+        Platform: node
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
     Properties:
       DeploymentPreference:
         Type: !Ref LambdaDeploymentPreference

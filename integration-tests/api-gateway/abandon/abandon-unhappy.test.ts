@@ -1,7 +1,5 @@
-import {
-  clearAttemptsTable,
-  clearItemsFromTables,
-} from "../../resources/dynamodb-helper";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamodb-helper";
 import {
   abandonEndpoint,
   authorizationEndpoint,
@@ -11,9 +9,7 @@ import {
 } from "../endpoints";
 import { CLIENT_ID, NINO, REDIRECT_URL } from "../env-variables";
 
-jest.setTimeout(30_000);
-
-describe("Given the session is invalid and expecting to abandon the journey", () => {
+describe("Given the session is invalid and expecting to abandon the journey", { timeout: 30_000 /* 30s */ }, () => {
   let sessionId: string;
   let privateApi: string;
   let sessionTableName: string;
@@ -27,13 +23,7 @@ describe("Given the session is invalid and expecting to abandon the journey", ()
     const sessionData = await session.json();
     sessionId = sessionData.session_id;
     await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
-    await authorizationEndpoint(
-      privateApi,
-      sessionId,
-      CLIENT_ID,
-      REDIRECT_URL,
-      sessionData.state
-    );
+    await authorizationEndpoint(privateApi, sessionId, CLIENT_ID, REDIRECT_URL, sessionData.state);
   });
 
   afterEach(async () => {

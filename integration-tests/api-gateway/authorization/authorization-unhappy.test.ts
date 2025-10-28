@@ -1,18 +1,9 @@
-import {
-  clearAttemptsTable,
-  clearItemsFromTables,
-} from "../../resources/dynamodb-helper";
-import {
-  authorizationEndpoint,
-  checkEndpoint,
-  createSession,
-  getJarAuthorization,
-} from "../endpoints";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamodb-helper";
+import { authorizationEndpoint, checkEndpoint, createSession, getJarAuthorization } from "../endpoints";
 import { CLIENT_ID, NINO, REDIRECT_URL } from "../env-variables";
 
-jest.setTimeout(30_000);
-
-describe("Given the session is invalid and expecting it not to be authorized", () => {
+describe("Given the session is invalid and expecting it not to be authorized", { timeout: 30_000 /* 30s */ }, () => {
   let sessionId: string;
   let state: string;
   let privateApi: string;
@@ -49,52 +40,28 @@ describe("Given the session is invalid and expecting it not to be authorized", (
   });
 
   it("Should return an 400 response when /authorization endpoint is called when session id is empty", async () => {
-    const authResponse = await authorizationEndpoint(
-      privateApi,
-      "",
-      CLIENT_ID,
-      REDIRECT_URL,
-      state
-    );
+    const authResponse = await authorizationEndpoint(privateApi, "", CLIENT_ID, REDIRECT_URL, state);
     await authResponse.json();
 
     expect(authResponse.status).toEqual(400);
   });
 
   it("Should return an 400 response when /authorization endpoint is called when client id is empty", async () => {
-    const authResponse = await authorizationEndpoint(
-      privateApi,
-      sessionId,
-      "",
-      REDIRECT_URL,
-      state
-    );
+    const authResponse = await authorizationEndpoint(privateApi, sessionId, "", REDIRECT_URL, state);
     await authResponse.json();
 
     expect(authResponse.status).toEqual(400);
   });
 
   it("Should return an 400 response when /authorization endpoint is called when callback is empty", async () => {
-    const authResponse = await authorizationEndpoint(
-      privateApi,
-      sessionId,
-      CLIENT_ID,
-      "",
-      state
-    );
+    const authResponse = await authorizationEndpoint(privateApi, sessionId, CLIENT_ID, "", state);
     await authResponse.json();
 
     expect(authResponse.status).toEqual(400);
   });
 
   it("Should return an 400 response when /authorization endpoint is called when state is empty", async () => {
-    const authResponse = await authorizationEndpoint(
-      privateApi,
-      sessionId,
-      CLIENT_ID,
-      REDIRECT_URL,
-      ""
-    );
+    const authResponse = await authorizationEndpoint(privateApi, sessionId, CLIENT_ID, REDIRECT_URL, "");
     await authResponse.json();
 
     expect(authResponse.status).toEqual(200);

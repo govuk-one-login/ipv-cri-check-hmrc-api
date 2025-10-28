@@ -1,19 +1,9 @@
-import {
-  clearAttemptsTable,
-  clearItemsFromTables,
-  getItemByKey,
-} from "../../resources/dynamodb-helper";
-import {
-  authorizationEndpoint,
-  checkEndpoint,
-  createSession,
-  getJarAuthorization,
-} from "../endpoints";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { clearAttemptsTable, clearItemsFromTables, getItemByKey } from "../../resources/dynamodb-helper";
+import { authorizationEndpoint, checkEndpoint, createSession, getJarAuthorization } from "../endpoints";
 import { CLIENT_ID, NINO, REDIRECT_URL } from "../env-variables";
 
-jest.setTimeout(30_000);
-
-describe("Given the session is valid and expecting to be authorized", () => {
+describe("Given the session is valid and expecting to be authorized", { timeout: 30_000 /* 30s */ }, () => {
   let authCode: { value: string };
   let sessionId: string;
   let state: string;
@@ -53,13 +43,7 @@ describe("Given the session is valid and expecting to be authorized", () => {
   });
 
   it("Should return an authorizationCode when /authorization endpoint is called", async () => {
-    const authResponse = await authorizationEndpoint(
-      privateApi,
-      sessionId,
-      CLIENT_ID,
-      REDIRECT_URL,
-      state
-    );
+    const authResponse = await authorizationEndpoint(privateApi, sessionId, CLIENT_ID, REDIRECT_URL, state);
 
     const authData = await authResponse.json();
     authCode = authData.authorizationCode;
