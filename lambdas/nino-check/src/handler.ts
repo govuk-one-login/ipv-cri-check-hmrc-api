@@ -19,6 +19,7 @@ import { PersonIdentityItem } from "../../common/src/database/types/person-ident
 import { getAttempts } from "../../common/src/database/get-attempts";
 import { sendAuditEvent } from "../../common/src/util/audit";
 import { REQUEST_SENT, RESPONSE_RECEIVED } from "../../common/src/types/audit";
+import { doSomeStuff } from "@bc-nx-test-org/service";
 
 initOpenTelemetry();
 
@@ -34,6 +35,8 @@ class NinoCheckHandler implements LambdaInterface {
   public async handler({ body, headers }: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
     try {
       logger.info(`${context.functionName} invoked.`);
+
+      doSomeStuff("yep all good!");
 
       const sessionId = headers["session-id"] as string;
       const deviceInformationHeader = headers["txma-audit-encoded"];

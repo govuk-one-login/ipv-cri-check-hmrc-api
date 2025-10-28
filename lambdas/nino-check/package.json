@@ -14,7 +14,8 @@
     "@aws-lambda-powertools/logger": "2.3.0",
     "@aws-lambda-powertools/parameters": "2.21.0",
     "@aws-sdk/client-dynamodb": "3.828.0",
-    "@aws-sdk/util-dynamodb": "3.828.0"
+    "@aws-sdk/util-dynamodb": "3.828.0",
+    "@bc-nx-test-org/service": "^1.0.2"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.150",
