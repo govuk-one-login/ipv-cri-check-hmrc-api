@@ -1,4 +1,4 @@
-import { Metrics, MetricUnits } from "@aws-lambda-powertools/metrics";
+import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics";
 jest.mock("@aws-lambda-powertools/metrics");
 
 const mockSingleMetric = {
@@ -28,13 +28,13 @@ describe("metrics functions", () => {
     it("captures a single metric correctly", () => {
       captureMetric("bob");
 
-      expect(mockMetrics.addMetric).toHaveBeenCalledWith("bob", MetricUnits.Count, 1);
+      expect(mockMetrics.addMetric).toHaveBeenCalledWith("bob", MetricUnit.Count, 1);
     });
 
     it("overrides the parameters correctly", () => {
-      captureMetric("grug", 9999999, MetricUnits.TerabytesPerSecond);
+      captureMetric("grug", 9999999, MetricUnit.TerabytesPerSecond);
 
-      expect(mockMetrics.addMetric).toHaveBeenCalledWith("grug", MetricUnits.TerabytesPerSecond, 9999999);
+      expect(mockMetrics.addMetric).toHaveBeenCalledWith("grug", MetricUnit.TerabytesPerSecond, 9999999);
     });
   });
 
@@ -47,11 +47,7 @@ describe("metrics functions", () => {
       expect(res).toStrictEqual(["good!", 141]);
 
       expect(mockSingleMetric.addDimension).toHaveBeenCalledWith("HTTP", "zoomies");
-      expect(mockSingleMetric.addMetric).toHaveBeenCalledWith(
-        "ResponseLatency",
-        MetricUnits.Milliseconds,
-        141
-      );
+      expect(mockSingleMetric.addMetric).toHaveBeenCalledWith("ResponseLatency", MetricUnit.Milliseconds, 141);
     });
 
     it("handles generic return types correctly", async () => {
@@ -69,7 +65,7 @@ describe("metrics functions", () => {
       expect(res).toStrictEqual([{ blah: 9, go: true, success: "maybe", thing: { stuff: false } }, 4]);
 
       expect(mockSingleMetric.addDimension).toHaveBeenCalledWith("HTTP", "big obj");
-      expect(mockSingleMetric.addMetric).toHaveBeenCalledWith("ResponseLatency", MetricUnits.Milliseconds, 4);
+      expect(mockSingleMetric.addMetric).toHaveBeenCalledWith("ResponseLatency", MetricUnit.Milliseconds, 4);
     });
   });
 });
