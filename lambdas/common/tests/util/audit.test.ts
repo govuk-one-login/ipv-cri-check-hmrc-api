@@ -1,3 +1,8 @@
+import { mockLogger } from "../../../common/tests/logger";
+jest.mock("../../../common/src/util/logger", () => ({
+  logger: mockLogger,
+}));
+
 const mockSqsClient = {
   send: jest.fn().mockResolvedValue({ $metadata: { httpStatusCode: 200 } }),
 };

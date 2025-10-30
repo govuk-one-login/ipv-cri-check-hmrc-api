@@ -1,9 +1,12 @@
-import { Logger } from "@aws-lambda-powertools/logger";
+import { mockLogger } from "../../../common/tests/logger";
+jest.mock("../../../common/src/util/logger", () => ({
+  logger: mockLogger,
+}));
+import { logger } from "../../../common/src/util/logger";
 import { CriError } from "../../src/errors/cri-error";
 import { handleErrorResponse } from "../../src/errors/cri-error-response";
 
 describe("cri-error-response", () => {
-  const logger = new Logger();
   jest.spyOn(logger, "error");
 
   it("returns error with message on 400 CriError", () => {

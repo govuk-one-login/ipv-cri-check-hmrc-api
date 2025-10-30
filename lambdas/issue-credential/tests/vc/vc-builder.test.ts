@@ -1,3 +1,7 @@
+import { mockLogger } from "../../../common/tests/logger";
+jest.mock("../../../common/src/util/logger", () => ({
+  logger: mockLogger,
+}));
 import { buildVerifiableCredential } from "../../src/vc/vc-builder";
 import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
 import { NinoUser } from "../../../common/src/types/nino-user";

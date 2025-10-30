@@ -1,10 +1,13 @@
+import { mockLogger } from "../../../common/tests/logger";
+jest.mock("../../../common/src/util/logger", () => ({
+  logger: mockLogger,
+}));
 import { logger } from "../../../common/src/util/logger";
 import { retrieveSessionIdByAccessToken } from "../../src/helpers/retrieve-session-by-access-token";
 import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
 import { mockAccessToken, mockSessionFromIndex } from "../../../common/tests/mocks/mockData";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { QueryCommand } from "@aws-sdk/client-dynamodb";
-jest.mock("../../../common/src/util/logger");
 jest.mock("../../../common/src/util/metrics");
 
 jest.mock("@aws-sdk/client-dynamodb", () => ({

@@ -1,5 +1,8 @@
+import { mockLogger } from "../../../common/tests/logger";
+jest.mock("../../../common/src/util/logger", () => ({
+  logger: mockLogger,
+}));
 jest.mock("../../../common/src/util/metrics");
-jest.mock("../../../common/src/util/logger");
 import { PdvApiInput } from "../../src/hmrc-apis/types/pdv";
 import { logger } from "../../../common/src/util/logger";
 import { captureLatency } from "../../../common/src/util/metrics";
@@ -166,7 +169,7 @@ describe("matchUserDetailsWithPdv", () => {
     expect(result.errorBody).toStrictEqual("Request to create account for a deceased user");
   });
 
-   it("should return parsed deceased response even with JSON contentt-type header", async () => {
+  it("should return parsed deceased response even with JSON contentt-type header", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       headers: {
         get: jest.fn().mockReturnValueOnce("mock-txn").mockReturnValueOnce("application/json"),
