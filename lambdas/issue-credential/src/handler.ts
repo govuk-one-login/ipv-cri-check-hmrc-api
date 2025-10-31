@@ -7,7 +7,7 @@ import { retrieveSessionIdByAccessToken } from "./helpers/retrieve-session-by-ac
 import { captureMetric, metrics } from "../../common/src/util/metrics";
 import { getAttempts } from "../../common/src/database/get-attempts";
 import { retrieveNinoUser } from "./helpers/retrieve-nino-user";
-import { LambdaInterface } from "@aws-lambda-powertools/commons";
+import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { dynamoDBClient } from "../../common/src/util/dynamo";
 import { NinoUser } from "../../common/src/types/nino-user";

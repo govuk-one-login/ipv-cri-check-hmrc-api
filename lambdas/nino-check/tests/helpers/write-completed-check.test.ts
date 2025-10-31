@@ -1,10 +1,13 @@
+import { mockLogger } from "../../../common/tests/logger";
+jest.mock("../../../common/src/util/logger", () => ({
+  logger: mockLogger,
+}));
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { writeCompletedCheck } from "../../src/helpers/write-completed-check";
 import { mockSaveRes, mockTableNames } from "../mocks/mockConfig";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
 import { mockNino, mockSession, mockSessionId } from "../../../common/tests/mocks/mockData";
-jest.mock("../../../common/src/util/logger");
 
 const mockDynamoClient = mockClient(DynamoDBClient);
 mockDynamoClient.on(PutItemCommand).resolves(mockSaveRes);

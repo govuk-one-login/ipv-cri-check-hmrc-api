@@ -1,3 +1,7 @@
+import { mockLogger } from "../../common/tests/logger";
+jest.mock("../../common/src/util/logger", () => ({
+  logger: mockLogger,
+}));
 import { DynamoDBClient, QueryCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";

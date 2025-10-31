@@ -1,3 +1,7 @@
+import { mockLogger } from "../../../../common/tests/logger";
+jest.mock("../../../../common/src/util/logger", () => ({
+  logger: mockLogger,
+}));
 import { getHmrcContraIndicators } from "../../../src/vc/contraIndicator/index";
 import { ContraIndicator } from "../../../src/vc/contraIndicator/ci-mapping-util";
 import { CiMappings } from "../../../src/vc/contraIndicator/types/ci-mappings";

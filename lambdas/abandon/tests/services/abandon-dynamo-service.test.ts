@@ -1,6 +1,10 @@
+import { mockLogger } from "../../../common/tests/logger";
+jest.mock("../../../common/src/util/logger", () => ({
+  logger: mockLogger,
+}));
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
-import { DynamoDBClient, QueryCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { removeAuthCodeFromSessionRecord } from "../../src/services/abandon-dynamo-service";
 
 describe("abandon-dynamo-service", () => {

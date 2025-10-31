@@ -1,4 +1,4 @@
-import { LambdaInterface } from "@aws-lambda-powertools/commons";
+import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { AbandonHandlerConfig } from "./config/abandon-handler-config";

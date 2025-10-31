@@ -1,10 +1,13 @@
+import { mockLogger } from "../../../common/tests/logger";
+jest.mock("../../../common/src/util/logger", () => ({
+  logger: mockLogger,
+}));
 import { RecordNotFoundError } from "../../../common/src/database/exceptions/errors";
 import * as getRecordModule from "../../../common/src/database/get-record-by-session-id";
 import { logger } from "../../../common/src/util/logger";
 import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
 import { mockNinoUser, mockSessionId } from "../../../common/tests/mocks/mockData";
 import { retrieveNinoUser } from "../../src/helpers/retrieve-nino-user";
-jest.mock("../../../common/src/util/logger");
 jest.mock("../../../common/src/util/metrics");
 
 const getRecordBySessionId = jest.spyOn(getRecordModule, "getRecordBySessionId");

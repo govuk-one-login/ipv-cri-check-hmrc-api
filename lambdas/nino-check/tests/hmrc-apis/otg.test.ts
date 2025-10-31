@@ -1,4 +1,7 @@
-jest.mock("../../../common/src/util/logger");
+import { mockLogger } from "../../../common/tests/logger";
+jest.mock("../../../common/src/util/logger", () => ({
+  logger: mockLogger,
+}));
 jest.mock("../../../common/src/util/metrics");
 import { logger } from "../../../common/src/util/logger";
 import { captureLatency } from "../../../common/src/util/metrics";

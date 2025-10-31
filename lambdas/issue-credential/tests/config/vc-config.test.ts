@@ -1,3 +1,7 @@
+import { mockLogger } from "../../../common/tests/logger";
+jest.mock("../../../common/src/util/logger", () => ({
+  logger: mockLogger,
+}));
 import { CriError } from "../../../common/src/errors/cri-error";
 import * as GetParameters from "../../../common/src/util/get-parameters";
 import { logger } from "../../../common/src/util/logger";
