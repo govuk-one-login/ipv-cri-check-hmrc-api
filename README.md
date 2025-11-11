@@ -17,7 +17,7 @@ To run these tests the following environment variables are needed:
 Temporary credentials can be found by going to the [AWS start page](https://uk-digital-identity.awsapps.com/start#/), selecting the account and clicking
 `Access Keys` and clicking the copy next to `Option 1: Set AWS environment variables` to authenticate the correct account.
 
-Then run the command:
+Then run the command :
 
 `AWS_PROFILE=YourProfileName npm run test:api --workspace integration-tests`
 
