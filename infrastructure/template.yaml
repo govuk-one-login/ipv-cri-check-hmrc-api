@@ -56,9 +56,9 @@ Conditions:
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
   IsBuildEnvironment: !Equals [!Ref Environment, build]
+  IsDevBuildEnvironment: !Or [!Condition IsDevLikeEnvironment, !Condition IsBuildEnvironment]
   IsNotDevBuildEnvironment: !Not
-    - !Condition IsDevLikeEnvironment
-    - !Condition IsBuildEnvironment
+    - !Condition IsDevBuildEnvironment
   IsIntOrProdEnvironment: !Or [!Condition IsIntEnvironment, !Condition IsProdEnvironment]
   IsNotIntOrProdEnvironment: !Not
     - !Condition IsIntOrProdEnvironment
