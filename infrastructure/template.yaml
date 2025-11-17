@@ -55,6 +55,10 @@ Conditions:
   IsDevLikeEnvironment: !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
   IsNotDevLikeEnvironment: !Not
     - !Condition IsDevLikeEnvironment
+  IsBuildEnvironment: !Equals [!Ref Environment, build]
+  IsNotDevBuildEnvironment: !Not
+    - !Condition IsDevLikeEnvironment
+    - !Condition IsBuildEnvironment
   IsIntOrProdEnvironment: !Or [!Condition IsIntEnvironment, !Condition IsProdEnvironment]
   IsNotIntOrProdEnvironment: !Not
     - !Condition IsIntOrProdEnvironment
@@ -713,7 +717,7 @@ Resources:
 
   AbandonFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
+    Condition: IsNotDevBuildEnvironment
     Properties:
       DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
@@ -770,7 +774,7 @@ Resources:
 
   PublicNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
+    Condition: IsNotDevBuildEnvironment
     Properties:
       DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
@@ -878,7 +882,7 @@ Resources:
 
   PrivateNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
+    Condition: IsNotDevBuildEnvironment
     Properties:
       DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
@@ -1115,7 +1119,7 @@ Resources:
 
   NinoCheckFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
+    Condition: IsNotDevBuildEnvironment
     Properties:
       DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
@@ -1202,7 +1206,7 @@ Resources:
 
   IssueCredentialFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevLikeEnvironment
+    Condition: IsNotDevBuildEnvironment
     Properties:
       DestinationArn: !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
       FilterPattern: ""
