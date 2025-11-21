@@ -13,8 +13,8 @@
   "dependencies": {
     "@aws-lambda-powertools/logger": "2.28.1",
     "@aws-lambda-powertools/parameters": "2.28.1",
-    "@aws-sdk/client-dynamodb": "3.828.0",
-    "@aws-sdk/util-dynamodb": "3.828.0"
+    "@aws-sdk/client-dynamodb": "3.936.0",
+    "@aws-sdk/util-dynamodb": "3.936.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.150",
