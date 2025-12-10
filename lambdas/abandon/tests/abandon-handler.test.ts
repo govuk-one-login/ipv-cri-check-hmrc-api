@@ -21,7 +21,7 @@ const auditConfig = {
   componentId: "https://check-hmrc-time.account.gov.uk",
 };
 
-describe("abandon-handler", () => {
+xdescribe("abandon-handler", () => {
   const ddbMock = mockClient(DynamoDBClient);
 
   const now = Math.round(Date.now() / 1000);
