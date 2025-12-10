@@ -20,39 +20,8 @@ export class AbandonHandler implements LambdaInterface {
   }
 
   @logger.injectLambdaContext({ resetKeys: true })
-  public async handler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
-    try {
-      logger.info(`${context.functionName} invoked`);
-
-      const txmaAuditHeader = event.headers["txma-audit-encoded"];
-      const sessionId = event.headers["session-id"];
-      if (!sessionId) {
-        throw new CriError(400, "No session-id header present");
-      }
-
-      const sessionItem = await getSessionBySessionId(this.config.tableNames.sessionTable, sessionId);
-
-      logger.appendKeys({
-        govuk_signin_journey_id: sessionItem.clientSessionId,
-      });
-      logger.info("Successfully retrieved the session record.");
-
-      await removeAuthCodeFromSessionRecord(this.config.tableNames.sessionTable, sessionId);
-
-      const txmaAuditValue = txmaAuditHeader
-        ? {
-            restricted: { device_information: { encoded: txmaAuditHeader } },
-          }
-        : undefined;
-      await sendAuditEvent(ABANDONED, this.config.audit, sessionItem, txmaAuditValue);
-
-      return {
-        statusCode: 200,
-        body: "",
-      };
-    } catch (error: unknown) {
-      return handleErrorResponse(error, logger);
-    }
+  public async handler(_: APIGatewayProxyEvent, _: Context): Promise<APIGatewayProxyResult> {
+    throw new Error("test");
   }
 }
 
