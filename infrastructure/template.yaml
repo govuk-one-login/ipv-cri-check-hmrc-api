@@ -61,7 +61,7 @@ Conditions:
   IsNotIntOrProdEnvironment: !Not
     - !Condition IsIntOrProdEnvironment
   UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
-  DeployAlarms: true
+  DeployAlarms: "true"
   AddProvisionedConcurrency: !Not [!Equals [!FindInMap [ProvisionedConcurrency, Environment, !Ref Environment], 0]]
 
 Mappings:
