@@ -660,7 +660,6 @@ Resources:
 
   CheckAbandonedAlarmLambdaErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
     Properties:
       AlarmName: !Sub ${AWS::StackName}-CheckAbandonedAlarmLambdaErrors-alarm
       AlarmDescription: !Sub
