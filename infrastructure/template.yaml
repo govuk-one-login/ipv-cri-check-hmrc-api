@@ -184,6 +184,32 @@ Globals:
       - !Ref AWS::NoValue
 
 Resources:
+  CheckAbandonedAlarmLambdaErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-CheckAbandonedAlarmLambdaErrors-alarm
+      AlarmDescription: !Sub
+        - "AbandonFunction invoked more than 3 times in a minute. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [ StaticVariables, Urls, SupportManualURL ]
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue BuildNotificationTopicArn
+      OKActions:
+        - !ImportValue BuildNotificationWarningsTopicArn
+      InsufficientDataActions: [ ]
+      MetricName: Invocations
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref AbandonFunction
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
   JWKSBucketRole:
     Type: "AWS::IAM::Role"
     Properties:
