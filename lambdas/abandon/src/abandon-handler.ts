@@ -21,6 +21,7 @@ export class AbandonHandler implements LambdaInterface {
 
   @logger.injectLambdaContext({ resetKeys: true })
   public async handler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+    throw new Error("error");
     try {
       logger.info(`${context.functionName} invoked`);
 
