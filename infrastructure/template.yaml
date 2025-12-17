@@ -678,7 +678,7 @@ Resources:
         - Name: FunctionName
           Value: !Ref AbandonFunction
       Period: 60
-      EvaluationPeriods: 1
+      EvaluationPeriods: 2
       DatapointsToAlarm: 1
       Threshold: 3
       ComparisonOperator: GreaterThanThreshold
