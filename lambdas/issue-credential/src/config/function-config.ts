@@ -14,7 +14,7 @@ const envVarNames = {
   ninoUserTable: "NINO_USER_TABLE",
   maxJwtTtl: "MAX_JWT_TTL",
   jwtTtlUnit: "JWT_TTL_UNIT",
-  commonStackName: "COMMON_STACK_NAME",
+  vcSigningKeyId: "VC_SIGNING_KEY_ID",
   vcIssuer: "ISSUER",
 };
 
@@ -22,7 +22,7 @@ export type CredentialIssuerEnv = {
   issuer: string;
   maxJwtTtl: number;
   jwtTtlUnit: TimeUnits;
-  commonStackName: string;
+  vcSigningKeyId: string;
 };
 export class IssueCredFunctionConfig extends BaseFunctionConfig {
   public readonly credentialIssuerEnv: CredentialIssuerEnv;
@@ -36,7 +36,7 @@ export class IssueCredFunctionConfig extends BaseFunctionConfig {
       issuer: process.env[envVarNames.vcIssuer] as string,
       maxJwtTtl: Number(process.env[envVarNames.maxJwtTtl]),
       jwtTtlUnit: process.env[envVarNames.jwtTtlUnit] as TimeUnits,
-      commonStackName: process.env[envVarNames.commonStackName] as string,
+      vcSigningKeyId: process.env[envVarNames.vcSigningKeyId] as string,
     };
   }
 

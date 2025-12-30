@@ -40,7 +40,7 @@ describe("function config", () => {
           issuer: "bob",
           maxJwtTtl: 3600,
           jwtTtlUnit: "seconds",
-          commonStackName: "common-stack",
+          vcSigningKeyId: "key-id-here",
         },
       });
       expect(config.tableNames).toEqual({
