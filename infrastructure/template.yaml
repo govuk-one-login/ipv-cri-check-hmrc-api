@@ -125,16 +125,22 @@ Mappings:
   EnvironmentConfiguration:
     localdev:
       DOMAINNAME: review-hc.localdev.account.gov.uk
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod
     dev:
       DOMAINNAME: review-hc.dev.account.gov.uk
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod
     build:
       DOMAINNAME: review-hc.build.account.gov.uk
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod
     staging:
       DOMAINNAME: review-hc.staging.account.gov.uk
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod
     integration:
       DOMAINNAME: review-hc.integration.account.gov.uk
+      HealthcheckSSMClientId: ipv-core
     production:
       DOMAINNAME: review-hc.production.account.gov.uk
+      HealthcheckSSMClientId: ipv-core
 
 Globals:
   Function:
@@ -1217,6 +1223,40 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref IssueCredentialFunction.Alias
+      Principal: apigateway.amazonaws.com
+
+  HealthcheckFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/healthcheck/src/handler.handler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/HealthcheckFunction
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-HealthcheckFunction"
+          CLIENT_ID: !FindInMap [EnvironmentConfiguration, !Ref Environment, HealthcheckSSMClientId]
+          LOG_FULL_ERRORS: "true"
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: check-hmrc-cri-api/OtgUrl/*
+        - SSMParameterReadPolicy:
+            ParameterName: check-hmrc-cri-api/NinoCheckUrl/*
+
+  HealthcheckFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/HealthcheckFunction
+      RetentionInDays: 30
+
+  HealthcheckFunctionAPIGWPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref HealthcheckFunction.Alias
       Principal: apigateway.amazonaws.com
 
   ##################################################################

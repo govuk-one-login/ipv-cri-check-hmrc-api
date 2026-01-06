@@ -20,7 +20,8 @@ import { mockLogger } from "../../common/tests/logger";
 
 import { handler } from "../src/handler";
 import { NinoCheckFunctionConfig } from "../src/helpers/function-config";
-import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../src/helpers/nino";
+import { getHmrcConfig } from "../../common/src/config/get-hmrc-config";
+import { handleResponseAndSaveAttempt, saveTxn } from "../src/helpers/nino";
 import { callPdvMatchingApi } from "../../common/src/hmrc-apis/pdv";
 import { writeCompletedCheck } from "../src/helpers/write-completed-check";
 import { getTokenFromOtg } from "../../common/src/hmrc-apis/otg";

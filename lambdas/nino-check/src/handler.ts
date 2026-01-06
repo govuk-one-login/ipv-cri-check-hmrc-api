@@ -2,7 +2,8 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda
 import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { writeCompletedCheck } from "./helpers/write-completed-check";
 import { NinoCheckFunctionConfig } from "./helpers/function-config";
-import { getHmrcConfig, saveTxn, handleResponseAndSaveAttempt } from "./helpers/nino";
+import { saveTxn, handleResponseAndSaveAttempt } from "./helpers/nino";
+import { getHmrcConfig } from "../../common/src/config/get-hmrc-config";
 import { CriError } from "../../common/src/errors/cri-error";
 import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
 import { dynamoDBClient } from "../../common/src/util/dynamo";
