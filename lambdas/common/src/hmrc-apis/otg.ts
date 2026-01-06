@@ -1,6 +1,6 @@
 import { OtgConfig, OtgTokenResponse } from "./types/otg";
-import { logger } from "../../../common/src/util/logger";
-import { captureLatency } from "../../../common/src/util/metrics";
+import { logger } from "../util/logger";
+import { captureLatency } from "../util/metrics";
 
 export async function getTokenFromOtg({ apiUrl }: OtgConfig): Promise<string> {
   const [response, latency] = await captureLatency("OTGHandler", () =>

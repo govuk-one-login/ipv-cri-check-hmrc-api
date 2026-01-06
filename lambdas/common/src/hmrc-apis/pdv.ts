@@ -1,7 +1,7 @@
 import { PdvApiErrorBody, PdvApiErrorJSON, PdvApiInput, PdvConfig, ParsedPdvMatchResponse } from "./types/pdv";
-import { logger } from "../../../common/src/util/logger";
-import { captureLatency } from "../../../common/src/util/metrics";
-import { safeStringifyError } from "../../../common/src/util/stringify-error";
+import { logger } from "../util/logger";
+import { captureLatency } from "../util/metrics";
+import { safeStringifyError } from "../util/stringify-error";
 
 export async function callPdvMatchingApi(
   { apiUrl }: PdvConfig,

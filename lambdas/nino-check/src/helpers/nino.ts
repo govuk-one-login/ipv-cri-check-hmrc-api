@@ -1,12 +1,17 @@
 import { ISO8601DateString } from "../../../common/src/types/brands";
-import { PdvApiErrorJSON, PdvApiErrorBody, ParsedPdvMatchResponse, PdvConfig } from "../hmrc-apis/types/pdv";
+import {
+  PdvApiErrorJSON,
+  PdvApiErrorBody,
+  ParsedPdvMatchResponse,
+  PdvConfig,
+} from "../../../common/src/hmrc-apis/types/pdv";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { CriError } from "../../../common/src/errors/cri-error";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { AttemptItem } from "../../../common/src/types/attempt";
 import { logger } from "../../../common/src/util/logger";
 import { captureMetric } from "../../../common/src/util/metrics";
-import { OtgConfig } from "../hmrc-apis/types/otg";
+import { OtgConfig } from "../../../common/src/hmrc-apis/types/otg";
 import { getParametersValues } from "../../../common/src/util/get-parameters";
 import { SessionItem } from "../../../common/src/database/types/session-item";
 export type HmrcApiConfig = {

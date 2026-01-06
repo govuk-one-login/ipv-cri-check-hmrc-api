@@ -1,4 +1,4 @@
-import { UnixSecondsTimestamp } from "../../../../common/src/types/brands";
+import { UnixSecondsTimestamp } from "../../types/brands";
 
 export type OtgTokenResponse = {
   token: string;
