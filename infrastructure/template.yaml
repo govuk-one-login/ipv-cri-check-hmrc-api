@@ -661,9 +661,9 @@ Resources:
   CheckAbandonedAlarmLambdaErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub ${AWS::StackName}-CheckAbandonedAlarmLambdaErrors-alarm
+      AlarmName: !Sub ${AWS::StackName}-PleaseIgnorePagerdutyTest-alert
       AlarmDescription: !Sub
-        - "AbandonFunction invoked more than 3 times in a minute. Runbook: ${SupportManualURL}"
+        - "Please ignore. This is a test alert to prove pagerduty integration for new build notifications stack. Runbook: ${SupportManualURL}"
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
