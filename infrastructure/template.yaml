@@ -667,7 +667,7 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue multi-channel-pagerduty-notifier-BuildNotificationTopicArn
+        - !ImportValue multi-channel-pagerduty-notifier-SlackSNSTopicArn
       OKActions:
         - !ImportValue multi-channel-pagerduty-notifier-BuildNotificationWarningsTopicArn
       InsufficientDataActions: []
