@@ -1,5 +1,5 @@
 import { PdvApiErrorBody, PdvApiErrorJSON, PdvApiInput, PdvConfig, ParsedPdvMatchResponse } from "./types/pdv";
-import { logger } from "../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { captureLatency } from "../../../common/src/util/metrics";
 import { safeStringifyError } from "../../../common/src/util/stringify-error";
 

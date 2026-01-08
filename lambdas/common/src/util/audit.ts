@@ -1,7 +1,7 @@
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { SessionItem } from "../database/types/session-item";
 import { AUDIT_PREFIX, AuditConfig, AuditEvent, AuditEventType, AuditUser } from "../types/audit";
-import { logger } from "./logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { UnixMillisecondsTimestamp, UnixSecondsTimestamp } from "../types/brands";
 
 const auditClient = new SQSClient();

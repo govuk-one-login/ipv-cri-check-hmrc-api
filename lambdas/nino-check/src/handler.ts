@@ -6,7 +6,7 @@ import { getHmrcConfig, saveTxn, handleResponseAndSaveAttempt } from "./helpers/
 import { CriError } from "../../common/src/errors/cri-error";
 import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
 import { dynamoDBClient } from "../../common/src/util/dynamo";
-import { logger } from "../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { captureMetric, metrics } from "../../common/src/util/metrics";
 import { getTokenFromOtg } from "./hmrc-apis/otg";
@@ -156,7 +156,7 @@ class NinoCheckHandler implements LambdaInterface {
 
       return { statusCode: 200, body: JSON.stringify({ requestRetry: false }) };
     } catch (error) {
-      return handleErrorResponse(error, logger);
+      return handleErrorResponse(error);
     }
   }
 }

@@ -1,9 +1,9 @@
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("../../../common/src/util/logger", () => ({
+jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 jest.mock("../../../common/src/util/metrics");
-import { logger } from "../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { captureLatency } from "../../../common/src/util/metrics";
 import { getTokenFromOtg } from "../../src/hmrc-apis/otg";
 

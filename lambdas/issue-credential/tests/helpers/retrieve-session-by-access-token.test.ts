@@ -1,8 +1,8 @@
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("../../../common/src/util/logger", () => ({
+jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
-import { logger } from "../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { retrieveSessionIdByAccessToken } from "../../src/helpers/retrieve-session-by-access-token";
 import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
 import { mockAccessToken, mockSessionFromIndex } from "../../../common/tests/mocks/mockData";

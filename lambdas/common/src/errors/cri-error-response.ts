@@ -1,8 +1,8 @@
-import { Logger } from "@aws-lambda-powertools/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { CriError } from "./cri-error";
 import { safeStringifyError } from "../util/stringify-error";
 
-export function handleErrorResponse(err: unknown, logger: Logger) {
+export function handleErrorResponse(err: unknown) {
   if (err instanceof CriError) {
     logger.error("Cri Error thrown: " + err.message);
     if (err.status >= 500) {

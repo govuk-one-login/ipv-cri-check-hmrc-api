@@ -3,7 +3,7 @@ import { TimeUnits, toEpochSecondsFromNow } from "../../../common/src/util/date-
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { NinoUser } from "../../../common/src/types/nino-user";
-import { logger } from "../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { SessionItem } from "../../../common/src/database/types/session-item";
 import { TableNames } from "./function-config";
 
