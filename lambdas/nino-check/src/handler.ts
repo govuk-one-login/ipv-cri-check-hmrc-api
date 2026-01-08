@@ -1,5 +1,4 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
-import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { writeCompletedCheck } from "./helpers/write-completed-check";
 import { NinoCheckFunctionConfig } from "./helpers/function-config";
 import { getHmrcConfig, saveTxn, handleResponseAndSaveAttempt } from "./helpers/nino";
@@ -19,8 +18,6 @@ import { PersonIdentityItem } from "../../common/src/database/types/person-ident
 import { getAttempts } from "../../common/src/database/get-attempts";
 import { sendAuditEvent } from "../../common/src/util/audit";
 import { REQUEST_SENT, RESPONSE_RECEIVED } from "../../common/src/types/audit";
-
-initOpenTelemetry();
 
 const MAX_PAST_ATTEMPTS = 1;
 
