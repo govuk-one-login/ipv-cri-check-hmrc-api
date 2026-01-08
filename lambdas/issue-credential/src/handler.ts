@@ -1,5 +1,4 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
-import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { CriError } from "../../common/src/errors/cri-error";
 import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
 import { logger } from "@govuk-one-login/cri-logger";
@@ -25,8 +24,6 @@ import { getAuditEvidence } from "./evidence/evidence-creator";
 import { IssueCredFunctionConfig } from "./config/function-config";
 import { VcCheckConfig, getVcConfig } from "./config/vc-config";
 import { jwtSigner } from "./kms-signer/kms-signer";
-
-initOpenTelemetry();
 
 const functionConfig = new IssueCredFunctionConfig();
 let vcConfig: VcCheckConfig;

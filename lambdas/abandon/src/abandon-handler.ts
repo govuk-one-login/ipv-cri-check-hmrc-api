@@ -1,6 +1,5 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
-import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { AbandonHandlerConfig } from "./config/abandon-handler-config";
 import { removeAuthCodeFromSessionRecord } from "./services/abandon-dynamo-service";
 import { CriError } from "../../common/src/errors/cri-error";
@@ -9,8 +8,6 @@ import { logger } from "@govuk-one-login/cri-logger";
 import { getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { sendAuditEvent } from "../../common/src/util/audit";
 import { ABANDONED } from "../../common/src/types/audit";
-
-initOpenTelemetry();
 
 export class AbandonHandler implements LambdaInterface {
   readonly config: AbandonHandlerConfig;
