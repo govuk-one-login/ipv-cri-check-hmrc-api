@@ -4,7 +4,7 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { NinoUser } from "../../../common/src/types/nino-user";
 import { logger } from "@govuk-one-login/cri-logger";
-import { SessionItem } from "../../../common/src/database/types/session-item";
+import { SessionItem } from "@govuk-one-login/cri-types";
 import { TableNames } from "./function-config";
 
 export async function writeCompletedCheck(

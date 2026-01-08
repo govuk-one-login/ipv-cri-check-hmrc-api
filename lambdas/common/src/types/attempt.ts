@@ -1,4 +1,4 @@
-import { ISO8601DateString, UnixSecondsTimestamp } from "../../../common/src/types/brands";
+import { ISO8601DateString, UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 
 export type AttemptItem = {
   sessionId: string;

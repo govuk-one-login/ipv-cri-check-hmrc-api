@@ -49,7 +49,7 @@ import { retrieveNinoUser } from "../src/helpers/retrieve-nino-user";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { buildVerifiableCredential } from "../src/vc/vc-builder";
 import { getHmrcContraIndicators } from "../src/vc/contraIndicator";
-import * as AuditUtils from "../../common/src/util/audit";
+import * as AuditUtils from "@govuk-one-login/cri-audit";
 import * as MetricsUtils from "../../common/src/util/metrics";
 import { getAuditEvidence } from "../src/evidence/evidence-creator";
 import { jwtSigner } from "../src/kms-signer/kms-signer";
@@ -100,7 +100,7 @@ const handlerInput: Parameters<typeof handler> = [
 (getRecordBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockPersonIdentity);
 (retrieveNinoUser as unknown as jest.Mock).mockResolvedValue(mockNinoUser);
 
-const sendAuditEventSpy = jest.spyOn(AuditUtils, "sendAuditEvent");
+const sendAuditEventSpy = jest.spyOn(AuditUtils, "buildAndSendAuditEvent");
 const signJwtSpy = jest.spyOn(jwtSigner, "signJwt");
 const captureMetricSpy = jest.spyOn(MetricsUtils, "captureMetric");
 const expectedJwt = "header.payload.signature";
@@ -144,8 +144,9 @@ describe("issue-credential handler", () => {
     expect(sendAuditEventSpy).toHaveBeenCalledTimes(2);
     expect(sendAuditEventSpy).toHaveBeenNthCalledWith(
       1,
-      "VC_ISSUED",
-      mockFunctionConfig.audit,
+      mockFunctionConfig.audit.queueUrl,
+      "IPV_HMRC_RECORD_CHECK_CRI_VC_ISSUED",
+      mockFunctionConfig.audit.componentId,
       mockSession,
       expect.objectContaining({
         restricted: {
@@ -162,7 +163,7 @@ describe("issue-credential handler", () => {
         },
       })
     );
-    expect(sendAuditEventSpy).toHaveBeenNthCalledWith(2, "END", mockFunctionConfig.audit, mockSession);
+    expect(sendAuditEventSpy).toHaveBeenNthCalledWith(2,  mockFunctionConfig.audit.queueUrl, "IPV_HMRC_RECORD_CHECK_CRI_END", mockFunctionConfig.audit.componentId, mockSession);
     expect(captureMetricSpy).toHaveBeenCalledWith("VCIssuedMetric");
   });
 

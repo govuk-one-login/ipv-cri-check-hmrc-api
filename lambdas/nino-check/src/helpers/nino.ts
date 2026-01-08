@@ -1,4 +1,4 @@
-import { ISO8601DateString } from "../../../common/src/types/brands";
+import { SessionItem, ISO8601DateString } from "@govuk-one-login/cri-types";
 import { PdvApiErrorJSON, PdvApiErrorBody, ParsedPdvMatchResponse } from "../../../common/src/hmrc-apis/types/pdv";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { CriError } from "../../../common/src/errors/cri-error";
@@ -6,7 +6,6 @@ import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/clie
 import { AttemptItem } from "../../../common/src/types/attempt";
 import { logger } from "@govuk-one-login/cri-logger";
 import { captureMetric } from "../../../common/src/util/metrics";
-import { SessionItem } from "../../../common/src/database/types/session-item";
 
 export async function saveTxn(dynamoClient: DynamoDBClient, sessionTableName: string, sessionId: string, txn: string) {
   const txnCmd = new UpdateItemCommand({

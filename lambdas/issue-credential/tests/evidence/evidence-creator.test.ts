@@ -1,4 +1,4 @@
-import { SessionItem } from "../../../common/src/database/types/session-item";
+import { SessionItem } from "@govuk-one-login/cri-types";
 import { AttemptItem, AttemptsResult } from "../../../common/src/types/attempt";
 import { getEvidence, getAuditEvidence } from "../../src/evidence/evidence-creator";
 import * as MetricsUtils from "../../../common/src/util/metrics";

@@ -3,11 +3,11 @@ jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 import { buildVerifiableCredential } from "../../src/vc/vc-builder";
-import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
+import { PersonIdentityItem } from "@govuk-one-login/cri-types";
 import { NinoUser } from "../../../common/src/types/nino-user";
 import { VerifiableIdentityCredential, VerifiableCredential } from "../../src/types/verifiable-credential";
 import { AttemptItem, AttemptsResult } from "../../../common/src/types/attempt";
-import { SessionItem } from "../../../common/src/database/types/session-item";
+import { SessionItem } from "@govuk-one-login/cri-types";
 
 describe("vc-builder", () => {
   const sessionId = "test-session";
