@@ -1,5 +1,5 @@
 import { OtgConfig, OtgTokenResponse } from "./types/otg";
-import { logger } from "../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { captureLatency } from "../../../common/src/util/metrics";
 
 export async function getTokenFromOtg({ apiUrl }: OtgConfig): Promise<string> {

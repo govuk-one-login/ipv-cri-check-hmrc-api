@@ -5,7 +5,7 @@ import { AbandonHandlerConfig } from "./config/abandon-handler-config";
 import { removeAuthCodeFromSessionRecord } from "./services/abandon-dynamo-service";
 import { CriError } from "../../common/src/errors/cri-error";
 import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
-import { logger } from "../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { sendAuditEvent } from "../../common/src/util/audit";
 import { ABANDONED } from "../../common/src/types/audit";
@@ -51,7 +51,7 @@ export class AbandonHandler implements LambdaInterface {
         body: "",
       };
     } catch (error: unknown) {
-      return handleErrorResponse(error, logger);
+      return handleErrorResponse(error);
     }
   }
 }

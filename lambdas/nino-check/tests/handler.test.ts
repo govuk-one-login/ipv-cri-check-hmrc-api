@@ -1,4 +1,4 @@
-jest.mock("../../common/src/util/logger", () => ({
+jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 jest.mock("../src/helpers/write-completed-check");

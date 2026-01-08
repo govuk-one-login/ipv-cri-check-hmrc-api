@@ -1,5 +1,5 @@
 import { mockLogger } from "../logger";
-jest.mock("../../src/util/logger", () => ({
+jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 import { mockClient } from "aws-sdk-client-mock";

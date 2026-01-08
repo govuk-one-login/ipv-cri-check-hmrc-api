@@ -1,5 +1,5 @@
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("../../../common/src/util/logger", () => ({
+jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 import { buildVerifiableCredential } from "../../src/vc/vc-builder";

@@ -1,7 +1,7 @@
 import { mockLogger } from "../../common/tests/logger";
 import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
 
-jest.mock("../../common/src/util/logger", () => ({
+jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 jest.mock("../../common/src/config/base-function-config");

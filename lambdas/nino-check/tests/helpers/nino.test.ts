@@ -1,5 +1,5 @@
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("../../../common/src/util/logger", () => ({
+jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 jest.mock("../../../common/src/util/metrics");
@@ -12,7 +12,7 @@ import * as GetParameters from "../../../common/src/util/get-parameters";
 import { mockPdvDeceasedRes, mockPdvErrorRes, mockPdvInvalidCredsRes, mockPdvRes } from "../mocks/mockData";
 import { mockSession, mockSessionId, mockTxn } from "../../../common/tests/mocks/mockData";
 import { captureMetric } from "../../../common/src/util/metrics";
-import { logger } from "../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { CriError } from "../../../common/src/errors/cri-error";
 
 const ddbMock = mockClient(DynamoDBClient);

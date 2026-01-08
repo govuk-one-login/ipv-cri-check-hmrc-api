@@ -4,7 +4,7 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 import { CriError } from "../../../common/src/errors/cri-error";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { AttemptItem } from "../../../common/src/types/attempt";
-import { logger } from "../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { captureMetric } from "../../../common/src/util/metrics";
 import { OtgConfig } from "../hmrc-apis/types/otg";
 import { getParametersValues } from "../../../common/src/util/get-parameters";

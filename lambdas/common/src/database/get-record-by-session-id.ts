@@ -3,7 +3,6 @@ import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { withRetry } from "../util/retry";
 import { RecordNotFoundError, TooManyRecordsError } from "./exceptions/errors";
 import { UnixSecondsTimestamp } from "../types/brands";
-import { logger } from "../util/logger";
 import { dynamoDBClient } from "../util/dynamo";
 import { CriError } from "../errors/cri-error";
 import { SessionItem } from "./types/session-item";
@@ -52,7 +51,7 @@ export async function getRecordBySessionId<
     return result.Items;
   }
 
-  const queryResult = await withRetry(queryRecord, logger, {
+  const queryResult = await withRetry(queryRecord, {
     maxRetries: 3,
     baseDelay: 300,
   });
