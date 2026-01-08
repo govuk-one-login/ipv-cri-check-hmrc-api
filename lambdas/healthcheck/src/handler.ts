@@ -17,7 +17,6 @@ const PDV_TEST_USER: PdvApiInput = {
   dateOfBirth: "2000-01-01",
   nino: "AA000000A",
 };
-const HMRC_API_HOST = "https://api.service.hmrc.gov.uk/";
 
 function selectMode(path: string) {
   switch (path) {
@@ -30,10 +29,65 @@ function selectMode(path: string) {
   }
 }
 
+const timeRemainingValue = Number(process.env.TIMEOUT_TIME) ?? 20_000;
+
+let timeRemaining = timeRemainingValue;
+
+function timeout(abortSignal: AbortSignal) {
+  return new Promise<undefined>((_, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(`Timed out after ${timeRemaining} ms!`);
+    }, timeRemaining);
+
+    abortSignal.addEventListener("abort", () => clearTimeout(timeoutId));
+
+    if (abortSignal.aborted) clearTimeout(timeoutId);
+  });
+}
+
+type AssertFunctionResultOutput<ResultType = unknown> = {
+  latency: number;
+  result: ResultType | undefined;
+  error: string | undefined;
+};
+
+async function assertFunctionResultWithTimeout<ResultType>(
+  mode: ReturnType<typeof selectMode>,
+  callback: (abortSignal: AbortSignal) => Promise<ResultType>,
+  checkFunction?: (result: ResultType | undefined) => { success: true } | { success: false; message: string }
+): Promise<AssertFunctionResultOutput<ResultType>> {
+  let result: ResultType | undefined;
+  let error: string | undefined;
+
+  const abortController = new AbortController();
+
+  const start = performance.now();
+  try {
+    result = await Promise.race([callback(abortController.signal), timeout(abortController.signal)]);
+
+    abortController.abort();
+
+    if (checkFunction) {
+      const checkOutcome = checkFunction(result);
+
+      if (!checkOutcome.success) throw new Error(checkOutcome.message);
+    }
+  } catch (e) {
+    if (mode === "healthcheck") throw e;
+    error = safeStringifyError(e);
+  }
+
+  const latency = Math.round(performance.now() - start);
+  timeRemaining -= latency;
+  return { result, latency, error };
+}
+
 class HealthcheckHandler implements LambdaInterface {
   @logger.injectLambdaContext({ resetKeys: true })
   @metrics.logMetrics({ throwOnEmptyMetrics: false, captureColdStartMetric: true })
   public async handler({ path }: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> {
+    timeRemaining = timeRemainingValue;
+
     try {
       const clientId = process.env.CLIENT_ID;
       if (!clientId) throw new CriError(500, "No CLIENT_ID environment variable provided!");
@@ -42,69 +96,78 @@ class HealthcheckHandler implements LambdaInterface {
 
       const mode = selectMode(path);
 
-      const hmrcHostRes = await fetch(HMRC_API_HOST);
-      if (hmrcHostRes.status >= 500 && mode === "healthcheck")
-        throw new CriError(
-          500,
-          `HMRC API host ${HMRC_API_HOST} returned unexpected response code: ${hmrcHostRes.status}.`
+      logger.info(`mode=${mode}. Fetching HMRC config.`);
+
+      const hmrcConfigRes = await assertFunctionResultWithTimeout(mode, () => getHmrcConfig(clientId));
+      const hmrcConfig = hmrcConfigRes.result;
+
+      let pdvHostRes: AssertFunctionResultOutput<{ status: number; body: string }> | undefined;
+      let otgRes: AssertFunctionResultOutput<string> | undefined;
+      let pdvRes: AssertFunctionResultOutput<ParsedPdvMatchResponse> | undefined;
+
+      if (hmrcConfig) {
+        const pdvHost = new URL(hmrcConfig.pdv.apiUrl).origin;
+
+        logger.info(`Checking if PDV host '${pdvHost}' is online...`);
+
+        pdvHostRes = await assertFunctionResultWithTimeout(
+          mode,
+          async (signal) => {
+            const response = await fetch(pdvHost, {
+              method: "HEAD",
+              signal,
+            });
+            const body = await response.text();
+            return { status: response.status, body };
+          },
+          (result) =>
+            !result || result.status >= 500
+              ? {
+                  success: false,
+                  message: `PDV host ${pdvHost} returned unexpected code: ${result?.status}.`,
+                }
+              : { success: true }
         );
 
-      logger.info(`HMRC host responded with code: ${hmrcHostRes.status}`);
-      const hmrcConfig = await getHmrcConfig(clientId);
+        logger.info(`Fetching token from OTG.`);
 
-      let otgToken: string | undefined;
-      let otgError: unknown;
-      let pdvResponse: ParsedPdvMatchResponse | undefined;
-      let pdvError: unknown;
-
-      logger.info(`Fetching token from OTG.`);
-
-      try {
-        otgToken = await getTokenFromOtg(hmrcConfig.otg);
-        if (!otgToken) throw new CriError(500, `Failed to retrieve OTG token!`);
-        logger.info(`Retrieved token from OTG`);
-      } catch (e) {
-        logger.info(`Failed to retreive token from OTG`);
-        if (mode === "healthcheck") throw e;
-        otgError = e;
-      }
-
-      if (otgToken) {
-        logger.info(`Calling PDV API with dummy user.`);
-        try {
-          pdvResponse = await callPdvMatchingApi(hmrcConfig.pdv, otgToken, PDV_TEST_USER);
-
-          logger.info(`PDV status: ${pdvResponse.httpStatus}`);
-
-          if (pdvResponse.httpStatus !== 401 && mode === "healthcheck") {
-            throw new CriError(500, `HMRC PDV returned unexpected response code: ${pdvResponse.httpStatus}`);
+        otgRes = await assertFunctionResultWithTimeout(
+          mode,
+          (signal) => getTokenFromOtg(hmrcConfig.otg, signal),
+          (result) => {
+            return result ? { success: true } : { success: false, message: `Failed to retrieve OTG token!` };
           }
-        } catch (e) {
-          logger.info(`Error was thrown when calling PDV API.`);
-          if (mode === "healthcheck") throw e;
-          pdvError = e;
+        );
+        const otgToken = otgRes.result;
+
+        if (otgToken) {
+          logger.info(`Calling PDV API with dummy user.`);
+          pdvRes = await assertFunctionResultWithTimeout(
+            mode,
+            (signal) => callPdvMatchingApi(hmrcConfig.pdv, otgToken, PDV_TEST_USER, signal),
+            (result) =>
+              result?.httpStatus !== 401
+                ? { success: false, message: `HMRC PDV returned unexpected response code: ${result?.httpStatus}` }
+                : { success: true }
+          );
+          logger.info(`PDV status: ${pdvRes.result?.httpStatus}`);
         }
       }
 
       const response =
         mode === "report"
           ? {
-              hmrcHost: {
-                url: HMRC_API_HOST,
-                status: hmrcHostRes.status,
-                body: await hmrcHostRes.text(),
-              },
-              otg: {
-                url: hmrcConfig.otg.apiUrl,
-                tokenLength: otgToken?.length ?? "N/A",
-                error: otgError ? safeStringifyError(otgError) : undefined,
-              },
-              pdv: {
-                url: hmrcConfig.pdv.apiUrl,
-                testUser: PDV_TEST_USER,
-                response: pdvResponse ?? "N/A",
-                error: pdvError ? safeStringifyError(pdvError) : undefined,
-              },
+              hmrcConfig: hmrcConfigRes,
+              hmrcHost: pdvHostRes ?? "N/A (not called due to earlier failures)",
+              otg: otgRes
+                ? {
+                    latency: otgRes.latency,
+                    // avoid logging the token itself
+                    result: otgRes.result && { tokenLength: otgRes.result.length },
+                    error: otgRes.error,
+                  }
+                : "N/A (not called due to earlier failures)",
+              pdv: pdvRes ?? "N/A (not called due to earlier failures)",
             }
           : { message: "success" };
 

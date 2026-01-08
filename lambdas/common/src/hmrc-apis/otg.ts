@@ -2,10 +2,11 @@ import { OtgConfig, OtgTokenResponse } from "./types/otg";
 import { logger } from "../util/logger";
 import { captureLatency } from "../util/metrics";
 
-export async function getTokenFromOtg({ apiUrl }: OtgConfig): Promise<string> {
+export async function getTokenFromOtg({ apiUrl }: OtgConfig, signal?: AbortSignal): Promise<string> {
   const [response, latency] = await captureLatency("OTGHandler", () =>
     fetch(apiUrl, {
       method: "GET",
+      signal,
     })
   );
 

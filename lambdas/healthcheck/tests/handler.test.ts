@@ -13,17 +13,18 @@ import { ParsedPdvMatchResponse } from "../../common/src/hmrc-apis/types/pdv";
 
 process.env.CLIENT_ID = "mr-client";
 process.env.LOG_FULL_ERRORS = "true";
+process.env.TIMEOUT_TIME = "500";
 
+const pdvHost = "https://pdv.hmrc.com";
 const otgUrl = "https://otg.hmrc.com";
-const pdvUrl = "https://pdv.hmrc.com";
+const pdvUrl = `${pdvHost}/gimme-pdv`;
 const mockPdvResponse: ParsedPdvMatchResponse = { httpStatus: 401, errorBody: "could not find that guy", txn: "txn" };
 const mockPdvErrorResponse: ParsedPdvMatchResponse = { httpStatus: 500, errorBody: "unhappy :(", txn: "badTxn" };
 const mockPdvHappyResponse: ParsedPdvMatchResponse = { httpStatus: 200, errorBody: "", txn: "happyTxn" };
 const mockOtgToken = "otg-token";
 const mockFetchMessage = "no service here";
 const mockFetchRes = { status: 404, text: jest.fn().mockResolvedValue(mockFetchMessage) } as unknown as Response;
-const apiGatewayPath = "/get/healthcheck/thirdparty";
-const hmrcHost = "https://api.service.hmrc.gov.uk/";
+const apiGatewayPath = "/healthcheck/thirdparty";
 const testUser = {
   firstName: expect.any(String),
   lastName: expect.any(String),
@@ -31,10 +32,12 @@ const testUser = {
   nino: "AA000000A",
 };
 
-const getHmrcConfigMock = jest.spyOn(getHmrcConfigFile, "getHmrcConfig").mockResolvedValue({
+const mockHmrcConfig = {
   pdv: { apiUrl: pdvUrl },
   otg: { apiUrl: otgUrl },
-});
+};
+
+const getHmrcConfigMock = jest.spyOn(getHmrcConfigFile, "getHmrcConfig").mockResolvedValue(mockHmrcConfig);
 const callPdvMatchingApiMock = jest.spyOn(pdvFile, "callPdvMatchingApi").mockResolvedValue(mockPdvResponse);
 const getTokenFromOtgMock = jest.spyOn(otgFile, "getTokenFromOtg").mockResolvedValue(mockOtgToken);
 const fetchMock = jest.spyOn(global, "fetch").mockResolvedValue(mockFetchRes);
@@ -54,12 +57,13 @@ describe(`handler`, () => {
     const res = await handler(...healthcheckHandlerInput);
 
     expect(getHmrcConfigMock).toHaveBeenCalled();
-    expect(fetchMock).toHaveBeenCalledWith(hmrcHost);
-    expect(getTokenFromOtgMock).toHaveBeenCalledWith({ apiUrl: otgUrl });
+    expect(fetchMock).toHaveBeenCalledWith(pdvHost, { method: "HEAD", signal: expect.any(Object) });
+    expect(getTokenFromOtgMock).toHaveBeenCalledWith({ apiUrl: otgUrl }, expect.any(Object));
     expect(callPdvMatchingApiMock).toHaveBeenCalledWith(
       { apiUrl: pdvUrl },
       mockOtgToken,
-      expect.objectContaining(testUser)
+      expect.objectContaining(testUser),
+      expect.any(Object)
     );
 
     expect(res.statusCode).toEqual(200);
@@ -71,35 +75,35 @@ describe(`handler`, () => {
 
     expect(res.statusCode).toEqual(200);
     expect(JSON.parse(res.body)).toStrictEqual({
+      hmrcConfig: {
+        latency: expect.any(Number),
+        result: mockHmrcConfig,
+      },
       hmrcHost: {
-        url: hmrcHost,
-        status: mockFetchRes.status,
-        body: mockFetchMessage,
+        latency: expect.any(Number),
+        result: { status: mockFetchRes.status, body: mockFetchMessage },
       },
       otg: {
-        url: otgUrl,
-        tokenLength: mockOtgToken.length,
+        latency: expect.any(Number),
+        result: { tokenLength: mockOtgToken.length },
       },
       pdv: {
-        url: pdvUrl,
-        testUser,
-        response: mockPdvResponse,
+        latency: expect.any(Number),
+        result: mockPdvResponse,
       },
     });
   });
 
   describe(`healthcheck fails if something is wrong`, () => {
-    it(`fails and logs execution errors`, async () => {
-      fetchMock.mockImplementationOnce(() => {
+    it(`fails if it can't get HMRC config`, async () => {
+      getHmrcConfigMock.mockImplementationOnce(() => {
         throw new Error(`broken!`);
       });
 
       const res = await handler(...healthcheckHandlerInput);
 
       expect(res.statusCode).toEqual(500);
-      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining(`Error: broken!`));
     });
-
     it(`fails if the HMRC host returns a 5xx`, async () => {
       fetchMock.mockResolvedValueOnce({ ...mockFetchRes, status: 500 });
 
@@ -134,8 +138,31 @@ describe(`handler`, () => {
   });
 
   describe(`report is returned if something breaks`, () => {
+    it(`returns a report correctly if HMRC config fetch is broken`, async () => {
+      getHmrcConfigMock.mockImplementationOnce(() => {
+        throw new Error(`broken!`);
+      });
+
+      const res = await handler(...reportHandlerInput);
+
+      expect(res.statusCode).toEqual(200);
+      expect(JSON.parse(res.body)).toStrictEqual({
+        hmrcConfig: {
+          latency: expect.any(Number),
+          error: expect.stringContaining("Error: broken!"),
+        },
+        hmrcHost: expect.stringContaining("N/A"),
+        otg: expect.stringContaining("N/A"),
+        pdv: expect.stringContaining("N/A"),
+      });
+    });
+
     it(`returns a report correctly if HMRC host and/or OTG are broken`, async () => {
-      fetchMock.mockResolvedValueOnce({ ...mockFetchRes, status: 500 });
+      fetchMock.mockResolvedValueOnce({
+        ...mockFetchRes,
+        status: 500,
+        text: jest.fn().mockResolvedValue("hmrc down!"),
+      });
       getTokenFromOtgMock.mockImplementationOnce(() => {
         throw new Error(`otg bad times!`);
       });
@@ -144,21 +171,23 @@ describe(`handler`, () => {
 
       expect(res.statusCode).toEqual(200);
       expect(JSON.parse(res.body)).toStrictEqual({
+        hmrcConfig: {
+          latency: expect.any(Number),
+          result: mockHmrcConfig,
+        },
         hmrcHost: {
-          url: hmrcHost,
-          status: 500,
-          body: expect.any(String),
+          latency: expect.any(Number),
+          result: {
+            status: 500,
+            body: "hmrc down!",
+          },
+          error: expect.stringContaining("500"),
         },
         otg: {
-          url: otgUrl,
-          tokenLength: "N/A",
+          latency: expect.any(Number),
           error: expect.stringContaining("Error: otg bad times!"),
         },
-        pdv: {
-          url: pdvUrl,
-          testUser,
-          response: "N/A",
-        },
+        pdv: expect.stringContaining("N/A"),
       });
     });
 
@@ -171,21 +200,47 @@ describe(`handler`, () => {
 
       expect(res.statusCode).toEqual(200);
       expect(JSON.parse(res.body)).toStrictEqual({
+        hmrcConfig: {
+          latency: expect.any(Number),
+          result: mockHmrcConfig,
+        },
         hmrcHost: {
-          url: hmrcHost,
-          status: mockFetchRes.status,
-          body: mockFetchMessage,
+          latency: expect.any(Number),
+          result: { status: mockFetchRes.status, body: mockFetchMessage },
         },
         otg: {
-          url: otgUrl,
-          tokenLength: mockOtgToken.length,
+          latency: expect.any(Number),
+          result: {
+            tokenLength: mockOtgToken.length,
+          },
         },
         pdv: {
-          url: pdvUrl,
-          testUser,
-          response: "N/A",
+          latency: expect.any(Number),
           error: expect.stringContaining("Error: pdv bad times!"),
         },
+      });
+    });
+
+    it(`reports correctly if something times out`, async () => {
+      getTokenFromOtgMock.mockImplementationOnce(() => new Promise((resolve) => setTimeout(resolve, 1000)));
+
+      const res = await handler(...reportHandlerInput);
+
+      expect(res.statusCode).toEqual(200);
+      expect(JSON.parse(res.body)).toStrictEqual({
+        hmrcConfig: {
+          latency: expect.any(Number),
+          result: mockHmrcConfig,
+        },
+        hmrcHost: {
+          latency: expect.any(Number),
+          result: { status: mockFetchRes.status, body: mockFetchMessage },
+        },
+        otg: {
+          latency: expect.any(Number),
+          error: expect.stringContaining("Timed out"),
+        },
+        pdv: expect.stringContaining("N/A"),
       });
     });
   });
