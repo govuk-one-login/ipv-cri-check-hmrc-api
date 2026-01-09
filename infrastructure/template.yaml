@@ -658,31 +658,31 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  CheckAbandonedAlarmLambdaErrors:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub ${AWS::StackName}-PleaseIgnorePagerdutyTest-alert
-      AlarmDescription: !Sub
-        - "Please ignore. This is a test alert to prove pagerduty integration for new build notifications stack. Runbook: ${SupportManualURL}"
-        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue multi-channel-pagerduty-notifier-PagerDutySNSTopicArn
-      OKActions:
-        - !ImportValue multi-channel-pagerduty-notifier-BuildNotificationWarningsTopicArn
-      InsufficientDataActions: []
-      MetricName: Invocations
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Dimensions:
-        - Name: FunctionName
-          Value: !Ref AbandonFunction
-      Period: 60
-      EvaluationPeriods: 2
-      DatapointsToAlarm: 1
-      Threshold: 3
-      ComparisonOperator: GreaterThanThreshold
-      TreatMissingData: notBreaching
+  # CheckAbandonedAlarmLambdaErrors:
+  #   Type: AWS::CloudWatch::Alarm
+  #   Properties:
+  #     AlarmName: !Sub ${AWS::StackName}-PleaseIgnorePagerdutyTest-alert
+  #     AlarmDescription: !Sub
+  #       - "Please ignore. This is a test alert to prove pagerduty integration for new build notifications stack. Runbook: ${SupportManualURL}"
+  #       - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
+  #     ActionsEnabled: true
+  #     AlarmActions:
+  #       - !ImportValue multi-channel-pagerduty-notifier-PagerDutySNSTopicArn
+  #     OKActions:
+  #       - !ImportValue multi-channel-pagerduty-notifier-BuildNotificationWarningsTopicArn
+  #     InsufficientDataActions: []
+  #     MetricName: Invocations
+  #     Namespace: AWS/Lambda
+  #     Statistic: Sum
+  #     Dimensions:
+  #       - Name: FunctionName
+  #         Value: !Ref AbandonFunction
+  #     Period: 60
+  #     EvaluationPeriods: 2
+  #     DatapointsToAlarm: 1
+  #     Threshold: 3
+  #     ComparisonOperator: GreaterThanThreshold
+  #     TreatMissingData: notBreaching
 
   AbandonFunction:
     Type: AWS::Serverless::Function
