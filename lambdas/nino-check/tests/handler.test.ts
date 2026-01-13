@@ -4,10 +4,11 @@ jest.mock("@govuk-one-login/cri-logger", () => ({
 jest.mock("../src/helpers/write-completed-check");
 jest.mock("../src/helpers/function-config");
 jest.mock("../src/helpers/nino");
+jest.mock("../../common/src/config/get-hmrc-config");
 jest.mock("../../common/src/database/get-attempts");
 jest.mock("../../common/src/database/get-record-by-session-id");
-jest.mock("../src/hmrc-apis/pdv");
-jest.mock("../src/hmrc-apis/otg");
+jest.mock("../../common/src/hmrc-apis/pdv");
+jest.mock("../../common/src/hmrc-apis/otg");
 jest.mock("../../common/src/util/metrics");
 jest.mock("../../common/src/util/audit");
 
@@ -20,10 +21,11 @@ import { mockLogger } from "../../common/tests/logger";
 
 import { handler } from "../src/handler";
 import { NinoCheckFunctionConfig } from "../src/helpers/function-config";
-import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../src/helpers/nino";
-import { callPdvMatchingApi } from "../src/hmrc-apis/pdv";
+import { getHmrcConfig } from "../../common/src/config/get-hmrc-config";
+import { handleResponseAndSaveAttempt, saveTxn } from "../src/helpers/nino";
+import { callPdvMatchingApi } from "../../common/src/hmrc-apis/pdv";
 import { writeCompletedCheck } from "../src/helpers/write-completed-check";
-import { getTokenFromOtg } from "../src/hmrc-apis/otg";
+import { getTokenFromOtg } from "../../common/src/hmrc-apis/otg";
 import { buildPdvInput } from "../src/helpers/build-pdv-input";
 import { captureMetric } from "../../common/src/util/metrics";
 import { CriError } from "../../common/src/errors/cri-error";

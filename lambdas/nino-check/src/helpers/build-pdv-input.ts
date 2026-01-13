@@ -1,5 +1,5 @@
 import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
-import { PdvApiInput } from "../hmrc-apis/types/pdv";
+import { PdvApiInput } from "../../../common/src/hmrc-apis/types/pdv";
 
 export function buildPdvInput(personIdentity: PersonIdentityItem, nino: string): PdvApiInput {
   let firstName = "";

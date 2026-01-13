@@ -1,6 +1,6 @@
 import { NinoCheckFunctionConfig, TableNames } from "../../src/helpers/function-config";
-import { HmrcApiConfig } from "../../src/helpers/nino";
 import { mockAuditConfig } from "../../../common/tests/mocks/mockConfig";
+import { HmrcApiConfig } from "../../../common/src/config/get-hmrc-config";
 
 export const mockDeviceInformationHeader = "big-device-time";
 
@@ -22,7 +22,7 @@ export const mockHmrcConfig: HmrcApiConfig = {
 
 export const mockFunctionConfig: NinoCheckFunctionConfig = {
   tableNames: mockTableNames,
-  audit: mockAuditConfig
+  audit: mockAuditConfig,
 };
 
 export const mockSaveRes = {

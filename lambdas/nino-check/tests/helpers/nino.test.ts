@@ -7,13 +7,14 @@ import { mockSaveRes } from "../mocks/mockConfig";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
-import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../../src/helpers/nino";
+import { handleResponseAndSaveAttempt, saveTxn } from "../../src/helpers/nino";
 import * as GetParameters from "../../../common/src/util/get-parameters";
 import { mockPdvDeceasedRes, mockPdvErrorRes, mockPdvInvalidCredsRes, mockPdvRes } from "../mocks/mockData";
 import { mockSession, mockSessionId, mockTxn } from "../../../common/tests/mocks/mockData";
 import { captureMetric } from "../../../common/src/util/metrics";
 import { logger } from "@govuk-one-login/cri-logger";
 import { CriError } from "../../../common/src/errors/cri-error";
+import { getHmrcConfig } from "../../../common/src/config/get-hmrc-config";
 
 const ddbMock = mockClient(DynamoDBClient);
 ddbMock.on(PutItemCommand).resolves(mockSaveRes);
