@@ -671,9 +671,7 @@ Resources:
         - !ImportValue multi-channel-pagerduty-notifier-WarningAlertsTopicArn
         - !ImportValue multi-channel-pagerduty-notifier-CriticalAlertsTopicArn
       OKActions:
-        - !ImportValue multi-channel-pagerduty-notifier-CriticalAlertsTopicArn
         - !ImportValue multi-channel-pagerduty-notifier-WarningAlertsTopicArn
-        - !ImportValue multi-channel-pagerduty-notifier-CriticalAlertsTopicArn
       InsufficientDataActions: []
       MetricName: Invocations
       Namespace: AWS/Lambda
