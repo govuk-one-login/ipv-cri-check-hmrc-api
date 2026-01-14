@@ -1257,6 +1257,7 @@ Resources:
         Sourcemap: true
     Properties:
       Handler: lambdas/healthcheck/src/handler.handler
+      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/HealthcheckFunction
       Environment:
