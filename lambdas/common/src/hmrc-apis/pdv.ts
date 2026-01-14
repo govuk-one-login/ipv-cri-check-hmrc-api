@@ -1,12 +1,13 @@
 import { PdvApiErrorBody, PdvApiErrorJSON, PdvApiInput, PdvConfig, ParsedPdvMatchResponse } from "./types/pdv";
 import { logger } from "@govuk-one-login/cri-logger";
-import { captureLatency } from "../../../common/src/util/metrics";
-import { safeStringifyError } from "../../../common/src/util/stringify-error";
+import { captureLatency } from "../util/metrics";
+import { safeStringifyError } from "../util/stringify-error";
 
 export async function callPdvMatchingApi(
   { apiUrl }: PdvConfig,
   oAuthToken: string,
-  apiInput: PdvApiInput
+  apiInput: PdvApiInput,
+  signal?: AbortSignal
 ): Promise<ParsedPdvMatchResponse> {
   const [response, latency] = await captureLatency("MatchingHandler", () =>
     fetch(apiUrl, {
@@ -17,6 +18,7 @@ export async function callPdvMatchingApi(
         Authorization: `Bearer ${oAuthToken}`,
       },
       body: JSON.stringify(apiInput),
+      signal,
     })
   );
 
