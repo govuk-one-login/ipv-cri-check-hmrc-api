@@ -1,4 +1,4 @@
-import { UnixSecondsTimestamp } from "../../types/brands";
+import { UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 
 export type OtgTokenResponse = {
   token: string;

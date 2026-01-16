@@ -5,10 +5,10 @@ jest.mock("@govuk-one-login/cri-logger", () => ({
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
 import { DynamoDBClient, QueryCommand, QueryCommandOutput } from "@aws-sdk/client-dynamodb";
-import { PersonIdentityItem } from "../../src/database/types/person-identity";
+import { PersonIdentityItem } from "@govuk-one-login/cri-types";
 import { RecordNotFoundError, TooManyRecordsError } from "../../src/database/exceptions/errors";
-import { SessionItem } from "../../src/database/types/session-item";
-import { UnixSecondsTimestamp } from "../../src/types/brands";
+import { SessionItem } from "@govuk-one-login/cri-types";
+import { UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 import { getRecordBySessionId, getSessionBySessionId } from "../../src/database/get-record-by-session-id";
 import { NinoUser } from "../../src/types/nino-user";
 import { CriError } from "../../src/errors/cri-error";

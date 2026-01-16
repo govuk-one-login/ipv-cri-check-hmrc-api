@@ -10,7 +10,7 @@ jest.mock("../../common/src/database/get-record-by-session-id");
 jest.mock("../../common/src/hmrc-apis/pdv");
 jest.mock("../../common/src/hmrc-apis/otg");
 jest.mock("../../common/src/util/metrics");
-jest.mock("../../common/src/util/audit");
+jest.mock("@govuk-one-login/cri-audit");
 
 import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
 import { mockOtgToken, mockPdvRes } from "./mocks/mockData";
@@ -31,8 +31,8 @@ import { captureMetric } from "../../common/src/util/metrics";
 import { CriError } from "../../common/src/errors/cri-error";
 import { getAttempts as attempts } from "../../common/src/database/get-attempts";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
-import { sendAuditEvent } from "../../common/src/util/audit";
-import { REQUEST_SENT, RESPONSE_RECEIVED } from "../../common/src/types/audit";
+import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
+import { AUDIT_EVENT_TYPE } from "../../common/src/types/audit";
 
 const mockContext: Context = {
   awsRequestId: "",
@@ -93,7 +93,7 @@ describe("nino-check handler", () => {
     expect(mockLogger.appendKeys).toHaveBeenCalledWith({
       govuk_signin_journey_id: mockSession.clientSessionId,
     });
-    expect(sendAuditEvent).toHaveBeenCalledWith(REQUEST_SENT, mockFunctionConfig.audit, mockSession, {
+    expect(buildAndSendAuditEvent).toHaveBeenCalledWith(mockFunctionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.REQUEST_SENT, mockFunctionConfig.audit.componentId, mockSession, {
       restricted: {
         birthDate: mockPersonIdentity.birthDates,
         name: mockPersonIdentity.names,
@@ -114,7 +114,7 @@ describe("nino-check handler", () => {
       mockSessionId,
       mockPdvRes.txn
     );
-    expect(sendAuditEvent).toHaveBeenCalledWith(RESPONSE_RECEIVED, mockFunctionConfig.audit, mockSession, {
+    expect(buildAndSendAuditEvent).toHaveBeenCalledWith(mockFunctionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.RESPONSE_RECEIVED, mockFunctionConfig.audit.componentId, mockSession, {
       restricted: {
         device_information: {
           encoded: mockDeviceInformationHeader,

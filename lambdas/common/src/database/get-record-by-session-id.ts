@@ -2,10 +2,9 @@ import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { withRetry } from "../util/retry";
 import { RecordNotFoundError, TooManyRecordsError } from "./exceptions/errors";
-import { UnixSecondsTimestamp } from "../types/brands";
+import { SessionItem, UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 import { dynamoDBClient } from "../util/dynamo";
 import { CriError } from "../errors/cri-error";
-import { SessionItem } from "./types/session-item";
 
 export type SessionIdRecord = { sessionId: string; expiryDate?: UnixSecondsTimestamp };
 

@@ -16,10 +16,10 @@ import { safeStringifyError } from "../../common/src/util/stringify-error";
 import { buildPdvInput } from "./helpers/build-pdv-input";
 import { ParsedPdvMatchResponse } from "../../common/src/hmrc-apis/types/pdv";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
-import { PersonIdentityItem } from "../../common/src/database/types/person-identity";
+import { PersonIdentityItem } from "@govuk-one-login/cri-types";
 import { getAttempts } from "../../common/src/database/get-attempts";
-import { sendAuditEvent } from "../../common/src/util/audit";
-import { REQUEST_SENT, RESPONSE_RECEIVED } from "../../common/src/types/audit";
+import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
+import { AUDIT_EVENT_TYPE } from "../../common/src/types/audit";
 
 initOpenTelemetry();
 
@@ -93,7 +93,7 @@ class NinoCheckHandler implements LambdaInterface {
           }
         : undefined;
 
-      await sendAuditEvent(REQUEST_SENT, functionConfig.audit, session, {
+      await buildAndSendAuditEvent(functionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.REQUEST_SENT, functionConfig.audit.componentId, session, {
         restricted: {
           birthDate: personIdentity.birthDates,
           name: personIdentity.names,
@@ -127,7 +127,7 @@ class NinoCheckHandler implements LambdaInterface {
 
       logger.info(`Saved txn.`);
 
-      await sendAuditEvent(RESPONSE_RECEIVED, functionConfig.audit, session, {
+      await buildAndSendAuditEvent(functionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.RESPONSE_RECEIVED, functionConfig.audit.componentId, session, {
         restricted: auditDeviceInformation,
         extensions: { evidence: { txn: parsedPdvMatchResponse.txn } },
       });

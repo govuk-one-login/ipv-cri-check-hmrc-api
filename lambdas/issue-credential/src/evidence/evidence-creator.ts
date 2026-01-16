@@ -6,7 +6,7 @@ import {
   STRENGTH_SCORE,
 } from "../../../common/src/types/evidence";
 import { ContraIndicator } from "../vc/contraIndicator/ci-mapping-util";
-import { SessionItem } from "../../../common/src/database/types/session-item";
+import { SessionItem } from "@govuk-one-login/cri-types";
 import { CiReasonsMapping } from "../vc/contraIndicator/types/ci-reasons-mapping";
 import { AttemptsResult } from "../../../common/src/types/attempt";
 import { captureMetric } from "../../../common/src/util/metrics";

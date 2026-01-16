@@ -1,9 +1,13 @@
-import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
-import { PdvApiInput } from "../../../common/src/hmrc-apis/types/pdv";
+import { PersonIdentityItem } from "@govuk-one-login/cri-types";
+import { PdvApiInput } from "common/src/hmrc-apis/types/pdv";
 
 export function buildPdvInput(personIdentity: PersonIdentityItem, nino: string): PdvApiInput {
   let firstName = "";
   let lastName = "";
+
+  if(!personIdentity.names || !personIdentity.birthDates) {
+    throw new Error("Names or BirthDates is blank");
+  }
 
   for (const name of personIdentity.names) {
     for (const namePart of name.nameParts) {
