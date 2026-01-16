@@ -2,15 +2,15 @@ import { ninoCheckEndpoint, createSession, getJarAuthorization } from "../endpoi
 import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamodb-helper";
 import { AUDIENCE, NINO } from "../env-variables";
 import {
-  AuditRestricted,
-  AuditExtensions,
+  NinoCheckAuditExtensions,
   baseExpectedEvent,
   pollForTestHarnessEvents,
   REQUEST_SENT_EVENT_NAME,
   RESPONSE_RECEIVED_EVENT_NAME,
+  NinoCheckAuditRestricted,
 } from "../audit";
 import { testUser } from "../user";
-import { AuditEvent } from "@govuk-one-login/cri-audit/dist/cjs/types";
+import { AuditEvent } from "@govuk-one-login/cri-audit";
 
 jest.setTimeout(60_000); // 1 min
 
@@ -61,7 +61,7 @@ describe("Given the session and NINO is valid", () => {
     const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
 
-    const expectedRequestSentAuditEvent: AuditEvent<never, never, AuditRestricted> = {
+    const expectedRequestSentAuditEvent: AuditEvent<never, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, sessionId),
       restricted: {
         birthDate: [{ value: testUser.dob }],
@@ -73,7 +73,7 @@ describe("Given the session and NINO is valid", () => {
 
     const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
-    const expectedResponseReceivedAuditEvent: AuditEvent<AuditExtensions, never, AuditRestricted> = {
+    const expectedResponseReceivedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, sessionId),
       extensions: {
         evidence: { txn: expect.any(String) },
@@ -99,7 +99,7 @@ describe("Given the session and NINO is valid", () => {
     const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
 
-    const expectedRequestSentAuditEvent: AuditEvent<never, never, AuditRestricted> = {
+    const expectedRequestSentAuditEvent: AuditEvent<never, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, sessionId),
       restricted: {
         birthDate: [{ value: testUser.dob }],
@@ -115,7 +115,7 @@ describe("Given the session and NINO is valid", () => {
     const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
 
-    const expectedRequestReceivedAuditEvent: AuditEvent<AuditExtensions, never, AuditRestricted> = {
+    const expectedRequestReceivedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, sessionId),
       restricted: {
         device_information: {
@@ -182,7 +182,7 @@ describe("Given the session and NINO is valid", () => {
     const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
 
-    const expectedRequestSentAuditEvent: AuditEvent<never, never, AuditRestricted> = {
+    const expectedRequestSentAuditEvent: AuditEvent<never, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, sessionId),
       restricted: {
         birthDate: deceasedPersonSession.birthDate,
@@ -198,7 +198,7 @@ describe("Given the session and NINO is valid", () => {
     const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
 
-    const expectedRequestReceivedAuditEvent: AuditEvent<AuditExtensions, never, AuditRestricted> = {
+    const expectedRequestReceivedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, sessionId),
       restricted: {
         device_information: {
@@ -267,7 +267,7 @@ describe("Given the session and NINO is valid", () => {
     const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
 
-    const expectedRequestSentAuditEvent: AuditEvent<never, never, AuditRestricted> = {
+    const expectedRequestSentAuditEvent: AuditEvent<never, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, sessionId),
       restricted: {
         birthDate: [{ value: "2000-02-02" }],
@@ -280,7 +280,7 @@ describe("Given the session and NINO is valid", () => {
     const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
 
-    const expectedRequestReceivedAuditEvent: AuditEvent<AuditExtensions, never, AuditRestricted> = {
+    const expectedRequestReceivedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, sessionId),
       extensions: {
         evidence: { txn: expect.any(String) },

@@ -1,4 +1,4 @@
-import { AuditEvent } from "@govuk-one-login/cri-audit/dist/cjs/types";
+import { AuditEvent } from "@govuk-one-login/cri-audit";
 import { clearAttemptsTable, clearItemsFromTables, getItemByKey } from "../../resources/dynamodb-helper";
 import { ABANDONED_EVENT_NAME, baseExpectedEvent, pollForTestHarnessEvents } from "../audit";
 import {

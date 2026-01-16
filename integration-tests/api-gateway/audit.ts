@@ -2,8 +2,8 @@ import type { UnixSecondsTimestamp, PersonIdentityDateOfBirth, PersonIdentityNam
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { signedFetch } from "../resources/fetch";
 import { pause } from "../resources/util";
-import { AuditEvent } from "@govuk-one-login/cri-audit/dist/cjs/types";
 import { Evidence } from "../../lambdas/common/src/types/evidence";
+import { AuditEvent, AuditRestricted } from "@govuk-one-login/cri-audit";
 
 const prefix = "IPV_HMRC_RECORD_CHECK_CRI" as const;
 
@@ -14,21 +14,11 @@ export const VC_ISSUED_EVENT_NAME = `${prefix}_VC_ISSUED`;
 export const END_EVENT_NAME = `${prefix}_END`;
 export const ABANDONED_EVENT_NAME = `${prefix}_ABANDONED`;
 
-export type AuditRestricted = {
-  device_information?: {
-    encoded: string;
-  };
-  birthDate?: PersonIdentityDateOfBirth[];
-  name?: {
-    description?: string;
-    validFrom?: number;
-    validUntil?: number;
-    nameParts: (PersonIdentityNamePart & { validFrom?: number; validUntil?: number })[];
-  }[];
-  socialSecurityRecord?: { personalNumber: string }[];
+export interface NinoCheckAuditRestricted extends AuditRestricted {
+	socialSecurityRecord?: { personalNumber: string }[];
 };
 
-export type AuditExtensions = {
+export type NinoCheckAuditExtensions = {
   evidence?:
     | (Evidence & { attemptNum: number; ciReasons?: { ci: string; reason: string }[] })[]
     | { txn: string }
