@@ -75,19 +75,24 @@ describe(`handler`, () => {
 
     expect(res.statusCode).toEqual(200);
     expect(JSON.parse(res.body)).toStrictEqual({
+      healthcheckPassed: true,
       hmrcConfig: {
+        passed: true,
         latency: expect.any(Number),
         result: mockHmrcConfig,
       },
       hmrcHost: {
+        passed: true,
         latency: expect.any(Number),
         result: { status: mockFetchRes.status },
       },
       otg: {
+        passed: true,
         latency: expect.any(Number),
         result: { tokenLength: mockOtgToken.length },
       },
       pdv: {
+        passed: true,
         latency: expect.any(Number),
         result: { status: mockPdvResponse.httpStatus },
       },
@@ -148,7 +153,9 @@ describe(`handler`, () => {
 
       expect(res.statusCode).toEqual(200);
       expect(JSON.parse(res.body)).toStrictEqual({
+        healthcheckPassed: false,
         hmrcConfig: {
+          passed: false,
           latency: expect.any(Number),
           error: expect.stringContaining("Error: broken!"),
         },
@@ -172,11 +179,14 @@ describe(`handler`, () => {
 
       expect(res.statusCode).toEqual(200);
       expect(JSON.parse(res.body)).toStrictEqual({
+        healthcheckPassed: false,
         hmrcConfig: {
+          passed: true,
           latency: expect.any(Number),
           result: mockHmrcConfig,
         },
         hmrcHost: {
+          passed: false,
           latency: expect.any(Number),
           result: {
             status: 500,
@@ -184,6 +194,7 @@ describe(`handler`, () => {
           error: expect.stringContaining("500"),
         },
         otg: {
+          passed: false,
           latency: expect.any(Number),
           error: expect.stringContaining("Error: otg bad times!"),
         },
@@ -200,21 +211,26 @@ describe(`handler`, () => {
 
       expect(res.statusCode).toEqual(200);
       expect(JSON.parse(res.body)).toStrictEqual({
+        healthcheckPassed: false,
         hmrcConfig: {
+          passed: true,
           latency: expect.any(Number),
           result: mockHmrcConfig,
         },
         hmrcHost: {
+          passed: true,
           latency: expect.any(Number),
           result: { status: mockFetchRes.status },
         },
         otg: {
+          passed: true,
           latency: expect.any(Number),
           result: {
             tokenLength: mockOtgToken.length,
           },
         },
         pdv: {
+          passed: false,
           latency: expect.any(Number),
           error: expect.stringContaining("Error: pdv bad times!"),
         },
@@ -228,15 +244,19 @@ describe(`handler`, () => {
 
       expect(res.statusCode).toEqual(200);
       expect(JSON.parse(res.body)).toStrictEqual({
+        healthcheckPassed: false,
         hmrcConfig: {
+          passed: true,
           latency: expect.any(Number),
           result: mockHmrcConfig,
         },
         hmrcHost: {
+          passed: true,
           latency: expect.any(Number),
           result: { status: mockFetchRes.status },
         },
         otg: {
+          passed: false,
           latency: expect.any(Number),
           error: expect.stringContaining("Timed out"),
         },
