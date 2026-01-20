@@ -44,6 +44,7 @@ function timeout(abortSignal: AbortSignal) {
 }
 
 type AssertFunctionResultOutput<ResultType = unknown> = {
+  passed: boolean;
   latency: number;
   result: ResultType | undefined;
   error: string | undefined;
@@ -77,7 +78,7 @@ async function assertFunctionResultWithTimeout<ResultType>(
 
   const latency = Math.round(performance.now() - start);
   timeRemaining -= latency;
-  return { result, latency, error };
+  return { passed: error === undefined, result, latency, error };
 }
 
 function loadEnvironmentVariables() {
@@ -159,12 +160,18 @@ class HealthcheckHandler implements LambdaInterface {
         }
       }
 
+      const healthcheckPassed = Boolean(
+        hmrcConfigRes?.passed && pdvHostRes?.passed && otgRes?.passed && pdvRes?.passed
+      );
+
       const response =
         mode === "report"
           ? {
+              healthcheckPassed,
               hmrcConfig: hmrcConfigRes,
               hmrcHost: pdvHostRes
                 ? {
+                    passed: pdvHostRes.passed,
                     result: pdvHostRes.result && { status: pdvHostRes.result.status },
                     latency: pdvHostRes.latency,
                     error: pdvHostRes.error,
@@ -172,6 +179,7 @@ class HealthcheckHandler implements LambdaInterface {
                 : "N/A (not called due to earlier failures)",
               otg: otgRes
                 ? {
+                    passed: otgRes.passed,
                     result: otgRes.result && { tokenLength: otgRes.result.length },
                     latency: otgRes.latency,
                     error: otgRes.error,
@@ -179,6 +187,7 @@ class HealthcheckHandler implements LambdaInterface {
                 : "N/A (not called due to earlier failures)",
               pdv: pdvRes
                 ? {
+                    passed: pdvRes.passed,
                     result: pdvRes.result && { status: pdvRes.result.httpStatus },
                     latency: pdvRes.latency,
                     error: pdvRes.error,
