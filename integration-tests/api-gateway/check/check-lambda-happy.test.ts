@@ -4,13 +4,14 @@ import { AUDIENCE, NINO } from "../env-variables";
 import {
   NinoCheckAuditExtensions,
   baseExpectedEvent,
-  pollForTestHarnessEvents,
   REQUEST_SENT_EVENT_NAME,
   RESPONSE_RECEIVED_EVENT_NAME,
   NinoCheckAuditRestricted,
+  TEST_HARNESS_EXECUTE_URL,
 } from "../audit";
 import { testUser } from "../user";
 import { AuditEvent } from "@govuk-one-login/cri-audit";
+import { pollTestHarnessForEvents } from "@govuk-one-login/cri-test-resources-helpers";
 
 jest.setTimeout(60_000); // 1 min
 
@@ -58,7 +59,7 @@ describe("Given the session and NINO is valid", () => {
     expect(check.status).toEqual(200);
     expect(resBody).toStrictEqual({ requestRetry: false });
 
-    const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
+    const reqSentEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
 
     const expectedRequestSentAuditEvent: AuditEvent<never, never, NinoCheckAuditRestricted> = {
@@ -71,7 +72,7 @@ describe("Given the session and NINO is valid", () => {
     };
     expect(reqSentEvents[0].event).toStrictEqual(expectedRequestSentAuditEvent);
 
-    const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
+    const resReceivedEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
     const expectedResponseReceivedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, sessionId),
@@ -96,7 +97,7 @@ describe("Given the session and NINO is valid", () => {
     expect(check.status).toEqual(200);
     expect(resBody).toStrictEqual({ requestRetry: false });
 
-    const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
+    const reqSentEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
 
     const expectedRequestSentAuditEvent: AuditEvent<never, never, NinoCheckAuditRestricted> = {
@@ -112,7 +113,7 @@ describe("Given the session and NINO is valid", () => {
     }
     expect(reqSentEvents[0].event).toStrictEqual(expectedRequestSentAuditEvent);
 
-    const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
+    const resReceivedEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
 
     const expectedRequestReceivedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
@@ -179,7 +180,7 @@ describe("Given the session and NINO is valid", () => {
     expect(check.status).toEqual(200);
     expect(resBody).toStrictEqual({ requestRetry: true });
 
-    const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
+    const reqSentEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
 
     const expectedRequestSentAuditEvent: AuditEvent<never, never, NinoCheckAuditRestricted> = {
@@ -195,7 +196,7 @@ describe("Given the session and NINO is valid", () => {
     }
     expect(reqSentEvents[0].event).toStrictEqual(expectedRequestSentAuditEvent);
 
-    const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
+    const resReceivedEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
 
     const expectedRequestReceivedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
@@ -264,7 +265,7 @@ describe("Given the session and NINO is valid", () => {
 
     expect(checkData).toEqual(200);
 
-    const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
+    const reqSentEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
 
     const expectedRequestSentAuditEvent: AuditEvent<never, never, NinoCheckAuditRestricted> = {
@@ -277,7 +278,7 @@ describe("Given the session and NINO is valid", () => {
     }
     expect(reqSentEvents[0].event).toStrictEqual(expectedRequestSentAuditEvent);
 
-    const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
+    const resReceivedEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
 
     const expectedRequestReceivedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
