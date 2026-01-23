@@ -20,6 +20,7 @@
     "@aws-sdk/client-ssm": "3.934.0",
     "@aws-sdk/lib-dynamodb": "3.934.0",
     "@aws-sdk/util-dynamodb": "3.934.0",
+    "@govuk-one-login/cri-test-resources-helpers": "1.0.1",
     "@pact-foundation/pact": "16.0.0",
     "@types/express": "4.17.21",
     "@types/uuid": "9.0.8",
