@@ -42,7 +42,7 @@ class IssueCredentialHandler implements LambdaInterface {
 
       const { attempts, personIdentity, ninoUser, session } = await this.getCheckedUserData(accessToken);
 
-      vcConfig ??= await getVcConfig(functionConfig.credentialIssuerEnv.commonStackName);
+      vcConfig ??= await getVcConfig(functionConfig.credentialIssuerEnv.vcSigningKeyId);
       const contraIndicators = getHmrcContraIndicators({
         contraIndicationMapping: vcConfig.contraIndicator.errorMapping,
         contraIndicatorReasonsMapping: vcConfig.contraIndicator.reasonsMapping,
