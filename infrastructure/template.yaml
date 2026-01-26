@@ -377,10 +377,8 @@ Resources:
       AlarmDescription: !Sub Check HMRC ${Environment} lambda errors"
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: Errors
@@ -399,10 +397,8 @@ Resources:
       AlarmName: !Sub ${AWS::StackName}-CheckHmrcLambdaThrottle-alarm
       AlarmDescription: !Sub Check HMRC ${Environment} lambda throttle"
       ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
-      OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
+      AlarmActions: []
+      OKActions: []
       InsufficientDataActions: []
       MetricName: Throttles
       Namespace: AWS/Lambda
@@ -608,10 +604,8 @@ Resources:
       AlarmDescription: !Sub "Trigger an alarm when Fatal ${PublicNinoCheckApi} Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PublicNinoCheckApi-Fatalerror
@@ -711,10 +705,8 @@ Resources:
       AlarmDescription: !Sub "Trigger an alarm when Fatal ${PrivateNinoCheckApi} Error occurs. ${SupportManualURL}"
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PrivateNinoCheckApi-Fatalerror
@@ -842,10 +834,8 @@ Resources:
     Condition: "DeployAlarms"
     Properties:
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmDescription: !Sub "${CheckSessionStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-CheckSessionStateMachine-alarm"
@@ -988,10 +978,8 @@ Resources:
     Condition: "DeployAlarms"
     Properties:
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmDescription: !Sub "${NinoCheckStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckStateMachine-ExecutionsFailed-alarm"
@@ -1233,10 +1221,8 @@ Resources:
     Condition: "DeployAlarms"
     Properties:
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmDescription: !Sub "${NinoIssueCredentialStateMachine} failed 4 or more requests in the last hour. ${SupportManualURL}"
       AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoIssueCredentialStateMachine-ExecutionsFailed-alarm"
