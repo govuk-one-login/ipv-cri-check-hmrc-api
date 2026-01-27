@@ -292,10 +292,8 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       EvaluationPeriods: 5
@@ -467,10 +465,8 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       Metrics:
         - Id: errors
@@ -557,10 +553,8 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       Metrics:
         - Id: errors
@@ -624,10 +618,8 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: Errors
@@ -650,9 +642,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: Throttles
       Namespace: AWS/Lambda
@@ -832,10 +824,8 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PublicNinoCheckApi-Fatalerror
@@ -940,10 +930,8 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PrivateNinoCheckApi-Fatalerror
@@ -965,10 +953,8 @@ Resources:
       AlarmDescription: !Sub Check HMRC ${Environment} API Gateway 5XX errors
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       DatapointsToAlarm: 3
