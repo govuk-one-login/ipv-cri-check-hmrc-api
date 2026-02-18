@@ -1,8 +1,7 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { logger } from "@govuk-one-login/cri-logger";
+import { CriError, formatErrorResponse } from "@govuk-one-login/cri-error-response";
 import { metrics } from "../../common/src/util/metrics";
-import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
-import { CriError } from "../../common/src/errors/cri-error";
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 import { getHmrcConfig } from "../../common/src/config/get-hmrc-config";
 import { getTokenFromOtg } from "../../common/src/hmrc-apis/otg";
@@ -201,7 +200,7 @@ class HealthcheckHandler implements LambdaInterface {
         body: JSON.stringify(response),
       };
     } catch (error) {
-      return handleErrorResponse(error);
+      return formatErrorResponse(error);
     }
   }
 }

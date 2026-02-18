@@ -4,8 +4,7 @@ import { writeCompletedCheck } from "./helpers/write-completed-check";
 import { NinoCheckFunctionConfig } from "./helpers/function-config";
 import { saveTxn, handleResponseAndSaveAttempt } from "./helpers/nino";
 import { getHmrcConfig } from "../../common/src/config/get-hmrc-config";
-import { CriError } from "../../common/src/errors/cri-error";
-import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
+import { CriError, formatErrorResponse } from "@govuk-one-login/cri-error-response";
 import { dynamoDBClient } from "../../common/src/util/dynamo";
 import { logger } from "@govuk-one-login/cri-logger";
 import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
@@ -157,7 +156,7 @@ class NinoCheckHandler implements LambdaInterface {
 
       return { statusCode: 200, body: JSON.stringify({ requestRetry: false }) };
     } catch (error) {
-      return handleErrorResponse(error);
+      return formatErrorResponse(error);
     }
   }
 }

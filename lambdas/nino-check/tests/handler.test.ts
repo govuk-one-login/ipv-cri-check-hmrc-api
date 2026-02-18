@@ -28,7 +28,7 @@ import { writeCompletedCheck } from "../src/helpers/write-completed-check";
 import { getTokenFromOtg } from "../../common/src/hmrc-apis/otg";
 import { buildPdvInput } from "../src/helpers/build-pdv-input";
 import { captureMetric } from "../../common/src/util/metrics";
-import { CriError } from "../../common/src/errors/cri-error";
+import { CriError } from "@govuk-one-login/cri-error-response";
 import { getAttempts as attempts } from "../../common/src/database/get-attempts";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
@@ -54,6 +54,9 @@ const mockContext: Context = {
 const internalServerError = {
   statusCode: 500,
   body: JSON.stringify({ message: "Internal server error" }),
+  headers: {
+    "Content-Type": "application/json",
+  }
 };
 
 const handlerInput: Parameters<typeof handler> = [

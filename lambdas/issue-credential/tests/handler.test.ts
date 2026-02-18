@@ -78,11 +78,17 @@ const mockContext: Context = {
 const internalServerError = {
   statusCode: 500,
   body: JSON.stringify({ message: "Internal server error" }),
+  headers: {
+    "Content-Type": "application/json",
+  }
 };
 
 const badRequest = {
   statusCode: 400,
   body: expect.any(String),
+  headers: {
+    "Content-Type": "application/json",
+  }
 };
 
 const handlerInput: Parameters<typeof handler> = [

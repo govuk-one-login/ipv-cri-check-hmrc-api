@@ -1,4 +1,4 @@
-import { CriError } from "../errors/cri-error";
+import { CriError } from "@govuk-one-login/cri-error-response";
 import { OtgConfig } from "../hmrc-apis/types/otg";
 import { PdvConfig } from "../hmrc-apis/types/pdv";
 import { getParametersValues } from "../util/get-parameters";

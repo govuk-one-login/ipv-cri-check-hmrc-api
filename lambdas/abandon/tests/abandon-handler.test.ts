@@ -171,6 +171,9 @@ describe("abandon-handler", () => {
     expect(result).toEqual({
       body: '{"message":"No session-id header present"}',
       statusCode: 400,
+      headers: {
+        "Content-Type": "application/json",
+      }
     });
   });
 
@@ -193,6 +196,9 @@ describe("abandon-handler", () => {
     expect(result).toEqual({
       body: '{"message":"Session not found"}',
       statusCode: 400,
+      headers: {
+        "Content-Type": "application/json",
+      }
     });
   });
 
@@ -212,6 +218,9 @@ describe("abandon-handler", () => {
     expect(result).toEqual({
       body: '{"message":"Internal server error"}',
       statusCode: 500,
+      headers: {
+        "Content-Type": "application/json",
+      }
     });
   });
 
@@ -249,6 +258,9 @@ describe("abandon-handler", () => {
     expect(result).toEqual({
       body: '{"message":"Internal server error"}',
       statusCode: 500,
+      headers: {
+        "Content-Type": "application/json",
+      }
     });
   });
 
@@ -287,6 +299,9 @@ describe("abandon-handler", () => {
     expect(result).toEqual({
       body: '{"message":"Internal server error"}',
       statusCode: 500,
+      headers: {
+        "Content-Type": "application/json",
+      }
     });
   });
 });

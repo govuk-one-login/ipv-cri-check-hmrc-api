@@ -37,7 +37,7 @@ describe("retrieveNinoUser()", () => {
       await retrieveNinoUser(ninoUserTableName, mockDynamoClient, mockSessionId);
     } catch (error) {
       thrown = true;
-      expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 500 }));
+      expect(error).toEqual(expect.objectContaining({ name: "CriError", statusCode: 500 }));
     }
 
     expect(thrown).toEqual(true);
@@ -54,7 +54,7 @@ describe("retrieveNinoUser()", () => {
       await retrieveNinoUser(ninoUserTableName, mockDynamoClient, mockSessionId);
     } catch (error) {
       thrown = true;
-      expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 500 }));
+      expect(error).toEqual(expect.objectContaining({ name: "CriError", statusCode: 500 }));
     }
 
     expect(thrown).toEqual(true);

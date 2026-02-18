@@ -3,12 +3,11 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda
 import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { AbandonHandlerConfig } from "./config/abandon-handler-config";
 import { removeAuthCodeFromSessionRecord } from "./services/abandon-dynamo-service";
-import { CriError } from "../../common/src/errors/cri-error";
-import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
 import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
 import { logger } from "@govuk-one-login/cri-logger";
 import { getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { AUDIT_EVENT_TYPE } from "../../common/src/types/audit";
+import { CriError, formatErrorResponse } from "@govuk-one-login/cri-error-response";
 
 initOpenTelemetry();
 
@@ -51,7 +50,7 @@ export class AbandonHandler implements LambdaInterface {
         body: "",
       };
     } catch (error: unknown) {
-      return handleErrorResponse(error);
+      return formatErrorResponse(error);
     }
   }
 }
