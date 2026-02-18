@@ -13,7 +13,7 @@ import { mockPdvDeceasedRes, mockPdvErrorRes, mockPdvInvalidCredsRes, mockPdvRes
 import { mockSession, mockSessionId, mockTxn } from "../../../common/tests/mocks/mockData";
 import { captureMetric } from "../../../common/src/util/metrics";
 import { logger } from "@govuk-one-login/cri-logger";
-import { CriError } from "../../../common/src/errors/cri-error";
+import { CriError } from "@govuk-one-login/cri-error-response";
 import { getHmrcConfig } from "../../../common/src/config/get-hmrc-config";
 
 const ddbMock = mockClient(DynamoDBClient);
@@ -193,7 +193,7 @@ describe("handleResponseAndSaveAttempt()", () => {
     } catch (error) {
       thrown = true;
 
-      expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 500 }));
+      expect(error).toEqual(expect.objectContaining({ name: "CriError", statusCode: 500 }));
     }
 
     expect(thrown).toEqual(true);
@@ -211,7 +211,7 @@ describe("handleResponseAndSaveAttempt()", () => {
     } catch (error) {
       thrown = true;
 
-      expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 500 }));
+      expect(error).toEqual(expect.objectContaining({ name: "CriError", statusCode: 500 }));
     }
 
     expect(thrown).toEqual(true);

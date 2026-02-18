@@ -1,4 +1,4 @@
-import { CriError } from "../../../common/src/errors/cri-error";
+import { CriError } from "@govuk-one-login/cri-error-response";
 import { getParametersValues } from "../../../common/src/util/get-parameters";
 import { logger } from "@govuk-one-login/cri-logger";
 import { CiReasonsMapping } from "../vc/contraIndicator/types/ci-reasons-mapping";

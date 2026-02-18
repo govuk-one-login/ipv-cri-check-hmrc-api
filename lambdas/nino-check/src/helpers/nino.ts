@@ -1,7 +1,7 @@
 import { SessionItem, ISO8601DateString } from "@govuk-one-login/cri-types";
 import { PdvApiErrorJSON, PdvApiErrorBody, ParsedPdvMatchResponse } from "../../../common/src/hmrc-apis/types/pdv";
 import { marshall } from "@aws-sdk/util-dynamodb";
-import { CriError } from "../../../common/src/errors/cri-error";
+import { CriError } from "@govuk-one-login/cri-error-response";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { AttemptItem } from "../../../common/src/types/attempt";
 import { logger } from "@govuk-one-login/cri-logger";

@@ -1,7 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
-import { CriError } from "../../common/src/errors/cri-error";
-import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
+import { CriError, formatErrorResponse } from "@govuk-one-login/cri-error-response";
 import { logger } from "@govuk-one-login/cri-logger";
 import { retrieveSessionIdByAccessToken } from "./helpers/retrieve-session-by-access-token";
 import { captureMetric, metrics } from "../../common/src/util/metrics";
@@ -91,7 +90,7 @@ class IssueCredentialHandler implements LambdaInterface {
         body: signedJwt,
       };
     } catch (error: unknown) {
-      return handleErrorResponse(error);
+      return formatErrorResponse(error);
     }
   }
   private async getCheckedUserData(accessToken: string) {

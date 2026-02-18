@@ -8,6 +8,7 @@ import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
 import { mockAccessToken, mockSessionFromIndex } from "../../../common/tests/mocks/mockData";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { QueryCommand } from "@aws-sdk/client-dynamodb";
+import { CriError } from "@govuk-one-login/cri-error-response";
 jest.mock("../../../common/src/util/metrics");
 
 jest.mock("@aws-sdk/client-dynamodb", () => ({
@@ -63,7 +64,7 @@ describe("retrieveSessionByAccessToken()", () => {
       await retrieveSessionIdByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
     } catch (error) {
       thrown = true;
-      expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 400 }));
+      expect(error).toEqual(expect.objectContaining({ name: "CriError", statusCode: 400 }));
     }
 
     expect(thrown).toEqual(true);
@@ -82,7 +83,7 @@ describe("retrieveSessionByAccessToken()", () => {
     } catch (error) {
       thrown = true;
       expect(error).toEqual(
-        expect.objectContaining({ name: "CriError", status: 500, message: expect.stringContaining("2") })
+        expect.objectContaining({ name: "CriError", statusCode: 500, message: expect.stringContaining("2") })
       );
     }
 
@@ -100,7 +101,7 @@ describe("retrieveSessionByAccessToken()", () => {
       await retrieveSessionIdByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
     } catch (error) {
       thrown = true;
-      expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 500 }));
+      expect(error).toEqual(expect.objectContaining({ name: "CriError", statusCode: 500 }));
     }
 
     expect(thrown).toEqual(true);

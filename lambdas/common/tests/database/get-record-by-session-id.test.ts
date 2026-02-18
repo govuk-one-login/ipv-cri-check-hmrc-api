@@ -7,11 +7,11 @@ import "aws-sdk-client-mock-jest";
 import { DynamoDBClient, QueryCommand, QueryCommandOutput } from "@aws-sdk/client-dynamodb";
 import { PersonIdentityItem } from "@govuk-one-login/cri-types";
 import { RecordNotFoundError, TooManyRecordsError } from "../../src/database/exceptions/errors";
+import { CriError } from "@govuk-one-login/cri-error-response";
 import { SessionItem } from "@govuk-one-login/cri-types";
 import { UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 import { getRecordBySessionId, getSessionBySessionId } from "../../src/database/get-record-by-session-id";
 import { NinoUser } from "../../src/types/nino-user";
-import { CriError } from "../../src/errors/cri-error";
 import { metrics } from "../../src/util/metrics";
 
 describe("getRecordBySessionId()", () => {
@@ -289,7 +289,7 @@ describe("getSessionBySessionId()", () => {
     } catch (err) {
       expect(err).toBeInstanceOf(CriError);
       expect((err as CriError).message).toBe("Session not found");
-      expect((err as CriError).status).toBe(400);
+      expect((err as CriError).statusCode).toBe(400);
     }
   });
 

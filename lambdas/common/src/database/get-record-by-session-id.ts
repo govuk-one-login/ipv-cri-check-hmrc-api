@@ -4,7 +4,7 @@ import { withRetry } from "../util/retry";
 import { RecordNotFoundError, TooManyRecordsError } from "./exceptions/errors";
 import { SessionItem, UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 import { dynamoDBClient } from "../util/dynamo";
-import { CriError } from "../errors/cri-error";
+import { CriError } from "@govuk-one-login/cri-error-response";
 
 export type SessionIdRecord = { sessionId: string; expiryDate?: UnixSecondsTimestamp };
 
