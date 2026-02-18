@@ -229,9 +229,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       InsufficientDataActions: []
       EvaluationPeriods: 5
       DatapointsToAlarm: 2
@@ -292,9 +292,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       InsufficientDataActions: []
       EvaluationPeriods: 5
       DatapointsToAlarm: 2
@@ -355,9 +355,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       InsufficientDataActions: []
       EvaluationPeriods: 5
       DatapointsToAlarm: 2
@@ -421,9 +421,9 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -465,9 +465,9 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -509,9 +509,9 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -553,9 +553,9 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -594,9 +594,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       InsufficientDataActions: []
       MetricName: ConcurrentExecutions
       Namespace: AWS/Lambda
@@ -618,9 +618,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       InsufficientDataActions: []
       MetricName: Errors
       Namespace: AWS/Lambda
@@ -642,9 +642,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       InsufficientDataActions: []
       MetricName: Throttles
       Namespace: AWS/Lambda
@@ -824,9 +824,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       InsufficientDataActions: []
       MetricName: PublicNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
@@ -930,9 +930,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       InsufficientDataActions: []
       MetricName: PrivateNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
@@ -953,9 +953,9 @@ Resources:
       AlarmDescription: !Sub Check HMRC ${Environment} API Gateway 5XX errors
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue slack-notifications-CriticalAlertsTopicArn
       InsufficientDataActions: []
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
@@ -1283,9 +1283,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: "Abandon lambda returning 5xx response."
       Namespace: AWS/ApiGateway
       MetricName: 5XXError
@@ -1313,9 +1313,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Errors returned from the AbandonFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -1340,9 +1340,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Errors returned from the NinoCheckFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -1367,9 +1367,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Check HRMC NINO Check Lambda returning 5xx response."
       AlarmName: !Sub ${AWS::StackName}-${Environment}-NinoCheckFunction5xxCanaryErrors
       Namespace: AWS/ApiGateway
@@ -1398,9 +1398,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Errors returned from the IssueCredentialFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -1425,9 +1425,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Check HRMC Issue credential Lambda returning 5xx response."
       AlarmName: !Sub ${AWS::StackName}-${Environment}-IssueCredentialFunction5xxCanaryErrors
       Namespace: AWS/ApiGateway
