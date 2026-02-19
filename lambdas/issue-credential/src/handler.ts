@@ -3,7 +3,7 @@ import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { CriError, formatErrorResponse } from "@govuk-one-login/cri-error-response";
 import { logger } from "@govuk-one-login/cri-logger";
 import { retrieveSessionIdByAccessToken } from "./helpers/retrieve-session-by-access-token";
-import { captureMetric, metrics } from "../../common/src/util/metrics";
+import { captureMetric, metrics } from "@govuk-one-login/cri-metrics";
 import { getAttempts } from "../../common/src/database/get-attempts";
 import { retrieveNinoUser } from "./helpers/retrieve-nino-user";
 import { LambdaInterface } from "@aws-lambda-powertools/commons/types";

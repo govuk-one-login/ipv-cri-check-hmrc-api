@@ -1,7 +1,7 @@
 import { SessionItem } from "@govuk-one-login/cri-types";
 import { AttemptItem, AttemptsResult } from "../../../common/src/types/attempt";
 import { getEvidence, getAuditEvidence } from "../../src/evidence/evidence-creator";
-import * as MetricsUtils from "../../../common/src/util/metrics";
+import * as MetricsUtils from "@govuk-one-login/cri-metrics";
 import { CHECK_DETAIL } from "../../../common/src/types/evidence";
 
 describe("evidence-creator", () => {

@@ -12,7 +12,7 @@ import { SessionItem } from "@govuk-one-login/cri-types";
 import { UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 import { getRecordBySessionId, getSessionBySessionId } from "../../src/database/get-record-by-session-id";
 import { NinoUser } from "../../src/types/nino-user";
-import { metrics } from "../../src/util/metrics";
+import { metrics } from "@govuk-one-login/cri-metrics";
 
 describe("getRecordBySessionId()", () => {
   const tableName = "some-table-some-stack";
@@ -237,7 +237,7 @@ describe("getRecordBySessionId()", () => {
 });
 
 describe("getSessionBySessionId()", () => {
-  jest.mock("../../src/util/metrics");
+  jest.mock("@govuk-one-login/cri-metrics");
 
   const ddbMock = mockClient(DynamoDBClient);
   const now = Math.round(Date.now() / 1000);

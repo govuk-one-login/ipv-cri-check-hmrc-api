@@ -1,9 +1,9 @@
 import { OtgConfig, OtgTokenResponse } from "./types/otg";
 import { logger } from "@govuk-one-login/cri-logger";
-import { captureLatency } from "../util/metrics";
+import { captureLatency } from "@govuk-one-login/cri-metrics";
 
 export async function getTokenFromOtg({ apiUrl }: OtgConfig, signal?: AbortSignal): Promise<string> {
-  const [response, latency] = await captureLatency("OTGHandler", () =>
+  const { result: response, latencyInMs } = await captureLatency("OTGHandler", () =>
     fetch(apiUrl, {
       method: "GET",
       signal,
@@ -14,7 +14,7 @@ export async function getTokenFromOtg({ apiUrl }: OtgConfig, signal?: AbortSigna
     message: "OTG API response received",
     url: apiUrl,
     status: response.status,
-    latencyInMs: latency,
+    latencyInMs,
   });
 
   if (response.ok) {

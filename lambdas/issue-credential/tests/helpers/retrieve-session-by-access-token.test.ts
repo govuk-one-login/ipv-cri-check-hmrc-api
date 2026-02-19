@@ -8,8 +8,7 @@ import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
 import { mockAccessToken, mockSessionFromIndex } from "../../../common/tests/mocks/mockData";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { QueryCommand } from "@aws-sdk/client-dynamodb";
-import { CriError } from "@govuk-one-login/cri-error-response";
-jest.mock("../../../common/src/util/metrics");
+jest.mock("@govuk-one-login/cri-metrics");
 
 jest.mock("@aws-sdk/client-dynamodb", () => ({
   QueryCommand: jest.fn().mockImplementation((input) => ({

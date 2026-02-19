@@ -9,7 +9,7 @@ jest.mock("../../common/src/database/get-attempts");
 jest.mock("../../common/src/database/get-record-by-session-id");
 jest.mock("../../common/src/hmrc-apis/pdv");
 jest.mock("../../common/src/hmrc-apis/otg");
-jest.mock("../../common/src/util/metrics");
+jest.mock("@govuk-one-login/cri-metrics");
 jest.mock("@govuk-one-login/cri-audit");
 
 import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
@@ -27,7 +27,7 @@ import { callPdvMatchingApi } from "../../common/src/hmrc-apis/pdv";
 import { writeCompletedCheck } from "../src/helpers/write-completed-check";
 import { getTokenFromOtg } from "../../common/src/hmrc-apis/otg";
 import { buildPdvInput } from "../src/helpers/build-pdv-input";
-import { captureMetric } from "../../common/src/util/metrics";
+import { captureMetric } from "@govuk-one-login/cri-metrics";
 import { CriError } from "@govuk-one-login/cri-error-response";
 import { getAttempts as attempts } from "../../common/src/database/get-attempts";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";

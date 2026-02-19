@@ -5,7 +5,7 @@ import { CriError } from "@govuk-one-login/cri-error-response";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { AttemptItem } from "../../../common/src/types/attempt";
 import { logger } from "@govuk-one-login/cri-logger";
-import { captureMetric } from "../../../common/src/util/metrics";
+import { captureMetric } from "@govuk-one-login/cri-metrics";
 
 export async function saveTxn(dynamoClient: DynamoDBClient, sessionTableName: string, sessionId: string, txn: string) {
   const txnCmd = new UpdateItemCommand({

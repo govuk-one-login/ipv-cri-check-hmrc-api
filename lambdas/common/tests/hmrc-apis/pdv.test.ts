@@ -2,10 +2,10 @@ import { mockLogger } from "../../../common/tests/logger";
 jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
-jest.mock("../../../common/src/util/metrics");
+jest.mock("@govuk-one-login/cri-metrics");
 import { PdvApiInput } from "../../src/hmrc-apis/types/pdv";
 import { logger } from "@govuk-one-login/cri-logger";
-import { captureLatency } from "../../../common/src/util/metrics";
+import { captureLatency } from "@govuk-one-login/cri-metrics";
 import { callPdvMatchingApi } from "../../src/hmrc-apis/pdv";
 
 const apiUrl = "https://test-api.service.hmrc.gov.uk/individuals/authentication/authenticator/match";
@@ -24,9 +24,12 @@ const pdvInput: PdvApiInput = {
 
 const mockInput = [pdvConfig, oAuthToken, pdvInput] as const;
 
-const latency = 1001;
+const latencyInMs = 1001;
 
-(captureLatency as unknown as jest.Mock).mockImplementation(async (_, callback) => [await callback(), latency]);
+(captureLatency as unknown as jest.Mock).mockImplementation(async (_, callback) => {
+    const result = await callback();
+    return { result, latencyInMs };
+  });
 
 global.fetch = jest.fn();
 
@@ -58,7 +61,7 @@ describe("matchUserDetailsWithPdv", () => {
         message: "PDV API response received",
         url: apiUrl,
         status: 200,
-        latencyInMs: latency,
+        latencyInMs,
       })
     );
   });
