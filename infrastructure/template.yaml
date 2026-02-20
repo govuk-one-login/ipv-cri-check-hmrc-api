@@ -67,7 +67,7 @@ Conditions:
   #   - !Condition IsNotDevLikeEnvironment
   #   - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
 
-  #temporary override to create alarms in dev for build-notifications testing
+  #temporary override
   DeployAlarms: !Equals [true, true]
 
 
