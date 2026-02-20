@@ -35,7 +35,7 @@ Parameters:
   DeployAlarmsInDevEnvironment:
     Description: "Set to the string value `true` to deploy alarms in a DEV environment"
     Type: String
-    Default: false
+    Default: true
   CriIdentifier:
     Description: "The unique credential issuer identifier"
     Type: AWS::SSM::Parameter::Value<String>
@@ -63,14 +63,7 @@ Conditions:
   IsNotIntOrProdEnvironment: !Not
     - !Condition IsIntOrProdEnvironment
   UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
-  # DeployAlarms: !Or
-  #   - !Condition IsNotDevLikeEnvironment
-  #   - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
-
-  #temporary override
-  DeployAlarms: !Equals [true, true]
-
-
+  DeployAlarms: !Equals ["true", "true"]
   AddProvisionedConcurrency: !Not [!Equals [!FindInMap [ProvisionedConcurrency, Environment, !Ref Environment], 0]]
 
 Mappings:
@@ -829,7 +822,7 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue 
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
       OKActions:
         - !ImportValue build-notifications-CriticalAlertsTopicArn
       InsufficientDataActions: []
