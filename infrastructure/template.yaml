@@ -869,7 +869,7 @@ Resources:
       AlwaysDeploy: true
       DefinitionBody:
         openapi: 3.0.1
-        paths: # workaround to get `sam validate` to work
+        paths: # workaround to get sam validate to work
           /never-created:
             options: {}
         Fn::Transform:
