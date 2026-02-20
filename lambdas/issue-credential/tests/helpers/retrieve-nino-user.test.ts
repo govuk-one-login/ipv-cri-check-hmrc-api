@@ -8,7 +8,7 @@ import { logger } from "@govuk-one-login/cri-logger";
 import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
 import { mockNinoUser, mockSessionId } from "../../../common/tests/mocks/mockData";
 import { retrieveNinoUser } from "../../src/helpers/retrieve-nino-user";
-jest.mock("../../../common/src/util/metrics");
+jest.mock("@govuk-one-login/cri-metrics");
 
 const getRecordBySessionId = jest.spyOn(getRecordModule, "getRecordBySessionId");
 getRecordBySessionId.mockResolvedValue(mockNinoUser);

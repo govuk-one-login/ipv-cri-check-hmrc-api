@@ -2,7 +2,7 @@ import { mockLogger } from "../../../common/tests/logger";
 jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
-jest.mock("../../../common/src/util/metrics");
+jest.mock("@govuk-one-login/cri-metrics");
 import { mockSaveRes } from "../mocks/mockConfig";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
@@ -11,7 +11,7 @@ import { handleResponseAndSaveAttempt, saveTxn } from "../../src/helpers/nino";
 import * as GetParameters from "../../../common/src/util/get-parameters";
 import { mockPdvDeceasedRes, mockPdvErrorRes, mockPdvInvalidCredsRes, mockPdvRes } from "../mocks/mockData";
 import { mockSession, mockSessionId, mockTxn } from "../../../common/tests/mocks/mockData";
-import { captureMetric } from "../../../common/src/util/metrics";
+import { captureMetric } from "@govuk-one-login/cri-metrics";
 import { logger } from "@govuk-one-login/cri-logger";
 import { CriError } from "@govuk-one-login/cri-error-response";
 import { getHmrcConfig } from "../../../common/src/config/get-hmrc-config";

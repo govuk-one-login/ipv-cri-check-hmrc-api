@@ -2,18 +2,21 @@ import { mockLogger } from "../../../common/tests/logger";
 jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
-jest.mock("../../../common/src/util/metrics");
+jest.mock("@govuk-one-login/cri-metrics");
 import { logger } from "@govuk-one-login/cri-logger";
-import { captureLatency } from "../../../common/src/util/metrics";
+import { captureLatency } from "@govuk-one-login/cri-metrics";
 import { getTokenFromOtg } from "../../src/hmrc-apis/otg";
 
 const apiUrl = "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub";
 
 const mockParams = [{ apiUrl }] as const;
 
-const latency = 1001;
+const latencyInMs = 1001;
 
-(captureLatency as unknown as jest.Mock).mockImplementation(async (_, callback) => [await callback(), latency]);
+(captureLatency as unknown as jest.Mock).mockImplementation(async (_, callback) => {
+    const result = await callback();
+    return { result, latencyInMs };
+  });
 
 const mockToken = "goodToken";
 const mockExpiry = Date.now() + 600000;
@@ -42,7 +45,7 @@ describe("getTokenFromOtg", () => {
         message: "OTG API response received",
         url: apiUrl,
         status: 200,
-        latencyInMs: latency,
+        latencyInMs,
       })
     );
   });

@@ -1,7 +1,7 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { logger } from "@govuk-one-login/cri-logger";
 import { CriError, formatErrorResponse } from "@govuk-one-login/cri-error-response";
-import { metrics } from "../../common/src/util/metrics";
+import { metrics } from "@govuk-one-login/cri-metrics";
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 import { getHmrcConfig } from "../../common/src/config/get-hmrc-config";
 import { getTokenFromOtg } from "../../common/src/hmrc-apis/otg";

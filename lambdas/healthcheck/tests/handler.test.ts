@@ -3,7 +3,7 @@ import { mockLogger } from "../../common/tests/logger";
 jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
-jest.mock("../../common/src/util/metrics");
+jest.mock("@govuk-one-login/cri-metrics");
 
 import * as getHmrcConfigFile from "../../common/src/config/get-hmrc-config";
 import * as otgFile from "../../common/src/hmrc-apis/otg";

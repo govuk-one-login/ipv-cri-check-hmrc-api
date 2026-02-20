@@ -9,7 +9,7 @@ jest.mock("../../common/src/database/get-attempts");
 jest.mock("../../common/src/database/get-record-by-session-id");
 jest.mock("../src/helpers/retrieve-session-by-access-token");
 jest.mock("../src/helpers/retrieve-nino-user");
-jest.mock("../../common/src/util/metrics", () => ({
+jest.mock("@govuk-one-login/cri-metrics", () => ({
   metrics: {
     logMetrics: jest.fn(() => () => {}),
   },
@@ -50,7 +50,7 @@ import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/da
 import { buildVerifiableCredential } from "../src/vc/vc-builder";
 import { getHmrcContraIndicators } from "../src/vc/contraIndicator";
 import * as AuditUtils from "@govuk-one-login/cri-audit";
-import * as MetricsUtils from "../../common/src/util/metrics";
+import * as MetricsUtils from "@govuk-one-login/cri-metrics";
 import { getAuditEvidence } from "../src/evidence/evidence-creator";
 import { jwtSigner } from "../src/kms-signer/kms-signer";
 

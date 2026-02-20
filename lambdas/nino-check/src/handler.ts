@@ -8,7 +8,7 @@ import { CriError, formatErrorResponse } from "@govuk-one-login/cri-error-respon
 import { dynamoDBClient } from "../../common/src/util/dynamo";
 import { logger } from "@govuk-one-login/cri-logger";
 import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
-import { captureMetric, metrics } from "../../common/src/util/metrics";
+import { captureMetric, metrics } from "@govuk-one-login/cri-metrics";
 import { getTokenFromOtg } from "../../common/src/hmrc-apis/otg";
 import { callPdvMatchingApi } from "../../common/src/hmrc-apis/pdv";
 import { safeStringifyError } from "../../common/src/util/stringify-error";

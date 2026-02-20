@@ -1,6 +1,6 @@
 import { PdvApiErrorBody, PdvApiErrorJSON, PdvApiInput, PdvConfig, ParsedPdvMatchResponse } from "./types/pdv";
 import { logger } from "@govuk-one-login/cri-logger";
-import { captureLatency } from "../util/metrics";
+import { captureLatency } from "@govuk-one-login/cri-metrics";
 import { safeStringifyError } from "../util/stringify-error";
 
 export async function callPdvMatchingApi(
@@ -9,7 +9,7 @@ export async function callPdvMatchingApi(
   apiInput: PdvApiInput,
   signal?: AbortSignal
 ): Promise<ParsedPdvMatchResponse> {
-  const [response, latency] = await captureLatency("MatchingHandler", () =>
+  const { result: response, latencyInMs } = await captureLatency("MatchingHandler", () =>
     fetch(apiUrl, {
       method: "POST",
       headers: {
@@ -26,7 +26,7 @@ export async function callPdvMatchingApi(
     message: "PDV API response received",
     url: apiUrl,
     status: response.status,
-    latencyInMs: latency,
+    latencyInMs,
   });
 
   const txn = response.headers.get("x-amz-cf-id") ?? "";
