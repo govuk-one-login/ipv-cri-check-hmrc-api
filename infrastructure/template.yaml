@@ -924,7 +924,7 @@ Resources:
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-PrivateNinoCheckApi-FatalError-alarm"
       AlarmDescription: !Sub
-        - "Trigger an alarm when Fatal ${PrivateNinoCheckApi} Error occurs.Runbook:  ${SupportManualURL}"
+        - "Trigger an alarm when Fatal ${PrivateNinoCheckApi} Error occurs. Runbook: ${SupportManualURL}"
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
