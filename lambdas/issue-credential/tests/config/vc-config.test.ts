@@ -15,13 +15,11 @@ type spyGetParametersValues = jest.SpyInstance<
 describe("getVcConfig", () => {
   let getParametersValuesSpy: spyGetParametersValues;
 
-  const mockCommonStackName = "test-stack";
-  const expectedVcSigningKeyId = `/${mockCommonStackName}/verifiableCredentialKmsSigningKeyId`;
+  const mockVcSigningKeyId = "test-signing-key-id";
   const expectedErrorMapping = "/check-hmrc-cri-api/contraindicationMappings";
   const expectedReasonsMapping = "/check-hmrc-cri-api/contraIndicatorReasonsMapping";
 
   const mockSsmParams: Record<string, string> = {
-    [expectedVcSigningKeyId]: "test-signing-key-id",
     [expectedErrorMapping]: "error1||error2||error3",
     [expectedReasonsMapping]: JSON.stringify([
       { code: "A", reason: "Reason A" },
@@ -40,7 +38,7 @@ describe("getVcConfig", () => {
     it("returns correctly typed VcCheckConfig with valid parameters", async () => {
       getParametersValuesSpy.mockResolvedValueOnce(mockSsmParams);
 
-      const result: VcCheckConfig = await getVcConfig(mockCommonStackName);
+      const result: VcCheckConfig = await getVcConfig(mockVcSigningKeyId);
 
       expect(result).toEqual({
         kms: { signingKeyId: "test-signing-key-id" },
@@ -57,12 +55,9 @@ describe("getVcConfig", () => {
     it("calls getParametersValues with correct parameter paths", async () => {
       getParametersValuesSpy.mockResolvedValueOnce(mockSsmParams);
 
-      await getVcConfig(mockCommonStackName);
+      await getVcConfig(mockVcSigningKeyId);
 
-      expect(getParametersValuesSpy).toHaveBeenCalledWith(
-        [expectedVcSigningKeyId, expectedErrorMapping, expectedReasonsMapping],
-        300
-      );
+      expect(getParametersValuesSpy).toHaveBeenCalledWith([expectedErrorMapping, expectedReasonsMapping], 300);
       expect(getParametersValuesSpy).toHaveBeenCalledTimes(1);
     });
 
@@ -70,7 +65,7 @@ describe("getVcConfig", () => {
       getParametersValuesSpy.mockResolvedValueOnce(mockSsmParams);
       jest.spyOn(logger, "info");
 
-      await getVcConfig(mockCommonStackName);
+      await getVcConfig(mockVcSigningKeyId);
 
       expect(logger.info).toHaveBeenCalledWith("Retrieved Check Hmrc VC parameters.");
       expect(logger.info).toHaveBeenCalledTimes(1);
@@ -82,7 +77,7 @@ describe("getVcConfig", () => {
         [expectedErrorMapping]: "",
       });
 
-      const result = await getVcConfig(mockCommonStackName);
+      const result = await getVcConfig(mockVcSigningKeyId);
 
       expect(result.contraIndicator.errorMapping).toEqual([""]);
     });
@@ -93,7 +88,7 @@ describe("getVcConfig", () => {
         [expectedErrorMapping]: "single-error",
       });
 
-      const result = await getVcConfig(mockCommonStackName);
+      const result = await getVcConfig(mockVcSigningKeyId);
 
       expect(result.contraIndicator.errorMapping).toEqual(["single-error"]);
     });
@@ -109,7 +104,7 @@ describe("getVcConfig", () => {
         [expectedReasonsMapping]: JSON.stringify(multipleReasons),
       });
 
-      const result = await getVcConfig(mockCommonStackName);
+      const result = await getVcConfig(mockVcSigningKeyId);
 
       expect(result.contraIndicator.reasonsMapping).toEqual(multipleReasons);
     });
@@ -119,7 +114,7 @@ describe("getVcConfig", () => {
     it("throws CriError when getParametersValues throws Error", async () => {
       getParametersValuesSpy.mockRejectedValue(new Error("SSM parameter not found"));
 
-      await expect(getVcConfig(mockCommonStackName)).rejects.toThrow(
+      await expect(getVcConfig(mockVcSigningKeyId)).rejects.toThrow(
         new CriError(500, "Failed to load VC config: SSM parameter not found")
       );
     });
@@ -127,7 +122,7 @@ describe("getVcConfig", () => {
     it("throws CriError when getParametersValues throws non-Error", async () => {
       getParametersValuesSpy.mockRejectedValueOnce("String error");
 
-      await expect(getVcConfig(mockCommonStackName)).rejects.toThrow(
+      await expect(getVcConfig(mockVcSigningKeyId)).rejects.toThrow(
         new CriError(500, "Failed to load VC config: String error")
       );
     });
@@ -135,7 +130,7 @@ describe("getVcConfig", () => {
     it("throws CriError when getParametersValues throws null", async () => {
       getParametersValuesSpy.mockRejectedValue(null);
 
-      await expect(getVcConfig(mockCommonStackName)).rejects.toThrow(
+      await expect(getVcConfig(mockVcSigningKeyId)).rejects.toThrow(
         new CriError(500, "Failed to load VC config: null")
       );
     });
@@ -143,7 +138,7 @@ describe("getVcConfig", () => {
     it("throws CriError when getParametersValues throws undefined", async () => {
       getParametersValuesSpy.mockRejectedValue(undefined);
 
-      await expect(getVcConfig(mockCommonStackName)).rejects.toThrow(
+      await expect(getVcConfig(mockVcSigningKeyId)).rejects.toThrow(
         new CriError(500, "Failed to load VC config: undefined")
       );
     });
@@ -154,8 +149,8 @@ describe("getVcConfig", () => {
         [expectedReasonsMapping]: "invalid-json",
       });
 
-      await expect(getVcConfig(mockCommonStackName)).rejects.toThrow(CriError);
-      await expect(getVcConfig(mockCommonStackName)).rejects.toThrow(
+      await expect(getVcConfig(mockVcSigningKeyId)).rejects.toThrow(CriError);
+      await expect(getVcConfig(mockVcSigningKeyId)).rejects.toThrow(
         expect.objectContaining({
           statusCode: 500,
           message: expect.stringContaining("Failed to load VC config:"),
@@ -167,49 +162,8 @@ describe("getVcConfig", () => {
       const specificErrorMessage = "Specific AWS SSM error occurred";
       getParametersValuesSpy.mockRejectedValueOnce(new Error(specificErrorMessage));
 
-      await expect(getVcConfig(mockCommonStackName)).rejects.toThrow(
+      await expect(getVcConfig(mockVcSigningKeyId)).rejects.toThrow(
         new CriError(500, `Failed to load VC config: ${specificErrorMessage}`)
-      );
-    });
-  });
-
-  describe("parameter path construction", () => {
-    it("constructs correct vcSigningKeyId path with different stack names", async () => {
-      const customStackName = "custom-stack-name";
-      const expectedCustomPath = `/${customStackName}/verifiableCredentialKmsSigningKeyId`;
-
-      getParametersValuesSpy.mockResolvedValueOnce({
-        [expectedCustomPath]: "custom-key-id",
-        [expectedErrorMapping]: "error1||error2",
-        [expectedReasonsMapping]: JSON.stringify([]),
-      });
-
-      await getVcConfig(customStackName);
-
-      expect(getParametersValuesSpy).toHaveBeenCalledWith(
-        [expectedCustomPath, expectedErrorMapping, expectedReasonsMapping],
-        300
-      );
-    });
-
-    it("handles stack names with special characters", async () => {
-      const specialStackName = "stack-with-123_special.chars";
-      const expectedSpecialPath = `/${specialStackName}/verifiableCredentialKmsSigningKeyId`;
-
-      const specialMockParams = {
-        [expectedSpecialPath]: "special-key-id",
-        [expectedErrorMapping]: "error1",
-        [expectedReasonsMapping]: JSON.stringify([]),
-      };
-
-      getParametersValuesSpy.mockResolvedValueOnce(specialMockParams);
-
-      const result = await getVcConfig(specialStackName);
-
-      expect(result.kms.signingKeyId).toBe("special-key-id");
-      expect(getParametersValuesSpy).toHaveBeenCalledWith(
-        [expectedSpecialPath, expectedErrorMapping, expectedReasonsMapping],
-        300
       );
     });
   });
@@ -218,7 +172,7 @@ describe("getVcConfig", () => {
     it("returns object matching VcCheckConfig type", async () => {
       getParametersValuesSpy.mockResolvedValueOnce(mockSsmParams);
 
-      const result = await getVcConfig(mockCommonStackName);
+      const result = await getVcConfig(mockVcSigningKeyId);
 
       expect(typeof result.kms.signingKeyId).toBe("string");
       expect(Array.isArray(result.contraIndicator.errorMapping)).toBe(true);
@@ -234,29 +188,13 @@ describe("getVcConfig", () => {
   });
 
   describe("some edge cases", () => {
-    it("handles empty commonStackName", async () => {
-      getParametersValuesSpy.mockResolvedValueOnce({
-        "//verifiableCredentialKmsSigningKeyId": "empty-stack-key",
-        [expectedErrorMapping]: "error1",
-        [expectedReasonsMapping]: JSON.stringify([]),
-      });
-
-      const result = await getVcConfig("");
-
-      expect(getParametersValuesSpy).toHaveBeenCalledWith(
-        ["//verifiableCredentialKmsSigningKeyId", expectedErrorMapping, expectedReasonsMapping],
-        300
-      );
-      expect(result.kms.signingKeyId).toBe("empty-stack-key");
-    });
-
     it("handles reasonsMapping as empty array", async () => {
       getParametersValuesSpy.mockResolvedValueOnce({
         ...mockSsmParams,
         [expectedReasonsMapping]: "[]",
       });
 
-      const result = await getVcConfig(mockCommonStackName);
+      const result = await getVcConfig(mockVcSigningKeyId);
 
       expect(result.contraIndicator.reasonsMapping).toEqual([]);
     });
@@ -267,7 +205,7 @@ describe("getVcConfig", () => {
         [expectedErrorMapping]: "error1||||error2||error3",
       });
 
-      const result = await getVcConfig(mockCommonStackName);
+      const result = await getVcConfig(mockVcSigningKeyId);
 
       expect(result.contraIndicator.errorMapping).toEqual(["error1", "", "error2", "error3"]);
     });
