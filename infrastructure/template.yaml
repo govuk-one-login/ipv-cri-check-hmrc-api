@@ -66,6 +66,8 @@ Conditions:
   # DeployAlarms: !Or
   #   - !Condition IsNotDevLikeEnvironment
   #   - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
+
+  #temporary override to create alarms in dev for build-notifications testing
   DeployAlarms: true
 
   AddProvisionedConcurrency: !Not [!Equals [!FindInMap [ProvisionedConcurrency, Environment, !Ref Environment], 0]]
