@@ -63,9 +63,11 @@ Conditions:
   IsNotIntOrProdEnvironment: !Not
     - !Condition IsIntOrProdEnvironment
   UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
-  DeployAlarms: !Or
-    - !Condition IsNotDevLikeEnvironment
-    - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
+  # DeployAlarms: !Or
+  #   - !Condition IsNotDevLikeEnvironment
+  #   - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
+  DeployAlarms: true
+
   AddProvisionedConcurrency: !Not [!Equals [!FindInMap [ProvisionedConcurrency, Environment, !Ref Environment], 0]]
 
 Mappings:
@@ -824,7 +826,7 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !ImportValue 
       OKActions:
         - !ImportValue build-notifications-CriticalAlertsTopicArn
       InsufficientDataActions: []
