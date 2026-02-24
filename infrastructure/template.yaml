@@ -35,7 +35,7 @@ Parameters:
   DeployAlarmsInDevEnvironment:
     Description: "Set to the string value `true` to deploy alarms in a DEV environment"
     Type: String
-    Default: true
+    Default: false
   CriIdentifier:
     Description: "The unique credential issuer identifier"
     Type: AWS::SSM::Parameter::Value<String>
@@ -61,7 +61,9 @@ Conditions:
   IsNotIntOrProdEnvironment: !Not
     - !Condition IsIntOrProdEnvironment
   UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
-  DeployAlarms: !Not [!Equals [!Ref Environment, "never-match-this-value"]]
+  DeployAlarms: !Or
+    - !Condition IsNotDevLikeEnvironment
+    - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
   AddProvisionedConcurrency: !Not [!Equals [!FindInMap [ProvisionedConcurrency, Environment, !Ref Environment], 0]]
 
 Mappings:
@@ -288,9 +290,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       AlarmActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       InsufficientDataActions: []
       EvaluationPeriods: 5
       DatapointsToAlarm: 2
@@ -461,9 +463,9 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       OKActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -549,9 +551,9 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       OKActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -614,9 +616,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       OKActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       InsufficientDataActions: []
       MetricName: Errors
       Namespace: AWS/Lambda
@@ -808,11 +810,12 @@ Resources:
           MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
           MetricName: "PublicNinoCheckApi-Fatalerror"
 
+  #for testing always create PublicNinoCheckApiFatalErrorAlarm not just for higher environments
   PublicNinoCheckApiFatalErrorAlarm:
     DependsOn:
       - "PublicNinoCheckApiFatalErrorMetricFilter"
     Type: AWS::CloudWatch::Alarm
-    Condition: DeployAlarms
+    # Condition: DeployAlarms
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-PublicNinoCheckApi-FatalError-alarm"
       AlarmDescription: !Sub
@@ -820,9 +823,11 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !ImportValue slack-notifications-PagerDutySNSTopicArn
+     #   - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       OKActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !ImportValue slack-notifications-PagerDutySNSTopicArn
+      #  - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       InsufficientDataActions: []
       MetricName: PublicNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
@@ -926,9 +931,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       OKActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       InsufficientDataActions: []
       MetricName: PrivateNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
@@ -949,9 +954,9 @@ Resources:
       AlarmDescription: !Sub Check HMRC ${Environment} API Gateway 5XX errors
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       OKActions:
-        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       InsufficientDataActions: []
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
