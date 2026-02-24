@@ -816,7 +816,7 @@ Resources:
     DependsOn:
       - "PublicNinoCheckApiFatalErrorMetricFilter"
     Type: AWS::CloudWatch::Alarm
-    # Condition: DeployAlarms
+    Condition: DeployAlarms
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-PublicNinoCheckApi-FatalError-alarm"
       AlarmDescription: !Sub
@@ -824,11 +824,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue build-notifications-PagerDutySNSTopicArn
-        # - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       OKActions:
-        - !ImportValue build-notifications-PagerDutySNSTopicArn
-        # - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       InsufficientDataActions: []
       MetricName: PublicNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
