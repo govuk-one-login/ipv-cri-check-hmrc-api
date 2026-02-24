@@ -35,7 +35,7 @@ Parameters:
   DeployAlarmsInDevEnvironment:
     Description: "Set to the string value `true` to deploy alarms in a DEV environment"
     Type: String
-    Default: false
+    Default: true
   CriIdentifier:
     Description: "The unique credential issuer identifier"
     Type: AWS::SSM::Parameter::Value<String>
@@ -812,7 +812,6 @@ Resources:
           MetricNamespace: !Sub "${AWS::StackName}/LogMessages"
           MetricName: "PublicNinoCheckApi-Fatalerror"
 
-  #for testing always create PublicNinoCheckApiFatalErrorAlarm not just for higher environments
   PublicNinoCheckApiFatalErrorAlarm:
     DependsOn:
       - "PublicNinoCheckApiFatalErrorMetricFilter"
@@ -826,10 +825,10 @@ Resources:
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue slack-notifications-PagerDutySNSTopicArn
-     #   - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
+        # - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       OKActions:
         - !ImportValue slack-notifications-PagerDutySNSTopicArn
-      #  - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
+        # - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue build-notifications-CriticalAlertsTopicArn]
       InsufficientDataActions: []
       MetricName: PublicNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
