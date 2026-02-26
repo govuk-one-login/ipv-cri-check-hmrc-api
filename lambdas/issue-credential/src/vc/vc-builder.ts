@@ -1,12 +1,11 @@
-import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
+import { SessionItem, PersonIdentityItem } from "@govuk-one-login/cri-types";
 import { NinoUser } from "../../../common/src/types/nino-user";
 import { VerifiableIdentityCredential, VC_CONTEXT, VC_TYPE, JwtClass } from "../types/verifiable-credential";
 import { CredentialSubject } from "../types/credential-subject";
 import { AttemptsResult } from "../../../common/src/types/attempt";
-import { SessionItem } from "../../../common/src/database/types/session-item";
 import { getEvidence } from "../evidence/evidence-creator";
 import { ContraIndicator } from "./contraIndicator/ci-mapping-util";
-import { logger } from "../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { CHECK_DETAIL } from "../../../common/src/types/evidence";
 
 /**

@@ -1,10 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
-import { CriError } from "../../common/src/errors/cri-error";
-import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
-import { logger } from "../../common/src/util/logger";
+import { CriError, formatErrorResponse } from "@govuk-one-login/cri-error-response";
+import { logger } from "@govuk-one-login/cri-logger";
 import { retrieveSessionIdByAccessToken } from "./helpers/retrieve-session-by-access-token";
-import { captureMetric, metrics } from "../../common/src/util/metrics";
+import { captureMetric, metrics } from "@govuk-one-login/cri-metrics";
 import { getAttempts } from "../../common/src/database/get-attempts";
 import { retrieveNinoUser } from "./helpers/retrieve-nino-user";
 import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
@@ -13,14 +12,13 @@ import { dynamoDBClient } from "../../common/src/util/dynamo";
 import { NinoUser } from "../../common/src/types/nino-user";
 import { buildVerifiableCredential } from "./vc/vc-builder";
 import { randomUUID } from "crypto";
-import { PersonIdentityItem } from "../../common/src/database/types/person-identity";
+import { SessionItem, PersonIdentityItem } from "@govuk-one-login/cri-types";
 import { JwtClass } from "./types/verifiable-credential";
 import { toEpochSecondsFromNow } from "../../common/src/util/date-time";
-import { SessionItem } from "../../common/src/database/types/session-item";
 import { getHmrcContraIndicators } from "./vc/contraIndicator";
 
-import { END, VC_ISSUED } from "../../common/src/types/audit";
-import { sendAuditEvent } from "../../common/src/util/audit";
+import { AUDIT_EVENT_TYPE } from "../../common/src/types/audit";
+import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
 import { getAuditEvidence } from "./evidence/evidence-creator";
 import { IssueCredFunctionConfig } from "./config/function-config";
 import { VcCheckConfig, getVcConfig } from "./config/vc-config";
@@ -66,7 +64,7 @@ class IssueCredentialHandler implements LambdaInterface {
       });
 
       const [vcEvidence] = vcClaimSet.vc.evidence || [];
-      await sendAuditEvent(VC_ISSUED, functionConfig.audit, session, {
+      await buildAndSendAuditEvent(functionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.VC_ISSUED, functionConfig.audit.componentId, session, {
         restricted: {
           birthDate: personIdentity.birthDates,
           name: personIdentity.names,
@@ -82,7 +80,7 @@ class IssueCredentialHandler implements LambdaInterface {
       });
 
       captureMetric("VCIssuedMetric");
-      await sendAuditEvent(END, functionConfig.audit, session);
+      await buildAndSendAuditEvent(functionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.END, functionConfig.audit.componentId, session);
 
       return {
         statusCode: 200,
@@ -92,7 +90,7 @@ class IssueCredentialHandler implements LambdaInterface {
         body: signedJwt,
       };
     } catch (error: unknown) {
-      return handleErrorResponse(error, logger);
+      return formatErrorResponse(error);
     }
   }
   private async getCheckedUserData(accessToken: string) {

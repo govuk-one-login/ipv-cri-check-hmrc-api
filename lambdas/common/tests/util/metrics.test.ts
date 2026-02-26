@@ -11,7 +11,7 @@ const mockMetrics = {
 };
 (Metrics as unknown as jest.Mock).mockReturnValue(mockMetrics);
 
-import { captureMetric, captureLatency } from "../../src/util/metrics";
+import { captureMetric, captureLatency } from "@govuk-one-login/cri-metrics";
 
 performance.now = jest.fn();
 
@@ -44,7 +44,7 @@ describe("metrics functions", () => {
 
       const res = await captureLatency("zoomies", () => waitBeforeReturning("good!", 80));
 
-      expect(res).toStrictEqual(["good!", 141]);
+      expect(res).toStrictEqual({"latencyInMs": 141, "result": "good!"});
 
       expect(mockSingleMetric.addDimension).toHaveBeenCalledWith("HTTP", "zoomies");
       expect(mockSingleMetric.addMetric).toHaveBeenCalledWith("ResponseLatency", MetricUnit.Milliseconds, 141);
@@ -59,10 +59,13 @@ describe("metrics functions", () => {
       // The return type should be derived from the callback's return type.
       // If it is not, the type provided for res will cause a type error during
       // test compilation because captureLatency is returning something else.
-      const res: [{ blah: number; go: boolean; success: string; thing: { stuff: boolean } }, number] =
-        await captureLatency("big obj", theCoolback);
+      const res: {
+        result: { blah: number; go: boolean; success: string; thing: { stuff: boolean } };
+        latencyInMs: number;
+      } = await captureLatency("big obj", theCoolback);
 
-      expect(res).toStrictEqual([{ blah: 9, go: true, success: "maybe", thing: { stuff: false } }, 4]);
+      expect(res.result).toStrictEqual({ blah: 9, go: true, success: "maybe", thing: { stuff: false } });
+      expect(res.latencyInMs).toStrictEqual(4);
 
       expect(mockSingleMetric.addDimension).toHaveBeenCalledWith("HTTP", "big obj");
       expect(mockSingleMetric.addMetric).toHaveBeenCalledWith("ResponseLatency", MetricUnit.Milliseconds, 4);

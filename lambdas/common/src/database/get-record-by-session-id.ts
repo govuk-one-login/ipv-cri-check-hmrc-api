@@ -2,11 +2,9 @@ import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { withRetry } from "../util/retry";
 import { RecordNotFoundError, TooManyRecordsError } from "./exceptions/errors";
-import { UnixSecondsTimestamp } from "../types/brands";
-import { logger } from "../util/logger";
+import { SessionItem, UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 import { dynamoDBClient } from "../util/dynamo";
-import { CriError } from "../errors/cri-error";
-import { SessionItem } from "./types/session-item";
+import { CriError } from "@govuk-one-login/cri-error-response";
 
 export type SessionIdRecord = { sessionId: string; expiryDate?: UnixSecondsTimestamp };
 
@@ -52,7 +50,7 @@ export async function getRecordBySessionId<
     return result.Items;
   }
 
-  const queryResult = await withRetry(queryRecord, logger, {
+  const queryResult = await withRetry(queryRecord, {
     maxRetries: 3,
     baseDelay: 300,
   });

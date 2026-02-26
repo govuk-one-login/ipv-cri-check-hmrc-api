@@ -1,7 +1,7 @@
 import { HMRC_ERRORS_ABSENT, getContraIndicatorWithReason, validateInputs } from "./ci-mappings-validator";
 import { getHmrcErrsCiRecord, ContraIndicator } from "./ci-mapping-util";
 import { CiMappings } from "./types/ci-mappings";
-import { logger } from "../../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 
 export const getHmrcContraIndicators = (ciMappings: CiMappings): Array<ContraIndicator> => {
   try {

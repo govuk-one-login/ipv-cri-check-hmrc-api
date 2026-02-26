@@ -2,23 +2,23 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda
 import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { writeCompletedCheck } from "./helpers/write-completed-check";
 import { NinoCheckFunctionConfig } from "./helpers/function-config";
-import { getHmrcConfig, saveTxn, handleResponseAndSaveAttempt } from "./helpers/nino";
-import { CriError } from "../../common/src/errors/cri-error";
-import { handleErrorResponse } from "../../common/src/errors/cri-error-response";
+import { saveTxn, handleResponseAndSaveAttempt } from "./helpers/nino";
+import { getHmrcConfig } from "../../common/src/config/get-hmrc-config";
+import { CriError, formatErrorResponse } from "@govuk-one-login/cri-error-response";
 import { dynamoDBClient } from "../../common/src/util/dynamo";
-import { logger } from "../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
-import { captureMetric, metrics } from "../../common/src/util/metrics";
-import { getTokenFromOtg } from "./hmrc-apis/otg";
-import { callPdvMatchingApi } from "./hmrc-apis/pdv";
+import { captureMetric, metrics } from "@govuk-one-login/cri-metrics";
+import { getTokenFromOtg } from "../../common/src/hmrc-apis/otg";
+import { callPdvMatchingApi } from "../../common/src/hmrc-apis/pdv";
 import { safeStringifyError } from "../../common/src/util/stringify-error";
 import { buildPdvInput } from "./helpers/build-pdv-input";
-import { ParsedPdvMatchResponse } from "./hmrc-apis/types/pdv";
+import { ParsedPdvMatchResponse } from "../../common/src/hmrc-apis/types/pdv";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
-import { PersonIdentityItem } from "../../common/src/database/types/person-identity";
+import { PersonIdentityItem } from "@govuk-one-login/cri-types";
 import { getAttempts } from "../../common/src/database/get-attempts";
-import { sendAuditEvent } from "../../common/src/util/audit";
-import { REQUEST_SENT, RESPONSE_RECEIVED } from "../../common/src/types/audit";
+import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
+import { AUDIT_EVENT_TYPE } from "../../common/src/types/audit";
 
 initOpenTelemetry();
 
@@ -92,7 +92,7 @@ class NinoCheckHandler implements LambdaInterface {
           }
         : undefined;
 
-      await sendAuditEvent(REQUEST_SENT, functionConfig.audit, session, {
+      await buildAndSendAuditEvent(functionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.REQUEST_SENT, functionConfig.audit.componentId, session, {
         restricted: {
           birthDate: personIdentity.birthDates,
           name: personIdentity.names,
@@ -126,7 +126,7 @@ class NinoCheckHandler implements LambdaInterface {
 
       logger.info(`Saved txn.`);
 
-      await sendAuditEvent(RESPONSE_RECEIVED, functionConfig.audit, session, {
+      await buildAndSendAuditEvent(functionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.RESPONSE_RECEIVED, functionConfig.audit.componentId, session, {
         restricted: auditDeviceInformation,
         extensions: { evidence: { txn: parsedPdvMatchResponse.txn } },
       });
@@ -156,7 +156,7 @@ class NinoCheckHandler implements LambdaInterface {
 
       return { statusCode: 200, body: JSON.stringify({ requestRetry: false }) };
     } catch (error) {
-      return handleErrorResponse(error, logger);
+      return formatErrorResponse(error);
     }
   }
 }

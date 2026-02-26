@@ -1,7 +1,7 @@
 import { getAttempts } from "../../src/database/get-attempts";
 import { mockSessionId } from "../mocks/mockData";
 import { QueryCommand } from "@aws-sdk/client-dynamodb";
-import { UnixSecondsTimestamp } from "../../src/types/brands";
+import { UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 import { mockDynamoClient } from "../mocks/mockDynamoClient";
 
 jest.mock("@aws-sdk/client-dynamodb", () => ({

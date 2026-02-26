@@ -121,16 +121,22 @@ Mappings:
   EnvironmentConfiguration:
     localdev:
       DOMAINNAME: review-hc.localdev.account.gov.uk
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod
     dev:
       DOMAINNAME: review-hc.dev.account.gov.uk
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod
     build:
       DOMAINNAME: review-hc.build.account.gov.uk
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod
     staging:
       DOMAINNAME: review-hc.staging.account.gov.uk
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod
     integration:
       DOMAINNAME: review-hc.integration.account.gov.uk
+      HealthcheckSSMClientId: ipv-core
     production:
       DOMAINNAME: review-hc.production.account.gov.uk
+      HealthcheckSSMClientId: ipv-core
 
 Globals:
   Function:
@@ -294,10 +300,8 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       EvaluationPeriods: 5
@@ -471,10 +475,8 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       Metrics:
         - Id: errors
@@ -565,10 +567,8 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       Metrics:
         - Id: errors
@@ -634,10 +634,8 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: Errors
@@ -660,9 +658,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-warning-alert-topic
       InsufficientDataActions: []
       MetricName: Throttles
       Namespace: AWS/Lambda
@@ -772,6 +770,9 @@ Resources:
       AlwaysDeploy: true
       DefinitionBody:
         openapi: 3.0.1
+        paths: # workaround to get `sam validate` to work
+          /never-created:
+            options: {}
         Fn::Transform:
           Name: AWS::Include
           Parameters:
@@ -782,6 +783,27 @@ Resources:
       Tags:
         FMSRegionalPolicy: !If [IsNotIntOrProdEnvironment, "false", ""]
         CustomPolicy: !If [IsNotIntOrProdEnvironment, "true", ""]
+      Auth:
+        ResourcePolicy:
+          CustomStatements:
+            - Effect: Deny
+              Principal: "*"
+              Action: execute-api:Invoke
+              Resource:
+                - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/${Environment}/GET/healthcheck/thirdparty*"
+              Condition:
+                NotIpAddress:
+                  aws:SourceIp:
+                    - "217.196.229.77/32"
+                    - "217.196.229.79/32"
+                    - "217.196.229.80/32"
+                    - "217.196.229.81/32"
+                    - "51.149.8.0/25"
+                    - "51.149.8.128/29"
+            - Effect: Allow
+              Principal: "*"
+              Action: execute-api:Invoke
+              Resource: "execute-api:/*"
 
   PublicNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -819,10 +841,8 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PublicNinoCheckApi-Fatalerror
@@ -927,10 +947,8 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: PrivateNinoCheckApi-Fatalerror
@@ -952,10 +970,8 @@ Resources:
       AlarmDescription: !Sub Check HMRC ${Environment} API Gateway 5XX errors
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       DatapointsToAlarm: 3
@@ -1234,6 +1250,42 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref IssueCredentialFunction.Alias
+      Principal: apigateway.amazonaws.com
+
+  HealthcheckFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Handler: lambdas/healthcheck/src/handler.handler
+      CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/HealthcheckFunction
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-HealthcheckFunction"
+          CLIENT_ID: !FindInMap [EnvironmentConfiguration, !Ref Environment, HealthcheckSSMClientId]
+          LOG_FULL_ERRORS: "true"
+          TIMEOUT_TIME_SECONDS: 20
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: check-hmrc-cri-api/OtgUrl/*
+        - SSMParameterReadPolicy:
+            ParameterName: check-hmrc-cri-api/NinoCheckUrl/*
+
+  HealthcheckFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/HealthcheckFunction
+      RetentionInDays: 30
+
+  HealthcheckFunctionAPIGWPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref HealthcheckFunction.Alias
       Principal: apigateway.amazonaws.com
 
   ##################################################################

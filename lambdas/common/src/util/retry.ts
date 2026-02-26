@@ -1,9 +1,8 @@
-import { Logger } from "@aws-lambda-powertools/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { safeStringifyError } from "./stringify-error";
 
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  logger: Logger,
   options: {
     maxRetries?: number;
     baseDelay?: number;

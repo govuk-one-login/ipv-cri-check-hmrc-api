@@ -1,9 +1,9 @@
-import { PersonIdentityItem } from "../../../common/src/database/types/person-identity";
-import { ISO8601DateString, UnixSecondsTimestamp } from "../../../common/src/types/brands";
+import { PersonIdentityItem } from "@govuk-one-login/cri-types";
+import { ISO8601DateString } from "@govuk-one-login/cri-types";
 import { AttemptItem } from "../../../common/src/types/attempt";
 import { NinoUser } from "../../../common/src/types/nino-user";
 import { AccessTokenIndexSessionItem } from "../../src/types/access-token-index-session-item";
-import { SessionItem } from "../../src/database/types/session-item";
+import { SessionItem, UnixMillisecondsTimestamp, UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 
 export const mockTxn = "very good";
 
@@ -15,13 +15,16 @@ const expiryDate = 9999999999 as UnixSecondsTimestamp;
 
 export const mockSession: SessionItem = {
   sessionId: mockSessionId,
+  attemptCount: 1,
+  createdDate: 9999999999 as UnixMillisecondsTimestamp,
   expiryDate,
+  state: "",
   clientId: "magic",
   clientSessionId: "guy",
-  authorizationCodeExpiryDate: 9999999999,
+  authorizationCodeExpiryDate: 9999999999 as UnixSecondsTimestamp,
   redirectUri: "https://example.com",
   accessToken: mockAccessToken,
-  accessTokenExpiryDate: 9999999999,
+  accessTokenExpiryDate: 9999999999 as UnixSecondsTimestamp,
   clientIpAddress: "127.0.0.1",
   subject: "yarp",
   txn: "narp",

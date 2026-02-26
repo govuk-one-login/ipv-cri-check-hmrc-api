@@ -1,41 +1,12 @@
-import { ISO8601DateString } from "../../../common/src/types/brands";
-import { PdvApiErrorJSON, PdvApiErrorBody, ParsedPdvMatchResponse, PdvConfig } from "../hmrc-apis/types/pdv";
+import { SessionItem, ISO8601DateString } from "@govuk-one-login/cri-types";
+import { PdvApiErrorJSON, PdvApiErrorBody, ParsedPdvMatchResponse } from "../../../common/src/hmrc-apis/types/pdv";
 import { marshall } from "@aws-sdk/util-dynamodb";
-import { CriError } from "../../../common/src/errors/cri-error";
+import { CriError } from "@govuk-one-login/cri-error-response";
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { AttemptItem } from "../../../common/src/types/attempt";
-import { logger } from "../../../common/src/util/logger";
-import { captureMetric } from "../../../common/src/util/metrics";
-import { OtgConfig } from "../hmrc-apis/types/otg";
-import { getParametersValues } from "../../../common/src/util/get-parameters";
-import { SessionItem } from "../../../common/src/database/types/session-item";
-export type HmrcApiConfig = {
-  otg: OtgConfig;
-  pdv: PdvConfig;
-};
+import { logger } from "@govuk-one-login/cri-logger";
+import { captureMetric } from "@govuk-one-login/cri-metrics";
 
-const cacheTtlInSeconds = Number(process.env.POWERTOOLS_PARAMETERS_MAX_AGE) || 300;
-
-export async function getHmrcConfig(clientId: string): Promise<HmrcApiConfig> {
-  const otgParamName = `/check-hmrc-cri-api/OtgUrl/${clientId}`;
-  const pdvParamName = `/check-hmrc-cri-api/NinoCheckUrl/${clientId}`;
-  const paramPaths = [otgParamName, pdvParamName];
-
-  try {
-    const ssmParams = await getParametersValues(paramPaths, cacheTtlInSeconds);
-
-    return {
-      otg: {
-        apiUrl: ssmParams[otgParamName],
-      },
-      pdv: {
-        apiUrl: ssmParams[pdvParamName],
-      },
-    };
-  } catch (err) {
-    throw new CriError(500, `Failed to load HMRC config: ${(err as Error).message}`);
-  }
-}
 export async function saveTxn(dynamoClient: DynamoDBClient, sessionTableName: string, sessionId: string, txn: string) {
   const txnCmd = new UpdateItemCommand({
     TableName: sessionTableName,

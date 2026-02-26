@@ -1,14 +1,14 @@
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("../../../common/src/util/logger", () => ({
+jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 import { RecordNotFoundError } from "../../../common/src/database/exceptions/errors";
 import * as getRecordModule from "../../../common/src/database/get-record-by-session-id";
-import { logger } from "../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
 import { mockNinoUser, mockSessionId } from "../../../common/tests/mocks/mockData";
 import { retrieveNinoUser } from "../../src/helpers/retrieve-nino-user";
-jest.mock("../../../common/src/util/metrics");
+jest.mock("@govuk-one-login/cri-metrics");
 
 const getRecordBySessionId = jest.spyOn(getRecordModule, "getRecordBySessionId");
 getRecordBySessionId.mockResolvedValue(mockNinoUser);
@@ -37,7 +37,7 @@ describe("retrieveNinoUser()", () => {
       await retrieveNinoUser(ninoUserTableName, mockDynamoClient, mockSessionId);
     } catch (error) {
       thrown = true;
-      expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 500 }));
+      expect(error).toEqual(expect.objectContaining({ name: "CriError", statusCode: 500 }));
     }
 
     expect(thrown).toEqual(true);
@@ -54,7 +54,7 @@ describe("retrieveNinoUser()", () => {
       await retrieveNinoUser(ninoUserTableName, mockDynamoClient, mockSessionId);
     } catch (error) {
       thrown = true;
-      expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 500 }));
+      expect(error).toEqual(expect.objectContaining({ name: "CriError", statusCode: 500 }));
     }
 
     expect(thrown).toEqual(true);

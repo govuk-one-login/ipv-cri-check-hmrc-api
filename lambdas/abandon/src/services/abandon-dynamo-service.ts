@@ -1,5 +1,5 @@
 import { UpdateItemCommand } from "@aws-sdk/client-dynamodb";
-import { logger } from "../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { dynamoDBClient } from "../../../common/src/util/dynamo";
 
 export async function removeAuthCodeFromSessionRecord(sessionTableName: string, sessionId: string) {

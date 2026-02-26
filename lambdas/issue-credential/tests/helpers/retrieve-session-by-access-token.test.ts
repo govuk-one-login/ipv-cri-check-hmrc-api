@@ -1,14 +1,14 @@
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("../../../common/src/util/logger", () => ({
+jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
-import { logger } from "../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { retrieveSessionIdByAccessToken } from "../../src/helpers/retrieve-session-by-access-token";
 import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
 import { mockAccessToken, mockSessionFromIndex } from "../../../common/tests/mocks/mockData";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { QueryCommand } from "@aws-sdk/client-dynamodb";
-jest.mock("../../../common/src/util/metrics");
+jest.mock("@govuk-one-login/cri-metrics");
 
 jest.mock("@aws-sdk/client-dynamodb", () => ({
   QueryCommand: jest.fn().mockImplementation((input) => ({
@@ -63,7 +63,7 @@ describe("retrieveSessionByAccessToken()", () => {
       await retrieveSessionIdByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
     } catch (error) {
       thrown = true;
-      expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 400 }));
+      expect(error).toEqual(expect.objectContaining({ name: "CriError", statusCode: 400 }));
     }
 
     expect(thrown).toEqual(true);
@@ -82,7 +82,7 @@ describe("retrieveSessionByAccessToken()", () => {
     } catch (error) {
       thrown = true;
       expect(error).toEqual(
-        expect.objectContaining({ name: "CriError", status: 500, message: expect.stringContaining("2") })
+        expect.objectContaining({ name: "CriError", statusCode: 500, message: expect.stringContaining("2") })
       );
     }
 
@@ -100,7 +100,7 @@ describe("retrieveSessionByAccessToken()", () => {
       await retrieveSessionIdByAccessToken(sessionTableName, mockDynamoClient, mockAccessToken);
     } catch (error) {
       thrown = true;
-      expect(error).toEqual(expect.objectContaining({ name: "CriError", status: 500 }));
+      expect(error).toEqual(expect.objectContaining({ name: "CriError", statusCode: 500 }));
     }
 
     expect(thrown).toEqual(true);

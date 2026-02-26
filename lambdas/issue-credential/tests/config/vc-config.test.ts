@@ -1,10 +1,10 @@
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("../../../common/src/util/logger", () => ({
+jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
-import { CriError } from "../../../common/src/errors/cri-error";
+import { CriError } from "@govuk-one-login/cri-error-response";
 import * as GetParameters from "../../../common/src/util/get-parameters";
-import { logger } from "../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { VcCheckConfig, getVcConfig } from "../../src/config/vc-config";
 
 type spyGetParametersValues = jest.SpyInstance<
@@ -152,7 +152,7 @@ describe("getVcConfig", () => {
       await expect(getVcConfig(mockVcSigningKeyId)).rejects.toThrow(CriError);
       await expect(getVcConfig(mockVcSigningKeyId)).rejects.toThrow(
         expect.objectContaining({
-          status: 500,
+          statusCode: 500,
           message: expect.stringContaining("Failed to load VC config:"),
         })
       );

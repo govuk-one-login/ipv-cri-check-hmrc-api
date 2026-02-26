@@ -1,5 +1,5 @@
 import { mockLogger } from "../../common/tests/logger";
-jest.mock("../../common/src/util/logger", () => ({
+jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 import { DynamoDBClient, QueryCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
@@ -13,8 +13,8 @@ process.env.AUDIT_QUEUE_URL = "cool-queuez.com";
 process.env.AUDIT_COMPONENT_ID = "https://check-hmrc-time.account.gov.uk";
 import { AbandonHandler } from "../src/abandon-handler";
 
-jest.mock("../../common/src/util/audit");
-import { sendAuditEvent } from "../../common/src/util/audit";
+jest.mock("@govuk-one-login/cri-audit");
+import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
 
 const auditConfig = {
   queueUrl: "cool-queuez.com",
@@ -84,9 +84,10 @@ describe("abandon-handler", () => {
       TableName: "session-table",
       UpdateExpression: "SET authorizationCodeExpiryDate = :expiry REMOVE authorizationCode",
     });
-    expect(sendAuditEvent).toHaveBeenCalledWith(
-      "ABANDONED",
-      auditConfig,
+    expect(buildAndSendAuditEvent).toHaveBeenCalledWith(
+      auditConfig.queueUrl,
+      "IPV_HMRC_RECORD_CHECK_CRI_ABANDONED",
+      auditConfig.componentId,
       {
         sessionId: "session-123",
         clientSessionId: "gov-123",
@@ -137,9 +138,10 @@ describe("abandon-handler", () => {
     const result = await abandonHandler.handler(event, {} as Context);
 
     expect(result.statusCode).toEqual(200);
-    expect(sendAuditEvent).toHaveBeenCalledWith(
-      "ABANDONED",
-      auditConfig,
+    expect(buildAndSendAuditEvent).toHaveBeenCalledWith(
+      auditConfig.queueUrl,
+      "IPV_HMRC_RECORD_CHECK_CRI_ABANDONED",
+      auditConfig.componentId,
       {
         sessionId: "session-123",
         clientSessionId: "gov-123",
@@ -169,6 +171,9 @@ describe("abandon-handler", () => {
     expect(result).toEqual({
       body: '{"message":"No session-id header present"}',
       statusCode: 400,
+      headers: {
+        "Content-Type": "application/json",
+      }
     });
   });
 
@@ -191,6 +196,9 @@ describe("abandon-handler", () => {
     expect(result).toEqual({
       body: '{"message":"Session not found"}',
       statusCode: 400,
+      headers: {
+        "Content-Type": "application/json",
+      }
     });
   });
 
@@ -210,6 +218,9 @@ describe("abandon-handler", () => {
     expect(result).toEqual({
       body: '{"message":"Internal server error"}',
       statusCode: 500,
+      headers: {
+        "Content-Type": "application/json",
+      }
     });
   });
 
@@ -247,6 +258,9 @@ describe("abandon-handler", () => {
     expect(result).toEqual({
       body: '{"message":"Internal server error"}',
       statusCode: 500,
+      headers: {
+        "Content-Type": "application/json",
+      }
     });
   });
 
@@ -270,7 +284,7 @@ describe("abandon-handler", () => {
       Count: 1,
     });
     ddbMock.on(UpdateItemCommand).resolves({});
-    (sendAuditEvent as jest.Mock).mockRejectedValue(new Error("Audit failed"));
+    (buildAndSendAuditEvent as jest.Mock).mockRejectedValue(new Error("Audit failed"));
 
     const event = {
       body: JSON.stringify({}),
@@ -285,6 +299,9 @@ describe("abandon-handler", () => {
     expect(result).toEqual({
       body: '{"message":"Internal server error"}',
       statusCode: 500,
+      headers: {
+        "Content-Type": "application/json",
+      }
     });
   });
 });

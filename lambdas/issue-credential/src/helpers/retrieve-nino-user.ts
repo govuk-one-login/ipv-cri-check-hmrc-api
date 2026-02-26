@@ -1,8 +1,8 @@
 import { getRecordBySessionId } from "../../../common/src/database/get-record-by-session-id";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { logger } from "../../../common/src/util/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { RecordNotFoundError } from "../../../common/src/database/exceptions/errors";
-import { CriError } from "../../../common/src/errors/cri-error";
+import { CriError } from "@govuk-one-login/cri-error-response";
 import { safeStringifyError } from "../../../common/src/util/stringify-error";
 import { NinoUser } from "../../../common/src/types/nino-user";
 

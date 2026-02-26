@@ -1,7 +1,7 @@
 import { mockLogger } from "../../common/tests/logger";
 import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
 
-jest.mock("../../common/src/util/logger", () => ({
+jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 jest.mock("../../common/src/config/base-function-config");
@@ -9,7 +9,7 @@ jest.mock("../../common/src/database/get-attempts");
 jest.mock("../../common/src/database/get-record-by-session-id");
 jest.mock("../src/helpers/retrieve-session-by-access-token");
 jest.mock("../src/helpers/retrieve-nino-user");
-jest.mock("../../common/src/util/metrics", () => ({
+jest.mock("@govuk-one-login/cri-metrics", () => ({
   metrics: {
     logMetrics: jest.fn(() => () => {}),
   },
@@ -49,8 +49,8 @@ import { retrieveNinoUser } from "../src/helpers/retrieve-nino-user";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { buildVerifiableCredential } from "../src/vc/vc-builder";
 import { getHmrcContraIndicators } from "../src/vc/contraIndicator";
-import * as AuditUtils from "../../common/src/util/audit";
-import * as MetricsUtils from "../../common/src/util/metrics";
+import * as AuditUtils from "@govuk-one-login/cri-audit";
+import * as MetricsUtils from "@govuk-one-login/cri-metrics";
 import { getAuditEvidence } from "../src/evidence/evidence-creator";
 import { jwtSigner } from "../src/kms-signer/kms-signer";
 
@@ -78,11 +78,17 @@ const mockContext: Context = {
 const internalServerError = {
   statusCode: 500,
   body: JSON.stringify({ message: "Internal server error" }),
+  headers: {
+    "Content-Type": "application/json",
+  }
 };
 
 const badRequest = {
   statusCode: 400,
   body: expect.any(String),
+  headers: {
+    "Content-Type": "application/json",
+  }
 };
 
 const handlerInput: Parameters<typeof handler> = [
@@ -100,7 +106,7 @@ const handlerInput: Parameters<typeof handler> = [
 (getRecordBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockPersonIdentity);
 (retrieveNinoUser as unknown as jest.Mock).mockResolvedValue(mockNinoUser);
 
-const sendAuditEventSpy = jest.spyOn(AuditUtils, "sendAuditEvent");
+const sendAuditEventSpy = jest.spyOn(AuditUtils, "buildAndSendAuditEvent");
 const signJwtSpy = jest.spyOn(jwtSigner, "signJwt");
 const captureMetricSpy = jest.spyOn(MetricsUtils, "captureMetric");
 const expectedJwt = "header.payload.signature";
@@ -144,8 +150,9 @@ describe("issue-credential handler", () => {
     expect(sendAuditEventSpy).toHaveBeenCalledTimes(2);
     expect(sendAuditEventSpy).toHaveBeenNthCalledWith(
       1,
-      "VC_ISSUED",
-      mockFunctionConfig.audit,
+      mockFunctionConfig.audit.queueUrl,
+      "IPV_HMRC_RECORD_CHECK_CRI_VC_ISSUED",
+      mockFunctionConfig.audit.componentId,
       mockSession,
       expect.objectContaining({
         restricted: {
@@ -162,7 +169,7 @@ describe("issue-credential handler", () => {
         },
       })
     );
-    expect(sendAuditEventSpy).toHaveBeenNthCalledWith(2, "END", mockFunctionConfig.audit, mockSession);
+    expect(sendAuditEventSpy).toHaveBeenNthCalledWith(2,  mockFunctionConfig.audit.queueUrl, "IPV_HMRC_RECORD_CHECK_CRI_END", mockFunctionConfig.audit.componentId, mockSession);
     expect(captureMetricSpy).toHaveBeenCalledWith("VCIssuedMetric");
   });
 

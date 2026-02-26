@@ -5,15 +5,18 @@ import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamo
 import { authorizationEndpoint, checkEndpoint, createSession, getJarAuthorization } from "../endpoints";
 import { generatePrivateJwtParams } from "../crypto/private-key-jwt-helper";
 import {
-  AuditEvent,
+  NinoCheckAuditExtensions,
+  NinoCheckAuditRestricted,
   baseExpectedEvent,
   END_EVENT_NAME,
-  pollForTestHarnessEvents,
   REQUEST_SENT_EVENT_NAME,
   RESPONSE_RECEIVED_EVENT_NAME,
   START_EVENT_NAME,
   VC_ISSUED_EVENT_NAME,
+  TEST_HARNESS_EXECUTE_URL,
 } from "../audit";
+import { AuditEvent } from "@govuk-one-login/cri-audit";
+import { pollTestHarnessForEvents } from "@govuk-one-login/cri-test-resources-helpers";
 
 let sessionData: Response;
 let authCode: { value: string };
@@ -133,36 +136,41 @@ describe("End to end happy path journey", () => {
       },
     ]);
 
-    const startEvents = await pollForTestHarnessEvents(START_EVENT_NAME, sessionId);
+    const startEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, START_EVENT_NAME, sessionId);
     expect(startEvents).toHaveLength(1);
     expect(startEvents[0].event).toEqual<AuditEvent>(
       // clientId is currently unset on start events created by the common session lambda
       baseExpectedEvent(START_EVENT_NAME, sessionId)
     );
 
-    const reqSentEvents = await pollForTestHarnessEvents(REQUEST_SENT_EVENT_NAME, sessionId);
+    const reqSentEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, REQUEST_SENT_EVENT_NAME, sessionId);
     expect(reqSentEvents).toHaveLength(1);
-    expect(reqSentEvents[0].event).toStrictEqual<AuditEvent>({
+
+    const expectedRequestSentAuditEvent: AuditEvent<never, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(REQUEST_SENT_EVENT_NAME, sessionId),
       restricted: {
         birthDate: claimSet.shared_claims.birthDate,
         name: claimSet.shared_claims.name,
         socialSecurityRecord: [{ personalNumber: NINO }],
-      },
-    });
+      }
+    }
+    expect(reqSentEvents[0].event).toStrictEqual(expectedRequestSentAuditEvent);
 
-    const resReceivedEvents = await pollForTestHarnessEvents(RESPONSE_RECEIVED_EVENT_NAME, sessionId);
+    const resReceivedEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, RESPONSE_RECEIVED_EVENT_NAME, sessionId);
     expect(resReceivedEvents).toHaveLength(1);
-    expect(resReceivedEvents[0].event).toStrictEqual<AuditEvent>({
+
+    const expectedRequestReceivedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, sessionId),
       extensions: {
         evidence: { txn: expect.any(String) },
-      },
-    });
+      }
+    }
+    expect(resReceivedEvents[0].event).toStrictEqual(expectedRequestReceivedAuditEvent);
 
-    const vcIssuedEvents = await pollForTestHarnessEvents(VC_ISSUED_EVENT_NAME, sessionId);
+    const vcIssuedEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, VC_ISSUED_EVENT_NAME, sessionId);
     expect(vcIssuedEvents).toHaveLength(1);
-    expect(vcIssuedEvents[0].event).toEqual<AuditEvent>({
+
+    const expectedVCIssuedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(VC_ISSUED_EVENT_NAME, sessionId),
       restricted: {
         birthDate: claimSet.shared_claims.birthDate,
@@ -180,10 +188,11 @@ describe("End to end happy path journey", () => {
             attemptNum: 1,
           },
         ],
-      },
-    });
+      }
+    }
+    expect(vcIssuedEvents[0].event).toEqual(expectedVCIssuedAuditEvent);
 
-    const endEvents = await pollForTestHarnessEvents(END_EVENT_NAME, sessionId);
+    const endEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, END_EVENT_NAME, sessionId);
     expect(endEvents).toHaveLength(1);
     expect(endEvents[0].event).toStrictEqual<AuditEvent>(baseExpectedEvent(END_EVENT_NAME, sessionId));
   });

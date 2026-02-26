@@ -1,5 +1,7 @@
+import { AuditEvent } from "@govuk-one-login/cri-audit";
+import { pollTestHarnessForEvents } from "@govuk-one-login/cri-test-resources-helpers";
 import { clearAttemptsTable, clearItemsFromTables, getItemByKey } from "../../resources/dynamodb-helper";
-import { ABANDONED_EVENT_NAME, AuditEvent, baseExpectedEvent, pollForTestHarnessEvents } from "../audit";
+import { ABANDONED_EVENT_NAME, baseExpectedEvent, TEST_HARNESS_EXECUTE_URL } from "../audit";
 import {
   abandonEndpoint,
   authorizationEndpoint,
@@ -62,7 +64,7 @@ describe("Given the session is valid and expecting to abandon the journey", () =
     expect(sessionRecord.Item?.authorizationCode).toBeUndefined();
     expect(sessionRecord.Item?.authorizationCodeExpiryDate).toBe(0);
 
-    const events = await pollForTestHarnessEvents(ABANDONED_EVENT_NAME, sessionId);
+    const events = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, ABANDONED_EVENT_NAME, sessionId);
 
     expect(events).toHaveLength(1);
     expect(events[0].event).toStrictEqual<AuditEvent>(baseExpectedEvent(ABANDONED_EVENT_NAME, sessionId));
@@ -83,7 +85,7 @@ describe("Given the session is valid and expecting to abandon the journey", () =
     expect(sessionRecord.Item?.authorizationCode).toBeUndefined();
     expect(sessionRecord.Item?.authorizationCodeExpiryDate).toBe(0);
 
-    const events = await pollForTestHarnessEvents(ABANDONED_EVENT_NAME, sessionId);
+    const events = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, ABANDONED_EVENT_NAME, sessionId);
 
     expect(events).toHaveLength(1);
     expect(events[0].event).toStrictEqual<AuditEvent>({

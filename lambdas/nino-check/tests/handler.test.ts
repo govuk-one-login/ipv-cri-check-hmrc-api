@@ -1,15 +1,16 @@
-jest.mock("../../common/src/util/logger", () => ({
+jest.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 jest.mock("../src/helpers/write-completed-check");
 jest.mock("../src/helpers/function-config");
 jest.mock("../src/helpers/nino");
+jest.mock("../../common/src/config/get-hmrc-config");
 jest.mock("../../common/src/database/get-attempts");
 jest.mock("../../common/src/database/get-record-by-session-id");
-jest.mock("../src/hmrc-apis/pdv");
-jest.mock("../src/hmrc-apis/otg");
-jest.mock("../../common/src/util/metrics");
-jest.mock("../../common/src/util/audit");
+jest.mock("../../common/src/hmrc-apis/pdv");
+jest.mock("../../common/src/hmrc-apis/otg");
+jest.mock("@govuk-one-login/cri-metrics");
+jest.mock("@govuk-one-login/cri-audit");
 
 import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
 import { mockOtgToken, mockPdvRes } from "./mocks/mockData";
@@ -20,17 +21,18 @@ import { mockLogger } from "../../common/tests/logger";
 
 import { handler } from "../src/handler";
 import { NinoCheckFunctionConfig } from "../src/helpers/function-config";
-import { getHmrcConfig, handleResponseAndSaveAttempt, saveTxn } from "../src/helpers/nino";
-import { callPdvMatchingApi } from "../src/hmrc-apis/pdv";
+import { getHmrcConfig } from "../../common/src/config/get-hmrc-config";
+import { handleResponseAndSaveAttempt, saveTxn } from "../src/helpers/nino";
+import { callPdvMatchingApi } from "../../common/src/hmrc-apis/pdv";
 import { writeCompletedCheck } from "../src/helpers/write-completed-check";
-import { getTokenFromOtg } from "../src/hmrc-apis/otg";
+import { getTokenFromOtg } from "../../common/src/hmrc-apis/otg";
 import { buildPdvInput } from "../src/helpers/build-pdv-input";
-import { captureMetric } from "../../common/src/util/metrics";
-import { CriError } from "../../common/src/errors/cri-error";
+import { captureMetric } from "@govuk-one-login/cri-metrics";
+import { CriError } from "@govuk-one-login/cri-error-response";
 import { getAttempts as attempts } from "../../common/src/database/get-attempts";
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
-import { sendAuditEvent } from "../../common/src/util/audit";
-import { REQUEST_SENT, RESPONSE_RECEIVED } from "../../common/src/types/audit";
+import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
+import { AUDIT_EVENT_TYPE } from "../../common/src/types/audit";
 
 const mockContext: Context = {
   awsRequestId: "",
@@ -52,6 +54,9 @@ const mockContext: Context = {
 const internalServerError = {
   statusCode: 500,
   body: JSON.stringify({ message: "Internal server error" }),
+  headers: {
+    "Content-Type": "application/json",
+  }
 };
 
 const handlerInput: Parameters<typeof handler> = [
@@ -91,7 +96,7 @@ describe("nino-check handler", () => {
     expect(mockLogger.appendKeys).toHaveBeenCalledWith({
       govuk_signin_journey_id: mockSession.clientSessionId,
     });
-    expect(sendAuditEvent).toHaveBeenCalledWith(REQUEST_SENT, mockFunctionConfig.audit, mockSession, {
+    expect(buildAndSendAuditEvent).toHaveBeenCalledWith(mockFunctionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.REQUEST_SENT, mockFunctionConfig.audit.componentId, mockSession, {
       restricted: {
         birthDate: mockPersonIdentity.birthDates,
         name: mockPersonIdentity.names,
@@ -112,7 +117,7 @@ describe("nino-check handler", () => {
       mockSessionId,
       mockPdvRes.txn
     );
-    expect(sendAuditEvent).toHaveBeenCalledWith(RESPONSE_RECEIVED, mockFunctionConfig.audit, mockSession, {
+    expect(buildAndSendAuditEvent).toHaveBeenCalledWith(mockFunctionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.RESPONSE_RECEIVED, mockFunctionConfig.audit.componentId, mockSession, {
       restricted: {
         device_information: {
           encoded: mockDeviceInformationHeader,

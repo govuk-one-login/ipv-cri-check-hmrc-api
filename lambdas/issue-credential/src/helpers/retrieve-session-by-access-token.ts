@@ -1,7 +1,7 @@
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { AccessTokenIndexSessionItem } from "../../../common/src/types/access-token-index-session-item";
-import { logger } from "../../../common/src/util/logger";
-import { CriError } from "../../../common/src/errors/cri-error";
+import { logger } from "@govuk-one-login/cri-logger";;
+import { CriError } from "@govuk-one-login/cri-error-response";
 import { safeStringifyError } from "../../../common/src/util/stringify-error";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { withRetry } from "../../../common/src/util/retry";
@@ -39,7 +39,7 @@ export async function retrieveSessionIdByAccessToken(
       return retrievedRecords[0].sessionId;
     }
 
-    return await withRetry(sendQueryCommand, logger, {
+    return await withRetry(sendQueryCommand, {
       maxRetries: 3,
       baseDelay: 300,
     });

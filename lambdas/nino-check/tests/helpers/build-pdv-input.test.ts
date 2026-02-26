@@ -1,5 +1,5 @@
-import { PersonIdentityItem, PersonIdentityNamePart } from "../../../common/src/database/types/person-identity";
-import { UnixSecondsTimestamp } from "../../../common/src/types/brands";
+import { PersonIdentityItem, PersonIdentityNamePart } from "@govuk-one-login/cri-types";
+import { UnixSecondsTimestamp } from "@govuk-one-login/cri-types/";
 import { buildPdvInput } from "../../src/helpers/build-pdv-input";
 
 const dateOfBirth = "1948-04-23";
@@ -167,5 +167,19 @@ describe("buildPdvInput", () => {
     ];
 
     expect(() => buildPdvInput(blankNamePartPersonIdentity, nino)).toThrow(new Error("First Name is blank"));
+  });
+
+  it("should throw if names is undefined", async () => {
+    const blankNamePartPersonIdentity: PersonIdentityItem = JSON.parse(JSON.stringify(personIdentity));
+    blankNamePartPersonIdentity.names = undefined;
+
+    expect(() => buildPdvInput(blankNamePartPersonIdentity, nino)).toThrow(new Error("Names or BirthDates is blank"));
+  });
+
+    it("should throw if birthDates is undefined", async () => {
+    const blankNamePartPersonIdentity: PersonIdentityItem = JSON.parse(JSON.stringify(personIdentity));
+    blankNamePartPersonIdentity.birthDates = undefined;
+
+    expect(() => buildPdvInput(blankNamePartPersonIdentity, nino)).toThrow(new Error("Names or BirthDates is blank"));
   });
 });
