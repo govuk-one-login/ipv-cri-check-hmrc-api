@@ -120,22 +120,28 @@ Mappings:
 
   EnvironmentConfiguration:
     localdev:
-      DOMAINNAME: review-hc.localdev.account.gov.uk
+      VcDomain: review-hc.dev.account.gov.uk
+      ServiceDomain: review-hc.localdev.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
     dev:
-      DOMAINNAME: review-hc.dev.account.gov.uk
+      VcDomain: review-hc.dev.account.gov.uk
+      ServiceDomain: review-hc.dev.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
     build:
-      DOMAINNAME: review-hc.build.account.gov.uk
+      VcDomain: review-hc.build.account.gov.uk
+      ServiceDomain: review-hc.build.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
     staging:
-      DOMAINNAME: review-hc.staging.account.gov.uk
+      VcDomain: review-hc.staging.account.gov.uk
+      ServiceDomain: review-hc.staging.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
     integration:
-      DOMAINNAME: review-hc.integration.account.gov.uk
+      VcDomain: review-hc.integration.account.gov.uk
+      ServiceDomain: review-hc.integration.account.gov.uk
       HealthcheckSSMClientId: ipv-core
     production:
-      DOMAINNAME: review-hc.production.account.gov.uk
+      VcDomain: review-hc.production.account.gov.uk
+      ServiceDomain: review-hc.production.account.gov.uk
       HealthcheckSSMClientId: ipv-core
 
 Globals:
@@ -184,18 +190,27 @@ Globals:
       - !Ref AWS::NoValue
 
 Resources:
-  ComLams:
+  OAuth:
     Type: AWS::Serverless::Application
     Properties:
       Location:
-        ApplicationId: arn:aws:serverlessrepo:eu-west-2:486210938254:applications/bc-test-commonlambdas-2025-12
-        SemanticVersion: 0.0.6
+        ApplicationId: arn:aws:serverlessrepo:eu-west-2:667736788427:applications/di-ipv-cri-oauth-common
+        SemanticVersion: 0.0.0
       Parameters:
+        AuditEventNamePrefix: IPV_HMRC_RECORD_CHECK_CRI
+        CriIdentifier: di-ipv-cri-check-hmrc-api
+        CriAudience: !Sub
+          - "https://${domain}"
+          - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, VcDomain]
+        CriVcIssuer: !Sub
+          - "https://${domain}"
+          - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, VcDomain]
+        CriPrivateApiGwName: !Sub ${AWS::StackName}-private
+        CriPublicApiGwName: !Sub ${AWS::StackName}-public
         Environment: dev
-      Tags:
-        cri:component: ipv-cri-common-lambdas
-        cri:deployment-source: manual
-        cri:stack-type: dev
+        IPVCoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
+        IPVCoreStubJwksEndpoint: https://test-resources.review-hc.dev.account.gov.uk/.well-known/jwks.json
+        LambdaVpcConfiguration: di-devplatform-deploy
 
   JWKSBucketRole:
     Type: "AWS::IAM::Role"
@@ -459,7 +474,7 @@ Resources:
                 - Name: FunctionName
                   Value: !Sub
                     - ${OAuthStackName}-SessionFunctionTS
-                    - OAuthStackName: !Ref ComLams
+                    - OAuthStackName: !Ref OAuth
             Period: 300
             Stat: Sum
 
@@ -507,7 +522,7 @@ Resources:
                 - Name: FunctionName
                   Value: !Sub
                     - ${OAuthStackName}-SessionFunctionTS
-                    - OAuthStackName: !Ref ComLams
+                    - OAuthStackName: !Ref OAuth
             Period: 300
             Stat: Sum
 
@@ -553,7 +568,7 @@ Resources:
                 - Name: FunctionName
                   Value: !Sub
                     - ${OAuthStackName}-SessionFunctionTS
-                    - OAuthStackName: !Ref ComLams
+                    - OAuthStackName: !Ref OAuth
             Period: 300
             Stat: Sum
 
@@ -601,7 +616,7 @@ Resources:
                 - Name: FunctionName
                   Value: !Sub
                     - ${OAuthStackName}-SessionFunctionTS
-                    - OAuthStackName: !Ref ComLams
+                    - OAuthStackName: !Ref OAuth
             Period: 300
             Stat: Sum
 
@@ -701,17 +716,21 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Abandon"
-          SESSION_TABLE: !GetAtt ComLams.Outputs.SessionTableName
-          ISSUER: !GetAtt ComLams.Outputs.VCIssuer
+          SESSION_TABLE: !GetAtt OAuth.Outputs.DbSessionTableName
+          ISSUER: !Sub
+            - "https://${domain}"
+            - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ServiceDomain]
           LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
-          AUDIT_COMPONENT_ID: !GetAtt ComLams.Outputs.VCIssuer
+          AUDIT_COMPONENT_ID: !Sub
+            - "https://${domain}"
+            - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ServiceDomain]
       Policies:
         - DynamoDBReadPolicy:
-            TableName: !GetAtt ComLams.Outputs.SessionTableName
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
         - DynamoDBWritePolicy:
-            TableName: !GetAtt ComLams.Outputs.SessionTableName
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
         - KMSDecryptPolicy:
-            KeyId: !GetAtt ComLams.Outputs.DynamoDBCustomerManagedKeyID
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
         - SQSSendMessagePolicy:
             QueueName:
               Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
@@ -1117,13 +1136,13 @@ Resources:
         - SSMParameterReadPolicy:
             ParameterName: check-hmrc-cri-api/NinoCheckUrl/*
         - DynamoDBReadPolicy:
-            TableName: !GetAtt ComLams.Outputs.SessionTableName
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
         - DynamoDBWritePolicy:
-            TableName: !GetAtt ComLams.Outputs.SessionTableName
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
         - DynamoDBReadPolicy:
-            TableName: !GetAtt ComLams.Outputs.PersonIdentityTableName
+            TableName: !GetAtt OAuth.Outputs.DbPersonIdentityTableName
         - DynamoDBWritePolicy:
-            TableName: !GetAtt ComLams.Outputs.PersonIdentityTableName
+            TableName: !GetAtt OAuth.Outputs.DbPersonIdentityTableName
         - DynamoDBReadPolicy:
             TableName: !Ref UserAttemptsTable
         - DynamoDBWritePolicy:
@@ -1135,7 +1154,7 @@ Resources:
         - KMSDecryptPolicy:
             KeyId: !Ref DynamoTablesEncryptionKey
         - KMSDecryptPolicy:
-            KeyId: !GetAtt ComLams.Outputs.DynamoDBCustomerManagedKeyID
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
         - SQSSendMessagePolicy:
             QueueName:
               Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
@@ -1151,12 +1170,14 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-NinoCheckFunction"
-          SESSION_TABLE: !GetAtt ComLams.Outputs.SessionTableName
-          PERSON_IDENTITY_TABLE: !GetAtt ComLams.Outputs.PersonIdentityTableName
+          SESSION_TABLE: !GetAtt OAuth.Outputs.DbSessionTableName
+          PERSON_IDENTITY_TABLE: !GetAtt OAuth.Outputs.DbPersonIdentityTableName
           ATTEMPT_TABLE: !Ref UserAttemptsTable
           NINO_USER_TABLE: !Ref NinoUsersTable
           LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
-          AUDIT_COMPONENT_ID: !GetAtt ComLams.Outputs.VCIssuer
+          AUDIT_COMPONENT_ID: !Sub
+            - "https://${domain}"
+            - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ServiceDomain]
 
   NinoCheckFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1199,9 +1220,9 @@ Resources:
       CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Policies:
         - DynamoDBReadPolicy:
-            TableName: !GetAtt ComLams.Outputs.SessionTableName
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
         - DynamoDBReadPolicy:
-            TableName: !GetAtt ComLams.Outputs.PersonIdentityTableName
+            TableName: !GetAtt OAuth.Outputs.DbPersonIdentityTableName
         - DynamoDBReadPolicy:
             TableName: !Ref UserAttemptsTable
         - DynamoDBReadPolicy:
@@ -1209,7 +1230,7 @@ Resources:
         - KMSDecryptPolicy:
             KeyId: !Ref DynamoTablesEncryptionKey
         - KMSDecryptPolicy:
-            KeyId: !GetAtt ComLams.Outputs.DynamoDBCustomerManagedKeyID
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
         - SSMParameterReadPolicy:
             ParameterName: check-hmrc-cri-api/contraindicationMappings
         - SSMParameterReadPolicy:
@@ -1232,17 +1253,21 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-IssueCredentialFunction"
-          SESSION_TABLE: !GetAtt ComLams.Outputs.SessionTableName
-          PERSON_IDENTITY_TABLE: !GetAtt ComLams.Outputs.PersonIdentityTableName
+          SESSION_TABLE: !GetAtt OAuth.Outputs.DbSessionTableName
+          PERSON_IDENTITY_TABLE: !GetAtt OAuth.Outputs.DbPersonIdentityTableName
           ATTEMPT_TABLE: !Ref UserAttemptsTable
           NINO_USER_TABLE: !Ref NinoUsersTable
-          ISSUER: !GetAtt ComLams.Outputs.VCIssuer
+          ISSUER: !Sub
+            - "https://${domain}"
+            - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ServiceDomain]
           MAX_JWT_TTL: !FindInMap [MaxJwtTtl, Environment, !Ref Environment]
           JWT_TTL_UNIT: !FindInMap [JwtTtlUnit, Environment, !Ref Environment]
           LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
-          VC_SIGNING_KEY_ID: !GetAtt ComLams.Outputs.VCSigningKeyID
-          DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
-          AUDIT_COMPONENT_ID: !GetAtt ComLams.Outputs.VCIssuer
+          VC_SIGNING_KEY_ID: !GetAtt OAuth.Outputs.VCSigningKeyID
+          DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, ServiceDomain]
+          AUDIT_COMPONENT_ID: !Sub
+            - "https://${domain}"
+            - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ServiceDomain]
 
   IssueCredentialFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1525,7 +1550,7 @@ Outputs:
       Name: !Sub ${AWS::StackName}-PrivateApiGatewayId
   CommonStackName:
     Description: Common OAuth Lambdas Stack Name
-    Value: !Ref ComLams
+    Value: !Ref OAuth
   UserAttemptsTable:
     Description: UserAttemptsTable table name
     Value: !Ref UserAttemptsTable
