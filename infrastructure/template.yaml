@@ -229,9 +229,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       InsufficientDataActions: []
       EvaluationPeriods: 5
       DatapointsToAlarm: 2
@@ -292,9 +292,11 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       InsufficientDataActions: []
       EvaluationPeriods: 5
       DatapointsToAlarm: 2
@@ -355,9 +357,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       InsufficientDataActions: []
       EvaluationPeriods: 5
       DatapointsToAlarm: 2
@@ -421,9 +423,9 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -465,9 +467,11 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -509,9 +513,9 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -553,9 +557,11 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -594,9 +600,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       InsufficientDataActions: []
       MetricName: ConcurrentExecutions
       Namespace: AWS/Lambda
@@ -618,9 +624,11 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       InsufficientDataActions: []
       MetricName: Errors
       Namespace: AWS/Lambda
@@ -642,9 +650,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       InsufficientDataActions: []
       MetricName: Throttles
       Namespace: AWS/Lambda
@@ -753,7 +761,7 @@ Resources:
       AlwaysDeploy: true
       DefinitionBody:
         openapi: 3.0.1
-        paths: # workaround to get `sam validate` to work
+        paths: # workaround get `sam validate` to work
           /never-created:
             options: {}
         Fn::Transform:
@@ -824,9 +832,11 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       InsufficientDataActions: []
       MetricName: PublicNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
@@ -871,7 +881,7 @@ Resources:
       AlwaysDeploy: true
       DefinitionBody:
         openapi: 3.0.1
-        paths: # workaround to get `sam validate` to work
+        paths: # workaround to get sam validate to work
           /never-created:
             options: {}
         Fn::Transform:
@@ -926,13 +936,15 @@ Resources:
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-PrivateNinoCheckApi-FatalError-alarm"
       AlarmDescription: !Sub
-        - "Trigger an alarm when Fatal ${PrivateNinoCheckApi} Error occurs.Runbook:  ${SupportManualURL}"
+        - "Trigger an alarm when Fatal ${PrivateNinoCheckApi} Error occurs. Runbook: ${SupportManualURL}"
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       InsufficientDataActions: []
       MetricName: PrivateNinoCheckApi-Fatalerror
       Namespace: !Sub "${AWS::StackName}/LogMessages"
@@ -953,9 +965,11 @@ Resources:
       AlarmDescription: !Sub Check HMRC ${Environment} API Gateway 5XX errors
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        - !ImportValue build-notifications-CriticalAlertsTopicArn
+        - !If [IsProdEnvironment, !ImportValue build-notifications-PagerDutySNSTopicArn, !Ref "AWS::NoValue"]
       InsufficientDataActions: []
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
@@ -1283,9 +1297,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       AlarmDescription: "Abandon lambda returning 5xx response."
       Namespace: AWS/ApiGateway
       MetricName: 5XXError
@@ -1313,9 +1327,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Errors returned from the AbandonFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -1340,9 +1354,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Errors returned from the NinoCheckFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -1367,9 +1381,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Check HRMC NINO Check Lambda returning 5xx response."
       AlarmName: !Sub ${AWS::StackName}-${Environment}-NinoCheckFunction5xxCanaryErrors
       Namespace: AWS/ApiGateway
@@ -1398,9 +1412,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Errors returned from the IssueCredentialFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -1425,9 +1439,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue build-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Check HRMC Issue credential Lambda returning 5xx response."
       AlarmName: !Sub ${AWS::StackName}-${Environment}-IssueCredentialFunction5xxCanaryErrors
       Namespace: AWS/ApiGateway
