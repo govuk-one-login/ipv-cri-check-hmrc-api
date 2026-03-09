@@ -137,3 +137,5 @@ dotenv
 coverage
 
 .idea/
+
+.vscode
