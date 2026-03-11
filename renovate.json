@@ -1,0 +1,14 @@
+{
+  "extends": ["config:recommended"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/template\\.ya?ml$/"],
+      "matchStrings": [
+        "ApplicationId:\\s*arn:aws:serverlessrepo:[^\\n]+\\s*\\n\\s*SemanticVersion:\\s*(?<currentValue>[0-9.]+)"
+      ],
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "govuk-one-login/ipv-cri-oauth-common"
+    }
+  ]
+}
