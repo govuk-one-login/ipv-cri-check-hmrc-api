@@ -1,11 +1,14 @@
 name: Update SAR dependency (ComLams)
 
 on:
+  pull_request:
   schedule:
     - cron: '0 3 * * *'
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   update-sar-version:
