@@ -1,0 +1,74 @@
+name: Update SAR dependency (ComLams)
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  update-sar-version:
+    name: Check and update ComLams SAR version
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Assume temporary AWS role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.DEPLOYMENT_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - name: Get latest SAR version
+        id: sar-version
+        run: |
+          APPLICATION_ID="arn:aws:serverlessrepo:eu-west-2:486210938254:applications/bc-test-commonlambdas-2025-12"
+
+          LATEST_VERSION=$(aws serverlessrepo list-application-versions \
+            --application-id "$APPLICATION_ID" \
+            --region eu-west-2 \
+            --query 'Versions[*].SemanticVersion' \
+            --output text | tr '\t' '\n' | sort -V | tail -1)
+
+          if [ -z "$LATEST_VERSION" ]; then
+            echo "Failed to retrieve latest SAR version" >&2
+            exit 1
+          fi
+
+          CURRENT_VERSION=$(grep 'SemanticVersion:' infrastructure/template.yaml | awk '{print $2}')
+
+          echo "latest=$LATEST_VERSION" >> "$GITHUB_OUTPUT"
+          echo "current=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Latest version: $LATEST_VERSION"
+          echo "Current version: $CURRENT_VERSION"
+
+      - name: Update template.yaml
+        if: steps.sar-version.outputs.latest != steps.sar-version.outputs.current
+        run: |
+          sed -i "s/SemanticVersion: ${{ steps.sar-version.outputs.current }}/SemanticVersion: ${{ steps.sar-version.outputs.latest }}/" infrastructure/template.yaml
+
+      - name: Create Pull Request
+        if: steps.sar-version.outputs.latest != steps.sar-version.outputs.current
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update ComLams SAR version to ${{ steps.sar-version.outputs.latest }}"
+          branch: "auto/update-comlams-sar-${{ steps.sar-version.outputs.latest }}"
+          title: "chore: update ComLams SAR version to ${{ steps.sar-version.outputs.latest }}"
+          body: |
+            Updates the `ComLams` SAR stack version in `infrastructure/template.yaml`:
+
+            | | Version |
+            |---|---|
+            | **Before** | `${{ steps.sar-version.outputs.current }}` |
+            | **After** | `${{ steps.sar-version.outputs.latest }}` |
+
+            **SAR Application:** `arn:aws:serverlessrepo:eu-west-2:486210938254:applications/bc-test-commonlambdas-2025-12`
+          labels: dependencies
+          delete-branch: true
