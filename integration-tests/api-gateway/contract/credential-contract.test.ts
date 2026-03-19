@@ -1,10 +1,7 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import { Verifier, VerifierOptions } from "@pact-foundation/pact";
 import { Constants } from "./utils/Constants";
-import {
-  clearContractTestsFromDatabase,
-  populateDatabaseForContractTests,
-} from "./utils/DatabasePopulator";
+import { clearContractTestsFromDatabase, populateDatabaseForContractTests } from "./utils/DatabasePopulator";
 
 const logger = new Logger({
   logLevel: "INFO",
@@ -21,10 +18,7 @@ describe("Pact Verification", () => {
       pactBrokerUrl: "https://" + process.env.PACT_BROKER_HOST,
       pactBrokerUsername: process.env.PACT_BROKER_USERNAME,
       pactBrokerPassword: process.env.PACT_BROKER_PASSWORD,
-      consumerVersionSelectors: [
-        { mainBranch: true },
-        { deployedOrReleased: true },
-      ],
+      consumerVersionSelectors: [{ mainBranch: true }, { deployedOrReleased: true }],
       publishVerificationResult: true,
       providerVersion: "3.0.0",
       logLevel: "info",
@@ -37,18 +31,22 @@ describe("Pact Verification", () => {
 
   it("tests against contracts", async () => {
     logger.debug("Starting Pact Verification");
-    let result;
-    await new Verifier(opts)
-      .verifyProvider()
-      .then((output) => {
-        logger.info("Pact Verification Complete!");
-        logger.info("Output: ", output);
-        result = Number(output.match(/\d+/));
-      })
-      .catch((error) => {
-        logger.error("Pact verification failed :(", { error });
-        result = 1;
-      });
-    expect(result).toBe(0);
+
+    try {
+      const result = JSON.parse(await new Verifier(opts).verifyProvider());
+
+      logger.info("Pact Verification Complete!");
+      logger.info("Output: ", result);
+
+      expect(result).toHaveProperty("pendingErrors");
+      expect(result).toHaveProperty("errors");
+
+      const { pendingErrors, errors } = result;
+
+      expect(pendingErrors.length).toBe(0);
+      expect(errors.length).toBe(0);
+    } catch (error) {
+      logger.error("Pact verification failed :(", { error });
+    }
   }, 60000);
 });
