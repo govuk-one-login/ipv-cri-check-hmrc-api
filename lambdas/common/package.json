@@ -10,9 +10,6 @@
     "deploy": "../../deploy.sh",
     "compile": "tsc"
   },
-  "dependencies": {
-    "@aws-sdk/util-dynamodb": "3.986.0"
-  },
   "devDependencies": {
     "@aws-lambda-powertools/logger": "2.31.0",
     "@aws-lambda-powertools/parameters": "2.31.0",
