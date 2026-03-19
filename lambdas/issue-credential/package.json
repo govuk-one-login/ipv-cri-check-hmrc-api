@@ -12,12 +12,9 @@
   },
   "dependencies": {
     "@aws-lambda-powertools/commons": "2.31.0",
-    "@aws-lambda-powertools/logger": "2.31.0",
     "@aws-lambda-powertools/parameters": "2.31.0",
-    "@aws-sdk/client-dynamodb": "3.986.0",
-    "@aws-sdk/client-kms": "3.986.0",
-    "@aws-sdk/credential-providers": "3.986.0",
-    "@aws-sdk/util-dynamodb": "3.986.0",
+    "@aws-sdk/client-kms": "3.1012.0",
+    "@aws-sdk/credential-providers": "3.1012.0",
     "ecdsa-sig-formatter": "1.0.11"
   },
   "devDependencies": {
