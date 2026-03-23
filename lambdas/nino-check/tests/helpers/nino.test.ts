@@ -1,11 +1,12 @@
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("@govuk-one-login/cri-logger", () => ({
+vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
-jest.mock("@govuk-one-login/cri-metrics");
+vi.mock("@govuk-one-login/cri-metrics");
 import { mockSaveRes } from "../mocks/mockConfig";
 import { mockClient } from "aws-sdk-client-mock";
-import "aws-sdk-client-mock-jest";
+import { allCustomMatcherWithAliases } from "aws-sdk-client-mock-vitest";
+expect.extend(allCustomMatcherWithAliases);
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { handleResponseAndSaveAttempt, saveTxn } from "../../src/helpers/nino";
 import * as GetParameters from "../../../common/src/util/get-parameters";
@@ -31,11 +32,11 @@ describe("getHmrcConfig()", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("behaves as expected when the SSM fetch works", async () => {
-    const paramSpy = jest.spyOn(GetParameters, "getParametersValues").mockResolvedValueOnce(ssmRes);
+    const paramSpy = vi.spyOn(GetParameters, "getParametersValues").mockResolvedValueOnce(ssmRes);
 
     const config = await getHmrcConfig(mockClientId);
 
@@ -55,7 +56,7 @@ describe("getHmrcConfig()", () => {
   });
 
   it("throws an error when the SSM fetch returns errors", async () => {
-    jest
+    vi
       .spyOn(GetParameters, "getParametersValues")
       .mockRejectedValueOnce(
         new Error(
@@ -76,7 +77,7 @@ describe("saveTxn()", () => {
   const sessionTableName = "big-session-gang";
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("works correctly with valid input", async () => {
@@ -103,7 +104,7 @@ describe("handleResponseAndSaveAttempt()", () => {
   const attemptTableName = "attempt-zone";
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("handles a valid response correctly", async () => {

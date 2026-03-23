@@ -1,15 +1,15 @@
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("@govuk-one-login/cri-logger", () => ({
+vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
+import type { MockInstance } from "vitest";
 import { CriError } from "@govuk-one-login/cri-error-response";
 import * as GetParameters from "../../../common/src/util/get-parameters";
 import { logger } from "@govuk-one-login/cri-logger";
 import { VcCheckConfig, getVcConfig } from "../../src/config/vc-config";
 
-type spyGetParametersValues = jest.SpyInstance<
-  Promise<Record<string, string>>,
-  [parameterPaths: string[], cacheTtlInSeconds?: number]
+type spyGetParametersValues = MockInstance<
+  (parameterPaths: string[], cacheTtlInSeconds?: number) => Promise<Record<string, string>>
 >;
 
 describe("getVcConfig", () => {
@@ -30,11 +30,11 @@ describe("getVcConfig", () => {
   };
 
   beforeEach(() => {
-    getParametersValuesSpy = jest.spyOn(GetParameters, "getParametersValues");
-    jest.clearAllMocks();
+    getParametersValuesSpy = vi.spyOn(GetParameters, "getParametersValues");
+    vi.clearAllMocks();
   });
 
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => vi.restoreAllMocks());
 
   describe("successful configuration retrieval", () => {
     it("returns correctly typed VcCheckConfig with valid parameters", async () => {
@@ -68,7 +68,7 @@ describe("getVcConfig", () => {
 
     it("logs info message when retrieving parameters", async () => {
       getParametersValuesSpy.mockResolvedValueOnce(mockSsmParams);
-      jest.spyOn(logger, "info");
+      vi.spyOn(logger, "info");
 
       await getVcConfig(mockCommonStackName);
 

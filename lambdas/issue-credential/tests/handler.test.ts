@@ -1,38 +1,60 @@
 import { mockLogger } from "../../common/tests/logger";
 import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
 
-jest.mock("@govuk-one-login/cri-logger", () => ({
+vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
-jest.mock("../../common/src/config/base-function-config");
-jest.mock("../../common/src/database/get-attempts");
-jest.mock("../../common/src/database/get-record-by-session-id");
-jest.mock("../src/helpers/retrieve-session-by-access-token");
-jest.mock("../src/helpers/retrieve-nino-user");
-jest.mock("@govuk-one-login/cri-metrics", () => ({
+vi.mock("../../open-telemetry/src/otel-setup");
+vi.mock("../../common/src/config/base-function-config");
+vi.mock("../../common/src/database/get-attempts");
+vi.mock("../../common/src/database/get-record-by-session-id");
+vi.mock("../src/helpers/retrieve-session-by-access-token");
+vi.mock("../src/helpers/retrieve-nino-user");
+vi.mock("@govuk-one-login/cri-metrics", () => ({
   metrics: {
-    logMetrics: jest.fn(() => () => {}),
+    logMetrics: vi.fn(() => () => {}),
   },
-  captureMetric: jest.fn(),
+  captureMetric: vi.fn(),
 }));
-jest.mock("../src/config/function-config");
-jest.mock("../src/vc/vc-builder");
-jest.mock("crypto", () => ({
-  randomUUID: jest.fn(() => "mock-uuid-123"),
+const { mockIssueCredConfig } = vi.hoisted(() => ({
+  mockIssueCredConfig: {
+    credentialIssuerEnv: {
+      issuer: "bob",
+      maxJwtTtl: 1000,
+      jwtTtlUnit: "Hours",
+      commonStackName: "big-stack",
+    },
+    tableNames: {
+      sessionTable: "session-table",
+      personIdentityTable: "person-identity-table",
+      attemptTable: "attempt-table",
+      ninoUserTable: "nino-user-table",
+    },
+    audit: {
+      queueUrl: "cool-queuez.com",
+      componentId: "https://check-hmrc-time.account.gov.uk",
+    },
+  },
 }));
-jest.mock("../src/vc/contraIndicator");
-jest.mock("../src/evidence/evidence-creator");
-jest.mock("../../common/src/util/date-time", () => ({
-  toEpochSecondsFromNow: jest.fn(() => 1234567890),
+vi.mock("../src/config/function-config", () => ({
+  IssueCredFunctionConfig: vi.fn().mockImplementation(function () { return mockIssueCredConfig; }),
+}));
+vi.mock("../src/vc/vc-builder");
+vi.mock("crypto", () => ({
+  randomUUID: vi.fn(() => "mock-uuid-123"),
+}));
+vi.mock("../src/vc/contraIndicator");
+vi.mock("../src/evidence/evidence-creator");
+vi.mock("@govuk-one-login/cri-audit");
+vi.mock("../../common/src/util/date-time", () => ({
+  toEpochSecondsFromNow: vi.fn(() => 1234567890),
   TimeUnits: { Hours: "Hours" },
 }));
-jest.mock("../../common/src/util/dynamo", () => ({
+vi.mock("../../common/src/util/dynamo", () => ({
   dynamoDBClient: mockDynamoClient,
 }));
-import { IssueCredFunctionConfig } from "../src/config/function-config";
 import * as VcConfig from "../src/config/vc-config";
 import { mockFunctionConfig } from "./mocks/mockConfig";
-(IssueCredFunctionConfig as unknown as jest.Mock).mockReturnValue(mockFunctionConfig);
 
 import {
   mockAccessToken,
@@ -54,9 +76,9 @@ import * as MetricsUtils from "@govuk-one-login/cri-metrics";
 import { getAuditEvidence } from "../src/evidence/evidence-creator";
 import { jwtSigner } from "../src/kms-signer/kms-signer";
 
-(buildVerifiableCredential as unknown as jest.Mock).mockReturnValue({ mockVc: "credential" });
-(getHmrcContraIndicators as unknown as jest.Mock).mockReturnValue([]);
-(getAuditEvidence as unknown as jest.Mock).mockReturnValue({ txn: "test-txn", type: "IdentityCheck" });
+vi.mocked(buildVerifiableCredential).mockReturnValue({} as unknown as ReturnType<typeof buildVerifiableCredential>);
+vi.mocked(getHmrcContraIndicators).mockReturnValue([]);
+vi.mocked(getAuditEvidence).mockReturnValue({ txn: "test-txn", type: "IdentityCheck", attemptNum: 1 });
 
 const mockContext: Context = {
   awsRequestId: "",
@@ -100,30 +122,30 @@ const handlerInput: Parameters<typeof handler> = [
   mockContext,
 ];
 
-(retrieveSessionIdByAccessToken as unknown as jest.Mock).mockResolvedValue(mockSessionId);
-(getAttempts as unknown as jest.Mock).mockResolvedValue({ count: 0, items: [] });
-(getSessionBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockSession);
-(getRecordBySessionId as unknown as jest.Mock).mockResolvedValueOnce(mockPersonIdentity);
-(retrieveNinoUser as unknown as jest.Mock).mockResolvedValue(mockNinoUser);
+vi.mocked(retrieveSessionIdByAccessToken).mockResolvedValue(mockSessionId);
+vi.mocked(getAttempts).mockResolvedValue({ count: 0, items: [] });
+vi.mocked(getSessionBySessionId).mockResolvedValueOnce(mockSession);
+vi.mocked(getRecordBySessionId).mockResolvedValueOnce(mockPersonIdentity);
+vi.mocked(retrieveNinoUser).mockResolvedValue(mockNinoUser);
 
-const sendAuditEventSpy = jest.spyOn(AuditUtils, "buildAndSendAuditEvent");
-const signJwtSpy = jest.spyOn(jwtSigner, "signJwt");
-const captureMetricSpy = jest.spyOn(MetricsUtils, "captureMetric");
+const sendAuditEventSpy = vi.spyOn(AuditUtils, "buildAndSendAuditEvent");
+const signJwtSpy = vi.spyOn(jwtSigner, "signJwt");
+const captureMetricSpy = vi.spyOn(MetricsUtils, "captureMetric");
 const expectedJwt = "header.payload.signature";
 describe("issue-credential handler", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     signJwtSpy.mockResolvedValueOnce(expectedJwt);
     sendAuditEventSpy.mockResolvedValueOnce(undefined).mockResolvedValueOnce(undefined);
-    (buildVerifiableCredential as unknown as jest.Mock).mockReturnValueOnce({
+    vi.mocked(buildVerifiableCredential).mockReturnValueOnce({
       vc: {
         evidence: [{ txn: "test-txn", type: "IdentityCheck" }],
       },
-    });
+    } as unknown as ReturnType<typeof buildVerifiableCredential>);
   });
 
   it("executes successfully with a valid input", async () => {
-    const spyVcConfig = jest.spyOn(VcConfig, "getVcConfig").mockResolvedValue({
+    const spyVcConfig = vi.spyOn(VcConfig, "getVcConfig").mockResolvedValue({
       contraIndicator: {
         errorMapping: ["mapping1", "mapping2"],
         reasonsMapping: [],
@@ -174,7 +196,7 @@ describe("issue-credential handler", () => {
   });
 
   it("handles application errors correctly", async () => {
-    (retrieveSessionIdByAccessToken as unknown as jest.Mock).mockImplementationOnce(() => {
+    vi.mocked(retrieveSessionIdByAccessToken).mockImplementationOnce(() => {
       throw new Error("nooooooo!!!");
     });
 

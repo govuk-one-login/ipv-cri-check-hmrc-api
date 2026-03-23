@@ -3,7 +3,7 @@ import { TimeUnits, toEpochSecondsFromNow } from "../../../common/src/util/date-
 const monday31st2021InMilliseconds = 1622502000000;
 const monday31st2021InSeconds = 1622502000;
 
-jest.spyOn(Date, "now").mockReturnValue(monday31st2021InMilliseconds);
+vi.spyOn(Date, "now").mockReturnValue(monday31st2021InMilliseconds);
 
 describe("DateTime utils", () => {
   describe("toEpochSeconds", () => {

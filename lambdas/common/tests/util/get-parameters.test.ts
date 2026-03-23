@@ -1,6 +1,6 @@
 import * as SSMPowerToolsParameter from "@aws-lambda-powertools/parameters/ssm";
 import * as GetParameters from "../../src/util/get-parameters";
-jest.mock("@aws-lambda-powertools/parameters/ssm");
+vi.mock("@aws-lambda-powertools/parameters/ssm");
 
 describe("getParametersValues", () => {
   const issuer = "mock-issuer";
@@ -16,7 +16,7 @@ describe("getParametersValues", () => {
       "/mock-common-prefix/clients/mock-client-id/jwtAuthentication/issuer": issuer,
     };
 
-    jest.spyOn(SSMPowerToolsParameter, "getParametersByName").mockResolvedValueOnce({
+    vi.spyOn(SSMPowerToolsParameter, "getParametersByName").mockResolvedValueOnce({
       ...mockParameters,
       _errors: [],
     });
@@ -43,7 +43,7 @@ describe("getParametersValues", () => {
       "/mock-common-prefix/clients/mock-client-id/jwtAuthentication/issuer": issuer,
     };
 
-    jest.spyOn(SSMPowerToolsParameter, "getParametersByName").mockResolvedValueOnce({
+    vi.spyOn(SSMPowerToolsParameter, "getParametersByName").mockResolvedValueOnce({
       ...mockParameters,
       _errors: [],
     });
@@ -66,7 +66,7 @@ describe("getParametersValues", () => {
       "/mock-common-prefix/clients/mock-client-id/jwtAuthentication/issuer",
     ];
 
-    jest.spyOn(SSMPowerToolsParameter, "getParametersByName").mockResolvedValueOnce({
+    vi.spyOn(SSMPowerToolsParameter, "getParametersByName").mockResolvedValueOnce({
       _errors: ["/mock-common-prefix/clients/mock-client-id/jwtAuthentication/audience"],
     });
 

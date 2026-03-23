@@ -4,14 +4,14 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "unit": "export POWERTOOLS_DEV=true && jest --silent ",
+    "unit": "export POWERTOOLS_DEV=true && vitest run",
     "test": "npm run unit --",
-    "test:coverage": "npm run unit -- --coverage",
+    "test:coverage": "export POWERTOOLS_DEV=true && vitest run --coverage",
     "deploy": "../../deploy.sh",
     "compile": "tsc"
   },
   "devDependencies": {
     "aws-sdk-client-mock": "4.1.0",
-    "aws-sdk-client-mock-jest": "4.1.0"
+    "aws-sdk-client-mock-vitest": "7.0.1"
   }
 }

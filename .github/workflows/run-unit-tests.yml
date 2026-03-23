@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           cache: npm
-          node-version: 20
+          node-version: 22
 
       - name: Install dependencies
         run: npm ci
@@ -35,7 +35,7 @@ jobs:
       - name: Run tests
         uses: govuk-one-login/github-actions/node/run-script@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
         with:
-          script: npm run test:coverage -- --config .github/jest.config.ci.ts
+          script: npm run test:coverage -- --reporter=github-actions --reporter=verbose --coverage.reporter=lcov --coverage.reporter=text
 
       - name: Archive coverage results
         if: ${{ inputs.coverage-report }}

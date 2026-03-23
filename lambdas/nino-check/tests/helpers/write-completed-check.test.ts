@@ -1,12 +1,13 @@
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("@govuk-one-login/cri-logger", () => ({
+vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { writeCompletedCheck } from "../../src/helpers/write-completed-check";
 import { mockSaveRes, mockTableNames } from "../mocks/mockConfig";
 import { mockClient } from "aws-sdk-client-mock";
-import "aws-sdk-client-mock-jest";
+import { allCustomMatcherWithAliases } from "aws-sdk-client-mock-vitest";
+expect.extend(allCustomMatcherWithAliases);
 import { mockNino, mockSession, mockSessionId } from "../../../common/tests/mocks/mockData";
 
 const mockDynamoClient = mockClient(DynamoDBClient);
