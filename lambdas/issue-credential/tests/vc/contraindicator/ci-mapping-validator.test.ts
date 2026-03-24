@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import { CiMappings } from "../../../src/vc/contraIndicator/types/ci-mappings";
 import { validateInputs, CiReasonsMapping } from "../../../src/vc/contraIndicator/ci-mappings-validator";
 

@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mockLogger } from "../../../common/tests/logger";
 vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,

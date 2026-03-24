@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockDynamoClient = vi.hoisted(() => ({ send: vi.fn() }));
 
 vi.mock("@govuk-one-login/cri-logger", () => ({
