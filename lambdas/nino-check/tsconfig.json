@@ -10,7 +10,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["vitest/globals", "node", "aws-lambda"],
+    "types": ["node", "aws-lambda"],
     "outDir": "./build/",
     "noImplicitAny": true
   },

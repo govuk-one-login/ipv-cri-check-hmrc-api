@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.hoisted(() => {
   process.env.SESSION_TABLE = "session-table";
   process.env.ISSUER = "issuer";

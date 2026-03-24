@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, test, vi } from "vitest";
 import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics";
 
 const { mockSingleMetric, mockMetrics } = vi.hoisted(() => {

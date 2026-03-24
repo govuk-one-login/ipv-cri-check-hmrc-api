@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getAttempts } from "../../src/database/get-attempts";
 import { mockSessionId } from "../mocks/mockData";
 import { QueryCommand } from "@aws-sdk/client-dynamodb";

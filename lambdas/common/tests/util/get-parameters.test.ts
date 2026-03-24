@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from "vitest";
 import * as SSMPowerToolsParameter from "@aws-lambda-powertools/parameters/ssm";
 import * as GetParameters from "../../src/util/get-parameters";
 vi.mock("@aws-lambda-powertools/parameters/ssm");

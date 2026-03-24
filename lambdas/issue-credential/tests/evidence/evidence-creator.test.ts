@@ -1,3 +1,4 @@
+import { describe, expect, it, test, vi } from "vitest";
 import { SessionItem } from "@govuk-one-login/cri-types";
 import { AttemptItem, AttemptsResult } from "../../../common/src/types/attempt";
 import { getEvidence, getAuditEvidence } from "../../src/evidence/evidence-creator";
