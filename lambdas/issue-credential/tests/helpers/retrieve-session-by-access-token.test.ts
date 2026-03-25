@@ -1,30 +1,32 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("@govuk-one-login/cri-logger", () => ({
+vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 import { logger } from "@govuk-one-login/cri-logger";
 import { retrieveSessionIdByAccessToken } from "../../src/helpers/retrieve-session-by-access-token";
-import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
+import { mockDynamoClient, mockSend } from "../../../common/tests/mocks/mockDynamoClient";
 import { mockAccessToken, mockSessionFromIndex } from "../../../common/tests/mocks/mockData";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { QueryCommand } from "@aws-sdk/client-dynamodb";
-jest.mock("@govuk-one-login/cri-metrics");
+vi.mock("@govuk-one-login/cri-metrics");
 
-jest.mock("@aws-sdk/client-dynamodb", () => ({
-  QueryCommand: jest.fn().mockImplementation((input) => ({
-    type: "QueryCommandInstance",
-    input,
-  })),
-  DynamoDBClient: jest.fn().mockImplementation(() => mockDynamoClient),
+vi.mock("@aws-sdk/client-dynamodb", () => ({
+  QueryCommand: vi.fn().mockImplementation(function (input) {
+    return { type: "QueryCommandInstance", input };
+  }),
+  DynamoDBClient: vi.fn().mockImplementation(function () {
+    return mockDynamoClient;
+  }),
 }));
 
-const mockSendFunction = mockDynamoClient.send as jest.Mock;
+const mockSendFunction = mockSend;
 
 const sessionTableName = "my-session-zone";
 
 describe("retrieveSessionByAccessToken()", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns as expected for some valid input", async () => {

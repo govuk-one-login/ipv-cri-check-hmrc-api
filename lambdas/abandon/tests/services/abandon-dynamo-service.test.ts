@@ -1,9 +1,11 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("@govuk-one-login/cri-logger", () => ({
+vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 import { mockClient } from "aws-sdk-client-mock";
-import "aws-sdk-client-mock-jest";
+import { allCustomMatcherWithAliases } from "aws-sdk-client-mock-vitest";
+expect.extend(allCustomMatcherWithAliases);
 import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { removeAuthCodeFromSessionRecord } from "../../src/services/abandon-dynamo-service";
 

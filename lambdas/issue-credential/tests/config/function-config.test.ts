@@ -1,3 +1,4 @@
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { IssueCredFunctionConfig } from "../../src/config/function-config";
 
 const originalProcessEnv = { ...process.env };

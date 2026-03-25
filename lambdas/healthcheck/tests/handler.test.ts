@@ -1,9 +1,10 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mockLogger } from "../../common/tests/logger";
 
-jest.mock("@govuk-one-login/cri-logger", () => ({
+vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
-jest.mock("@govuk-one-login/cri-metrics");
+vi.mock("@govuk-one-login/cri-metrics");
 
 import * as getHmrcConfigFile from "../../common/src/config/get-hmrc-config";
 import * as otgFile from "../../common/src/hmrc-apis/otg";
@@ -23,7 +24,7 @@ const mockPdvErrorResponse: ParsedPdvMatchResponse = { httpStatus: 500, errorBod
 const mockPdvHappyResponse: ParsedPdvMatchResponse = { httpStatus: 200, errorBody: "", txn: "happyTxn" };
 const mockOtgToken = "otg-token";
 const mockFetchMessage = "no service here";
-const mockFetchRes = { status: 404, text: jest.fn().mockResolvedValue(mockFetchMessage) } as unknown as Response;
+const mockFetchRes = { status: 404, text: vi.fn().mockResolvedValue(mockFetchMessage) } as unknown as Response;
 const apiGatewayPath = "/healthcheck/thirdparty";
 const testUser = {
   firstName: expect.any(String),
@@ -37,10 +38,10 @@ const mockHmrcConfig = {
   otg: { apiUrl: otgUrl },
 };
 
-const getHmrcConfigMock = jest.spyOn(getHmrcConfigFile, "getHmrcConfig").mockResolvedValue(mockHmrcConfig);
-const callPdvMatchingApiMock = jest.spyOn(pdvFile, "callPdvMatchingApi").mockResolvedValue(mockPdvResponse);
-const getTokenFromOtgMock = jest.spyOn(otgFile, "getTokenFromOtg").mockResolvedValue(mockOtgToken);
-const fetchMock = jest.spyOn(global, "fetch").mockResolvedValue(mockFetchRes);
+const getHmrcConfigMock = vi.spyOn(getHmrcConfigFile, "getHmrcConfig").mockResolvedValue(mockHmrcConfig);
+const callPdvMatchingApiMock = vi.spyOn(pdvFile, "callPdvMatchingApi").mockResolvedValue(mockPdvResponse);
+const getTokenFromOtgMock = vi.spyOn(otgFile, "getTokenFromOtg").mockResolvedValue(mockOtgToken);
+const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue(mockFetchRes);
 
 const healthcheckHandlerInput = [{ path: apiGatewayPath }, {}] as unknown as Parameters<typeof handler>;
 const reportHandlerInput: Parameters<typeof handler> = [
@@ -50,7 +51,7 @@ const reportHandlerInput: Parameters<typeof handler> = [
 
 describe(`handler`, () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it(`passes under expected conditions`, async () => {
@@ -169,7 +170,7 @@ describe(`handler`, () => {
       fetchMock.mockResolvedValueOnce({
         ...mockFetchRes,
         status: 500,
-        text: jest.fn().mockResolvedValue("hmrc down!"),
+        text: vi.fn().mockResolvedValue("hmrc down!"),
       });
       getTokenFromOtgMock.mockImplementationOnce(() => {
         throw new Error(`otg bad times!`);

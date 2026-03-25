@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, test, vi } from "vitest";
 import { KMSClient } from "@aws-sdk/client-kms";
 import sigFormatter from "ecdsa-sig-formatter";
 import { SignerPayLoad } from "../../src/kms-signer/types/signer-payload";
@@ -12,12 +13,12 @@ import {
 } from "./test-data";
 import { signJwt } from "../../src/kms-signer/kms-signer";
 
-const kmsClient = jest.mocked(KMSClient).prototype;
+const kmsClient = vi.mocked(KMSClient).prototype;
 
-jest.spyOn(kmsClient, "send");
-jest.mock("jose", () => ({
+const kmsSendSpy = vi.spyOn(kmsClient, "send");
+vi.mock("jose", () => ({
   base64url: {
-    encode: jest.fn().mockImplementation((args) => args),
+    encode: vi.fn().mockImplementation((args) => args),
   },
 }));
 
@@ -31,7 +32,7 @@ describe("KmsSigner", () => {
 
     describe("KID header", () => {
       beforeEach(() => {
-        kmsClient.send.mockImplementationOnce(() =>
+        kmsSendSpy.mockImplementationOnce(() =>
           Promise.resolve({
             Signature: sigFormatter.joseToDer(joseSignature, "ES256"),
           })
@@ -61,7 +62,7 @@ describe("KmsSigner", () => {
 
     describe("With RAW signing mode", () => {
       it("Should verify a signed JWT message smaller than 4096", async () => {
-        kmsClient.send.mockImplementationOnce(() =>
+        kmsSendSpy.mockImplementationOnce(() =>
           Promise.resolve({
             Signature: sigFormatter.joseToDer(joseSignature, "ES256"),
           })
@@ -87,7 +88,7 @@ describe("KmsSigner", () => {
           header: JSON.stringify(header),
           claimsSet: JSON.stringify(largeClaimsSet),
         };
-        kmsClient.send.mockImplementationOnce(() =>
+        kmsSendSpy.mockImplementationOnce(() =>
           Promise.resolve({
             Signature: sigFormatter.joseToDer(joseLargeClaimsSetSignature, "ES256"),
           })
@@ -117,7 +118,7 @@ describe("KmsSigner", () => {
         claimsSet: JSON.stringify(claimsSet),
       };
 
-      kmsClient.send.mockImplementationOnce(() =>
+      kmsSendSpy.mockImplementationOnce(() =>
         Promise.resolve({
           Signature: undefined,
         })
@@ -153,7 +154,7 @@ describe("KmsSigner", () => {
         claimsSet: JSON.stringify(claimsSet),
       };
 
-      kmsClient.send.mockImplementationOnce(() => Promise.reject(error));
+      kmsSendSpy.mockImplementationOnce(() => Promise.reject(error));
 
       await expect(signJwt(kmsClient, payload as SignerPayLoad)).rejects.toThrow(expectedMessage);
     });

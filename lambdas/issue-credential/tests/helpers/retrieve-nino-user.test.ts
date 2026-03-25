@@ -1,5 +1,6 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("@govuk-one-login/cri-logger", () => ({
+vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 import { RecordNotFoundError } from "../../../common/src/database/exceptions/errors";
@@ -8,16 +9,16 @@ import { logger } from "@govuk-one-login/cri-logger";
 import { mockDynamoClient } from "../../../common/tests/mocks/mockDynamoClient";
 import { mockNinoUser, mockSessionId } from "../../../common/tests/mocks/mockData";
 import { retrieveNinoUser } from "../../src/helpers/retrieve-nino-user";
-jest.mock("@govuk-one-login/cri-metrics");
+vi.mock("@govuk-one-login/cri-metrics");
 
-const getRecordBySessionId = jest.spyOn(getRecordModule, "getRecordBySessionId");
+const getRecordBySessionId = vi.spyOn(getRecordModule, "getRecordBySessionId");
 getRecordBySessionId.mockResolvedValue(mockNinoUser);
 
 const ninoUserTableName = "nino-user-squad";
 
 describe("retrieveNinoUser()", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns as expected for some valid input", async () => {

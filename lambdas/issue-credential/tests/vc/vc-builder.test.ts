@@ -1,5 +1,6 @@
+import { describe, expect, it, test, vi } from "vitest";
 import { mockLogger } from "../../../common/tests/logger";
-jest.mock("@govuk-one-login/cri-logger", () => ({
+vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 import { buildVerifiableCredential } from "../../src/vc/vc-builder";

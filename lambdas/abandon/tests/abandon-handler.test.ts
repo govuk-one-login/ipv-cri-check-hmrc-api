@@ -1,19 +1,23 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+vi.hoisted(() => {
+  process.env.SESSION_TABLE = "session-table";
+  process.env.ISSUER = "issuer";
+  process.env.AUDIT_QUEUE_URL = "cool-queuez.com";
+  process.env.AUDIT_COMPONENT_ID = "https://check-hmrc-time.account.gov.uk";
+});
 import { mockLogger } from "../../common/tests/logger";
-jest.mock("@govuk-one-login/cri-logger", () => ({
+vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
+vi.mock("../../open-telemetry/src/otel-setup");
 import { DynamoDBClient, QueryCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
-import "aws-sdk-client-mock-jest";
+import { allCustomMatcherWithAliases } from "aws-sdk-client-mock-vitest";
+expect.extend(allCustomMatcherWithAliases);
 import { APIGatewayProxyEvent, APIGatewayProxyEventHeaders, Context } from "aws-lambda";
-
-process.env.SESSION_TABLE = "session-table";
-process.env.ISSUER = "issuer";
-process.env.AUDIT_QUEUE_URL = "cool-queuez.com";
-process.env.AUDIT_COMPONENT_ID = "https://check-hmrc-time.account.gov.uk";
 import { AbandonHandler } from "../src/abandon-handler";
 
-jest.mock("@govuk-one-login/cri-audit");
+vi.mock("@govuk-one-login/cri-audit");
 import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
 
 const auditConfig = {
@@ -29,7 +33,7 @@ describe("abandon-handler", () => {
 
   beforeEach(() => {
     ddbMock.reset();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should successfully return 200", async () => {
@@ -284,7 +288,7 @@ describe("abandon-handler", () => {
       Count: 1,
     });
     ddbMock.on(UpdateItemCommand).resolves({});
-    (buildAndSendAuditEvent as jest.Mock).mockRejectedValue(new Error("Audit failed"));
+    vi.mocked(buildAndSendAuditEvent).mockRejectedValue(new Error("Audit failed"));
 
     const event = {
       body: JSON.stringify({}),

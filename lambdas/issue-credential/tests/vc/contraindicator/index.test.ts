@@ -1,5 +1,6 @@
+import { describe, expect, it, vi } from "vitest";
 import { mockLogger } from "../../../../common/tests/logger";
-jest.mock("@govuk-one-login/cri-logger", () => ({
+vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 import { getHmrcContraIndicators } from "../../../src/vc/contraIndicator/index";

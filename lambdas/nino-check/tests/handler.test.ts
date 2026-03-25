@@ -1,18 +1,24 @@
-jest.mock("@govuk-one-login/cri-logger", () => ({
+import { beforeEach, describe, expect, it, vi } from "vitest";
+const mockDynamoClient = vi.hoisted(() => ({ send: vi.fn() }));
+
+vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
-jest.mock("../src/helpers/write-completed-check");
-jest.mock("../src/helpers/function-config");
-jest.mock("../src/helpers/nino");
-jest.mock("../../common/src/config/get-hmrc-config");
-jest.mock("../../common/src/database/get-attempts");
-jest.mock("../../common/src/database/get-record-by-session-id");
-jest.mock("../../common/src/hmrc-apis/pdv");
-jest.mock("../../common/src/hmrc-apis/otg");
-jest.mock("@govuk-one-login/cri-metrics");
-jest.mock("@govuk-one-login/cri-audit");
+vi.mock("../../open-telemetry/src/otel-setup");
+vi.mock("../src/helpers/write-completed-check");
+vi.mock("../src/helpers/function-config");
+vi.mock("../src/helpers/nino");
+vi.mock("../../common/src/config/get-hmrc-config");
+vi.mock("../../common/src/database/get-attempts");
+vi.mock("../../common/src/database/get-record-by-session-id");
+vi.mock("../../common/src/hmrc-apis/pdv");
+vi.mock("../../common/src/hmrc-apis/otg");
+vi.mock("@govuk-one-login/cri-metrics");
+vi.mock("@govuk-one-login/cri-audit");
+vi.mock("../../common/src/util/dynamo", () => ({
+  dynamoDBClient: mockDynamoClient,
+}));
 
-import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
 import { mockOtgToken, mockPdvRes } from "./mocks/mockData";
 import { mockNino, mockPersonIdentity, mockSession, mockSessionId } from "../../common/tests/mocks/mockData";
 import { APIGatewayProxyEvent, Context } from "aws-lambda";
@@ -33,6 +39,7 @@ import { getAttempts as attempts } from "../../common/src/database/get-attempts"
 import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
 import { AUDIT_EVENT_TYPE } from "../../common/src/types/audit";
+import type { AttemptItem } from "../../common/src/types/attempt";
 
 const mockContext: Context = {
   awsRequestId: "",
@@ -72,17 +79,17 @@ const handlerInput: Parameters<typeof handler> = [
   mockContext,
 ];
 
-(NinoCheckFunctionConfig as unknown as jest.Mock).mockReturnValue(mockFunctionConfig);
-(getSessionBySessionId as unknown as jest.Mock).mockResolvedValue(mockSession);
-(getHmrcConfig as unknown as jest.Mock).mockResolvedValue(mockHmrcConfig);
-(attempts as unknown as jest.Mock).mockResolvedValue({ count: 0, items: [] });
-(getRecordBySessionId as unknown as jest.Mock).mockResolvedValue(mockPersonIdentity);
-(getTokenFromOtg as unknown as jest.Mock).mockResolvedValue(mockOtgToken);
-(callPdvMatchingApi as unknown as jest.Mock).mockResolvedValue(mockPdvRes);
-(handleResponseAndSaveAttempt as unknown as jest.Mock).mockResolvedValue(true);
+vi.mocked(NinoCheckFunctionConfig).mockImplementation(function () { return mockFunctionConfig; });
+vi.mocked(getSessionBySessionId).mockResolvedValue(mockSession);
+vi.mocked(getHmrcConfig).mockResolvedValue(mockHmrcConfig);
+vi.mocked(attempts).mockResolvedValue({ count: 0, items: [] });
+vi.mocked(getRecordBySessionId).mockResolvedValue(mockPersonIdentity);
+vi.mocked(getTokenFromOtg).mockResolvedValue(mockOtgToken);
+vi.mocked(callPdvMatchingApi).mockResolvedValue(mockPdvRes);
+vi.mocked(handleResponseAndSaveAttempt).mockResolvedValue(true);
 
 describe("nino-check handler", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it("executes successfully with a valid input", async () => {
     const response = await handler(...handlerInput);
@@ -144,7 +151,7 @@ describe("nino-check handler", () => {
   });
 
   it("handles application errors correctly", async () => {
-    (getSessionBySessionId as unknown as jest.Mock).mockImplementationOnce(() => {
+    vi.mocked(getSessionBySessionId).mockImplementationOnce(() => {
       throw new Error("nooooooo!!!");
     });
 
@@ -158,7 +165,7 @@ describe("nino-check handler", () => {
   });
 
   it("handles a too-many-attempts scenario correctly", async () => {
-    (attempts as unknown as jest.Mock).mockResolvedValueOnce({ count: 2, items: [{}, {}] });
+    vi.mocked(attempts).mockResolvedValueOnce({ count: 2, items: [{}, {}] as unknown[] as AttemptItem[] });
 
     const response = await handler(...handlerInput);
 
@@ -176,7 +183,7 @@ describe("nino-check handler", () => {
   });
 
   it("handles a problem with the PDV function correctly", async () => {
-    (callPdvMatchingApi as unknown as jest.Mock).mockImplementationOnce(() => {
+    vi.mocked(callPdvMatchingApi).mockImplementationOnce(() => {
       throw new Error("broken!");
     });
 
@@ -189,7 +196,7 @@ describe("nino-check handler", () => {
   });
 
   it("behaves correctly if ninoMatch is false", async () => {
-    (handleResponseAndSaveAttempt as unknown as jest.Mock).mockReturnValueOnce(false);
+    vi.mocked(handleResponseAndSaveAttempt).mockResolvedValueOnce(false);
 
     const response = await handler(
       { ...handlerInput[0], headers: { ...handlerInput[0].headers, "txma-audit-encoded": undefined } },
@@ -206,8 +213,8 @@ describe("nino-check handler", () => {
   });
 
   it("should return 200 if nino match is false but it's the final attempt", async () => {
-    (attempts as unknown as jest.Mock).mockResolvedValueOnce({ count: 1, items: [{}] });
-    (handleResponseAndSaveAttempt as unknown as jest.Mock).mockReturnValueOnce(false);
+    vi.mocked(attempts).mockResolvedValueOnce({ count: 1, items: [{}] as unknown[] as AttemptItem[] });
+    vi.mocked(handleResponseAndSaveAttempt).mockResolvedValueOnce(false);
 
     const response = await handler(...handlerInput);
 
@@ -218,7 +225,7 @@ describe("nino-check handler", () => {
   });
 
   it("should return 500 if unexpected Error recieved from PDV request", async () => {
-    (handleResponseAndSaveAttempt as unknown as jest.Mock).mockImplementationOnce(() => {
+    vi.mocked(handleResponseAndSaveAttempt).mockImplementationOnce(() => {
       throw new CriError(500, "Error");
     });
 

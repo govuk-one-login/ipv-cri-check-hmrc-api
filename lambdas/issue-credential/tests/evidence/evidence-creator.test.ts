@@ -1,6 +1,8 @@
+import { describe, expect, it, test, vi } from "vitest";
 import { SessionItem } from "@govuk-one-login/cri-types";
 import { AttemptItem, AttemptsResult } from "../../../common/src/types/attempt";
 import { getEvidence, getAuditEvidence } from "../../src/evidence/evidence-creator";
+vi.mock("@govuk-one-login/cri-metrics");
 import * as MetricsUtils from "@govuk-one-login/cri-metrics";
 import { CHECK_DETAIL } from "../../../common/src/types/evidence";
 
@@ -122,7 +124,7 @@ describe("evidence-creator", () => {
     });
 
     it("creates audit evidence with failedCheckDetails and ciReasons when user has failed", () => {
-      const captureMetricSpy = jest.spyOn(MetricsUtils, "captureMetric");
+      const captureMetricSpy = vi.spyOn(MetricsUtils, "captureMetric");
       const contraIndicators = [
         {
           ci: "ci_3",
