@@ -1,6 +1,7 @@
 {
   "name": "common",
   "description": "",
+  "type": "module",
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

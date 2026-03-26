@@ -1,6 +1,7 @@
 {
   "name": "ipv-cri-check-hmrc-api",
   "description": "",
+  "type": "module",
   "workspaces": [
     "integration-tests",
     "lambdas/*"

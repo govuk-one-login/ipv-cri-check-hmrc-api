@@ -668,9 +668,17 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        EntryPoints:
+          - lambdas/abandon/src/abandon-handler.ts
+        Format: esm
+        Target: es2022
         Sourcemap: true
+        OutExtension:
+          - .js=.mjs
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
     Properties:
-      Handler: lambdas/abandon/src/abandon-handler.lambdaHandler
+      Handler: abandon-handler.lambdaHandler
       DeploymentPreference:
         Enabled: true
         Type: !Ref LambdaDeploymentPreference
@@ -1081,7 +1089,15 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        EntryPoints:
+          - lambdas/nino-check/src/handler.ts
+        Format: esm
+        Target: es2022
         Sourcemap: true
+        OutExtension:
+          - .js=.mjs
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
     Properties:
       DeploymentPreference:
         Type: !Ref LambdaDeploymentPreference
@@ -1090,7 +1106,7 @@ Resources:
           - [!Ref NinoCheckFunctionCanaryErrors, !Ref NinoCheckFunction5xxCanaryErrors]
           - [!Ref AWS::NoValue]
         Role: !GetAtt CodeDeployServiceRole.Arn
-      Handler: lambdas/nino-check/src/handler.handler
+      Handler: handler.handler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/NinoCheckFunction
       CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
@@ -1166,7 +1182,15 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        EntryPoints:
+          - lambdas/issue-credential/src/handler.ts
+        Format: esm
+        Target: es2022
         Sourcemap: true
+        OutExtension:
+          - .js=.mjs
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
     Properties:
       DeploymentPreference:
         Type: !Ref LambdaDeploymentPreference
@@ -1175,7 +1199,7 @@ Resources:
           - [!Ref IssueCredentialFunctionCanaryErrors, !Ref IssueCredentialFunction5xxCanaryErrors]
           - [!Ref AWS::NoValue]
         Role: !GetAtt CodeDeployServiceRole.Arn
-      Handler: lambdas/issue-credential/src/handler.handler
+      Handler: handler.handler
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/IssueCredentialFunction
       CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
@@ -1253,9 +1277,17 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        EntryPoints:
+          - lambdas/healthcheck/src/handler.ts
+        Format: esm
+        Target: es2022
         Sourcemap: true
+        OutExtension:
+          - .js=.mjs
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
     Properties:
-      Handler: lambdas/healthcheck/src/handler.handler
+      Handler: handler.handler
       CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       LoggingConfig:
         LogGroup: !Sub /aws/lambda/${AWS::StackName}/HealthcheckFunction

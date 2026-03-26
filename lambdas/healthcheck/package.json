@@ -1,6 +1,7 @@
 {
   "name": "healthcheck-handler",
   "description": "",
+  "type": "module",
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
