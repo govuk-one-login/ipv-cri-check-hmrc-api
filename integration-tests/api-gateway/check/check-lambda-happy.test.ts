@@ -1,3 +1,4 @@
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { ninoCheckEndpoint, createSession, getJarAuthorization } from "../endpoints";
 import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamodb-helper";
 import { AUDIENCE, NINO } from "../env-variables";
@@ -13,7 +14,7 @@ import { testUser } from "../user";
 import { AuditEvent } from "@govuk-one-login/cri-audit";
 import { pollTestHarnessForEvents } from "@govuk-one-login/cri-test-resources-helpers";
 
-jest.setTimeout(60_000); // 1 min
+vi.setConfig({ testTimeout: 60000 });
 
 describe("Given the session and NINO is valid", () => {
   let sessionId: string;

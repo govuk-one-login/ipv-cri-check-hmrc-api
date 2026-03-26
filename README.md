@@ -22,9 +22,6 @@ Then run the command:
 `AWS_PROFILE=YourProfileName npm run test:api --workspace integration-tests`
 
 This will run all tests in the `api-gateway` directory.
-or to run e2e api tests, use the following command
-
-`AWS_PROFILE=YourProfileName npm run test:api:e2e --workspace integration-tests`
 
 Where `YourProfileName` is your aws sso profile, created against the Check Hmrc CRI AWS Account
 

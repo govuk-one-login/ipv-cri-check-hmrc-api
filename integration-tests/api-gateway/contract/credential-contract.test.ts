@@ -1,3 +1,4 @@
+import { beforeEach, beforeAll, afterAll, describe, expect, it } from "vitest";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { Verifier, VerifierOptions } from "@pact-foundation/pact";
 import { Constants } from "./utils/Constants";
@@ -47,6 +48,7 @@ describe("Pact Verification", () => {
       expect(errors.length).toBe(0);
     } catch (error) {
       logger.error("Pact verification failed :(", { error });
+      throw error;
     }
   }, 60000);
 });

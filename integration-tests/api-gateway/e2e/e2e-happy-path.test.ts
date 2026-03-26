@@ -1,3 +1,4 @@
+import { beforeEach, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { getSSMParameter } from "../../resources/ssm-param-helper";
 import { NINO, claimSet, environment, CLIENT_ID, REDIRECT_URL, AUDIENCE } from "../env-variables";
 import { decodeJwt, JWK } from "jose";
@@ -23,7 +24,7 @@ let authCode: { value: string };
 let privateApi: string;
 let publicApi: string;
 
-jest.setTimeout(180_000); // 3 mins
+vi.setConfig({ testTimeout: 180000 });
 
 describe("End to end happy path journey", () => {
   let state: string;
