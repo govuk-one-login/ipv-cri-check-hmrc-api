@@ -1,8 +1,9 @@
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { ninoCheckEndpoint, createSession, getJarAuthorization } from "../endpoints";
 import { clearAttemptsTable, clearItemsFromTables, queryItemsBySessionId } from "../../resources/dynamodb-helper";
 import { NINO } from "../env-variables";
 
-jest.setTimeout(30_000);
+vi.setConfig({ testTimeout: 30000 });
 
 describe("check-lambda retry logic", () => {
   const errorNino = "ER123456A";

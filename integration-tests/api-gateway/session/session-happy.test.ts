@@ -1,7 +1,9 @@
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { createSession, getJarAuthorization } from "../endpoints";
 import { clearItemsFromTables } from "../../resources/dynamodb-helper";
 
-jest.setTimeout(30_000);
+vi.setConfig({ testTimeout: 30000 });
+
 describe("Given the session is valid", () => {
   let sessionId: string;
   let sessionTableName: string;

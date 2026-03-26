@@ -1,3 +1,4 @@
+import { expect } from "vitest";
 import type { UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 import { Evidence } from "../../lambdas/common/src/types/evidence";
 import { AuditEvent, AuditRestricted } from "@govuk-one-login/cri-audit";

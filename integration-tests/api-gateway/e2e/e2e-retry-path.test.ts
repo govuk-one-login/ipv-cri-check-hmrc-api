@@ -1,3 +1,4 @@
+import { beforeEach, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { getSSMParameter } from "../../resources/ssm-param-helper";
 import { NINO, claimSet, environment, CLIENT_ID, REDIRECT_URL, AUDIENCE } from "../env-variables";
 import { decodeJwt, JWK } from "jose";
@@ -11,7 +12,7 @@ let authCode: { value: string };
 let privateApi: string;
 let publicApi: string;
 
-jest.setTimeout(35_000);
+vi.setConfig({ testTimeout: 35000 });
 
 const retryClaimSet = JSON.parse(JSON.stringify(claimSet));
 retryClaimSet.shared_claims.name[0].nameParts[0].value = "Error";

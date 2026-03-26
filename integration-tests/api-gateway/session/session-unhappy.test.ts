@@ -1,5 +1,6 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createSession } from "../endpoints";
-jest.setTimeout(35_000);
+vi.setConfig({ testTimeout: 35000 });
 describe("Given the session is invalid", () => {
   let anInValidSession: Response;
 

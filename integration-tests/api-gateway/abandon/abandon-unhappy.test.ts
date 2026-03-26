@@ -1,3 +1,4 @@
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import {
   clearAttemptsTable,
   clearItemsFromTables,
@@ -11,7 +12,7 @@ import {
 } from "../endpoints";
 import { CLIENT_ID, NINO, REDIRECT_URL } from "../env-variables";
 
-jest.setTimeout(30_000);
+vi.setConfig({ testTimeout: 30000 });
 
 describe("Given the session is invalid and expecting to abandon the journey", () => {
   let sessionId: string;

@@ -1,8 +1,9 @@
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { environment } from "../env-variables";
 
 let endpointURL: string;
 
-jest.setTimeout(30_000);
+vi.setConfig({ testTimeout: 30000 });
 
 describe("/.well-known/jwks.json", () => {
   beforeAll(async () => {
