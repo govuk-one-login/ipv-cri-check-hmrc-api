@@ -1,6 +1,7 @@
 {
   "name": "open-telemetry",
   "description": "",
+  "type": "module",
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
