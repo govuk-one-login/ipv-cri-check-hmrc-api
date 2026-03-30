@@ -24,7 +24,7 @@
     "aws-sigv4-fetch": "4.4.1",
     "express": "4.22.1",
     "express-asyncify": "2.1.2",
-    "jose": "5.10.0",
+    "jose": "6.2.2",
     "npm-run-all2": "8.0.4",
     "tsx": "4.21.0",
     "uuid": "8.3.2",
