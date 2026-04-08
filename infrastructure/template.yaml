@@ -67,6 +67,9 @@ Conditions:
     - !Condition IsNotDevLikeEnvironment
     - !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]
   AddProvisionedConcurrency: !Not [!Equals [!FindInMap [ProvisionedConcurrency, Environment, !Ref Environment], 0]]
+  CreateOAuthSSMParam: !And
+    - !Not [!Condition IsLocalDevEnvironment]
+    - !Not [!Condition IsProdEnvironment]
 
 Mappings:
   StaticVariables:
@@ -1516,6 +1519,22 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
       PermissionsBoundary: !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
+
+##################################################################
+#                                                                  #
+#  SSM Parameters                                                  #
+#                                                                  #
+####################################################################
+
+  OAuthCommonStackNameParam:
+    Type: AWS::SSM::Parameter
+    Condition: CreateOAuthSSMParam
+    Properties:
+      Name: /common-cri/oauth-common/stack-name
+      Type: String
+      Value: !Ref CommonStackName
+      Description: The stack currently used for OAuth (common-lambdas or oauth-common). Only required for test-resources.
+
 
 ##################################################################
 #                                                                  #
