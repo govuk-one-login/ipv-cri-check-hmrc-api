@@ -198,7 +198,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:eu-west-2:667736788427:applications/di-ipv-cri-oauth-common
-        SemanticVersion: 0.0.0
+        SemanticVersion: 0.0.2
       Parameters:
         AuditEventNamePrefix: IPV_HMRC_RECORD_CHECK_CRI
         CriIdentifier: di-ipv-cri-check-hmrc-api
@@ -1574,7 +1574,7 @@ Resources:
     Properties:
       Name: /common-cri/oauth-common/stack-name
       Type: String
-      Value: !Ref CommonStackName
+      Value: !Select [1, !Split ["/", !Ref OAuth]]
       Description: The stack currently used for OAuth (common-lambdas or oauth-common). Only required for test-resources.
 
 
@@ -1601,7 +1601,7 @@ Outputs:
       Name: !Sub ${AWS::StackName}-PrivateApiGatewayId
   CommonStackName:
     Description: Common OAuth Lambdas Stack Name
-    Value: !Ref OAuth
+    Value: !Select [1, !Split ["/", !Ref OAuth]]
   UserAttemptsTable:
     Description: UserAttemptsTable table name
     Value: !Ref UserAttemptsTable
