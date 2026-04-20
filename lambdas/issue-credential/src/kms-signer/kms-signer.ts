@@ -1,4 +1,4 @@
-import { createHash } from "crypto";
+import { createHash } from "node:crypto";
 import sigFormatter from "ecdsa-sig-formatter";
 import { SignerPayLoad, SignerHeader } from "./types/signer-payload";
 import { SignageType } from "./types/signage-type";

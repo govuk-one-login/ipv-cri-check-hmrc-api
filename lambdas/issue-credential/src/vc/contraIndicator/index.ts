@@ -22,11 +22,11 @@ const getCIsForHmrcErrors = (ciMappings: CiMappings): Array<ContraIndicator> => 
   const contraIndicators = contraIndicationMapping?.flatMap((ci) => {
     const { mappedHmrcErrors, ciValue } = getHmrcErrsCiRecord(ci);
 
-    const normalizedMappedHmrcErrors = mappedHmrcErrors.split(",").map((value) => value.trim().toUpperCase());
+    const normalizedMappedHmrcErrors = new Set(mappedHmrcErrors.split(",").map((value) => value.trim().toUpperCase()));
 
     return hmrcErrors
-      .flatMap((hmrcError) => hmrcError)
-      .filter((hmrcError) => normalizedMappedHmrcErrors.includes(hmrcError.trim().toUpperCase()))
+      .flat()
+      .filter((hmrcError) => normalizedMappedHmrcErrors.has(hmrcError.trim().toUpperCase()))
       .map((hmrcError) => ({
         ci: ciValue.trim(),
         reason: hmrcError.trim(),

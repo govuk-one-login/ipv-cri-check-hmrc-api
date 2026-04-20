@@ -37,7 +37,7 @@ jobs:
         cache: npm
 
     - name: Install dependencies
-      run: npm ci --include-workspace-root
+      run: npm ci --include-workspace-root # nosonar - esbuild and @pact-foundation/pact postinstall scripts are required to fetch their native binaries
 
     - name: Assume AWS Role
       uses: aws-actions/configure-aws-credentials@v4

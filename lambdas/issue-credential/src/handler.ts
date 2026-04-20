@@ -11,7 +11,7 @@ import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/da
 import { dynamoDBClient } from "../../common/src/util/dynamo";
 import { NinoUser } from "../../common/src/types/nino-user";
 import { buildVerifiableCredential } from "./vc/vc-builder";
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { SessionItem, PersonIdentityItem } from "@govuk-one-login/cri-types";
 import { JwtClass } from "./types/verifiable-credential";
 import { toEpochSecondsFromNow } from "../../common/src/util/date-time";
