@@ -18,10 +18,6 @@ Parameters:
     Default: dev
     AllowedValues: [dev, localdev, build, staging, integration, production]
     ConstraintDescription: must be dev, localdev, build, staging, integration or production
-  CommonStackName:
-    Type: String
-    Default: common-cri-api
-    Description: The name of the stack containing the common CRI lambdas/infra
   TxmaStackName:
     Type: String
     Default: txma-infrastructure
@@ -127,22 +123,28 @@ Mappings:
 
   EnvironmentConfiguration:
     localdev:
-      DOMAINNAME: review-hc.localdev.account.gov.uk
+      VcDomain: review-hc.dev.account.gov.uk
+      ServiceDomain: review-hc.localdev.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
     dev:
-      DOMAINNAME: review-hc.dev.account.gov.uk
+      VcDomain: review-hc.dev.account.gov.uk
+      ServiceDomain: review-hc.dev.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
     build:
-      DOMAINNAME: review-hc.build.account.gov.uk
+      VcDomain: review-hc.build.account.gov.uk
+      ServiceDomain: review-hc.build.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
     staging:
-      DOMAINNAME: review-hc.staging.account.gov.uk
+      VcDomain: review-hc.staging.account.gov.uk
+      ServiceDomain: review-hc.staging.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
     integration:
-      DOMAINNAME: review-hc.integration.account.gov.uk
+      VcDomain: review-hc.integration.account.gov.uk
+      ServiceDomain: review-hc.integration.account.gov.uk
       HealthcheckSSMClientId: ipv-core
     production:
-      DOMAINNAME: review-hc.production.account.gov.uk
+      VcDomain: review-hc.production.account.gov.uk
+      ServiceDomain: review-hc.production.account.gov.uk
       HealthcheckSSMClientId: ipv-core
 
 Globals:
@@ -184,7 +186,6 @@ Globals:
           - SecretArn: !FindInMap [Dynatrace, SecretArn, !Ref Environment]
         AUDIT_QUEUE_URL:
           Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueUrl
-        AUDIT_COMPONENT_ID: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
     AutoPublishAlias: live
     ProvisionedConcurrencyConfig: !If
       - AddProvisionedConcurrency
@@ -192,6 +193,28 @@ Globals:
       - !Ref AWS::NoValue
 
 Resources:
+  OAuth:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location:
+        ApplicationId: arn:aws:serverlessrepo:eu-west-2:667736788427:applications/di-ipv-cri-oauth-common
+        SemanticVersion: 0.0.0
+      Parameters:
+        AuditEventNamePrefix: IPV_HMRC_RECORD_CHECK_CRI
+        CriIdentifier: di-ipv-cri-check-hmrc-api
+        CriAudience: !Sub
+          - "https://${domain}"
+          - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, VcDomain]
+        CriVcIssuer: !Sub
+          - "https://${domain}"
+          - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, VcDomain]
+        CriPrivateApiGwName: !Sub ${AWS::StackName}-private
+        CriPublicApiGwName: !Sub ${AWS::StackName}-public
+        Environment: dev
+        IPVCoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
+        IPVCoreStubJwksEndpoint: https://test-resources.review-hc.dev.account.gov.uk/.well-known/jwks.json
+        LambdaVpcConfiguration: di-devplatform-deploy
+
   JWKSBucketRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -452,7 +475,9 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Sub ${CommonStackName}-SessionFunctionTS
+                  Value: !Sub
+                    - ${OAuthStackName}-SessionFunctionTS
+                    - OAuthStackName: !Ref OAuth
             Period: 300
             Stat: Sum
 
@@ -498,7 +523,9 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Sub ${CommonStackName}-SessionFunctionTS
+                  Value: !Sub
+                    - ${OAuthStackName}-SessionFunctionTS
+                    - OAuthStackName: !Ref OAuth
             Period: 300
             Stat: Sum
 
@@ -542,7 +569,9 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Sub ${CommonStackName}-AccessTokenFunctionTS
+                  Value: !Sub
+                    - ${OAuthStackName}-SessionFunctionTS
+                    - OAuthStackName: !Ref OAuth
             Period: 300
             Stat: Sum
 
@@ -588,7 +617,9 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Sub ${CommonStackName}-AccessTokenFunctionTS
+                  Value: !Sub
+                    - ${OAuthStackName}-SessionFunctionTS
+                    - OAuthStackName: !Ref OAuth
             Period: 300
             Stat: Sum
 
@@ -696,16 +727,21 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-Abandon"
-          SESSION_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-          ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
+          SESSION_TABLE: !GetAtt OAuth.Outputs.DbSessionTableName
+          ISSUER: !Sub
+            - "https://${domain}"
+            - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ServiceDomain]
           LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
+          AUDIT_COMPONENT_ID: !Sub
+            - "https://${domain}"
+            - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ServiceDomain]
       Policies:
         - DynamoDBReadPolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
         - DynamoDBWritePolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
         - KMSDecryptPolicy:
-            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
         - SQSSendMessagePolicy:
             QueueName:
               Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
@@ -1119,13 +1155,13 @@ Resources:
         - SSMParameterReadPolicy:
             ParameterName: check-hmrc-cri-api/NinoCheckUrl/*
         - DynamoDBReadPolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
         - DynamoDBWritePolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
         - DynamoDBReadPolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+            TableName: !GetAtt OAuth.Outputs.DbPersonIdentityTableName
         - DynamoDBWritePolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+            TableName: !GetAtt OAuth.Outputs.DbPersonIdentityTableName
         - DynamoDBReadPolicy:
             TableName: !Ref UserAttemptsTable
         - DynamoDBWritePolicy:
@@ -1137,7 +1173,7 @@ Resources:
         - KMSDecryptPolicy:
             KeyId: !Ref DynamoTablesEncryptionKey
         - KMSDecryptPolicy:
-            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
         - SQSSendMessagePolicy:
             QueueName:
               Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
@@ -1153,11 +1189,14 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-NinoCheckFunction"
-          SESSION_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-          PERSON_IDENTITY_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+          SESSION_TABLE: !GetAtt OAuth.Outputs.DbSessionTableName
+          PERSON_IDENTITY_TABLE: !GetAtt OAuth.Outputs.DbPersonIdentityTableName
           ATTEMPT_TABLE: !Ref UserAttemptsTable
           NINO_USER_TABLE: !Ref NinoUsersTable
           LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
+          AUDIT_COMPONENT_ID: !Sub
+            - "https://${domain}"
+            - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ServiceDomain]
 
   NinoCheckFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1208,9 +1247,9 @@ Resources:
       CodeSigningConfigArn: !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       Policies:
         - DynamoDBReadPolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
         - DynamoDBReadPolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+            TableName: !GetAtt OAuth.Outputs.DbPersonIdentityTableName
         - DynamoDBReadPolicy:
             TableName: !Ref UserAttemptsTable
         - DynamoDBReadPolicy:
@@ -1218,13 +1257,11 @@ Resources:
         - KMSDecryptPolicy:
             KeyId: !Ref DynamoTablesEncryptionKey
         - KMSDecryptPolicy:
-            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
         - SSMParameterReadPolicy:
             ParameterName: check-hmrc-cri-api/contraindicationMappings
         - SSMParameterReadPolicy:
             ParameterName: check-hmrc-cri-api/contraIndicatorReasonsMapping
-        - SSMParameterReadPolicy:
-            ParameterName: !Sub ${CommonStackName}/verifiableCredentialKmsSigningKeyId
         - Statement:
             Effect: Allow
             Action: kms:Sign
@@ -1243,16 +1280,21 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-IssueCredentialFunction"
-          SESSION_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-          PERSON_IDENTITY_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+          SESSION_TABLE: !GetAtt OAuth.Outputs.DbSessionTableName
+          PERSON_IDENTITY_TABLE: !GetAtt OAuth.Outputs.DbPersonIdentityTableName
           ATTEMPT_TABLE: !Ref UserAttemptsTable
           NINO_USER_TABLE: !Ref NinoUsersTable
-          ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
+          ISSUER: !Sub
+            - "https://${domain}"
+            - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ServiceDomain]
           MAX_JWT_TTL: !FindInMap [MaxJwtTtl, Environment, !Ref Environment]
           JWT_TTL_UNIT: !FindInMap [JwtTtlUnit, Environment, !Ref Environment]
           LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
-          COMMON_STACK_NAME: !Sub ${CommonStackName}
-          DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+          VC_SIGNING_KEY_ID: !GetAtt OAuth.Outputs.VCSigningKeyID
+          DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, ServiceDomain]
+          AUDIT_COMPONENT_ID: !Sub
+            - "https://${domain}"
+            - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ServiceDomain]
 
   IssueCredentialFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1558,8 +1600,8 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-PrivateApiGatewayId
   CommonStackName:
-    Description: Common Stack Name
-    Value: !Ref CommonStackName
+    Description: Common OAuth Lambdas Stack Name
+    Value: !Ref OAuth
   UserAttemptsTable:
     Description: UserAttemptsTable table name
     Value: !Ref UserAttemptsTable
