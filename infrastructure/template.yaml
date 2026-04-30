@@ -192,6 +192,19 @@ Globals:
       - !Ref AWS::NoValue
 
 Resources:
+  ComLams:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location:
+        ApplicationId: arn:aws:serverlessrepo:eu-west-2:486210938254:applications/bc-test-commonlambdas-2025-12
+        SemanticVersion: 0.0.6
+      Parameters:
+        Environment: dev
+      Tags:
+        cri:component: ipv-cri-common-lambdas
+        cri:deployment-source: manual
+        cri:stack-type: dev
+
   JWKSBucketRole:
     Type: "AWS::IAM::Role"
     Properties:

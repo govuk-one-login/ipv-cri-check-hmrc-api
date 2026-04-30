@@ -1,0 +1,23 @@
+{
+  "extends": ["config:recommended"],
+  "ignorePaths": [".github/workflows/**"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/template\\.ya?ml$/"],
+      "matchStrings": [
+        "SemanticVersion:\\s*(?<currentValue>[0-9.]+)"
+      ],
+      "autoReplaceStringTemplate": "SemanticVersion: {{newValue}}",
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "govuk-one-login/ipv-cri-oauth-common",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchDepNames": ["govuk-one-login/ipv-cri-oauth-common"],
+      "versioning": "semver"
+    }
+  ]
+}
