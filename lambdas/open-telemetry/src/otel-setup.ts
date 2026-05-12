@@ -6,12 +6,12 @@ import { FsInstrumentation } from "@opentelemetry/instrumentation-fs";
 import { DnsInstrumentation } from "@opentelemetry/instrumentation-dns";
 import { NetInstrumentation } from "@opentelemetry/instrumentation-net";
 import { UndiciInstrumentation } from "@opentelemetry/instrumentation-undici";
-import { awsLambdaDetectorSync } from "@opentelemetry/resource-detector-aws";
+import { awsLambdaDetector } from "@opentelemetry/resource-detector-aws";
 import {
-  envDetectorSync,
-  osDetectorSync,
-  processDetectorSync,
-  serviceInstanceIdDetectorSync,
+  envDetector,
+  osDetector,
+  processDetector,
+  serviceInstanceIdDetector,
 } from "@opentelemetry/resources";
 
 export function initOpenTelemetry() {
@@ -26,11 +26,11 @@ export function initOpenTelemetry() {
       new AwsInstrumentation(),
     ],
     resourceDetectors: [
-      envDetectorSync,
-      osDetectorSync,
-      processDetectorSync,
-      serviceInstanceIdDetectorSync,
-      awsLambdaDetectorSync,
+      envDetector,
+      osDetector,
+      processDetector,
+      serviceInstanceIdDetector,
+      awsLambdaDetector,
     ],
   }).start();
 }
