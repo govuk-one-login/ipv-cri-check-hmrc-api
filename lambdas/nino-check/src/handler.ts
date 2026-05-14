@@ -1,5 +1,4 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
-import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { writeCompletedCheck } from "./helpers/write-completed-check";
 import { NinoCheckFunctionConfig } from "./helpers/function-config";
 import { saveTxn, handleResponseAndSaveAttempt } from "./helpers/nino";
@@ -19,8 +18,6 @@ import { PersonIdentityItem } from "@govuk-one-login/cri-types";
 import { getAttempts } from "../../common/src/database/get-attempts";
 import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
 import { AUDIT_EVENT_TYPE } from "../../common/src/types/audit";
-
-initOpenTelemetry();
 
 const MAX_PAST_ATTEMPTS = 1;
 
@@ -92,18 +89,24 @@ class NinoCheckHandler implements LambdaInterface {
           }
         : undefined;
 
-      await buildAndSendAuditEvent(functionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.REQUEST_SENT, functionConfig.audit.componentId, session, {
-        restricted: {
-          birthDate: personIdentity.birthDates,
-          name: personIdentity.names,
-          socialSecurityRecord: [
-            {
-              personalNumber: nino,
-            },
-          ],
-          ...auditDeviceInformation,
-        },
-      });
+      await buildAndSendAuditEvent(
+        functionConfig.audit.queueUrl,
+        AUDIT_EVENT_TYPE.REQUEST_SENT,
+        functionConfig.audit.componentId,
+        session,
+        {
+          restricted: {
+            birthDate: personIdentity.birthDates,
+            name: personIdentity.names,
+            socialSecurityRecord: [
+              {
+                personalNumber: nino,
+              },
+            ],
+            ...auditDeviceInformation,
+          },
+        }
+      );
 
       logger.info(`REQUEST_SENT event fired.`);
 
@@ -126,10 +129,16 @@ class NinoCheckHandler implements LambdaInterface {
 
       logger.info(`Saved txn.`);
 
-      await buildAndSendAuditEvent(functionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.RESPONSE_RECEIVED, functionConfig.audit.componentId, session, {
-        restricted: auditDeviceInformation,
-        extensions: { evidence: { txn: parsedPdvMatchResponse.txn } },
-      });
+      await buildAndSendAuditEvent(
+        functionConfig.audit.queueUrl,
+        AUDIT_EVENT_TYPE.RESPONSE_RECEIVED,
+        functionConfig.audit.componentId,
+        session,
+        {
+          restricted: auditDeviceInformation,
+          extensions: { evidence: { txn: parsedPdvMatchResponse.txn } },
+        }
+      );
 
       logger.info(`RESPONSE_RECEIVED event fired.`);
 

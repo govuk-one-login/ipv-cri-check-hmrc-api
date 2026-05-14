@@ -1,6 +1,5 @@
 import { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
-import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { AbandonHandlerConfig } from "./config/abandon-handler-config";
 import { removeAuthCodeFromSessionRecord } from "./services/abandon-dynamo-service";
 import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
@@ -8,8 +7,6 @@ import { logger } from "@govuk-one-login/cri-logger";
 import { getSessionBySessionId } from "../../common/src/database/get-record-by-session-id";
 import { AUDIT_EVENT_TYPE } from "../../common/src/types/audit";
 import { CriError, formatErrorResponse } from "@govuk-one-login/cri-error-response";
-
-initOpenTelemetry();
 
 export class AbandonHandler implements LambdaInterface {
   readonly config: AbandonHandlerConfig;
@@ -43,7 +40,13 @@ export class AbandonHandler implements LambdaInterface {
             restricted: { device_information: { encoded: txmaAuditHeader } },
           }
         : undefined;
-      await buildAndSendAuditEvent(this.config.audit.queueUrl, AUDIT_EVENT_TYPE.ABANDONED, this.config.audit.componentId, sessionItem, txmaAuditValue);
+      await buildAndSendAuditEvent(
+        this.config.audit.queueUrl,
+        AUDIT_EVENT_TYPE.ABANDONED,
+        this.config.audit.componentId,
+        sessionItem,
+        txmaAuditValue
+      );
 
       return {
         statusCode: 200,
