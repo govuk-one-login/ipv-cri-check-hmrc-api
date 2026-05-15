@@ -1,5 +1,4 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
-import { initOpenTelemetry } from "../../open-telemetry/src/otel-setup";
 import { CriError, formatErrorResponse } from "@govuk-one-login/cri-error-response";
 import { logger } from "@govuk-one-login/cri-logger";
 import { retrieveSessionIdByAccessToken } from "./helpers/retrieve-session-by-access-token";
@@ -23,8 +22,6 @@ import { getAuditEvidence } from "./evidence/evidence-creator";
 import { IssueCredFunctionConfig } from "./config/function-config";
 import { VcCheckConfig, getVcConfig } from "./config/vc-config";
 import { jwtSigner } from "./kms-signer/kms-signer";
-
-initOpenTelemetry();
 
 const functionConfig = new IssueCredFunctionConfig();
 let vcConfig: VcCheckConfig;
@@ -64,23 +61,34 @@ class IssueCredentialHandler implements LambdaInterface {
       });
 
       const [vcEvidence] = vcClaimSet.vc.evidence || [];
-      await buildAndSendAuditEvent(functionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.VC_ISSUED, functionConfig.audit.componentId, session, {
-        restricted: {
-          birthDate: personIdentity.birthDates,
-          name: personIdentity.names,
-          socialSecurityRecord: [
-            {
-              personalNumber: ninoUser.nino,
-            },
-          ],
-        },
-        extensions: {
-          evidence: [getAuditEvidence(attempts, contraIndicators, vcEvidence)],
-        },
-      });
+      await buildAndSendAuditEvent(
+        functionConfig.audit.queueUrl,
+        AUDIT_EVENT_TYPE.VC_ISSUED,
+        functionConfig.audit.componentId,
+        session,
+        {
+          restricted: {
+            birthDate: personIdentity.birthDates,
+            name: personIdentity.names,
+            socialSecurityRecord: [
+              {
+                personalNumber: ninoUser.nino,
+              },
+            ],
+          },
+          extensions: {
+            evidence: [getAuditEvidence(attempts, contraIndicators, vcEvidence)],
+          },
+        }
+      );
 
       captureMetric("VCIssuedMetric");
-      await buildAndSendAuditEvent(functionConfig.audit.queueUrl, AUDIT_EVENT_TYPE.END, functionConfig.audit.componentId, session);
+      await buildAndSendAuditEvent(
+        functionConfig.audit.queueUrl,
+        AUDIT_EVENT_TYPE.END,
+        functionConfig.audit.componentId,
+        session
+      );
 
       return {
         statusCode: 200,
