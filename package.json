@@ -20,9 +20,7 @@
     "@aws-lambda-powertools/commons": "2.31.0",
     "@aws-lambda-powertools/parameters": "2.31.0",
     "@aws-lambda-powertools/tracer": "2.31.0",
-    "@aws-sdk/client-cloudwatch-logs": "3.1012.0",
     "@aws-sdk/client-dynamodb": "3.1012.0",
-    "@aws-sdk/client-sqs": "3.1012.0",
     "@aws-sdk/client-ssm": "3.1012.0",
     "@govuk-one-login/cri-audit": "1.0.2",
     "@govuk-one-login/cri-error-response": "1.0.0",
@@ -34,6 +32,7 @@
   "devDependencies": {
     "@aws-sdk/lib-dynamodb": "3.1012.0",
     "@aws-sdk/util-dynamodb": "3.996.2",
+    "@govuk-one-login/cri-types": "^1.0.1",
     "@types/aws-lambda": "^8.10.126",
     "@typescript-eslint/eslint-plugin": "^8.13.0",
     "@typescript-eslint/parser": "^8.13.0",
