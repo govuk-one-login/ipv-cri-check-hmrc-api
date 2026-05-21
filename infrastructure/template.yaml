@@ -50,6 +50,8 @@ Conditions:
   UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, ""]]
   IsDevEnvironment: !Equals [!Ref Environment, dev]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
+  IsNotLocalDevEnvironment: !Not
+   - !Condition IsLocalDevEnvironment
   IsIntEnvironment: !Equals [!Ref Environment, integration]
   IsProdEnvironment: !Equals [!Ref Environment, production]
   IsDevLikeEnvironment: !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
@@ -128,21 +130,33 @@ Mappings:
   EnvironmentConfiguration:
     localdev:
       DOMAINNAME: review-hc.localdev.account.gov.uk
+      VcDomain: review-hc.dev.account.gov.uk
+      ServiceDomain: review-hc.localdev.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
     dev:
       DOMAINNAME: review-hc.dev.account.gov.uk
+      VcDomain: review-hc.dev.account.gov.uk
+      ServiceDomain: review-hc.dev.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
     build:
       DOMAINNAME: review-hc.build.account.gov.uk
+      VcDomain: review-hc.build.account.gov.uk
+      ServiceDomain: review-hc.build.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
     staging:
       DOMAINNAME: review-hc.staging.account.gov.uk
+      VcDomain: review-hc.staging.account.gov.uk
+      ServiceDomain: review-hc.staging.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
     integration:
       DOMAINNAME: review-hc.integration.account.gov.uk
+      VcDomain: review-hc.integration.account.gov.uk
+      ServiceDomain: review-hc.integration.account.gov.uk
       HealthcheckSSMClientId: ipv-core
     production:
       DOMAINNAME: review-hc.production.account.gov.uk
+      VcDomain: review-hc.production.account.gov.uk
+      ServiceDomain: review-hc.production.account.gov.uk
       HealthcheckSSMClientId: ipv-core
 
 Globals:
@@ -192,6 +206,31 @@ Globals:
       - !Ref AWS::NoValue
 
 Resources:
+  OAuth:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location:
+        ApplicationId: arn:aws:serverlessrepo:eu-west-2:667736788427:applications/di-ipv-cri-oauth-common
+        SemanticVersion: 0.4.0
+      Parameters:
+        AuditEventNamePrefix: IPV_HMRC_RECORD_CHECK_CRI
+        CriIdentifier: di-ipv-cri-check-hmrc-api
+        CriAudience: !Sub
+          - "https://${domain}"
+          - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, VcDomain]
+        CriVcIssuer: !Sub
+          - "https://${domain}"
+          - domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, VcDomain]
+        CriPrivateApiGwName: !Sub ${AWS::StackName}-private
+        CriPublicApiGwName: !Sub ${AWS::StackName}-public
+        Environment: !If
+          - IsLocalDevEnvironment
+          - dev
+          - !Ref Environment
+        IPVCoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
+        IPVCoreStubJwksEndpoint: https://test-resources.review-hc.dev.account.gov.uk/.well-known/jwks.json
+        LambdaVpcConfiguration: di-devplatform-deploy
+
   JWKSBucketRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -1534,6 +1573,33 @@ Resources:
       Type: String
       Value: !Ref CommonStackName
       Description: The stack currently used for OAuth (common-lambdas or oauth-common). Only required for test-resources.
+
+  OAuthSessionTableName:
+    Type: AWS::SSM::Parameter
+    Condition: IsNotLocalDevEnvironment
+    Properties:
+      Name: !Sub "/common-cri/oauth-common/OAuthSessionTableName"
+      Value: !GetAtt OAuth.Outputs.DbSessionTableName
+      Type: String
+      Description: The OAuthSessionTableName for configuring the DynamoDB Stream table from common-lambdas
+
+  OAuthPersonIdentityTableName:
+    Type: AWS::SSM::Parameter
+    Condition: IsNotLocalDevEnvironment
+    Properties:
+      Name: !Sub "/common-cri/oauth-common/OAuthPersonIdentityTableName"
+      Value: !GetAtt OAuth.Outputs.DbPersonIdentityTableName
+      Type: String
+      Description: The OAuthPersonIdentityTableName for configuring the DynamoDB Stream table from common-lambdas
+
+  OAuthCustomerManagedKeyId:
+    Type: AWS::SSM::Parameter
+    Condition: IsNotLocalDevEnvironment
+    Properties:
+      Name: !Sub "/common-cri/oauth-common/OAuthCustomerManagedKeyId"
+      Value: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
+      Type: String
+      Description: The OAuthCustomerManagedKeyId for configuring the DynamoDB Stream table from common-lambdas
 
 
 ##################################################################
