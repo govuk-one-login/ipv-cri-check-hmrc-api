@@ -26,7 +26,10 @@ export const buildVerifiableCredential = (
       socialSecurityRecord: [{ personalNumber: ninoUser.nino }],
     }),
     birthDate: personIdentity.birthDates,
-    name: personIdentity.names,
+    name: personIdentity.names?.map(n => ({
+        ...n,
+        nameParts: n.nameParts.map(({type, value}) => ({type, value})),
+    })),
   };
 
   const verifiableCredential = {
