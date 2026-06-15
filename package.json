@@ -26,7 +26,7 @@
     "@govuk-one-login/cri-error-response": "1.0.0",
     "@govuk-one-login/cri-logger": "1.0.0",
     "@govuk-one-login/cri-metrics": "1.0.1",
-    "esbuild": "0.28.0",
+    "esbuild": "0.28.1",
     "jose": "6.2.2"
   },
   "devDependencies": {
