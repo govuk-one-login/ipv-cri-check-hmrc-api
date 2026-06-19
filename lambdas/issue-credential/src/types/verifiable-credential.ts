@@ -15,7 +15,7 @@ export type VerifiableCredential = {
   evidence?: Evidence[];
 };
 
-export type JwtClass = { iss: string; jti: string; nbf: number; exp: number; sub: string };
+export type JwtClass = { iss: string; jti: string; nbf: number; sub: string };
 export type VerifiableIdentityCredential = JwtClass & {
   vc: VerifiableCredential;
 };

@@ -52,6 +52,5 @@ export const claimSet = {
   },
   redirect_uri: CLIENT_URL,
   state: "diWgdrCGYnjrZK7cMPEKwJXvpGn6rvhCBteCl_I2ejg",
-  exp: Date.now() + 100000000000,
   iat: 1697516406,
 };

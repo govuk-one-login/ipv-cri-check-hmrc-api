@@ -36,7 +36,6 @@ export const buildVerifiableCredential = (
     sub: jwtClaims.sub,
     nbf: jwtClaims.nbf,
     iss: jwtClaims.iss,
-    exp: jwtClaims.exp,
     vc: {
       evidence: [getEvidence(session, attempts, CHECK_DETAIL, contraIndicators)],
       credentialSubject,
