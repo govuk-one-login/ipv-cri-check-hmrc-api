@@ -141,10 +141,6 @@ class IssueCredentialHandler implements LambdaInterface {
       sub: subject,
       nbf: toEpochSecondsFromNow(),
       iss: functionConfig.credentialIssuerEnv.issuer,
-      exp: toEpochSecondsFromNow(
-        functionConfig.credentialIssuerEnv.maxJwtTtl,
-        functionConfig.credentialIssuerEnv.jwtTtlUnit
-      ),
       jti: `urn:uuid:${randomUUID().toString()}`,
     };
   }

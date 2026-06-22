@@ -4,7 +4,6 @@ export type JWTClaimsSet = {
   sub: string;
   aud: string;
   iat: number;
-  exp: number;
   nbf: number;
   jti: string;
   response_type: string;

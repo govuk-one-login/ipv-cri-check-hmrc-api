@@ -62,7 +62,6 @@ export const claimsSet = {
   scope: "openid",
   redirect_uri: "https://cri.core.build.stubs.account.gov.uk/callback",
   state: "diWgdrCGYnjrZK7cMPEKwJXvpGn6rvhCBteCl_I2ejg",
-  exp: 4102444800,
   iat: 1697516406,
 };
 
@@ -119,7 +118,6 @@ export const largeClaimsSet = {
   scope: "openid",
   redirect_uri: "https://cri.core.build.stubs.account.gov.uk/callback",
   state: "diWgdrCGYnjrZK7cMPEKwJXvpGn6rvhCBteCl_I2ejg",
-  exp: 4102444800,
   iat: 1697516406,
 };
 

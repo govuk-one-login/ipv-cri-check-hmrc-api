@@ -50,7 +50,6 @@ describe("vc-builder", () => {
     iss: "https://review-hc.dev.account.gov.uk",
     jti: "urn:uuid:f540b78c-9e52-4a0f-b033-c78e7ab327ea",
     nbf: 1710396563,
-    exp: 1710403763,
     sub: "test",
     vc: {} as VerifiableCredential,
   };
@@ -77,7 +76,6 @@ describe("vc-builder", () => {
       );
 
       expect(result).toEqual({
-        exp: 1710403763,
         iss: "https://review-hc.dev.account.gov.uk",
         jti: "urn:uuid:f540b78c-9e52-4a0f-b033-c78e7ab327ea",
         nbf: 1710396563,
@@ -129,7 +127,6 @@ describe("vc-builder", () => {
       );
 
       expect(result).toEqual({
-        exp: 1710403763,
         iss: "https://review-hc.dev.account.gov.uk",
         jti: "urn:uuid:f540b78c-9e52-4a0f-b033-c78e7ab327ea",
         nbf: 1710396563,
@@ -183,7 +180,6 @@ describe("vc-builder", () => {
       );
 
       expect(result).toEqual({
-        exp: 1710403763,
         iss: "https://review-hc.dev.account.gov.uk",
         jti: "urn:uuid:f540b78c-9e52-4a0f-b033-c78e7ab327ea",
         nbf: 1710396563,
@@ -239,7 +235,6 @@ describe("vc-builder", () => {
     expect(result.iss).toBe(mockJwtClaims.iss);
     expect(result.jti).toBe(mockJwtClaims.jti);
     expect(result.nbf).toBe(mockJwtClaims.nbf);
-    expect(result.exp).toBe(mockJwtClaims.exp);
     expect(result.sub).toBe(mockJwtClaims.sub);
   });
 });

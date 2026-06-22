@@ -13,7 +13,6 @@ export const formatJwtForPactTest = (body: string) => {
 const replaceDynamicVcFieldsIfPresent = (parseVc: JWTClaimsSet) => {
   parseVc.nbf = parseVc.nbf == null ? parseVc.nbf : 4070908800;
   parseVc.iss = parseVc.iss == null ? parseVc.iss : "dummyNinoComponentId";
-  parseVc.exp = parseVc.exp == null ? parseVc.exp : 4070909400;
   parseVc.jti = parseVc.jti == null ? parseVc.jti : "dummyJti";
   return parseVc;
 };
