@@ -1,4 +1,4 @@
-import { stackOutputs } from "./resources/cloudformation-helper";
+import { stackOutputs } from "@govuk-one-login/cri-cloudformation-helpers";
 let outputs: Partial<{
   CommonStackName: string;
   StackName: string;

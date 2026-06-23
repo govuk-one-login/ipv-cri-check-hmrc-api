@@ -1,7 +1,7 @@
 import express from "express";
 import asyncify from "express-asyncify";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { stackOutputs } from "../../../resources/cloudformation-helper";
+import { stackOutputs } from "@govuk-one-login/cri-cloudformation-helpers";
 import { environment } from "../../env-variables";
 import { formatJwtForPactTest } from "../utils/PactJwtFormatter";
 import { IncomingHttpHeaders } from "http";

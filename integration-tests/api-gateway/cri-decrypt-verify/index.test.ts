@@ -1,6 +1,6 @@
 import { beforeAll, afterEach, afterAll, describe, expect, it, vi } from "vitest";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { stackOutputs } from "../../resources/cloudformation-helper";
+import { stackOutputs } from "@govuk-one-login/cri-cloudformation-helpers";
 import { JweDecrypter } from "../crypto/jwe-decrypter";
 import { JwtVerifierFactory, ClaimNames } from "../crypto/jwt-verifier";
 import { AUDIENCE, CLIENT_ID, CLIENT_URL, CORE_INFRASTRUCTURE } from "../env-variables";
