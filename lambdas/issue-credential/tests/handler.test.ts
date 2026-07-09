@@ -23,7 +23,7 @@ const { mockIssueCredConfig } = vi.hoisted(() => ({
       issuer: "bob",
       maxJwtTtl: 1000,
       jwtTtlUnit: "Hours",
-      commonStackName: "big-stack",
+      vcSigningKeyId: "big-stack",
     },
     tableNames: {
       sessionTable: "session-table",
