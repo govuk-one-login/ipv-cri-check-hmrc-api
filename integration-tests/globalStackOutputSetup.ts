@@ -16,6 +16,7 @@ export default async function globalSetup() {
     outputs = await stackOutputs(stackName);
     if (!outputs?.CommonStackName) throw new Error("Missing CommonStackName in stack outputs.");
 
+    const oauthOutputs = await stackOutputs(outputs.CommonStackName);
     process.env.AWS_REGION = "eu-west-2";
     process.env.COMMON_STACK_NAME = outputs.CommonStackName;
     process.env.STACK_NAME = outputs.StackName;
@@ -24,8 +25,8 @@ export default async function globalSetup() {
     process.env.NINO_USERS_TABLE = outputs.NinoUsersTable || "check-hmrc-cri-api-nino-users";
     process.env.USERS_ATTEMPTS_TABLE = outputs.UserAttemptsTable || "check-hmrc-cri-api-user-attempts";
     process.env.PERSON_IDENTITY_TABLE =
-      `person-identity-${outputs.CommonStackName}` || "person-identity-common-cri-api";
-    process.env.SESSION_TABLE = `session-${outputs.CommonStackName}` || "session-common-cri-api";
+      oauthOutputs.DbPersonIdentityTableName || "person-identity-common-cri-api";
+    process.env.SESSION_TABLE = oauthOutputs.DbSessionTableName || "session-common-cri-api";
 
     const testResourcesStackName = process.env.TEST_RESOURCES_STACK_NAME ?? "test-resources";
     process.env.TEST_RESOURCES_STACK_NAME = testResourcesStackName;
