@@ -724,6 +724,8 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AbandonFunction.Alias
       Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateNinoCheckApi}/*/*/*"
 
   AbandonFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1179,6 +1181,8 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref NinoCheckFunction.Alias
       Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateNinoCheckApi}/*/*/*"
 
   IssueCredentialFunction:
     Type: AWS::Serverless::Function
@@ -1274,6 +1278,8 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref IssueCredentialFunction.Alias
       Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PublicNinoCheckApi}/*/*/*"
 
   HealthcheckFunction:
     Type: AWS::Serverless::Function
@@ -1318,6 +1324,8 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref HealthcheckFunction.Alias
       Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PublicNinoCheckApi}/*/*/*"
 
   ##################################################################
   #                                                                  #
