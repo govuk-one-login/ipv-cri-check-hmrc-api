@@ -127,23 +127,41 @@ Mappings:
 
   EnvironmentConfiguration:
     localdev:
-      DOMAINNAME: review-hc.localdev.account.gov.uk
+      Domain: review-hc.localdev.account.gov.uk
+      BaseURL: https://review-hc.dev.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
+      CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
+      StubJwksEndpoint: https://test-resources.review-hc.dev.account.gov.uk/.well-known/jwks.json
     dev:
-      DOMAINNAME: review-hc.dev.account.gov.uk
+      Domain: review-hc.dev.account.gov.uk
+      BaseURL: https://review-hc.dev.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
+      CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
+      StubJwksEndpoint: https://test-resources.review-hc.dev.account.gov.uk/.well-known/jwks.json
     build:
-      DOMAINNAME: review-hc.build.account.gov.uk
+      Domain: review-hc.build.account.gov.uk
+      BaseURL: https://review-hc.build.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
+      CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
+      StubJwksEndpoint: https://test-resources.review-hc.build.account.gov.uk/.well-known/jwks.json
     staging:
-      DOMAINNAME: review-hc.staging.account.gov.uk
+      Domain: review-hc.staging.account.gov.uk
+      BaseURL: https://review-hc.staging.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
+      CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
+      StubJwksEndpoint: https://test-resources.review-hc.staging.account.gov.uk/.well-known/jwks.json
     integration:
-      DOMAINNAME: review-hc.integration.account.gov.uk
+      Domain: review-hc.integration.account.gov.uk
+      BaseURL: https://review-hc.integration.account.gov.uk
       HealthcheckSSMClientId: ipv-core
+      CoreRedirectURI: https://identity.integration.account.gov.uk/credential-issuer/callback?id=nino
+      StubJwksEndpoint: https://test-resources.review-hc.integration.account.gov.uk/.well-known/jwks.json
     production:
-      DOMAINNAME: review-hc.production.account.gov.uk
+      Domain: review-hc.production.account.gov.uk
+      BaseURL: https://review-hc.account.gov.uk
       HealthcheckSSMClientId: ipv-core
+      CoreRedirectURI: https://identity.account.gov.uk/credential-issuer/callback?id=nino
+      StubJwksEndpoint: ""
 
 Globals:
   Function:
@@ -192,6 +210,42 @@ Globals:
       - !Ref AWS::NoValue
 
 Resources:
+  OAuth:
+    Type: AWS::Serverless::Application
+    Condition: IsNotIntOrProdEnvironment
+    Properties:
+      Location:
+        ApplicationId: arn:aws:serverlessrepo:eu-west-2:667736788427:applications/di-ipv-cri-oauth-common
+        SemanticVersion: 0.5.0
+      Parameters:
+        AuditEventNamePrefix: IPV_HMRC_RECORD_CHECK_CRI
+        CSLSDestinationArn: !If
+          - IsNotDevBuildEnvironment
+          - !FindInMap [PlatformConfiguration, !Ref Environment, CSLSEGRESS]
+          - !Ref AWS::NoValue
+        CriIdentifier: di-ipv-cri-check-hmrc-api
+        CriAudience: !FindInMap [EnvironmentConfiguration, !Ref Environment, BaseURL]
+        CriVcIssuer: !FindInMap [EnvironmentConfiguration, !Ref Environment, BaseURL]
+        CriPrivateApiGwName: !Sub ${AWS::StackName}-private
+        CriPublicApiGwName: !Sub ${AWS::StackName}-public
+        Environment: !If
+          - IsLocalDevEnvironment
+          - dev
+          - !Ref Environment
+        IPVCoreRedirectURI: !FindInMap [EnvironmentConfiguration, !Ref Environment, CoreRedirectURI]
+        IPVCoreStubJwksEndpoint: !FindInMap [EnvironmentConfiguration, !Ref Environment, StubJwksEndpoint]
+        LambdaCodeSigningConfigArn: !If
+          - EnforceCodeSigning
+          - !Ref CodeSigningConfigArn
+          - !Ref AWS::NoValue
+        LambdaDeploymentPreference: !Ref LambdaDeploymentPreference
+        LambdaProvisionedConcurrentExecutions: !FindInMap [ProvisionedConcurrency, Environment, !Ref Environment]
+        LambdaVpcConfiguration: di-devplatform-deploy
+        PermissionsBoundaryArn: !If
+          - UsePermissionsBoundary
+          - !Ref PermissionsBoundary
+          - !Ref AWS::NoValue
+
   JWKSBucketRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -1256,7 +1310,7 @@ Resources:
           JWT_TTL_UNIT: !FindInMap [JwtTtlUnit, Environment, !Ref Environment]
           LOG_FULL_ERRORS: !If [IsIntOrProdEnvironment, "false", "true"]
           COMMON_STACK_NAME: !Sub ${CommonStackName}
-          DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, DOMAINNAME]
+          DOMAIN_NAME: !FindInMap [EnvironmentConfiguration, !Ref Environment, Domain]
 
   IssueCredentialFunctionLogGroup:
     Type: AWS::Logs::LogGroup
