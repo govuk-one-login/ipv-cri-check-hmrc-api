@@ -2,7 +2,7 @@
 
 HMRC Check Credential Issuer API
 
-## Integration Tests
+## Integration Test
 
 ### API Gateway
 These tests run against API Gateway in AWS.
