@@ -7,6 +7,7 @@ vi.mock("@govuk-one-login/cri-metrics");
 import { logger } from "@govuk-one-login/cri-logger";
 import { captureLatency } from "@govuk-one-login/cri-metrics";
 import { getTokenFromOtg } from "../../src/hmrc-apis/otg";
+import { CriError } from "@govuk-one-login/cri-error-response";
 
 const apiUrl = "https://apigwId-vpceId.execute-api.eu-west-2.amazonaws.com/dev/token/?tokenType=stub";
 
@@ -61,7 +62,7 @@ describe("getTokenFromOtg", () => {
     } as unknown as Response);
 
     await expect(() => getTokenFromOtg(...mockParams)).rejects.toThrow(
-      new Error("Error response received from OTG 400 Forbidden")
+      new CriError(500, "Error response received from OTG 400 Forbidden")
     );
   });
 
@@ -80,7 +81,7 @@ describe("getTokenFromOtg", () => {
     } as unknown as Response);
 
     await expect(() => getTokenFromOtg(...mockParams)).rejects.toThrow(
-      new Error("OTG returned an expired Bearer Token")
+      new CriError(500, "OTG returned an expired Bearer Token")
     );
   });
 });
