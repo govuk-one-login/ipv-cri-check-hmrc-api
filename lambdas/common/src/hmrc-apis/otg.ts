@@ -1,3 +1,4 @@
+import { CriError } from "@govuk-one-login/cri-error-response";
 import { OtgConfig, OtgTokenResponse } from "./types/otg";
 import { logger } from "@govuk-one-login/cri-logger";
 import { captureLatency } from "@govuk-one-login/cri-metrics";
@@ -22,10 +23,10 @@ export async function getTokenFromOtg({ apiUrl }: OtgConfig, signal?: AbortSigna
     const expiry = body.expiry;
     const now = Date.now();
     if (now > expiry) {
-      throw new Error("OTG returned an expired Bearer Token");
+      throw new CriError(500, "OTG returned an expired Bearer Token");
     }
     return body.token;
   }
 
-  throw new Error(`Error response received from OTG ${response.status} ${response.statusText}`);
+  throw new CriError(500, `Error response received from OTG ${response.status} ${response.statusText}`);
 }
