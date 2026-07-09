@@ -13,7 +13,7 @@ export const mockCredentialIssuerEnv: CredentialIssuerEnv = {
   issuer: "bob",
   maxJwtTtl: 1000,
   jwtTtlUnit: TimeUnits.Hours,
-  commonStackName: "big-stack",
+  vcSigningKeyId: "key-id",
 };
 
 export const mockFunctionConfig: IssueCredFunctionConfig = {

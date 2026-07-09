@@ -8,15 +8,14 @@ export type VcCheckConfig = {
   readonly kms: { signingKeyId: string };
   readonly contraIndicator: { errorMapping: string[]; reasonsMapping: CiReasonsMapping[] };
 };
-export const getVcConfig = async (commonStackName: string): Promise<VcCheckConfig> => {
-  const vcSigningKeyId = `/${commonStackName}/verifiableCredentialKmsSigningKeyId`;
+export const getVcConfig = async (vcSigningKeyId: string): Promise<VcCheckConfig> => {
   const errorMapping = "/check-hmrc-cri-api/contraindicationMappings";
   const reasonsMapping = "/check-hmrc-cri-api/contraIndicatorReasonsMapping";
   try {
-    const ssmParams = await getParametersValues([vcSigningKeyId, errorMapping, reasonsMapping], cacheTtlInSeconds);
+    const ssmParams = await getParametersValues([errorMapping, reasonsMapping], cacheTtlInSeconds);
     logger.info("Retrieved Check Hmrc VC parameters.");
     return {
-      kms: { signingKeyId: ssmParams[vcSigningKeyId] },
+      kms: { signingKeyId: vcSigningKeyId },
       contraIndicator: {
         errorMapping: ssmParams[errorMapping].split("||"),
         reasonsMapping: JSON.parse(ssmParams[reasonsMapping]),
