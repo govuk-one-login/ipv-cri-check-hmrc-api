@@ -15,10 +15,14 @@ jobs:
   build:
     name: Build SAM app
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      id-token: write
+      contents: read
     outputs:
       cache-key: ${{ steps.build.outputs.cache-key }}
       cache-restore-keys: ${{ steps.build.outputs.cache-restore-keys }}
+    environment:
+      name: development
     steps:
       - name: Install latest SAM
         uses: aws-actions/setup-sam@d78e1a4a9656d3b223e59b80676a797f20093133
@@ -26,13 +30,14 @@ jobs:
           version: 1.159.1
 
       - name: Build SAM application
-        uses: govuk-one-login/github-actions/sam/build-application@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
+        uses: govuk-one-login/github-actions/sam/build-application@4c76410195b5fcb1804fc7c183ed20704252830f
         id: build
         with:
           template: infrastructure/template.yaml
           cache-name: check-hmrc-api
           pull-repository: true
           source-dir: lambdas
+          aws-role-arn: ${{ vars.DEPLOYMENT_ROLE_ARN }}
 
   deploy:
     name: Deploy stack
@@ -56,12 +61,12 @@ jobs:
         with:
           version: 1.159.1
       - name: Deploy stack
-        uses: govuk-one-login/github-actions/sam/deploy-stack@e6b6ed890b35904e1be79f7f35ffec983fa4d9db
+        uses: govuk-one-login/github-actions/sam/deploy-stack@4c76410195b5fcb1804fc7c183ed20704252830f
         id: deploy
         with:
           sam-deployment-bucket: ${{ vars.DEPLOYMENT_ARTIFACTS_BUCKET }}
           aws-role-arn: ${{ vars.DEPLOYMENT_ROLE_ARN }}
-          stack-name-prefix: preview-check-hmrc-api
+          stack-name-prefix: preview
           cache-key: ${{ needs.build.outputs.cache-key }}
           cache-restore-keys: ${{ needs.build.outputs.cache-restore-keys }}
           s3-prefix: preview
