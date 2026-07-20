@@ -23,7 +23,7 @@ const { mockIssueCredConfig } = vi.hoisted(() => ({
       issuer: "bob",
       maxJwtTtl: 1000,
       jwtTtlUnit: "Hours",
-      commonStackName: "big-stack",
+      vcSigningKeyId: "key-id",
     },
     tableNames: {
       sessionTable: "session-table",
@@ -163,7 +163,7 @@ describe("issue-credential handler", () => {
       },
       body: expectedJwt,
     });
-    expect(spyVcConfig).toHaveBeenCalledWith("big-stack");
+    expect(spyVcConfig).toHaveBeenCalledWith("key-id");
     expect(mockLogger.appendKeys).toHaveBeenCalledWith({ govuk_signin_journey_id: mockSession.clientSessionId });
     expect(getAttempts).toHaveBeenCalledWith(
       mockFunctionConfig.tableNames.attemptTable,
