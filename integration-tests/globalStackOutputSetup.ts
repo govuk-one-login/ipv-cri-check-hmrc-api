@@ -1,6 +1,7 @@
 import { stackOutputs } from "@govuk-one-login/cri-cloudformation-helpers";
 let outputs: Partial<{
   CommonStackName: string;
+  OAuthCommonStackName: string;
   StackName: string;
   PrivateApiGatewayId: string;
   PublicApiGatewayId: string;
@@ -16,6 +17,9 @@ export default async function globalSetup() {
     outputs = await stackOutputs(stackName);
     if (!outputs?.CommonStackName) throw new Error("Missing CommonStackName in stack outputs.");
 
+    if (!outputs?.OAuthCommonStackName) throw new Error("Missing OAuthCommonStackName in stack outputs.");
+    const oAuthCommonOutputs = await stackOutputs(outputs.OAuthCommonStackName);
+
     process.env.AWS_REGION = "eu-west-2";
     process.env.COMMON_STACK_NAME = outputs.CommonStackName;
     process.env.STACK_NAME = outputs.StackName;
@@ -23,9 +27,12 @@ export default async function globalSetup() {
     process.env.PUBLIC_API = outputs.PublicApiGatewayId || "";
     process.env.NINO_USERS_TABLE = outputs.NinoUsersTable || "check-hmrc-cri-api-nino-users";
     process.env.USERS_ATTEMPTS_TABLE = outputs.UserAttemptsTable || "check-hmrc-cri-api-user-attempts";
+
     process.env.PERSON_IDENTITY_TABLE =
       `person-identity-${outputs.CommonStackName}` || "person-identity-common-cri-api";
     process.env.SESSION_TABLE = `session-${outputs.CommonStackName}` || "session-common-cri-api";
+    process.env.OAUTH_PERSON_IDENTITY_TABLE = oAuthCommonOutputs.DbPersonIdentityTableName;
+    process.env.OAUTH_SESSION_TABLE = oAuthCommonOutputs.DbSessionTableName;
 
     const testResourcesStackName = process.env.TEST_RESOURCES_STACK_NAME ?? "test-resources";
     process.env.TEST_RESOURCES_STACK_NAME = testResourcesStackName;
