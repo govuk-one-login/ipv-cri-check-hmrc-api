@@ -13,7 +13,7 @@ const validEnvVars = {
   ISSUER: "bob",
   MAX_JWT_TTL: "3600",
   JWT_TTL_UNIT: "seconds",
-  COMMON_STACK_NAME: "common-stack",
+  VC_SIGNING_KEY_ID: "key-id-here",
 };
 
 describe("function config", () => {
@@ -41,7 +41,7 @@ describe("function config", () => {
           issuer: "bob",
           maxJwtTtl: 3600,
           jwtTtlUnit: "seconds",
-          commonStackName: "common-stack",
+          vcSigningKeyId: "key-id-here",
         },
       });
       expect(config.tableNames).toEqual({
