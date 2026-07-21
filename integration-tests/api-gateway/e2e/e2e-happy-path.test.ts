@@ -2,7 +2,7 @@ import { beforeEach, afterEach, beforeAll, describe, expect, it, vi } from "vite
 import { getSSMParameter } from "../../resources/ssm-param-helper";
 import { NINO, claimSet, environment, CLIENT_ID, REDIRECT_URL, AUDIENCE } from "../env-variables";
 import { decodeJwt, JWK } from "jose";
-import { clearAttemptsTable, clearItemsFromTables } from "../../resources/dynamodb-helper";
+import { clearAttemptsTable, clearItemsFromTables, sessionExists } from "../../resources/dynamodb-helper";
 import { authorizationEndpoint, checkEndpoint, createSession, getJarAuthorization } from "../endpoints";
 import { generatePrivateJwtParams } from "../crypto/private-key-jwt-helper";
 import {
@@ -19,18 +19,25 @@ import {
 import { AuditEvent } from "@govuk-one-login/cri-audit";
 import { pollTestHarnessForEvents } from "@govuk-one-login/cri-test-resources-helpers";
 
-let sessionData: Response;
-let authCode: { value: string };
-let privateApi: string;
-let publicApi: string;
-
 vi.setConfig({ testTimeout: 180000 });
 
 describe("End to end happy path journey", () => {
-  let state: string;
-  let sessionId: string;
-  let sessionTableName: string;
+  const WRITE_TO_COMMON_LAMBDAS_TABLES = true;
+  const WRITE_TO_OAUTH_TABLES = false;
+
+  const SESSION_TABLE_NAME = `${process.env.SESSION_TABLE}`;
+  const PERSON_IDENTITY_TABLE_NAME = `${process.env.PERSON_IDENTITY_TABLE}`;
+  const OAUTH_SESSION_TABLE_NAME = `${process.env.OAUTH_SESSION_TABLE}`;
+  const OAUTH_PERSON_IDENTITY_TABLE_NAME = `${process.env.OAUTH_PERSON_IDENTITY_TABLE}`;
+
+  const PRIVATE_API_ID = `${process.env.PRIVATE_API}`;
+  const PUBLIC_API_ID = `${process.env.PUBLIC_API}`;
+
   let privateSigningKey: JWK | undefined;
+
+  let sessionId: string;
+  let sessionData: Response;
+  let state: string;
 
   beforeAll(async () => {
     privateSigningKey = JSON.parse(
@@ -44,10 +51,7 @@ describe("End to end happy path journey", () => {
       evidenceRequested: claimSet.evidence_requested,
     });
     const request = await data.json();
-    privateApi = `${process.env.PRIVATE_API}`;
-    publicApi = `${process.env.PUBLIC_API}`;
-    sessionTableName = `${process.env.SESSION_TABLE}`;
-    sessionData = await createSession(privateApi, request);
+    sessionData = await createSession(PRIVATE_API_ID, request);
     const session = await sessionData.json();
     state = session.state;
     sessionId = session.session_id;
@@ -58,7 +62,7 @@ describe("End to end happy path journey", () => {
   afterEach(async () => {
     await clearItemsFromTables(
       {
-        tableName: `${process.env.PERSON_IDENTITY_TABLE}`,
+        tableName: PERSON_IDENTITY_TABLE_NAME,
         items: { sessionId: sessionId },
       },
       {
@@ -66,7 +70,7 @@ describe("End to end happy path journey", () => {
         items: { sessionId: sessionId },
       },
       {
-        tableName: sessionTableName,
+        tableName: SESSION_TABLE_NAME,
         items: { sessionId: sessionId },
       }
     );
@@ -74,7 +78,7 @@ describe("End to end happy path journey", () => {
   });
 
   it("Should receive a successful VC when valid name and NINO are entered", async () => {
-    const checkRetryResponse = await checkEndpoint(privateApi, { "session-id": sessionId }, NINO);
+    const checkRetryResponse = await checkEndpoint(PRIVATE_API_ID, { "session-id": sessionId }, NINO);
 
     const checkData = checkRetryResponse.status;
     const checkBody = JSON.parse(await checkRetryResponse.text());
@@ -83,12 +87,12 @@ describe("End to end happy path journey", () => {
       requestRetry: false,
     });
 
-    const authResponse = await authorizationEndpoint(privateApi, sessionId, CLIENT_ID, REDIRECT_URL, state);
+    const authResponse = await authorizationEndpoint(PRIVATE_API_ID, sessionId, CLIENT_ID, REDIRECT_URL, state);
 
     const authData = await authResponse.json();
     expect(authResponse.status).toEqual(200);
 
-    authCode = authData.authorizationCode;
+    const authCode = authData.authorizationCode;
     const tokenData = await generatePrivateJwtParams(
       CLIENT_ID,
       authCode.value,
@@ -97,7 +101,7 @@ describe("End to end happy path journey", () => {
       AUDIENCE
     );
 
-    const tokenApiURL = `https://${publicApi}.execute-api.eu-west-2.amazonaws.com/${environment}/token`;
+    const tokenApiURL = `https://${PUBLIC_API_ID}.execute-api.eu-west-2.amazonaws.com/${environment}/token`;
     const tokenResponse = await fetch(tokenApiURL, {
       method: "POST",
       headers: {
@@ -109,7 +113,7 @@ describe("End to end happy path journey", () => {
     expect(tokenResponse.status).toEqual(200);
     const accessToken = token.access_token;
 
-    const credIssApiURL = `https://${publicApi}.execute-api.eu-west-2.amazonaws.com/${environment}/credential/issue`;
+    const credIssApiURL = `https://${PUBLIC_API_ID}.execute-api.eu-west-2.amazonaws.com/${environment}/credential/issue`;
     const credIssResponse = await fetch(credIssApiURL, {
       method: "POST",
       headers: {
@@ -196,5 +200,10 @@ describe("End to end happy path journey", () => {
     const endEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, END_EVENT_NAME, sessionId);
     expect(endEvents).toHaveLength(1);
     expect(endEvents[0].event).toStrictEqual<AuditEvent>(baseExpectedEvent(END_EVENT_NAME, sessionId));
+
+    expect(await sessionExists(SESSION_TABLE_NAME, sessionId)).toBe(WRITE_TO_COMMON_LAMBDAS_TABLES);
+    expect(await sessionExists(PERSON_IDENTITY_TABLE_NAME, sessionId)).toBe(WRITE_TO_COMMON_LAMBDAS_TABLES);
+    expect(await sessionExists(OAUTH_SESSION_TABLE_NAME, sessionId)).toBe(WRITE_TO_OAUTH_TABLES);
+    expect(await sessionExists(OAUTH_PERSON_IDENTITY_TABLE_NAME, sessionId)).toBe(WRITE_TO_OAUTH_TABLES);
   });
 });

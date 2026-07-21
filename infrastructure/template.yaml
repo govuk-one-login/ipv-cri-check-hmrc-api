@@ -145,7 +145,7 @@ Mappings:
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
       StubJwksEndpoint: https://test-resources.review-hc.dev.account.gov.uk/.well-known/jwks.json
-      OAuthCommonLambdas: false
+      OAuthCommonLambdas: true
       OAuthCommonTables: false
     dev:
       Domain: review-hc.dev.account.gov.uk
@@ -153,7 +153,7 @@ Mappings:
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
       StubJwksEndpoint: https://test-resources.review-hc.dev.account.gov.uk/.well-known/jwks.json
-      OAuthCommonLambdas: false
+      OAuthCommonLambdas: true
       OAuthCommonTables: false
     build:
       Domain: review-hc.build.account.gov.uk
@@ -1714,11 +1714,11 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-PrivateApiGatewayId
   CommonStackName:
-    Description: Common Stack Name
-    Value: !If
-      - UseOAuthCommonTables
-      - !Select [1, !Split ["/", !Ref OAuth]]
-      - !Ref CommonStackName
+    Description: Common Lambdas Stack Name
+    Value: !Ref CommonStackName
+  OAuthCommonStackName:
+    Description: OAuthCommon Stack Name
+    Value: !Select [1, !Split ["/", !Ref OAuth]]
   UserAttemptsTable:
     Description: UserAttemptsTable table name
     Value: !Ref UserAttemptsTable
