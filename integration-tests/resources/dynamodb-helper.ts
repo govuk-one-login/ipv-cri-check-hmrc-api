@@ -61,3 +61,19 @@ export const clearItemsFromTables = (...tableRecords: TableRecords[]) =>
   Promise.all(
     tableRecords.map((record) => clearItems(record.tableName, record.items))
   );
+
+export async function sessionExists(
+  tableName: string,
+  sessionId: string
+): Promise<boolean> {
+  const result = await sendCommand(QueryCommand, {
+    TableName: tableName,
+    KeyConditionExpression: "sessionId = :sessionId",
+    ExpressionAttributeValues: {
+      ":sessionId": sessionId,
+    },
+    Limit: 1,
+  });
+
+  return (result.Count ?? 0) > 0;
+}
