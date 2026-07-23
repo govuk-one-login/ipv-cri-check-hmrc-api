@@ -161,7 +161,7 @@ Mappings:
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
       StubJwksEndpoint: https://test-resources.review-hc.build.account.gov.uk/.well-known/jwks.json
-      OAuthCommonLambdas: false
+      OAuthCommonLambdas: true
       OAuthCommonTables: false
     staging:
       Domain: review-hc.staging.account.gov.uk
