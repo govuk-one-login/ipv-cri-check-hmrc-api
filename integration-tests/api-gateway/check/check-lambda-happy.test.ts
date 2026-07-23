@@ -21,7 +21,6 @@ describe("Given the session and NINO is valid", () => {
   let sessionData: { session_id: string };
   let sessionTableName: string;
   let privateApi: string;
-  let issuer: string | undefined;
 
   beforeEach(async () => {
     const data = await getJarAuthorization();
@@ -69,18 +68,22 @@ describe("Given the session and NINO is valid", () => {
         birthDate: [{ value: testUser.dob }],
         name: testUser.formattedName,
         socialSecurityRecord: [{ personalNumber: NINO }],
-      }
+      },
     };
     expect(reqSentEvents[0].event).toStrictEqual(expectedRequestSentAuditEvent);
 
-    const resReceivedEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, RESPONSE_RECEIVED_EVENT_NAME, sessionId);
+    const resReceivedEvents = await pollTestHarnessForEvents(
+      TEST_HARNESS_EXECUTE_URL,
+      RESPONSE_RECEIVED_EVENT_NAME,
+      sessionId
+    );
     expect(resReceivedEvents).toHaveLength(1);
     const expectedResponseReceivedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, sessionId),
       extensions: {
         evidence: { txn: expect.any(String) },
-      }
-    }
+      },
+    };
     expect(resReceivedEvents[0].event).toStrictEqual(expectedResponseReceivedAuditEvent);
   });
 
@@ -109,12 +112,16 @@ describe("Given the session and NINO is valid", () => {
         socialSecurityRecord: [{ personalNumber: NINO }],
         device_information: {
           encoded: "test encoded header",
-        }
-      }
-    }
+        },
+      },
+    };
     expect(reqSentEvents[0].event).toStrictEqual(expectedRequestSentAuditEvent);
 
-    const resReceivedEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, RESPONSE_RECEIVED_EVENT_NAME, sessionId);
+    const resReceivedEvents = await pollTestHarnessForEvents(
+      TEST_HARNESS_EXECUTE_URL,
+      RESPONSE_RECEIVED_EVENT_NAME,
+      sessionId
+    );
     expect(resReceivedEvents).toHaveLength(1);
 
     const expectedRequestReceivedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
@@ -126,8 +133,8 @@ describe("Given the session and NINO is valid", () => {
       },
       extensions: {
         evidence: { txn: expect.any(String) },
-      }
-    }
+      },
+    };
     expect(resReceivedEvents[0].event).toStrictEqual(expectedRequestReceivedAuditEvent);
   });
 
@@ -161,7 +168,6 @@ describe("Given the session and NINO is valid", () => {
 
     const data = await getJarAuthorization({
       aud: AUDIENCE,
-      iss: issuer,
       claimsOverride: deceasedPersonSession,
     });
 
@@ -194,10 +200,14 @@ describe("Given the session and NINO is valid", () => {
           encoded: "test encoded header",
         },
       },
-    }
+    };
     expect(reqSentEvents[0].event).toStrictEqual(expectedRequestSentAuditEvent);
 
-    const resReceivedEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, RESPONSE_RECEIVED_EVENT_NAME, sessionId);
+    const resReceivedEvents = await pollTestHarnessForEvents(
+      TEST_HARNESS_EXECUTE_URL,
+      RESPONSE_RECEIVED_EVENT_NAME,
+      sessionId
+    );
     expect(resReceivedEvents).toHaveLength(1);
 
     const expectedRequestReceivedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
@@ -209,8 +219,8 @@ describe("Given the session and NINO is valid", () => {
       },
       extensions: {
         evidence: { txn: expect.any(String) },
-      }
-    }
+      },
+    };
     expect(resReceivedEvents[0].event).toStrictEqual(expectedRequestReceivedAuditEvent);
   });
 
@@ -252,7 +262,6 @@ describe("Given the session and NINO is valid", () => {
 
     const data = await getJarAuthorization({
       aud: AUDIENCE,
-      iss: issuer,
       claimsOverride: multipleNamesSession,
     });
 
@@ -275,19 +284,23 @@ describe("Given the session and NINO is valid", () => {
         birthDate: [{ value: "2000-02-02" }],
         name: multipleNamesSession.name,
         socialSecurityRecord: [{ personalNumber: NINO }],
-      }
-    }
+      },
+    };
     expect(reqSentEvents[0].event).toStrictEqual(expectedRequestSentAuditEvent);
 
-    const resReceivedEvents = await pollTestHarnessForEvents(TEST_HARNESS_EXECUTE_URL, RESPONSE_RECEIVED_EVENT_NAME, sessionId);
+    const resReceivedEvents = await pollTestHarnessForEvents(
+      TEST_HARNESS_EXECUTE_URL,
+      RESPONSE_RECEIVED_EVENT_NAME,
+      sessionId
+    );
     expect(resReceivedEvents).toHaveLength(1);
 
     const expectedRequestReceivedAuditEvent: AuditEvent<NinoCheckAuditExtensions, never, NinoCheckAuditRestricted> = {
       ...baseExpectedEvent(RESPONSE_RECEIVED_EVENT_NAME, sessionId),
       extensions: {
         evidence: { txn: expect.any(String) },
-      }
-    }
+      },
+    };
     expect(resReceivedEvents[0].event).toStrictEqual(expectedRequestReceivedAuditEvent);
   });
 });

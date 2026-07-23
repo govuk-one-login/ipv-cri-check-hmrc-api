@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, test, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockLogger } from "../../../common/tests/logger";
 vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
@@ -28,9 +28,9 @@ const mockInput = [pdvConfig, oAuthToken, pdvInput] as const;
 const latencyInMs = 1001;
 
 vi.mocked(captureLatency).mockImplementation(async (_, callback) => {
-    const result = await callback();
-    return { result, latencyInMs };
-  });
+  const result = await callback();
+  return { result, latencyInMs };
+});
 
 global.fetch = vi.fn();
 

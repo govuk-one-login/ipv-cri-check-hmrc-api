@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, test, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mockLogger } from "../../common/tests/logger";
 import { mockDynamoClient } from "../../common/tests/mocks/mockDynamoClient";
 
@@ -38,7 +38,9 @@ const { mockIssueCredConfig } = vi.hoisted(() => ({
   },
 }));
 vi.mock("../src/config/function-config", () => ({
-  IssueCredFunctionConfig: vi.fn().mockImplementation(function () { return mockIssueCredConfig; }),
+  IssueCredFunctionConfig: vi.fn().mockImplementation(function () {
+    return mockIssueCredConfig;
+  }),
 }));
 vi.mock("../src/vc/vc-builder");
 vi.mock("crypto", () => ({
@@ -103,7 +105,7 @@ const internalServerError = {
   body: JSON.stringify({ message: "Internal server error" }),
   headers: {
     "Content-Type": "application/json",
-  }
+  },
 };
 
 const badRequest = {
@@ -111,7 +113,7 @@ const badRequest = {
   body: expect.any(String),
   headers: {
     "Content-Type": "application/json",
-  }
+  },
 };
 
 const handlerInput: Parameters<typeof handler> = [
@@ -192,7 +194,13 @@ describe("issue-credential handler", () => {
         },
       })
     );
-    expect(sendAuditEventSpy).toHaveBeenNthCalledWith(2,  mockFunctionConfig.audit.queueUrl, "IPV_HMRC_RECORD_CHECK_CRI_END", mockFunctionConfig.audit.componentId, mockSession);
+    expect(sendAuditEventSpy).toHaveBeenNthCalledWith(
+      2,
+      mockFunctionConfig.audit.queueUrl,
+      "IPV_HMRC_RECORD_CHECK_CRI_END",
+      mockFunctionConfig.audit.componentId,
+      mockSession
+    );
     expect(captureMetricSpy).toHaveBeenCalledWith("VCIssuedMetric");
   });
 
