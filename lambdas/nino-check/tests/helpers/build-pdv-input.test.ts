@@ -1,4 +1,4 @@
-import { describe, expect, it, test } from "vitest";
+import { describe, expect, it } from "vitest";
 import { PersonIdentityItem, PersonIdentityNamePart } from "@govuk-one-login/cri-types";
 import { UnixSecondsTimestamp } from "@govuk-one-login/cri-types/";
 import { buildPdvInput } from "../../src/helpers/build-pdv-input";
@@ -177,7 +177,7 @@ describe("buildPdvInput", () => {
     expect(() => buildPdvInput(blankNamePartPersonIdentity, nino)).toThrow(new Error("Names or BirthDates is blank"));
   });
 
-    it("should throw if birthDates is undefined", async () => {
+  it("should throw if birthDates is undefined", async () => {
     const blankNamePartPersonIdentity: PersonIdentityItem = JSON.parse(JSON.stringify(personIdentity));
     blankNamePartPersonIdentity.birthDates = undefined;
 

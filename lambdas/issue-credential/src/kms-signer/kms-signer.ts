@@ -43,9 +43,9 @@ const signWithKms = async (
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     if (err instanceof SyntaxError) {
-      throw new Error(`KMS response is not in JSON format. ${message}`);
+      throw new Error(`KMS response is not in JSON format. ${message}`, { cause: err });
     }
-    throw new Error(`KMS signing error: ${message}`);
+    throw new Error(`KMS signing error: ${message}`, { cause: err });
   }
 };
 

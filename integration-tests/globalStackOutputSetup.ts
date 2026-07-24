@@ -28,9 +28,8 @@ export default async function globalSetup() {
     process.env.NINO_USERS_TABLE = outputs.NinoUsersTable || "check-hmrc-cri-api-nino-users";
     process.env.USERS_ATTEMPTS_TABLE = outputs.UserAttemptsTable || "check-hmrc-cri-api-user-attempts";
 
-    process.env.PERSON_IDENTITY_TABLE =
-      `person-identity-${outputs.CommonStackName}` || "person-identity-common-cri-api";
-    process.env.SESSION_TABLE = `session-${outputs.CommonStackName}` || "session-common-cri-api";
+    process.env.PERSON_IDENTITY_TABLE = `person-identity-${outputs.CommonStackName}`;
+    process.env.SESSION_TABLE = `session-${outputs.CommonStackName}`;
     process.env.OAUTH_PERSON_IDENTITY_TABLE = oAuthCommonOutputs.DbPersonIdentityTableName;
     process.env.OAUTH_SESSION_TABLE = oAuthCommonOutputs.DbSessionTableName;
 
@@ -42,10 +41,8 @@ export default async function globalSetup() {
     // Includes trailing slash.
     process.env.TEST_HARNESS_EXECUTE_URL = testResourcesStackOutputs.TestHarnessExecuteUrl;
 
-    // eslint-disable-next-line no-console
     console.log("✅ Env vars set in globalSetup");
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error("❌ Failed to set up environment for tests:", error);
     throw error;
   }
