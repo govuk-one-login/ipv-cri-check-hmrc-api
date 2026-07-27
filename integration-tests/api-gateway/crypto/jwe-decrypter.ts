@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { base64url } from "jose";
 import { CipherGCMTypes, createDecipheriv, KeyObject } from "crypto";
 import { DecryptCommand, EncryptionAlgorithmSpec, KMSClient } from "@aws-sdk/client-kms";
@@ -110,7 +109,7 @@ export class JweDecrypter {
       return cek;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to decrypt with legacy key: ${message}`);
+      throw new Error(`Failed to decrypt with legacy key: ${message}`, { cause: error });
     }
   }
 

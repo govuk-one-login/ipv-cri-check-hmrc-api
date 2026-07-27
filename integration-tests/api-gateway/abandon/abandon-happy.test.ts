@@ -16,14 +16,12 @@ vi.setConfig({ testTimeout: 60000 });
 
 describe("Given the session is valid and expecting to abandon the journey", () => {
   let sessionId: string;
-  let clientId: string;
   let sessionTableName: string;
   let privateApi: string;
 
   beforeEach(async () => {
     const data = await getJarAuthorization();
     const request = await data.json();
-    clientId = request.client_id;
     privateApi = `${process.env.PRIVATE_API}`;
     sessionTableName = `${process.env.SESSION_TABLE}`;
     const session = await createSession(privateApi, request);

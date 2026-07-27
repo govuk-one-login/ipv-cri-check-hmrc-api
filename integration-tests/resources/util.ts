@@ -20,11 +20,11 @@ const retry = async <T>(
     const interval = intervalInMs / 1000;
 
     if (!quiet) {
-      // eslint-disable-next-line no-console
+
       console.warn(
         `Retrying after ${interval} seconds. ${maxRetries} retries left.`
       );
-      // eslint-disable-next-line no-console
+
       console.warn(err instanceof Error ? err.message : err);
     }
 

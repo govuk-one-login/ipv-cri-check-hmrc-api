@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockLogger } from "../../../common/tests/logger";
 vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
@@ -16,7 +16,7 @@ type spyGetParametersValues = MockInstance<
 describe("getVcConfig", () => {
   let getParametersValuesSpy: spyGetParametersValues;
 
-  const mockVcSigningKeyId = "test-signing-key-id"
+  const mockVcSigningKeyId = "test-signing-key-id";
   const expectedErrorMapping = "/check-hmrc-cri-api/contraindicationMappings";
   const expectedReasonsMapping = "/check-hmrc-cri-api/contraIndicatorReasonsMapping";
 
@@ -189,7 +189,6 @@ describe("getVcConfig", () => {
   });
 
   describe("some edge cases", () => {
-
     it("handles reasonsMapping as empty array", async () => {
       getParametersValuesSpy.mockResolvedValueOnce({
         ...mockSsmParams,

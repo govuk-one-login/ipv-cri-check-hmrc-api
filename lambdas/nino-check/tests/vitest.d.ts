@@ -1,1 +1,1 @@
-/// <reference path="../../common/tests/vitest.d.ts" />
+import "../../common/tests/vitest.d.ts";
