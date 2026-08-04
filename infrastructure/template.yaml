@@ -177,7 +177,7 @@ Mappings:
       HealthcheckSSMClientId: ipv-core
       CoreRedirectURI: https://identity.integration.account.gov.uk/credential-issuer/callback?id=nino
       StubJwksEndpoint: https://test-resources.review-hc.integration.account.gov.uk/.well-known/jwks.json
-      OAuthCommonLambdas: false
+      OAuthCommonLambdas: true
       OAuthCommonTables: false
     production:
       Domain: review-hc.production.account.gov.uk
@@ -185,7 +185,7 @@ Mappings:
       HealthcheckSSMClientId: ipv-core
       CoreRedirectURI: https://identity.account.gov.uk/credential-issuer/callback?id=nino
       StubJwksEndpoint: ""
-      OAuthCommonLambdas: false
+      OAuthCommonLambdas: true
       OAuthCommonTables: false
 
 Globals:
