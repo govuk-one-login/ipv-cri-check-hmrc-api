@@ -57,7 +57,7 @@ jobs:
             audit.json
             audit-summary.json
 
-      - name: Sync unfixable-vulns issue
+      - name: Sync unfixable-vulnerabilities issue
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: .github/scripts/sync-unfixable-issue.sh
