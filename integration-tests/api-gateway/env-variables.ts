@@ -1,7 +1,6 @@
-export type EvidenceRequest = {
-  scoringPolicy: string;
-  strengthScore: number;
-};
+import type { EvidenceRequestedClass } from "@govuk-one-login/data-vocab/credentials";
+
+export type EvidenceRequest = EvidenceRequestedClass;
 
 export const CLIENT_ID = process.env.CLIENTID || "ipv-core-stub-aws-headless";
 export const AUDIENCE = process.env.AUDIENCE || "https://review-hc.dev.account.gov.uk";

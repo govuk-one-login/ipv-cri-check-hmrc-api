@@ -1,10 +1,8 @@
 import { clearAttemptsTable, clearItemsFromTables, populateTables } from "../../../resources/dynamodb-helper";
 import { testUser } from "../../user";
+import type { EvidenceRequestedClass } from "@govuk-one-login/data-vocab/credentials";
 
-type EvidenceRequest = {
-  scoringPolicy: string;
-  strengthScore: number;
-};
+type EvidenceRequest = EvidenceRequestedClass;
 
 export const populateDatabaseForContractTests = async () => {
   await ninoCheckPassedData(

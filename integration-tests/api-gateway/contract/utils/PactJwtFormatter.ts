@@ -1,5 +1,9 @@
-import { base64url, decodeJwt, decodeProtectedHeader } from "jose";
-import { JWTClaimsSet } from "../../types";
+import {
+  base64url,
+  decodeJwt,
+  decodeProtectedHeader,
+  JWTPayload,
+} from "jose";
 
 export const formatJwtForPactTest = (body: string) => {
   const decodedVc = decodeJwt(body);
@@ -10,7 +14,7 @@ export const formatJwtForPactTest = (body: string) => {
   return `${getJwtHeader(body)}.${base64url.encode(JSON.stringify(vcWithReplacedFields))}.`;
 };
 
-const replaceDynamicVcFieldsIfPresent = (parseVc: JWTClaimsSet) => {
+const replaceDynamicVcFieldsIfPresent = (parseVc: JWTPayload) => {
   parseVc.nbf = parseVc.nbf == null ? parseVc.nbf : 4070908800;
   parseVc.iss = parseVc.iss == null ? parseVc.iss : "dummyNinoComponentId";
   parseVc.jti = parseVc.jti == null ? parseVc.jti : "dummyJti";

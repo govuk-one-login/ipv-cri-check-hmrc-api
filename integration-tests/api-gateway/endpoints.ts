@@ -1,13 +1,16 @@
+import type {
+EvidenceRequestedClass,
+PersonExtendedMatchingClass,
+} from "@govuk-one-login/data-vocab/credentials";
 import { environment } from "./env-variables";
 import { signedFetch } from "../resources/fetch";
-import { JWTClaimsSet } from "./types";
 
 type JarAuthorizationOptions = {
   clientId?: string;
   aud?: string;
   iss?: string;
-  claimsOverride?: unknown;
-  evidenceRequested?: unknown;
+  claimsOverride?: PersonExtendedMatchingClass;
+  evidenceRequested?: EvidenceRequestedClass;
 };
 export const getJarAuthorization = async ({
   clientId,
@@ -22,7 +25,7 @@ export const getJarAuthorization = async ({
     iss,
     shared_claims: claimsOverride,
     evidence_requested: evidenceRequested,
-  } as JWTClaimsSet;
+  };
 
   return await signedFetch(new URL("start", process.env.TEST_HARNESS_EXECUTE_URL).toString(), {
     method: "POST",
