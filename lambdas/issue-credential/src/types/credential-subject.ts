@@ -1,22 +1,25 @@
-export interface SocialSecurityRecord {
-  personalNumber: string;
-}
 
-export interface NamePart {
-  type: string;
-  value: string;
-}
+import type {
+  BirthDateClass,
+  IdentityCheckSubjectClass,
+  NameClass,
+  SocialSecurityRecordDetailsClass,
+} from "@govuk-one-login/data-vocab/credentials";
 
-export interface Name {
-  nameParts: NamePart[];
-}
+type Satisfies<Constraint, Target extends Constraint> = Target;
 
-export interface BirthDate {
-  value: string;
-}
+export type SocialSecurityRecord = Satisfies<
+  SocialSecurityRecordDetailsClass,
+  {
+    personalNumber: string;
+  }
+>;
 
-export interface CredentialSubject {
-  name?: Name[];
-  birthDate?: BirthDate[];
-  socialSecurityRecord?: SocialSecurityRecord[];
-}
+export type CredentialSubject = Satisfies<
+  IdentityCheckSubjectClass,
+  {
+    name?: NameClass[];
+    birthDate?: BirthDateClass[];
+    socialSecurityRecord?: SocialSecurityRecord[];
+  }
+>;
