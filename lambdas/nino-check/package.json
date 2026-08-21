@@ -12,7 +12,7 @@
     "compile": "tsc"
   },
   "dependencies": {
-    "@aws-lambda-powertools/parameters": "2.31.0"
+    "@aws-lambda-powertools/parameters": "2.34.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.150",
