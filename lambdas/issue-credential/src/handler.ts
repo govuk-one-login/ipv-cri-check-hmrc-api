@@ -36,11 +36,13 @@ class IssueCredentialHandler implements LambdaInterface {
       const { attempts, personIdentity, ninoUser, session } = await this.getCheckedUserData(accessToken);
 
       vcConfig ??= await getVcConfig(functionConfig.credentialIssuerEnv.vcSigningKeyId);
-      const contraIndicators = getHmrcContraIndicators({
-        contraIndicationMapping: vcConfig.contraIndicator.errorMapping,
-        contraIndicatorReasonsMapping: vcConfig.contraIndicator.reasonsMapping,
-        hmrcErrors: attempts.items.filter((i) => i.attempt === "FAIL").map((item) => item.text ?? ""),
-      });
+      const contraIndicators = getHmrcContraIndicators(
+        {
+          contraIndicationMapping: vcConfig.contraIndicator.errorMapping,
+          contraIndicatorReasonsMapping: vcConfig.contraIndicator.reasonsMapping,
+        },
+        attempts.items.filter((i) => i.attempt === "FAIL").map((item) => item.text ?? "")
+      );
 
       const vcClaimSet = buildVerifiableCredential(
         attempts,

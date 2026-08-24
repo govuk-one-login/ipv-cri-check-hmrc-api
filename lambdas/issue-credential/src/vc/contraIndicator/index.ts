@@ -1,31 +1,32 @@
-import { HMRC_ERRORS_ABSENT, getContraIndicatorWithReason, validateInputs } from "./ci-mappings-validator";
-import { getHmrcErrsCiRecord, ContraIndicator } from "./ci-mapping-util";
+import { getContraIndicatorWithReason, validateInputs } from "./ci-mappings-validator";
+import { ContraIndicator } from "./ci-mapping-util";
 import { CiMappings } from "./types/ci-mappings";
 import { logger } from "@govuk-one-login/cri-logger";
 
-export const getHmrcContraIndicators = (ciMappings: CiMappings): Array<ContraIndicator> => {
+export const getHmrcContraIndicators = (ciMappings: CiMappings, hmrcErrors: string[]): Array<ContraIndicator> => {
+  if (hmrcErrors.length === 0) {
+    logger.info(`Found no HMRC errors.`);
+    return [];
+  }
+
   try {
-    return getCIsForHmrcErrors(ciMappings);
+    return getCIsForHmrcErrors(ciMappings, hmrcErrors);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    if (message === HMRC_ERRORS_ABSENT) {
-      logger.info(`Found no HMRC errors.`);
-      return [];
-    }
     logger.error({ message: "An unexpected Error has occurred getting HMRC errors", error: message });
     throw error;
   }
 };
-const getCIsForHmrcErrors = (ciMappings: CiMappings): Array<ContraIndicator> => {
-  const { contraIndicationMapping, hmrcErrors, contraIndicatorReasonsMapping } = validateInputs(ciMappings);
+const getCIsForHmrcErrors = (ciMappings: CiMappings, hmrcErrors: string[]): Array<ContraIndicator> => {
+  const { contraIndicationMapping, contraIndicatorReasonsMapping, extractedHmrcErrors } = validateInputs(
+    ciMappings,
+    hmrcErrors
+  );
 
-  const contraIndicators = contraIndicationMapping?.flatMap((ci) => {
-    const { mappedHmrcErrors, ciValue } = getHmrcErrsCiRecord(ci);
+  const contraIndicators = contraIndicationMapping?.flatMap(({ mappedHmrcErrors, ciValue }) => {
+    const normalizedMappedHmrcErrors = new Set(mappedHmrcErrors.map((value) => value.trim().toUpperCase()));
 
-    const normalizedMappedHmrcErrors = new Set(mappedHmrcErrors.split(",").map((value) => value.trim().toUpperCase()));
-
-    return hmrcErrors
-      .flat()
+    return extractedHmrcErrors
       .filter((hmrcError) => normalizedMappedHmrcErrors.has(hmrcError.trim().toUpperCase()))
       .map((hmrcError) => ({
         ci: ciValue.trim(),
