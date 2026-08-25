@@ -1,38 +1,37 @@
-import { getContraIndicatorWithReason, validateInputs } from "./ci-mappings-validator";
-import { ContraIndicator } from "./ci-mapping-util";
-import { CiMappings } from "./types/ci-mappings";
+import { validateInputs } from "./ci-mappings-validator";
+import { CiMappings, ContraIndicator } from "./types";
 import { logger } from "@govuk-one-login/cri-logger";
 
 export const getHmrcContraIndicators = (ciMappings: CiMappings, hmrcErrors: string[]): Array<ContraIndicator> => {
-  if (hmrcErrors.length === 0) {
+  if (!hmrcErrors || hmrcErrors.length === 0) {
     logger.info(`Found no HMRC errors.`);
     return [];
   }
 
   try {
     return getCIsForHmrcErrors(ciMappings, hmrcErrors);
-  } catch (error: unknown) {
+  } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error({ message: "An unexpected Error has occurred getting HMRC errors", error: message });
     throw error;
   }
 };
-const getCIsForHmrcErrors = (ciMappings: CiMappings, hmrcErrors: string[]): Array<ContraIndicator> => {
+function getCIsForHmrcErrors(ciMappings: CiMappings, hmrcErrors: string[]): Array<ContraIndicator> {
   const { contraIndicationMapping, contraIndicatorReasonsMapping, extractedHmrcErrors } = validateInputs(
     ciMappings,
     hmrcErrors
   );
 
-  const contraIndicators = contraIndicationMapping?.flatMap(({ mappedHmrcErrors, ciValue }) => {
+  const errorsWithCIs = contraIndicationMapping.flatMap(({ mappedHmrcErrors, ciValue }) => {
     const normalizedMappedHmrcErrors = new Set(mappedHmrcErrors.map((value) => value.trim().toUpperCase()));
 
     return extractedHmrcErrors
       .filter((hmrcError) => normalizedMappedHmrcErrors.has(hmrcError.trim().toUpperCase()))
       .map((hmrcError) => ({
         ci: ciValue.trim(),
-        reason: hmrcError.trim(),
+        error: hmrcError.trim(),
       }));
   });
 
-  return getContraIndicatorWithReason(contraIndicatorReasonsMapping, contraIndicators);
-};
+  return errorsWithCIs.map((c) => contraIndicatorReasonsMapping.find((m) => m.ci === c.ci)) as ContraIndicator[];
+}

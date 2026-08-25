@@ -1,20 +1,10 @@
-import { CiMappings } from "./types/ci-mappings";
-import { ContraIndicator } from "./ci-mapping-util";
-
-const CONTRAINDICATION_MAPPINGS_ABSENT_ERROR = "ContraIndicationMapping cannot be undefined in CiMappingEvent";
-const CONTRAINDICATOR_REASONS_MAPPINGS_ABSENT_ERROR =
-  "ContraIndicatorReasonsMapping cannot be undefined in CiMappingEvent";
-
-export interface CiReasonsMapping {
-  ci: string;
-  reason: string;
-}
+import { CiMappings } from "./types";
 
 export function validateCiMappings({ contraIndicationMapping, contraIndicatorReasonsMapping }: CiMappings) {
   if (!contraIndicationMapping?.length) {
-    throw new Error(CONTRAINDICATION_MAPPINGS_ABSENT_ERROR);
+    throw new Error("ContraIndicationMapping cannot be undefined in CiMappingEvent");
   } else if (!contraIndicatorReasonsMapping?.length) {
-    throw new Error(CONTRAINDICATOR_REASONS_MAPPINGS_ABSENT_ERROR);
+    throw new Error("ContraIndicatorReasonsMapping cannot be undefined in CiMappingEvent");
   }
 
   const ciMapping = contraIndicationMapping.map((mapping) => {
@@ -25,8 +15,7 @@ export function validateCiMappings({ contraIndicationMapping, contraIndicatorRea
 
   if (
     ciMapping.some(
-      ({ mappedHmrcErrors, ciValue }) =>
-        mappedHmrcErrors.some((msg) => msg === "") || ciValue === undefined || ciValue.trim() === ""
+      ({ mappedHmrcErrors, ciValue }) => mappedHmrcErrors.includes("") || ciValue === undefined || ciValue.trim() === ""
     )
   ) {
     throw new Error("ContraIndicationMapping format is invalid");
@@ -43,14 +32,13 @@ export function validateCiMappings({ contraIndicationMapping, contraIndicatorRea
 
   const unmatchedCIs = [...mappingCIsNotInReasons, ...reasonCIsNotInMapping];
 
-  if (unmatchedCIs?.length) {
+  if (unmatchedCIs.length > 0) {
     const unmatchedCILocations = [
-      ...(mappingCIsNotInReasons.length ? ["ContraIndicatorReasonsMapping"] : []),
-      ...(reasonCIsNotInMapping.length ? ["ContraIndicationMappings"] : []),
+      ...(mappingCIsNotInReasons.length > 0 ? ["ContraIndicationMappings"] : []),
+      ...(reasonCIsNotInMapping.length > 0 ? ["ContraIndicatorReasonsMapping"] : []),
     ];
-
     throw new Error(
-      `Unmatched ${unmatchedCILocations.join(" & ")} ${unmatchedCIs.join(", ")} detected in configured mappings`
+      `Unmatched ${unmatchedCILocations.join(" & ")} ${unmatchedCIs.join(",")} detected in configured mappings`
     );
   }
 
@@ -60,12 +48,14 @@ export function validateCiMappings({ contraIndicationMapping, contraIndicatorRea
 export const validateInputs = (ciMappings: CiMappings, hmrcErrors: string[]) => {
   const { ciMapping, reasonsMapping } = validateCiMappings(ciMappings);
 
-  const allHmrcErrorsInCiMapping = ciMapping.flatMap((m) => m.mappedHmrcErrors.map((e) => e.toUpperCase()));
+  const allHmrcErrorsInCiMapping = new Set(
+    ciMapping.flatMap((m) => m.mappedHmrcErrors.map((e) => e.toUpperCase().trim()))
+  );
 
   const extractedHmrcErrors = hmrcErrors.flatMap((error) => error.split(",").map((string) => string.trim()));
 
   const unmappedErrorCount = extractedHmrcErrors.filter(
-    (error) => !allHmrcErrorsInCiMapping.includes(error.toUpperCase())
+    (error) => !allHmrcErrorsInCiMapping.has(error.toUpperCase())
   ).length;
 
   if (unmappedErrorCount > 0) {
@@ -82,16 +72,3 @@ export const validateInputs = (ciMappings: CiMappings, hmrcErrors: string[]) => 
     contraIndicatorReasonsMapping: reasonsMapping,
   };
 };
-
-export const getContraIndicatorWithReason = (
-  ciReasons: CiReasonsMapping[],
-  contraIndicators: ContraIndicator[]
-): ContraIndicator[] => {
-  return contraIndicators.map((c) => ({
-    ci: c.ci,
-    reason: ciReasons?.find((r) => areCIsEqual(r.ci, c.ci))?.reason ?? "",
-  }));
-};
-
-const areCIsEqual = (reasonCi?: string, contraCi?: string): boolean =>
-  reasonCi?.trim().toUpperCase() === contraCi?.trim().toUpperCase();

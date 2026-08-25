@@ -5,9 +5,8 @@ import {
   EVIDENCE_TYPE,
   STRENGTH_SCORE,
 } from "../../../common/src/types/evidence";
-import { ContraIndicator } from "../vc/contraIndicator/ci-mapping-util";
+import { ContraIndicator } from "../vc/contraIndicator/types";
 import { SessionItem } from "@govuk-one-login/cri-types";
-import { CiReasonsMapping } from "../vc/contraIndicator/types/ci-reasons-mapping";
 import { AttemptsResult } from "../../../common/src/types/attempt";
 import { captureMetric } from "@govuk-one-login/cri-metrics";
 
@@ -66,7 +65,7 @@ export const getAuditEvidence = (
   return { ...vcEvidence, attemptNum, ciReasons };
 };
 
-const isValidContraIndicator = (item: ContraIndicator): item is CiReasonsMapping =>
+const isValidContraIndicator = (item: ContraIndicator): item is ContraIndicator =>
   typeof item.ci === "string" && typeof item.reason === "string";
 
 const hasUserFailedCheck = (attempts: AttemptsResult) => attempts.items.filter((i) => i.attempt === "FAIL").length >= 2;

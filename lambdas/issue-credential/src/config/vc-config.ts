@@ -1,12 +1,12 @@
 import { CriError } from "@govuk-one-login/cri-error-response";
 import { getParametersValues } from "../../../common/src/util/get-parameters";
 import { logger } from "@govuk-one-login/cri-logger";
-import { CiReasonsMapping } from "../vc/contraIndicator/types/ci-reasons-mapping";
+import { ContraIndicator } from "../vc/contraIndicator/types";
 
 const cacheTtlInSeconds = Number(process.env.POWERTOOLS_PARAMETERS_MAX_AGE) || 300;
 export type VcCheckConfig = {
   readonly kms: { signingKeyId: string };
-  readonly contraIndicator: { errorMapping: string[]; reasonsMapping: CiReasonsMapping[] };
+  readonly contraIndicator: { errorMapping: string[]; reasonsMapping: ContraIndicator[] };
 };
 export const getVcConfig = async (vcSigningKeyId: string): Promise<VcCheckConfig> => {
   const errorMapping = "/check-hmrc-cri-api/contraindicationMappings";

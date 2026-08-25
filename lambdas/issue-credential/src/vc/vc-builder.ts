@@ -4,7 +4,7 @@ import { VerifiableIdentityCredential, VC_CONTEXT, VC_TYPE } from "../types/veri
 import { CredentialSubject } from "../types/credential-subject";
 import { AttemptsResult } from "../../../common/src/types/attempt";
 import { getEvidence } from "../evidence/evidence-creator";
-import { ContraIndicator } from "./contraIndicator/ci-mapping-util";
+import { ContraIndicator } from "./contraIndicator/types";
 import { logger } from "@govuk-one-login/cri-logger";
 import { CHECK_DETAIL } from "../../../common/src/types/evidence";
 import { NamePartType } from "@govuk-one-login/data-vocab/credentials";
@@ -44,7 +44,7 @@ export const buildVerifiableCredential = (
       type: VC_TYPE,
       "@context": VC_CONTEXT,
     },
-    jti: `urn:uuid:${randomUUID().toString()}`,
+    jti: `urn:uuid:${randomUUID()}`,
   };
   logger.info("Verifiable Credential Structure generated successfully.");
   return verifiableCredential;
