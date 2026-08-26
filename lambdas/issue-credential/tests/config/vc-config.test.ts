@@ -80,7 +80,7 @@ describe("getVcConfig", () => {
       expect(logger.info).toHaveBeenCalledTimes(1);
     });
 
-    it("handles empty error mapping string", async () => {
+    it("throws for an empty error mapping string", async () => {
       getParametersValuesSpy.mockResolvedValueOnce({
         ...mockSsmParams,
         [ciMappingParamName]: "",
@@ -91,7 +91,7 @@ describe("getVcConfig", () => {
       );
     });
 
-    it("handles single error mapping without delimiter", async () => {
+    it("throws for a CI mapping without delimiters", async () => {
       getParametersValuesSpy.mockResolvedValueOnce({
         ...mockSsmParams,
         [ciMappingParamName]: "single-error",
@@ -100,7 +100,7 @@ describe("getVcConfig", () => {
       await expect(() => getVcConfig(mockVcSigningKeyId)).rejects.toThrow("ContraIndicationMapping format is invalid");
     });
 
-    it("handles complex JSON in reasonsMapping", async () => {
+    it("correctly handles JSON in reasonsMapping", async () => {
       const multipleReasons = [
         { ci: "ci_1", reason: "Complex reason" },
         { ci: "ci_2", reason: "Another reason" },
@@ -177,7 +177,7 @@ describe("getVcConfig", () => {
   });
 
   describe("type safety", () => {
-    it("returns object matching VcCheckConfig type", async () => {
+    it("returns an object matching VcCheckConfig type", async () => {
       getParametersValuesSpy.mockResolvedValueOnce(mockSsmParams);
 
       const result = await getVcConfig(mockVcSigningKeyId);

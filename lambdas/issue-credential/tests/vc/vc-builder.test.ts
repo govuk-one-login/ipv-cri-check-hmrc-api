@@ -57,7 +57,7 @@ describe("vc-builder", () => {
 
   const issuer = "https://review-hc.dev.account.gov.uk";
 
-  describe("buildVcClaimSet", () => {
+  describe("buildVerifiableCredential", () => {
     const evidenceRequest = {
       scoringPolicy: "gpg45",
       strengthScore: 2,

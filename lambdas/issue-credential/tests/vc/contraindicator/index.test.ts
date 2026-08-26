@@ -62,31 +62,25 @@ const testCases = [
 
 describe("ci-mapping", () => {
   describe("getHmrcContraIndicators", () => {
-    it("should return the mapped CI for a single matching hmrc_error in ContraIndicationMapping", () => {
+    it("should return the mapped CI for a single matching HMRC error", () => {
       const result = getHmrcContraIndicators(mappings, ["aaaa"]);
 
       expect(result).toEqual([{ ci: "ci_1", reason: "ci_1 reason" }]);
     });
 
-    it.each([[["bbbb"], [["cccc"]]]])(
-      "should return contraIndicator code ci_2 and reason 'bbbb' for input '%s'",
-      (input) => {
-        const result = getHmrcContraIndicators(mappings, input);
+    it.each([[["bbbb"], [["cccc"]]]])("should return contraIndicator ci_2 for input '%s'", (input) => {
+      const result = getHmrcContraIndicators(mappings, input);
 
-        expect(result).toEqual([{ ci: "ci_2", reason: "ci_2 reason" }]);
-      }
-    );
+      expect(result).toEqual([{ ci: "ci_2", reason: "ci_2 reason" }]);
+    });
 
-    it.each(testCases)(
-      "should return all ContraIndicator code and reason pairs for hmrc errors input [%j]",
-      (testCase) => {
-        const result = getHmrcContraIndicators(mappings, testCase.inputHmrcErrors);
+    it.each(testCases)("should return correct CIs for hmrc errors [%j]", (testCase) => {
+      const result = getHmrcContraIndicators(mappings, testCase.inputHmrcErrors);
 
-        expect(result).toEqual(testCase.expectedCIs);
-      }
-    );
+      expect(result).toEqual(testCase.expectedCIs);
+    });
 
-    it("returns multiple ContraIndicator code and reasons when input contains different groups", () => {
+    it("returns multiple CIs when input contains different groups", () => {
       const result = getHmrcContraIndicators(mappings, ["gggg,aaaa"]);
 
       expect(result).toEqual([
@@ -95,13 +89,13 @@ describe("ci-mapping", () => {
       ]);
     });
 
-    it("should not produce a CI if there are no hmrc_errors", () => {
+    it("should not produce a CI if there are no HMRC errors", () => {
       const result = getHmrcContraIndicators(mappings, undefined as unknown as string[]);
 
       expect(result).toEqual([]);
     });
 
-    it("throws error, not all items in hmrc_errors have matching ContraIndicationMapping", () => {
+    it("throws an error when not all HMRC errors map to CIs", () => {
       expect(() => getHmrcContraIndicators(mappings, ["aaaa", "not-a-mapped-error"])).toThrow(
         "Not all items in hmrc_errors have matching ContraIndicationMapping"
       );

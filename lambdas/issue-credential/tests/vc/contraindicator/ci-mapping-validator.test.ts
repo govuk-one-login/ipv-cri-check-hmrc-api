@@ -21,15 +21,15 @@ describe("ci-mapping-validator", () => {
   const reasonsMappingInput = JSON.stringify(reasonsMapping);
 
   describe("parseCiMappings", () => {
-    describe("CiMappingEvent has an empty, blank or undefined component", () => {
-      it("throws ContraIndicationMapping cannot be undefined, given both inputs are undefined", () => {
+    describe("Invalid input cases", () => {
+      it("throws the expected error when both mapping inputs are undefined", () => {
         expect(() => parseCIMappings(undefined as unknown as string, undefined as unknown as string)).toThrow(
           "ContraIndicationMapping cannot be undefined in CiMappingEvent"
         );
       });
 
       it.each([undefined, [], ""])(
-        "throws ContraIndicationMapping cannot be undefined, given valid reasons mapping and ciMapping is %s",
+        "throws 'ContraIndicationMapping cannot be undefined' when CI mapping is %s and reasons mapping is valid",
         (actual) => {
           expect(() => parseCIMappings(actual as unknown as string, reasonsMappingInput)).toThrow(
             "ContraIndicationMapping cannot be undefined in CiMappingEvent"
@@ -38,7 +38,7 @@ describe("ci-mapping-validator", () => {
       );
 
       it.each([undefined, [], ""])(
-        "throws ContraIndicatorReasonsMapping cannot be undefined, given valid CI mapping and reasonsMapping is %s",
+        "throws 'ContraIndicatorReasonsMapping cannot be undefined' when reasonsMapping is %s and CI mapping is valid",
         (actual) => {
           expect(() => parseCIMappings(ciMappingInput, actual as unknown as string)).toThrow(
             "ContraIndicatorReasonsMapping cannot be undefined in CiMappingEvent"
@@ -47,20 +47,20 @@ describe("ci-mapping-validator", () => {
       );
     });
 
-    describe("Given ContraIndicationMapping format is invalid", () => {
-      it("throws error when ci entries that are colon separated are without hmrc error key but with a CI value", async () => {
-        expect(() => parseCIMappings(":Ci_1", JSON.stringify([{ ci: "Ci_1" } as ContraIndicator]))).toThrow(
+    describe("Invalid formatting of mapping configs retrieved from SSM", () => {
+      it("throws an error when CI mappings are missing HMRC errors", async () => {
+        expect(() => parseCIMappings(":Ci_1", JSON.stringify([{ ci: "Ci_1" }]))).toThrow(
           "ContraIndicationMapping format is invalid"
         );
       });
 
-      it("throws error with ci entries that are colon separated with a hmrc error key but without a CI value", async () => {
-        expect(() => parseCIMappings("err1:", JSON.stringify([{ ci: "" } as ContraIndicator]))).toThrow(
+      it("throws an error when CI mappings are missing a CI value", async () => {
+        expect(() => parseCIMappings("err1:", JSON.stringify([{ ci: "" }]))).toThrow(
           "ContraIndicationMapping format is invalid"
         );
       });
 
-      it("throws error given ci entries that are not colon separated", async () => {
+      it("throws an error when CI mapping entries are not colon separated", async () => {
         expect(() =>
           parseCIMappings(
             "aaaa,ci_1||bbbb,cccc,dddd;ci_2||eeee,ffff,gggg/ci_3",
@@ -75,22 +75,22 @@ describe("ci-mapping-validator", () => {
       });
     });
 
-    describe("Given ContraIndication Mapping and ContraIndicator reason mapping are out of sync", () => {
-      it("throws an unmatched error when ContraIndicationMapping is missing a CI", () => {
+    describe("When CI mapping and reasons mapping are out of sync", () => {
+      it("throws an unmatched error when CI mapping is missing a CI", () => {
         const contraIndicationMappingMissingCi_3 = "aaaa:ci_1||bbbb,cccc,dddd:ci_2";
         expect(() => parseCIMappings(contraIndicationMappingMissingCi_3, reasonsMappingInput)).toThrow(
           "Unmatched ContraIndicatorReasonsMapping ci_3 detected in configured mappings"
         );
       });
 
-      it("throws an unmatched error when ContraIndicationMapping is missing multiple CIs", () => {
+      it("throws an unmatched error when CI mapping is missing multiple CIs", () => {
         const contraIndicationMappingMissingCis = "aaaa:ci_1";
         expect(() => parseCIMappings(contraIndicationMappingMissingCis, reasonsMappingInput)).toThrow(
           "Unmatched ContraIndicatorReasonsMapping ci_2,ci_3 detected in configured mappings"
         );
       });
 
-      it("throws a different undefined error when all ContraIndicatorReasonsMapping is missing", () => {
+      it("throws a different unmatched error when CI mapping is missing all CIs", () => {
         const contraIndicationMappingMissingCi_3 = "aaaa:ci_1";
         const validatedResult = () => parseCIMappings(contraIndicationMappingMissingCi_3, "");
         expect(validatedResult).not.toThrow(
@@ -99,14 +99,14 @@ describe("ci-mapping-validator", () => {
         expect(validatedResult).toThrow("ContraIndicatorReasonsMapping cannot be undefined in CiMappingEvent");
       });
 
-      it("throws an unmatched error when ContraIndicatorReasonsMapping is missing multiple CI", () => {
+      it("throws an unmatched error when reasons mapping is missing multiple CIs", () => {
         const contraIndicatorReasonsMappingMissingCis = JSON.stringify([{ ci: "ci_2", reason: "ci_2 reason" }]);
         expect(() => parseCIMappings(ciMappingInput, contraIndicatorReasonsMappingMissingCis)).toThrow(
           "Unmatched ContraIndicationMappings ci_1,ci_3 detected in configured mappings"
         );
       });
 
-      it("throws an unmatched error when ContraIndicatorReasonsMapping is missing multiple CIs", () => {
+      it("throws an unmatched error when reasons mapping is missing a single CI", () => {
         const contraIndicatorReasonsMappingMissingCi_1 = JSON.stringify([
           { ci: "ci_2", reason: "ci_2 reason" },
           { ci: "ci_3", reason: "ci_3 reason" },
@@ -119,17 +119,17 @@ describe("ci-mapping-validator", () => {
   });
 
   describe("validateHmrcErrors", () => {
-    it("should return successfully when CiMappingEvent is valid", () => {
+    it("should return successfully when input is valid", () => {
       expect(validateHmrcErrors(ciMapping, ["aaaa"])).toEqual(["aaaa"]);
     });
 
-    it("throws error, no matching hmrc_error for any ContraIndicationMapping", () => {
+    it("throws an error when given only an HMRC error that is not present in the mappings", () => {
       expect(() => validateHmrcErrors(ciMapping, ["not-a-mapped-error"])).toThrow(
         "No matching hmrcError for any ContraIndicationMapping"
       );
     });
 
-    it("throws an error, not all items in hmrc_errors have matching ContraIndicationMapping", () => {
+    it("throws an error when not all HMRC errors are present in the CI mappings", () => {
       expect(() => validateHmrcErrors(ciMapping, ["aaaa", "not-a-mapped-error"])).toThrow(
         "Not all items in hmrc_errors have matching ContraIndicationMapping"
       );
