@@ -1,4 +1,4 @@
-import { validateInputs } from "./ci-mappings-validator";
+import { validateHmrcErrors } from "./ci-mappings-validator";
 import { CiMappings, ContraIndicator } from "./types";
 import { logger } from "@govuk-one-login/cri-logger";
 
@@ -16,13 +16,10 @@ export const getHmrcContraIndicators = (ciMappings: CiMappings, hmrcErrors: stri
     throw error;
   }
 };
-function getCIsForHmrcErrors(ciMappings: CiMappings, hmrcErrors: string[]): Array<ContraIndicator> {
-  const { contraIndicationMapping, contraIndicatorReasonsMapping, extractedHmrcErrors } = validateInputs(
-    ciMappings,
-    hmrcErrors
-  );
+function getCIsForHmrcErrors({ ciMapping, reasonsMapping }: CiMappings, hmrcErrors: string[]): Array<ContraIndicator> {
+  const extractedHmrcErrors = validateHmrcErrors(ciMapping, hmrcErrors);
 
-  const errorsWithCIs = contraIndicationMapping.flatMap(({ mappedHmrcErrors, ciValue }) => {
+  const errorsWithCIs = ciMapping.flatMap(({ mappedHmrcErrors, ciValue }) => {
     const normalizedMappedHmrcErrors = new Set(mappedHmrcErrors.map((value) => value.trim().toUpperCase()));
 
     return extractedHmrcErrors
@@ -33,5 +30,5 @@ function getCIsForHmrcErrors(ciMappings: CiMappings, hmrcErrors: string[]): Arra
       }));
   });
 
-  return errorsWithCIs.map((c) => contraIndicatorReasonsMapping.find((m) => m.ci === c.ci)) as ContraIndicator[];
+  return errorsWithCIs.map((c) => reasonsMapping.find((m) => m.ci === c.ci)) as ContraIndicator[];
 }

@@ -37,10 +37,7 @@ class IssueCredentialHandler implements LambdaInterface {
 
       vcConfig ??= await getVcConfig(functionConfig.credentialIssuerEnv.vcSigningKeyId);
       const contraIndicators = getHmrcContraIndicators(
-        {
-          contraIndicationMapping: vcConfig.contraIndicator.errorMapping,
-          contraIndicatorReasonsMapping: vcConfig.contraIndicator.reasonsMapping,
-        },
+        vcConfig.contraIndicator,
         attempts.items.filter((i) => i.attempt === "FAIL").map((item) => item.text ?? "")
       );
 

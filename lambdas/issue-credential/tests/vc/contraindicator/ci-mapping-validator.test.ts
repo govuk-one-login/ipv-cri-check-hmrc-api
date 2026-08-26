@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CiMappings, ContraIndicator } from "../../../src/vc/contraIndicator/types";
-import { validateInputs } from "../../../src/vc/contraIndicator/ci-mappings-validator";
+import { validateHmrcErrors } from "../../../src/vc/contraIndicator/ci-mappings-validator";
 
 describe("ci-mapping-validator", () => {
   describe("validateInputs", () => {
@@ -20,7 +20,7 @@ describe("ci-mapping-validator", () => {
     ];
 
     it("should return successfully when CiMappingEvent is valid", () => {
-      expect(validateInputs(mappings, ["aaaa"])).toEqual({
+      expect(validateHmrcErrors(mappings, ["aaaa"])).toEqual({
         contraIndicationMapping: validCiMapping,
         extractedHmrcErrors: ["aaaa"],
         contraIndicatorReasonsMapping: contraIndicatorReasonsMapping,
@@ -28,27 +28,27 @@ describe("ci-mapping-validator", () => {
     });
 
     it("throws error, no matching hmrc_error for any ContraIndicationMapping", () => {
-      expect(() => validateInputs(mappings, ["not-a-mapped-error"])).toThrow(
+      expect(() => validateHmrcErrors(mappings, ["not-a-mapped-error"])).toThrow(
         "No matching hmrcError for any ContraIndicationMapping"
       );
     });
 
     it("throws an error, not all items in hmrc_errors have matching ContraIndicationMapping", () => {
-      expect(() => validateInputs(mappings, ["aaaa", "not-a-mapped-error"])).toThrow(
+      expect(() => validateHmrcErrors(mappings, ["aaaa", "not-a-mapped-error"])).toThrow(
         "Not all items in hmrc_errors have matching ContraIndicationMapping"
       );
     });
 
     describe("CiMappingEvent has an empty, blank or undefined component", () => {
       it("throws error, ContraIndicationMapping cannot be undefined given CiMappingEvent is an empty object", () => {
-        expect(() => validateInputs({} as CiMappings, undefined as unknown as string[])).toThrow(
+        expect(() => validateHmrcErrors({} as CiMappings, undefined as unknown as string[])).toThrow(
           "ContraIndicationMapping cannot be undefined in CiMappingEvent"
         );
       });
 
       it("throws ContraIndicationMapping cannot be undefined, given both ContraIndicationMapping, contraIndicatorReasonsMapping and hmrc errors array are empty", () => {
         expect(() =>
-          validateInputs(
+          validateHmrcErrors(
             {
               contraIndicationMapping: [],
               contraIndicatorReasonsMapping: [],
@@ -62,7 +62,7 @@ describe("ci-mapping-validator", () => {
         "throws ContraIndicationMapping cannot be undefined, given valid hmrc error and ContraIndicationMapping is %s",
         (actual) => {
           expect(() =>
-            validateInputs(
+            validateHmrcErrors(
               {
                 contraIndicationMapping: actual as unknown as string[],
                 contraIndicatorReasonsMapping: [{ ci: "aaaa", reason: undefined as unknown as string }],
@@ -77,7 +77,7 @@ describe("ci-mapping-validator", () => {
         "throws ContraIndicatorReasonsMapping cannot be undefined, given valid hmrc error and ContraIndicatorReasonsMapping is %s",
         (actual) => {
           expect(() =>
-            validateInputs(
+            validateHmrcErrors(
               {
                 contraIndicationMapping,
                 contraIndicatorReasonsMapping: actual as unknown as ContraIndicator[],
@@ -92,7 +92,7 @@ describe("ci-mapping-validator", () => {
     describe("Given ContraIndicationMapping format is invalid", () => {
       it("throws error when ci entries that are colon separated are without hmrc error key but with a CI value", async () => {
         expect(() =>
-          validateInputs(
+          validateHmrcErrors(
             {
               contraIndicationMapping: [":Ci_1"],
               contraIndicatorReasonsMapping: [{ ci: "Ci_1" } as ContraIndicator],
@@ -104,7 +104,7 @@ describe("ci-mapping-validator", () => {
 
       it("throws error with ci entries that are colon separated with a hmrc error key but without a CI value", async () => {
         expect(() =>
-          validateInputs(
+          validateHmrcErrors(
             {
               contraIndicationMapping: ["err1:"],
               contraIndicatorReasonsMapping: [{ ci: "" } as ContraIndicator],
@@ -116,7 +116,7 @@ describe("ci-mapping-validator", () => {
 
       it("throws error given ci entries that are not colon separated", async () => {
         expect(() =>
-          validateInputs(
+          validateHmrcErrors(
             {
               contraIndicationMapping: ["aaaa,ci_1", "bbbb,cccc,dddd;ci_2", "eeee,ffff,gggg/ci_3"],
               contraIndicatorReasonsMapping: [
@@ -136,7 +136,7 @@ describe("ci-mapping-validator", () => {
       it("throws an unmatched error when ContraIndicationMapping is missing a CI", () => {
         const contraIndicationMappingMissingCi_3 = ["aaaa:ci_1", "bbbb,cccc,dddd:ci_2"];
         expect(() =>
-          validateInputs(
+          validateHmrcErrors(
             {
               contraIndicationMapping: contraIndicationMappingMissingCi_3,
               contraIndicatorReasonsMapping,
@@ -149,7 +149,7 @@ describe("ci-mapping-validator", () => {
       it("throws an unmatched error when ContraIndicationMapping is missing multiple CIs", () => {
         const contraIndicationMappingMissingCis = ["aaaa:ci_1"];
         expect(() =>
-          validateInputs(
+          validateHmrcErrors(
             {
               contraIndicationMapping: contraIndicationMappingMissingCis,
               contraIndicatorReasonsMapping,
@@ -162,7 +162,7 @@ describe("ci-mapping-validator", () => {
       it("throws a different undefined error when all ContraIndicatorReasonsMapping is missing", () => {
         const contraIndicationMappingMissingCi_3 = ["aaaa:ci_1"];
         const validatedResult = () =>
-          validateInputs(
+          validateHmrcErrors(
             {
               contraIndicationMapping: contraIndicationMappingMissingCi_3,
               contraIndicatorReasonsMapping: [],
@@ -178,7 +178,7 @@ describe("ci-mapping-validator", () => {
       it("throws an unmatched error when ContraIndicatorReasonsMapping is missing multiple CI", () => {
         const contraIndicatorReasonsMappingMissingCis = [{ ci: "ci_2", reason: "ci_2 reason" }];
         expect(() =>
-          validateInputs(
+          validateHmrcErrors(
             {
               contraIndicationMapping,
               contraIndicatorReasonsMapping: contraIndicatorReasonsMappingMissingCis,
@@ -194,7 +194,7 @@ describe("ci-mapping-validator", () => {
           { ci: "ci_3", reason: "ci_3 reason" },
         ];
         expect(() =>
-          validateInputs(
+          validateHmrcErrors(
             {
               contraIndicationMapping,
               contraIndicatorReasonsMapping: contraIndicatorReasonsMappingMissingCi_1,

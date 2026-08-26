@@ -3,7 +3,12 @@ export type ContraIndicator = {
   reason: string;
 };
 
+export interface CiMappingEntry {
+  ciValue: string;
+  mappedHmrcErrors: string[];
+}
+
 export interface CiMappings {
-  contraIndicationMapping: string[];
-  contraIndicatorReasonsMapping: ContraIndicator[];
+  ciMapping: CiMappingEntry[];
+  reasonsMapping: ContraIndicator[];
 }
