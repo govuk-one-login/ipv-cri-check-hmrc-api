@@ -4,24 +4,20 @@ vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 import { getHmrcContraIndicators } from "../../../src/vc/contraIndicator/index";
-import { ContraIndicator } from "../../../src/vc/contraIndicator/types";
+import { CiMappingEntry } from "../../../src/vc/contraIndicator/types";
 
-type TestCase = {
-  inputHmrcErrors: string[];
-  expectedCIs: ContraIndicator[];
-};
-
-const contraIndicationMapping = [
-  '"An error description, with a comma", aaaa:ci_1',
-  '"A second one with, a comma", bbbb,cccc,dddd:ci_2',
-  '"Another error, description", eeee,ffff,gggg:ci_3',
+const ciMapping: CiMappingEntry[] = [
+  { mappedHmrcErrors: ["An error description", "with a comma", "aaaa"], ciValue: "ci_1" },
+  { mappedHmrcErrors: ["A second one with", "a comma", "bbbb", "cccc", "dddd"], ciValue: "ci_2" },
+  { mappedHmrcErrors: ["Another error", "description", "eeee", "ffff", "gggg"], ciValue: "ci_3" },
 ];
-const contraIndicatorReasonsMapping = [
+
+const reasonsMapping = [
   { ci: "ci_1", reason: "ci_1 reason" },
   { ci: "ci_2", reason: "ci_2 reason" },
   { ci: "ci_3", reason: "ci_3 reason" },
 ];
-const mappings = { contraIndicationMapping, contraIndicatorReasonsMapping };
+const mappings = { ciMapping, reasonsMapping };
 
 const testCases = [
   [
@@ -54,7 +50,7 @@ const testCases = [
   ],
   [
     {
-      inputHmrcErrors: ['"An error description, with a comma"', "aaaa"],
+      inputHmrcErrors: ["An error description, with a comma", "aaaa"],
       expectedCIs: [
         { ci: "ci_1", reason: "ci_1 reason" },
         { ci: "ci_1", reason: "ci_1 reason" },
@@ -83,7 +79,7 @@ describe("ci-mapping", () => {
 
     it.each(testCases)(
       "should return all ContraIndicator code and reason pairs for hmrc errors input [%j]",
-      (testCase: TestCase) => {
+      (testCase) => {
         const result = getHmrcContraIndicators(mappings, testCase.inputHmrcErrors);
 
         expect(result).toEqual(testCase.expectedCIs);
