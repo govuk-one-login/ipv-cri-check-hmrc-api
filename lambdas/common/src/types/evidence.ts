@@ -1,4 +1,4 @@
-import { ContraIndicator } from "../../../issue-credential/src/vc/contraIndicator";
+import { ContraIndicator } from "../../../issue-credential/src/vc/contraIndicator/types";
 
 export const CHECK_METHOD = "data" as const;
 export const EVIDENCE_TYPE = "IdentityCheck" as const;

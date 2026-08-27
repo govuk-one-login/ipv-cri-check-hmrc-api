@@ -8,7 +8,7 @@ import { ContraIndicator } from "./contraIndicator/types";
 import { logger } from "@govuk-one-login/cri-logger";
 import { CHECK_DETAIL } from "../../../common/src/types/evidence";
 import { NamePartType } from "@govuk-one-login/data-vocab/credentials";
-import { toEpochSecondsFromNow } from "common/src/util/date-time";
+import { toEpochSecondsFromNow } from "../../../common/src/util/date-time";
 import { randomUUID } from "node:crypto";
 
 /**

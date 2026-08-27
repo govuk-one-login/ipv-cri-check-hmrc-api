@@ -7,9 +7,9 @@ import { getHmrcContraIndicators } from "../../../src/vc/contraIndicator/index";
 import { CiMappingEntry } from "../../../src/vc/contraIndicator/types";
 
 const ciMapping: CiMappingEntry[] = [
-  { mappedHmrcErrors: ["An error description", "with a comma", "aaaa"], ciValue: "ci_1" },
-  { mappedHmrcErrors: ["A second one with", "a comma", "bbbb", "cccc", "dddd"], ciValue: "ci_2" },
-  { mappedHmrcErrors: ["Another error", "description", "eeee", "ffff", "gggg"], ciValue: "ci_3" },
+  { mappedHmrcErrors: ["AN ERROR DESCRIPTION", "WITH A COMMA", "AAAA"], ciValue: "ci_1" },
+  { mappedHmrcErrors: ["A SECOND ONE WITH", "A COMMA", "BBBB", "CCCC", "DDDD"], ciValue: "ci_2" },
+  { mappedHmrcErrors: ["ANOTHER ERROR", "DESCRIPTION", "EEEE", "FFFF", "GGGG"], ciValue: "ci_3" },
 ];
 
 const reasonsMapping = [

@@ -150,7 +150,10 @@ describe("issue-credential handler", () => {
   it("executes successfully with a valid input", async () => {
     const spyVcConfig = vi.spyOn(VcConfig, "getVcConfig").mockResolvedValue({
       contraIndicator: {
-        errorMapping: ["mapping1", "mapping2"],
+        ciMapping: [
+          { mappedHmrcErrors: ["err"], ciValue: "ci_1" },
+          { mappedHmrcErrors: ["err2"], ciValue: "ci_2" },
+        ],
         reasonsMapping: [],
       },
       kms: { signingKeyId: "some-key-id" },

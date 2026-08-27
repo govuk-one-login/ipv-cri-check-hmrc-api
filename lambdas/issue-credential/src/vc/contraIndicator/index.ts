@@ -20,15 +20,17 @@ function getCIsForHmrcErrors({ ciMapping, reasonsMapping }: CiMappings, hmrcErro
   const extractedHmrcErrors = validateHmrcErrors(ciMapping, hmrcErrors);
 
   const errorsWithCIs = ciMapping.flatMap(({ mappedHmrcErrors, ciValue }) => {
-    const normalizedMappedHmrcErrors = new Set(mappedHmrcErrors.map((value) => value.trim().toUpperCase()));
+    const uniqueHmrcErrors = new Set(mappedHmrcErrors);
 
     return extractedHmrcErrors
-      .filter((hmrcError) => normalizedMappedHmrcErrors.has(hmrcError.trim().toUpperCase()))
+      .filter((hmrcError) => uniqueHmrcErrors.has(hmrcError))
       .map((hmrcError) => ({
-        ci: ciValue.trim(),
-        error: hmrcError.trim(),
+        ci: ciValue,
+        error: hmrcError,
       }));
   });
 
-  return errorsWithCIs.map((c) => reasonsMapping.find((m) => m.ci === c.ci)) as ContraIndicator[];
+  return errorsWithCIs.map((c) =>
+    reasonsMapping.find((m) => m.ci.toUpperCase() === c.ci.toUpperCase())
+  ) as ContraIndicator[];
 }

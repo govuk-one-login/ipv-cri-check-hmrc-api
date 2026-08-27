@@ -1,10 +1,10 @@
 import { CiMappingEntry, CiMappings, ContraIndicator } from "./types";
-import assert from "node:assert";
 
 export function parseCIMappings(ciMappingString: string, reasonsMappingString: string): CiMappings {
   if (!ciMappingString?.length) {
     throw new Error("ContraIndicationMapping cannot be undefined in CiMappingEvent");
-  } else if (!reasonsMappingString?.length) {
+  }
+  if (!reasonsMappingString?.length) {
     throw new Error("ContraIndicatorReasonsMapping cannot be undefined in CiMappingEvent");
   }
 
@@ -13,28 +13,37 @@ export function parseCIMappings(ciMappingString: string, reasonsMappingString: s
 
   const ciMapping = ciMappingSplit.map((mapping) => {
     const [commaSeparatedErrors, ciValue] = mapping.split(":").map((m) => m.trim());
-    const mappedHmrcErrors = commaSeparatedErrors.split(",").map((m) => m.trim());
+    const mappedHmrcErrors = commaSeparatedErrors
+      .toUpperCase()
+      .split(",")
+      .map((m) => m.trim());
     return { mappedHmrcErrors, ciValue };
   });
 
   if (
     ciMapping.some(
-      ({ mappedHmrcErrors, ciValue }) => mappedHmrcErrors.includes("") || ciValue === undefined || ciValue.trim() === ""
+      ({ mappedHmrcErrors, ciValue }) => mappedHmrcErrors.includes("") || ciValue === undefined || ciValue === ""
     )
   ) {
     throw new Error("ContraIndicationMapping format is invalid");
   }
 
-  assert(
-    parsedReasonsMapping.constructor === Array &&
-      parsedReasonsMapping.every((m) => typeof m?.ci === "string" && typeof m?.reason === "string")
-  );
-  const reasonsMapping = parsedReasonsMapping as ContraIndicator[];
+  if (
+    !Array.isArray(parsedReasonsMapping) ||
+    parsedReasonsMapping.some((m) => typeof m?.ci !== "string" || typeof m?.reason !== "string")
+  ) {
+    throw new Error(`Reasons mapping (${reasonsMappingString}) does not match expected format.`);
+  }
 
-  const mappingCIs = ciMapping.map((m) => m.ciValue.trim());
+  const reasonsMapping = (parsedReasonsMapping as ContraIndicator[]).map(({ ci, reason }) => ({
+    ci: ci.trim(),
+    reason: reason.trim(),
+  }));
+
+  const mappingCIs = ciMapping.map((m) => m.ciValue.toUpperCase());
   const uniqueMappingCIs = [...new Set(mappingCIs)];
 
-  const reasonsCIs = parsedReasonsMapping.map((r) => r.ci.trim());
+  const reasonsCIs = reasonsMapping.map((r) => r.ci.toUpperCase());
   const uniqueReasonsCIs = [...new Set(reasonsCIs)];
 
   const mappingCIsNotInReasons = uniqueMappingCIs.filter((ci) => !uniqueReasonsCIs.includes(ci));
@@ -56,15 +65,13 @@ export function parseCIMappings(ciMappingString: string, reasonsMappingString: s
 }
 
 export function validateHmrcErrors(ciMapping: CiMappingEntry[], hmrcErrors: string[]) {
-  const allHmrcErrorsInCiMapping = new Set(
-    ciMapping.flatMap((m) => m.mappedHmrcErrors.map((e) => e.toUpperCase().trim()))
+  const allHmrcErrorsInCiMapping = new Set(ciMapping.flatMap((m) => m.mappedHmrcErrors));
+
+  const extractedHmrcErrors = hmrcErrors.flatMap((error) =>
+    error.split(",").map((string) => string.trim().toUpperCase())
   );
 
-  const extractedHmrcErrors = hmrcErrors.flatMap((error) => error.split(",").map((string) => string.trim()));
-
-  const unmappedErrorCount = extractedHmrcErrors.filter(
-    (error) => !allHmrcErrorsInCiMapping.has(error.toUpperCase())
-  ).length;
+  const unmappedErrorCount = extractedHmrcErrors.filter((error) => !allHmrcErrorsInCiMapping.has(error)).length;
 
   if (unmappedErrorCount > 0) {
     if (unmappedErrorCount === extractedHmrcErrors.length) {
