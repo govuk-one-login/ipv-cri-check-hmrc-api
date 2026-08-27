@@ -243,7 +243,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:eu-west-2:667736788427:applications/di-ipv-cri-oauth-common
-        SemanticVersion: 1.2.6
+        SemanticVersion: 1.2.7
       Parameters:
         AuditEventNamePrefix: IPV_HMRC_RECORD_CHECK_CRI
         CommonLambdasStackName: !If
@@ -270,7 +270,6 @@ Resources:
         IPVCoreRedirectURI: !FindInMap [EnvironmentConfiguration, !Ref Environment, CoreRedirectURI]
         IPVCoreStubJwksEndpoint: !FindInMap [EnvironmentConfiguration, !Ref Environment, StubJwksEndpoint]
         LambdaEnableSafeAuthCodeLogging: true
-        LambdaSessionByTokenRetry: true
         LambdaCodeSigningConfigArn: !If
           - EnforceCodeSigning
           - !Ref CodeSigningConfigArn
