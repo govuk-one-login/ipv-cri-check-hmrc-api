@@ -1,37 +1,36 @@
-import { HMRC_ERRORS_ABSENT, getContraIndicatorWithReason, validateInputs } from "./ci-mappings-validator";
-import { getHmrcErrsCiRecord, ContraIndicator } from "./ci-mapping-util";
-import { CiMappings } from "./types/ci-mappings";
+import { validateHmrcErrors } from "./ci-mappings-validator";
+import { CiMappings, ContraIndicator } from "./types";
 import { logger } from "@govuk-one-login/cri-logger";
 
-export const getHmrcContraIndicators = (ciMappings: CiMappings): Array<ContraIndicator> => {
+export const getHmrcContraIndicators = (ciMappings: CiMappings, hmrcErrors: string[]): Array<ContraIndicator> => {
+  if (!hmrcErrors || hmrcErrors.length === 0) {
+    logger.info(`Found no HMRC errors.`);
+    return [];
+  }
+
   try {
-    return getCIsForHmrcErrors(ciMappings);
-  } catch (error: unknown) {
+    return getCIsForHmrcErrors(ciMappings, hmrcErrors);
+  } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (message === HMRC_ERRORS_ABSENT) {
-      logger.info(`Found no HMRC errors.`);
-      return [];
-    }
     logger.error({ message: "An unexpected Error has occurred getting HMRC errors", error: message });
     throw error;
   }
 };
-const getCIsForHmrcErrors = (ciMappings: CiMappings): Array<ContraIndicator> => {
-  const { contraIndicationMapping, hmrcErrors, contraIndicatorReasonsMapping } = validateInputs(ciMappings);
+function getCIsForHmrcErrors({ ciMapping, reasonsMapping }: CiMappings, hmrcErrors: string[]): Array<ContraIndicator> {
+  const extractedHmrcErrors = validateHmrcErrors(ciMapping, hmrcErrors);
 
-  const contraIndicators = contraIndicationMapping?.flatMap((ci) => {
-    const { mappedHmrcErrors, ciValue } = getHmrcErrsCiRecord(ci);
+  const errorsWithCIs = ciMapping.flatMap(({ mappedHmrcErrors, ciValue }) => {
+    const uniqueHmrcErrors = new Set(mappedHmrcErrors);
 
-    const normalizedMappedHmrcErrors = new Set(mappedHmrcErrors.split(",").map((value) => value.trim().toUpperCase()));
-
-    return hmrcErrors
-      .flat()
-      .filter((hmrcError) => normalizedMappedHmrcErrors.has(hmrcError.trim().toUpperCase()))
+    return extractedHmrcErrors
+      .filter((hmrcError) => uniqueHmrcErrors.has(hmrcError))
       .map((hmrcError) => ({
-        ci: ciValue.trim(),
-        reason: hmrcError.trim(),
+        ci: ciValue,
+        error: hmrcError,
       }));
   });
 
-  return getContraIndicatorWithReason(contraIndicatorReasonsMapping, contraIndicators);
-};
+  return errorsWithCIs.map((c) =>
+    reasonsMapping.find((m) => m.ci.toUpperCase() === c.ci.toUpperCase())
+  ) as ContraIndicator[];
+}

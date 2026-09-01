@@ -8,6 +8,7 @@ import { CriError } from "@govuk-one-login/cri-error-response";
 import * as GetParameters from "../../../common/src/util/get-parameters";
 import { logger } from "@govuk-one-login/cri-logger";
 import { VcCheckConfig, getVcConfig } from "../../src/config/vc-config";
+import { CiMappingEntry, ContraIndicator } from "../../src/vc/contraIndicator/types";
 
 type spyGetParametersValues = MockInstance<
   (parameterPaths: string[], cacheTtlInSeconds?: number) => Promise<Record<string, string>>
@@ -17,15 +18,25 @@ describe("getVcConfig", () => {
   let getParametersValuesSpy: spyGetParametersValues;
 
   const mockVcSigningKeyId = "test-signing-key-id";
-  const expectedErrorMapping = "/check-hmrc-cri-api/contraindicationMappings";
-  const expectedReasonsMapping = "/check-hmrc-cri-api/contraIndicatorReasonsMapping";
+  const ciMappingParamName = "/check-hmrc-cri-api/contraindicationMappings";
+  const reasonMappingParamName = "/check-hmrc-cri-api/contraIndicatorReasonsMapping";
+
+  const validReasonMapping: ContraIndicator[] = [
+    { ci: "ci_1", reason: "ci_1 reason" },
+    { ci: "ci_2", reason: "ci_2 reason" },
+    { ci: "ci_3", reason: "ci_3 reason" },
+  ];
+
+  const validCiMapping: CiMappingEntry[] = [
+    { mappedHmrcErrors: ["AN ERROR DESCRIPTION", "WITH A COMMA", "AAAA"], ciValue: "ci_1" },
+    { mappedHmrcErrors: ["A SECOND ONE WITH", "A COMMA", "BBBB", "CCCC", "DDDD"], ciValue: "ci_2" },
+    { mappedHmrcErrors: ["ANOTHER ERROR", "DESCRIPTION", "EEEE", "FFFF", "GGGG"], ciValue: "ci_3" },
+  ];
 
   const mockSsmParams: Record<string, string> = {
-    [expectedErrorMapping]: "error1||error2||error3",
-    [expectedReasonsMapping]: JSON.stringify([
-      { code: "A", reason: "Reason A" },
-      { code: "B", reason: "Reason B" },
-    ]),
+    [ciMappingParamName]:
+      "An error description, with a comma, aaaa:ci_1||A second one with, a comma, bbbb,cccc,dddd:ci_2||Another error, description, eeee,ffff,gggg:ci_3",
+    [reasonMappingParamName]: JSON.stringify(validReasonMapping),
   };
 
   beforeEach(() => {
@@ -44,11 +55,8 @@ describe("getVcConfig", () => {
       expect(result).toEqual({
         kms: { signingKeyId: "test-signing-key-id" },
         contraIndicator: {
-          errorMapping: ["error1", "error2", "error3"],
-          reasonsMapping: [
-            { code: "A", reason: "Reason A" },
-            { code: "B", reason: "Reason B" },
-          ],
+          ciMapping: validCiMapping,
+          reasonsMapping: validReasonMapping,
         },
       });
     });
@@ -58,7 +66,7 @@ describe("getVcConfig", () => {
 
       await getVcConfig(mockVcSigningKeyId);
 
-      expect(getParametersValuesSpy).toHaveBeenCalledWith([expectedErrorMapping, expectedReasonsMapping], 300);
+      expect(getParametersValuesSpy).toHaveBeenCalledWith([ciMappingParamName, reasonMappingParamName], 300);
       expect(getParametersValuesSpy).toHaveBeenCalledTimes(1);
     });
 
@@ -72,37 +80,36 @@ describe("getVcConfig", () => {
       expect(logger.info).toHaveBeenCalledTimes(1);
     });
 
-    it("handles empty error mapping string", async () => {
+    it("throws for an empty error mapping string", async () => {
       getParametersValuesSpy.mockResolvedValueOnce({
         ...mockSsmParams,
-        [expectedErrorMapping]: "",
+        [ciMappingParamName]: "",
       });
 
-      const result = await getVcConfig(mockVcSigningKeyId);
-
-      expect(result.contraIndicator.errorMapping).toEqual([""]);
+      await expect(() => getVcConfig(mockVcSigningKeyId)).rejects.toThrow(
+        "ContraIndicationMapping cannot be undefined in CiMappingEvent"
+      );
     });
 
-    it("handles single error mapping without delimiter", async () => {
+    it("throws for a CI mapping without delimiters", async () => {
       getParametersValuesSpy.mockResolvedValueOnce({
         ...mockSsmParams,
-        [expectedErrorMapping]: "single-error",
+        [ciMappingParamName]: "single-error",
       });
 
-      const result = await getVcConfig(mockVcSigningKeyId);
-
-      expect(result.contraIndicator.errorMapping).toEqual(["single-error"]);
+      await expect(() => getVcConfig(mockVcSigningKeyId)).rejects.toThrow("ContraIndicationMapping format is invalid");
     });
 
-    it("handles complex JSON in reasonsMapping", async () => {
+    it("correctly handles JSON in reasonsMapping", async () => {
       const multipleReasons = [
-        { code: "X", reason: "Complex reason" },
-        { code: "Y", reason: "Another reason" },
+        { ci: "ci_1", reason: "Complex reason" },
+        { ci: "ci_2", reason: "Another reason" },
+        { ci: "ci_3", reason: "Last reason" },
       ];
 
       getParametersValuesSpy.mockResolvedValue({
         ...mockSsmParams,
-        [expectedReasonsMapping]: JSON.stringify(multipleReasons),
+        [reasonMappingParamName]: JSON.stringify(multipleReasons),
       });
 
       const result = await getVcConfig(mockVcSigningKeyId);
@@ -147,7 +154,7 @@ describe("getVcConfig", () => {
     it("throws CriError when JSON.parse fails on reasonsMapping", async () => {
       getParametersValuesSpy.mockResolvedValueOnce({
         ...mockSsmParams,
-        [expectedReasonsMapping]: "invalid-json",
+        [reasonMappingParamName]: "invalid-json",
       });
 
       await expect(getVcConfig(mockVcSigningKeyId)).rejects.toThrow(CriError);
@@ -170,45 +177,21 @@ describe("getVcConfig", () => {
   });
 
   describe("type safety", () => {
-    it("returns object matching VcCheckConfig type", async () => {
+    it("returns an object matching VcCheckConfig type", async () => {
       getParametersValuesSpy.mockResolvedValueOnce(mockSsmParams);
 
       const result = await getVcConfig(mockVcSigningKeyId);
 
       expect(typeof result.kms.signingKeyId).toBe("string");
-      expect(Array.isArray(result.contraIndicator.errorMapping)).toBe(true);
+      expect(Array.isArray(result.contraIndicator.ciMapping)).toBe(true);
       expect(Array.isArray(result.contraIndicator.reasonsMapping)).toBe(true);
 
       const kmsConfig: { signingKeyId: string } = result.kms;
-      const contraConfig: { errorMapping: string[]; reasonsMapping: object[] } = result.contraIndicator;
+      const contraConfig: { ciMapping: CiMappingEntry[]; reasonsMapping: ContraIndicator[] } = result.contraIndicator;
 
       expect(kmsConfig.signingKeyId).toBeDefined();
-      expect(contraConfig.errorMapping).toBeDefined();
+      expect(contraConfig.ciMapping).toBeDefined();
       expect(contraConfig.reasonsMapping).toBeDefined();
-    });
-  });
-
-  describe("some edge cases", () => {
-    it("handles reasonsMapping as empty array", async () => {
-      getParametersValuesSpy.mockResolvedValueOnce({
-        ...mockSsmParams,
-        [expectedReasonsMapping]: "[]",
-      });
-
-      const result = await getVcConfig(mockVcSigningKeyId);
-
-      expect(result.contraIndicator.reasonsMapping).toEqual([]);
-    });
-
-    it("handles multiple consecutive delimiters in errorMapping", async () => {
-      getParametersValuesSpy.mockResolvedValueOnce({
-        ...mockSsmParams,
-        [expectedErrorMapping]: "error1||||error2||error3",
-      });
-
-      const result = await getVcConfig(mockVcSigningKeyId);
-
-      expect(result.contraIndicator.errorMapping).toEqual(["error1", "", "error2", "error3"]);
     });
   });
 });

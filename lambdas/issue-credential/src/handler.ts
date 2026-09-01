@@ -10,10 +10,7 @@ import { getRecordBySessionId, getSessionBySessionId } from "../../common/src/da
 import { dynamoDBClient } from "../../common/src/util/dynamo";
 import { NinoUser } from "../../common/src/types/nino-user";
 import { buildVerifiableCredential } from "./vc/vc-builder";
-import { randomUUID } from "node:crypto";
 import { SessionItem, PersonIdentityItem } from "@govuk-one-login/cri-types";
-import { JwtClass } from "./types/verifiable-credential";
-import { toEpochSecondsFromNow } from "../../common/src/util/date-time";
 import { getHmrcContraIndicators } from "./vc/contraIndicator";
 
 import { AUDIT_EVENT_TYPE } from "../../common/src/types/audit";
@@ -39,18 +36,17 @@ class IssueCredentialHandler implements LambdaInterface {
       const { attempts, personIdentity, ninoUser, session } = await this.getCheckedUserData(accessToken);
 
       vcConfig ??= await getVcConfig(functionConfig.credentialIssuerEnv.vcSigningKeyId);
-      const contraIndicators = getHmrcContraIndicators({
-        contraIndicationMapping: vcConfig.contraIndicator.errorMapping,
-        contraIndicatorReasonsMapping: vcConfig.contraIndicator.reasonsMapping,
-        hmrcErrors: attempts.items.filter((i) => i.attempt === "FAIL").map((item) => item.text ?? ""),
-      });
+      const contraIndicators = getHmrcContraIndicators(
+        vcConfig.contraIndicator,
+        attempts.items.filter((i) => i.attempt === "FAIL").map((item) => item.text ?? "")
+      );
 
       const vcClaimSet = buildVerifiableCredential(
         attempts,
         personIdentity,
         ninoUser,
         session,
-        await this.generateJwtClaims(session.subject),
+        functionConfig.credentialIssuerEnv.issuer,
         contraIndicators
       );
 
@@ -134,15 +130,6 @@ class IssueCredentialHandler implements LambdaInterface {
     logger.info("Successfully retrieved the nino user record.");
 
     return { attempts, session, personIdentity, ninoUser };
-  }
-
-  private async generateJwtClaims(subject: string): Promise<JwtClass> {
-    return {
-      sub: subject,
-      nbf: toEpochSecondsFromNow(),
-      iss: functionConfig.credentialIssuerEnv.issuer,
-      jti: `urn:uuid:${randomUUID().toString()}`,
-    };
   }
 }
 

@@ -1,5 +1,4 @@
-import { ContraIndicator } from "../../../issue-credential/src/vc/contraIndicator/ci-mapping-util";
-import { CiReasonsMapping } from "../../../issue-credential/src/vc/contraIndicator/ci-mappings-validator";
+import { ContraIndicator } from "../../../issue-credential/src/vc/contraIndicator/types";
 
 export const CHECK_METHOD = "data" as const;
 export const EVIDENCE_TYPE = "IdentityCheck" as const;
@@ -22,7 +21,7 @@ export type Evidence = {
   ci?: string[];
   txn: string;
   type: typeof EVIDENCE_TYPE;
-  ciReasons?: CiReasonsMapping[];
+  ciReasons?: ContraIndicator[];
   attemptNum?: number;
 };
 

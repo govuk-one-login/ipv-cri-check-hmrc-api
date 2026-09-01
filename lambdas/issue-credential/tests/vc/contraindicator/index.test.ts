@@ -4,24 +4,21 @@ vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
 import { getHmrcContraIndicators } from "../../../src/vc/contraIndicator/index";
-import { ContraIndicator } from "../../../src/vc/contraIndicator/ci-mapping-util";
-import { CiMappings } from "../../../src/vc/contraIndicator/types/ci-mappings";
+import { CiMappingEntry } from "../../../src/vc/contraIndicator/types";
 
-type TestCase = {
-  inputHmrcErrors: string[];
-  expectedCIs: ContraIndicator[];
-};
-
-const contraIndicationMapping = [
-  '"An error description, with a comma", aaaa:ci_1',
-  '"A second one with, a comma", bbbb,cccc,dddd:ci_2',
-  '"Another error, description", eeee,ffff,gggg:ci_3',
+const ciMapping: CiMappingEntry[] = [
+  { mappedHmrcErrors: ["AN ERROR DESCRIPTION", "WITH A COMMA", "AAAA"], ciValue: "ci_1" },
+  { mappedHmrcErrors: ["A SECOND ONE WITH", "A COMMA", "BBBB", "CCCC", "DDDD"], ciValue: "ci_2" },
+  { mappedHmrcErrors: ["ANOTHER ERROR", "DESCRIPTION", "EEEE", "FFFF", "GGGG"], ciValue: "ci_3" },
 ];
-const contraIndicatorReasonsMapping = [
+
+const reasonsMapping = [
   { ci: "ci_1", reason: "ci_1 reason" },
   { ci: "ci_2", reason: "ci_2 reason" },
   { ci: "ci_3", reason: "ci_3 reason" },
 ];
+const mappings = { ciMapping, reasonsMapping };
+
 const testCases = [
   [
     {
@@ -53,7 +50,7 @@ const testCases = [
   ],
   [
     {
-      inputHmrcErrors: ['"An error description, with a comma"', "aaaa"],
+      inputHmrcErrors: ["An error description, with a comma", "aaaa"],
       expectedCIs: [
         { ci: "ci_1", reason: "ci_1 reason" },
         { ci: "ci_1", reason: "ci_1 reason" },
@@ -65,56 +62,26 @@ const testCases = [
 
 describe("ci-mapping", () => {
   describe("getHmrcContraIndicators", () => {
-    it("should return the mapped CI for a single matching hmrc_error in ContraIndicationMapping", () => {
-      const event = {
-        contraIndicationMapping,
-        hmrcErrors: ["aaaa"],
-        contraIndicatorReasonsMapping,
-      } as CiMappings;
-
-      const result = getHmrcContraIndicators(event);
+    it("should return the mapped CI for a single matching HMRC error", () => {
+      const result = getHmrcContraIndicators(mappings, ["aaaa"]);
 
       expect(result).toEqual([{ ci: "ci_1", reason: "ci_1 reason" }]);
     });
 
-    it.each([[["bbbb"], [["cccc"]]]])(
-      "should return contraIndicator code ci_2 and reason 'bbbb' for input '%s'",
-      (input) => {
-        const event = {
-          contraIndicationMapping,
-          hmrcErrors: input,
-          contraIndicatorReasonsMapping,
-        } as unknown as CiMappings;
+    it.each([[["bbbb"], [["cccc"]]]])("should return contraIndicator ci_2 for input '%s'", (input) => {
+      const result = getHmrcContraIndicators(mappings, input);
 
-        const result = getHmrcContraIndicators(event);
+      expect(result).toEqual([{ ci: "ci_2", reason: "ci_2 reason" }]);
+    });
 
-        expect(result).toEqual([{ ci: "ci_2", reason: "ci_2 reason" }]);
-      }
-    );
+    it.each(testCases)("should return correct CIs for hmrc errors [%j]", (testCase) => {
+      const result = getHmrcContraIndicators(mappings, testCase.inputHmrcErrors);
 
-    it.each(testCases)(
-      "should return all ContraIndicator code and reason pairs for hmrc errors input [%j]",
-      (testCase: TestCase) => {
-        const event = {
-          contraIndicationMapping,
-          hmrcErrors: testCase.inputHmrcErrors,
-          contraIndicatorReasonsMapping,
-        } as CiMappings;
+      expect(result).toEqual(testCase.expectedCIs);
+    });
 
-        const result = getHmrcContraIndicators(event);
-
-        expect(result).toEqual(testCase.expectedCIs);
-      }
-    );
-
-    it("returns multiple ContraIndicator code and reasons when input contains different groups", () => {
-      const event = {
-        contraIndicationMapping,
-        hmrcErrors: ["gggg,aaaa"],
-        contraIndicatorReasonsMapping,
-      } as CiMappings;
-
-      const result = getHmrcContraIndicators(event);
+    it("returns multiple CIs when input contains different groups", () => {
+      const result = getHmrcContraIndicators(mappings, ["gggg,aaaa"]);
 
       expect(result).toEqual([
         { ci: "ci_1", reason: "ci_1 reason" },
@@ -122,60 +89,28 @@ describe("ci-mapping", () => {
       ]);
     });
 
-    it("should not produce a CI if there are no hmrc_errors", () => {
-      const event = {
-        contraIndicationMapping,
-        contraIndicatorReasonsMapping,
-      } as CiMappings;
-
-      const result = getHmrcContraIndicators(event);
+    it("should not produce a CI if there are no HMRC errors", () => {
+      const result = getHmrcContraIndicators(mappings, undefined as unknown as string[]);
 
       expect(result).toEqual([]);
     });
 
-    it("throws error, not all items in hmrc_errors have matching ContraIndicationMapping", () => {
-      const event = {
-        contraIndicationMapping,
-        hmrcErrors: ["aaaa", "not-a-mapped-error"],
-        contraIndicatorReasonsMapping,
-      } as CiMappings;
-
-      expect(() => getHmrcContraIndicators(event)).toThrow(
+    it("throws an error when not all HMRC errors map to CIs", () => {
+      expect(() => getHmrcContraIndicators(mappings, ["aaaa", "not-a-mapped-error"])).toThrow(
         "Not all items in hmrc_errors have matching ContraIndicationMapping"
       );
     });
   });
 
   describe("getHmrcContraIndicators error handling", () => {
-    it("should return empty array when HMRC_ERRORS_ABSENT", () => {
-      const event = {
-        contraIndicationMapping,
-        contraIndicatorReasonsMapping,
-      } as CiMappings;
-
-      const result = getHmrcContraIndicators(event);
-
-      expect(result).toEqual([]);
-    });
-
     it("should log error when error occurs", () => {
-      const event = {
-        contraIndicationMapping,
-        hmrcErrors: ["not-a-mapped-error"],
-        contraIndicatorReasonsMapping,
-      } as CiMappings;
-
-      expect(() => getHmrcContraIndicators(event)).toThrow();
+      expect(() => getHmrcContraIndicators(mappings, ["not-a-mapped-error"])).toThrow();
     });
 
     it("should rethrow error after logging", () => {
-      const event = {
-        contraIndicationMapping,
-        hmrcErrors: ["not-a-mapped-error"],
-        contraIndicatorReasonsMapping,
-      } as CiMappings;
-
-      expect(() => getHmrcContraIndicators(event)).toThrow("No matching hmrcError for any ContraIndicationMapping");
+      expect(() => getHmrcContraIndicators(mappings, ["not-a-mapped-error"])).toThrow(
+        "No matching hmrcError for any ContraIndicationMapping"
+      );
     });
   });
 });

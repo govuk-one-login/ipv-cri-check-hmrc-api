@@ -1,23 +1,25 @@
 import { SessionItem, PersonIdentityItem } from "@govuk-one-login/cri-types";
 import { NinoUser } from "../../../common/src/types/nino-user";
-import { VerifiableIdentityCredential, VC_CONTEXT, VC_TYPE, JwtClass } from "../types/verifiable-credential";
+import { VerifiableIdentityCredential, VC_CONTEXT, VC_TYPE } from "../types/verifiable-credential";
 import { CredentialSubject } from "../types/credential-subject";
 import { AttemptsResult } from "../../../common/src/types/attempt";
 import { getEvidence } from "../evidence/evidence-creator";
-import { ContraIndicator } from "./contraIndicator/ci-mapping-util";
+import { ContraIndicator } from "./contraIndicator/types";
 import { logger } from "@govuk-one-login/cri-logger";
 import { CHECK_DETAIL } from "../../../common/src/types/evidence";
+import { NamePartType } from "@govuk-one-login/data-vocab/credentials";
+import { toEpochSecondsFromNow } from "../../../common/src/util/date-time";
+import { randomUUID } from "node:crypto";
 
 /**
- * Builds a Verifiable Credential (VC) need all fields to be in the order
- * specified for PACT tests.
+ * Builds a Verifiable Credential (VC). Need all fields to be in the order specified for PACT tests.
  */
 export const buildVerifiableCredential = (
   attempts: AttemptsResult,
   personIdentity: PersonIdentityItem,
   ninoUser: NinoUser,
   session: SessionItem,
-  jwtClaims: JwtClass,
+  issuer: string,
   contraIndicators: ContraIndicator[]
 ): VerifiableIdentityCredential => {
   logger.info("Building verifiable Credential");
@@ -26,23 +28,23 @@ export const buildVerifiableCredential = (
       socialSecurityRecord: [{ personalNumber: ninoUser.nino }],
     }),
     birthDate: personIdentity.birthDates,
-    name: personIdentity.names?.map(n => ({
-        ...n,
-        nameParts: n.nameParts.map(({type, value}) => ({type, value})),
+    name: personIdentity.names?.map((n) => ({
+      ...n,
+      nameParts: n.nameParts.map(({ type, value }) => ({ type: type as NamePartType, value })),
     })),
   };
 
   const verifiableCredential = {
-    sub: jwtClaims.sub,
-    nbf: jwtClaims.nbf,
-    iss: jwtClaims.iss,
+    sub: session.subject,
+    nbf: toEpochSecondsFromNow(),
+    iss: issuer,
     vc: {
       evidence: [getEvidence(session, attempts, CHECK_DETAIL, contraIndicators)],
       credentialSubject,
       type: VC_TYPE,
       "@context": VC_CONTEXT,
     },
-    jti: jwtClaims.jti,
+    jti: `urn:uuid:${randomUUID()}`,
   };
   logger.info("Verifiable Credential Structure generated successfully.");
   return verifiableCredential;
