@@ -24,7 +24,7 @@
     "@types/uuid": "9.0.8",
     "aws-sigv4-fetch": "4.4.1",
     "express": "4.22.2",
-    "express-asyncify": "2.1.2",
+    "express-asyncify": "3.1.0",
     "jose": "6.2.2",
     "npm-run-all2": "8.0.4",
     "tsx": "4.22.4",
