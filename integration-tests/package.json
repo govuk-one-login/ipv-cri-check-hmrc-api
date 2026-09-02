@@ -13,10 +13,10 @@
     "compile": "tsc"
   },
   "devDependencies": {
-    "@aws-lambda-powertools/logger": "2.31.0",
-    "@aws-sdk/client-kms": "3.1012.0",
-    "@aws-sdk/client-secrets-manager": "3.1012.0",
-    "@aws-sdk/credential-providers": "3.1012.0",
+    "@aws-lambda-powertools/logger": "2.35.0",
+    "@aws-sdk/client-kms": "3.1121.0",
+    "@aws-sdk/client-secrets-manager": "3.1121.0",
+    "@aws-sdk/credential-providers": "3.1121.0",
     "@govuk-one-login/cri-test-resources-helpers": "1.0.2",
     "@govuk-one-login/cri-cloudformation-helpers": "1.0.1",
     "@pact-foundation/pact": "16.3.0",
