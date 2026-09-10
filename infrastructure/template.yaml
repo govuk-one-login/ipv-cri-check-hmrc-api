@@ -49,8 +49,8 @@ Parameters:
     Description: "Specifies the configuration to enable gradual Lambda deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'AllAtOnce'"
     Type: String
     Default: "AllAtOnce"
-  LambdaVersionHash:
-    Description: "Commit SHA used to force Lambda version publication in nested OAuth Common"
+  CommitSha:
+    Description: "Commit SHA supplied by the deployment pipeline"
     Type: String
     Default: "initial"
 
@@ -278,7 +278,7 @@ Resources:
           - !Ref CodeSigningConfigArn
           - !Ref AWS::NoValue
         LambdaDeploymentPreference: !Ref LambdaDeploymentPreference
-        LambdaVersionHash: !Ref LambdaVersionHash
+        LambdaVersionHash: !Ref CommitSha
         LambdaProvisionedConcurrentExecutions: !FindInMap [ProvisionedConcurrency, Environment, !Ref Environment]
         LambdaVpcConfiguration: di-devplatform-deploy
         PermissionsBoundaryArn: !If
