@@ -49,6 +49,10 @@ Parameters:
     Description: "Specifies the configuration to enable gradual Lambda deployments. It can be used to set deployment type and also allows skipping canary deployment by setting to 'AllAtOnce'"
     Type: String
     Default: "AllAtOnce"
+  CommitSha:
+    Description: "Commit SHA supplied by the deployment pipeline"
+    Type: String
+    Default: ""
 
 Conditions:
   EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, ""]]
@@ -243,7 +247,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:eu-west-2:667736788427:applications/di-ipv-cri-oauth-common
-        SemanticVersion: 1.2.8
+        SemanticVersion: 1.2.11
       Parameters:
         AuditEventNamePrefix: IPV_HMRC_RECORD_CHECK_CRI
         CommonLambdasStackName: !If
@@ -274,6 +278,7 @@ Resources:
           - !Ref CodeSigningConfigArn
           - !Ref AWS::NoValue
         LambdaDeploymentPreference: !Ref LambdaDeploymentPreference
+        LambdaVersionHash: !Ref CommitSha
         LambdaProvisionedConcurrentExecutions: !FindInMap [ProvisionedConcurrency, Environment, !Ref Environment]
         LambdaVpcConfiguration: di-devplatform-deploy
         PermissionsBoundaryArn: !If
