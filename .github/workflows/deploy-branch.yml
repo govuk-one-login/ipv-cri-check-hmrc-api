@@ -80,3 +80,4 @@ jobs:
             cri:deployment-source=github-actions
           parameters: |
             Environment=localdev
+            CommitSha=${{ github.sha }}

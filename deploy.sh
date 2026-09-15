@@ -17,6 +17,8 @@ sam validate -t infrastructure/template.yaml --lint
 
 sam build -t infrastructure/template.yaml --cached --parallel
 
+commit_sha="$(git rev-parse HEAD)"
+
 sam deploy --stack-name "$stack_name" \
   --no-fail-on-empty-changeset \
   --no-confirm-changeset \
@@ -32,4 +34,5 @@ sam deploy --stack-name "$stack_name" \
   --parameter-overrides \
   ${common_stack_name:+CommonStackName=$common_stack_name} \
   ${txma_stack_name:+TxmaStackName=$txma_stack_name} \
-  Environment=localdev
+  Environment=localdev \
+  CommitSha=$commit_sha
