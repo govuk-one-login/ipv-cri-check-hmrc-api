@@ -1144,6 +1144,82 @@ Resources:
             Period: 300
             Stat: Sum
 
+  Api4xxRateAnomalyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    #Condition: DeployAlarms
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-NinoCheckApi-4xx-rate-anomaly"
+      AlarmDescription: !Sub "Check HMRC ${Environment} API Gateway 4XX error rate is anomalously high"
+      # ActionsEnabled: true
+      # AlarmActions:
+      #   - !ImportValue build-notifications-WarningAlertsTopicArn
+      # OKActions:
+      #   - !ImportValue build-notifications-WarningAlertsTopicArn
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      ComparisonOperator: GreaterThanUpperThreshold
+      TreatMissingData: notBreaching
+      ThresholdMetricId: anomalyBand
+      Metrics:
+      - Id: publicApi4xxErrors
+        MetricStat:
+          Metric:
+            Namespace: AWS/ApiGateway
+            MetricName: 4XXError
+            Dimensions:
+              - Name: ApiName
+                Value: !Sub "${AWS::StackName}-public"
+          Period: 300
+          Stat: Sum
+        ReturnData: false
+      - Id: privateApi4xxErrors
+        MetricStat:
+          Metric:
+            Namespace: AWS/ApiGateway
+            MetricName: 4XXError
+            Dimensions:
+              - Name: ApiName
+                Value: !Sub "${AWS::StackName}-private"
+          Period: 300
+          Stat: Sum
+        ReturnData: false
+      - Id: publicApiInvocations
+        MetricStat:
+          Metric:
+            Namespace: AWS/ApiGateway
+            MetricName: Count
+            Dimensions:
+              - Name: ApiName
+                Value: !Sub "${AWS::StackName}-public"
+          Period: 300
+          Stat: Sum
+        ReturnData: false
+      - Id: privateApiInvocations
+        MetricStat:
+          Metric:
+            Namespace: AWS/ApiGateway
+            MetricName: Count
+            Dimensions:
+              - Name: ApiName
+                Value: !Sub "${AWS::StackName}-public"
+          Period: 300
+          Stat: Sum
+        ReturnData: false
+      - Id: combined4xxErrors
+        Expression: publicApi4xxErrors + privateApi4xxErrors
+        ReturnData: false
+      - Id: combinedInvocations
+        Expression: publicApiInvocations + privateApiInvocations
+        ReturnData: false
+      - Id: combined4xxErrorRate
+        Expression: "IF(combinedInvocations > 0, (combined4xxErrors / combinedInvocations) * 100, 0)"
+        Label: Combined 4XX Error Rate
+        ReturnData: true
+      - Id: anomalyBand
+        Expression: ANOMALY_DETECTION_BAND(combined4xxErrorRate, 2)
+        Label: Combined 4XX Anomaly Band
+        ReturnData: true
+
   DynamoTablesEncryptionKey:
     Type: AWS::KMS::Key
     Properties:
