@@ -1038,7 +1038,7 @@ Resources:
                 Condition:
                   StringNotEquals:
                     aws:SourceVpce:
-                      - !ImportValue cri-vpc-ApiGatewayVpcEndpointId
+                      - !ImportValue cri-vpc-ExecuteApiGatewayEndpointId
                       - !ImportValue spoke-vpc-ExecuteApiGatewayEndpointId
       Tags:
         FMSRegionalPolicy: !If [IsNotIntOrProdEnvironment, "false", ""]
