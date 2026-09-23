@@ -24,7 +24,7 @@ jobs:
           private-key: ${{ secrets.NPM_AUDIT_APP_KEY }}
 
       - name: Pull repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -84,7 +84,7 @@ jobs:
 
       # The base branch, so the PR diff is only the dependency fix.
       - name: Pull repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.audit.outputs.base }}
 
