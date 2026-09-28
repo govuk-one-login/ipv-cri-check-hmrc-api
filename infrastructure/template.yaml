@@ -267,6 +267,8 @@ Resources:
         CriVcIssuer: !FindInMap [EnvironmentConfiguration, !Ref Environment, BaseURL]
         CriPrivateApiGwName: !Sub ${AWS::StackName}-private
         CriPublicApiGwName: !Sub ${AWS::StackName}-public
+        CriPrivateApiGatewayID: !Ref PrivateNinoCheckApi
+        CriPublicApiGatewayID: !Ref PublicNinoCheckApi
         Environment: !If
           - IsLocalDevEnvironment
           - dev
