@@ -59,6 +59,7 @@ Conditions:
   UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, ""]]
   IsDevEnvironment: !Equals [!Ref Environment, dev]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
+  IsNotLocalDevEnvironment: !Not [!Condition IsLocalDevEnvironment]
   IsIntEnvironment: !Equals [!Ref Environment, integration]
   IsProdEnvironment: !Equals [!Ref Environment, production]
   IsDevLikeEnvironment: !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
@@ -145,6 +146,7 @@ Mappings:
   EnvironmentConfiguration:
     localdev:
       Domain: review-hc.localdev.account.gov.uk
+      ApiDomain: review-hc.dev.account.gov.uk
       BaseURL: https://review-hc.dev.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
@@ -153,6 +155,7 @@ Mappings:
       OAuthCommonTables: false
     dev:
       Domain: review-hc.dev.account.gov.uk
+      ApiDomain: review-hc.dev.account.gov.uk
       BaseURL: https://review-hc.dev.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
@@ -161,6 +164,7 @@ Mappings:
       OAuthCommonTables: false
     build:
       Domain: review-hc.build.account.gov.uk
+      ApiDomain: review-hc.build.account.gov.uk
       BaseURL: https://review-hc.build.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
@@ -169,6 +173,7 @@ Mappings:
       OAuthCommonTables: false
     staging:
       Domain: review-hc.staging.account.gov.uk
+      ApiDomain: review-hc.staging.account.gov.uk
       BaseURL: https://review-hc.staging.account.gov.uk
       HealthcheckSSMClientId: ipv-core-stub-aws-prod
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=nino
@@ -177,6 +182,7 @@ Mappings:
       OAuthCommonTables: false
     integration:
       Domain: review-hc.integration.account.gov.uk
+      ApiDomain: review-hc.integration.account.gov.uk
       BaseURL: https://review-hc.integration.account.gov.uk
       HealthcheckSSMClientId: ipv-core
       CoreRedirectURI: https://identity.integration.account.gov.uk/credential-issuer/callback?id=nino
@@ -185,6 +191,7 @@ Mappings:
       OAuthCommonTables: false
     production:
       Domain: review-hc.production.account.gov.uk
+      ApiDomain: review-hc.account.gov.uk
       BaseURL: https://review-hc.account.gov.uk
       HealthcheckSSMClientId: ipv-core
       CoreRedirectURI: https://identity.account.gov.uk/credential-issuer/callback?id=nino
@@ -925,6 +932,52 @@ Resources:
               Principal: "*"
               Action: execute-api:Invoke
               Resource: "execute-api:/*"
+
+  PublicApiCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Condition: IsNotLocalDevEnvironment
+    Properties:
+      DomainName: !Sub
+        - api.${Domain}
+        - Domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ApiDomain]
+      DomainValidationOptions:
+        - DomainName: !Sub
+            - api.${Domain}
+            - Domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ApiDomain]
+          HostedZoneId: !ImportValue PublicHostedZoneId
+      ValidationMethod: DNS
+
+  PublicApiDomainName:
+    Type: AWS::ApiGateway::DomainName
+    Condition: IsNotLocalDevEnvironment
+    Properties:
+      DomainName: !Sub
+        - api.${Domain}
+        - Domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ApiDomain]
+      RegionalCertificateArn: !Ref PublicApiCertificate
+      EndpointConfiguration:
+        Types: [REGIONAL]
+
+  PublicApiBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Condition: IsNotLocalDevEnvironment
+    Properties:
+      DomainName: !Ref PublicApiDomainName
+      RestApiId: !Ref PublicNinoCheckApi
+      Stage: !Ref PublicNinoCheckApi.Stage
+
+  PublicApiRecordSet:
+    Type: AWS::Route53::RecordSet
+    Condition: IsNotLocalDevEnvironment
+    Properties:
+      HostedZoneId: !ImportValue PublicHostedZoneId
+      Name: !Sub
+        - api.${Domain}
+        - Domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ApiDomain]
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt PublicApiDomainName.RegionalDomainName
+        HostedZoneId: !GetAtt PublicApiDomainName.RegionalHostedZoneId
 
   PublicNinoCheckApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1723,6 +1776,12 @@ Outputs:
     Value: !Ref PublicNinoCheckApi
     Export:
       Name: !Sub ${AWS::StackName}-PublicApiGatewayId
+  PublicApiCustomDomainName:
+    Description: Custom domain name of the public Nino Check HMRC CRI API
+    Value: !Sub
+      - ${StackPrefix}api.${Domain}
+      - StackPrefix: !If [IsLocalDevEnvironment, !Sub "${AWS::StackName}.", ""]
+        Domain: !FindInMap [EnvironmentConfiguration, !Ref Environment, ApiDomain]
   PrivateApiGatewayId:
     Description: API Gateway ID of the private Nino Check HMRC API
     Value: !Ref PrivateNinoCheckApi
