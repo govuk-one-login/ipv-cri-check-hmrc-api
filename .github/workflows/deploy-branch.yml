@@ -81,3 +81,4 @@ jobs:
           parameters: |
             Environment=localdev
             CommitSha=${{ github.sha }}
+            VpcStackName=spoke-vpc
