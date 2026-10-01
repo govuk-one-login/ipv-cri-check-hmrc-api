@@ -293,6 +293,7 @@ Resources:
           - UsePermissionsBoundary
           - !Ref PermissionsBoundary
           - !Ref AWS::NoValue
+        VpcStackNameOverride: !Ref VpcStackName
 
   JWKSBucketRole:
     Type: "AWS::IAM::Role"
