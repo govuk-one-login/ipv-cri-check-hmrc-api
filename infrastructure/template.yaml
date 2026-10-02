@@ -854,7 +854,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/AbandonFunction
-      RetentionInDays: 30
+      RetentionInDays: 365
 
   AbandonFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -935,7 +935,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PublicNinoCheckApi}-public-AccessLogs"
-      RetentionInDays: 30
+      RetentionInDays: 365
 
   PublicNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1053,7 +1053,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/vendedlogs/apigateway/${AWS::StackName}-${PrivateNinoCheckApi}-private-AccessLogs"
-      RetentionInDays: 30
+      RetentionInDays: 365
 
   PrivateNinoCheckApiLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1313,7 +1313,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/NinoCheckFunction
-      RetentionInDays: 30
+      RetentionInDays: 365
 
   NinoCheckFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1427,7 +1427,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/IssueCredentialFunction
-      RetentionInDays: 30
+      RetentionInDays: 365
 
   IssueCredentialFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -1481,7 +1481,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}/HealthcheckFunction
-      RetentionInDays: 30
+      RetentionInDays: 365
 
   HealthcheckFunctionAPIGWPermission:
     Type: AWS::Lambda::Permission
