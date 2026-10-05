@@ -67,6 +67,8 @@ Conditions:
   IsIntOrProdEnvironment: !Or [!Condition IsIntEnvironment, !Condition IsProdEnvironment]
   IsNotIntOrProdEnvironment: !Not
     - !Condition IsIntOrProdEnvironment
+  IsNotProdEnvironment: !Not
+    - !Condition IsProdEnvironment
   UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
@@ -1278,6 +1280,10 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-NinoCheckFunction"
+          POWERTOOLS_LOG_LEVEL: !If
+            - IsNotProdEnvironment
+            - "DEBUG"
+            - !Ref AWS::NoValue
           SESSION_TABLE: !If
             - UseOAuthCommonTables
             - !GetAtt OAuth.Outputs.DbSessionTableName

@@ -60,6 +60,7 @@ async function parsePdvErrorBody(response: Response): Promise<PdvApiErrorBody> {
       } else if ("code" in json && json.code === "INVALID_CREDENTIALS") {
         return { type: "invalid_creds", errorMessage: json.code } as PdvApiErrorJSON;
       } else {
+        logger.debug("Unexpected JSON response from PDV:", { response: json });
         logger.error("Unknown JSON response structure received from the Pdv request");
       }
     } catch (error) {
