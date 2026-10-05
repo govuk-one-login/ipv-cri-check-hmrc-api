@@ -58,7 +58,12 @@ async function parsePdvErrorBody(response: Response): Promise<PdvApiErrorBody> {
       if ("errors" in json) {
         return { type: "matching_error", errorMessage: json.errors } as PdvApiErrorJSON;
       } else if ("code" in json && json.code === "INVALID_CREDENTIALS") {
-        return { type: "invalid_creds", errorMessage: json.code } as PdvApiErrorJSON;
+        return { type: "invalid_creds", errorMessage: json.code };
+      } else if ("code" in json && json.code === "FORBIDDEN") {
+        logger.error(
+          `Encountered '${json.code}' response from PDV API. This may indicate misconfiguration, such as missing IPs in the API's configured allowlist.`
+        );
+        return { type: "forbidden", errorMessage: json.code };
       } else {
         logger.debug("Unexpected JSON response from PDV:", { response: json });
         logger.error("Unknown JSON response structure received from the Pdv request");
