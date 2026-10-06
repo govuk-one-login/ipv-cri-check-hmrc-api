@@ -253,7 +253,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:eu-west-2:667736788427:applications/di-ipv-cri-oauth-common
-        SemanticVersion: 1.4.1
+        SemanticVersion: 1.5.0
       Parameters:
         AuditEventNamePrefix: IPV_HMRC_RECORD_CHECK_CRI
         CommonLambdasStackName: !If
@@ -287,6 +287,7 @@ Resources:
         LambdaVersionHash: !Ref CommitSha
         LambdaProvisionedConcurrentExecutions: !FindInMap [ProvisionedConcurrency, Environment, !Ref Environment]
         LambdaVpcConfiguration: di-devplatform-deploy
+        LogRetention: 365
         PermissionsBoundaryArn: !If
           - UsePermissionsBoundary
           - !Ref PermissionsBoundary
