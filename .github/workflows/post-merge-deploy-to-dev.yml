@@ -38,7 +38,7 @@ jobs:
           sam build -t infrastructure/template.yaml -b out/
 
       - name: Deploy SAM app
-        uses: govuk-one-login/devplatform-upload-action@720ddb75fba8951db5a648ebb416eb233f1b6bc9
+        uses: govuk-one-login/devplatform-upload-action@ec09f4b1f8648fe21dd18a40a2d8e2fa94d0ad41
         with:
           artifact-bucket-name: ${{ secrets.DEV_ARTIFACT_SOURCE_BUCKET_NAME }}
           signing-profile-name: ${{ secrets.DEV_SIGNING_PROFILE_NAME }}
