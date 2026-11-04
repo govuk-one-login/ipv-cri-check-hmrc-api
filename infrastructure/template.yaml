@@ -1609,13 +1609,13 @@ Resources:
       MetricName: 5XXError
       Dimensions:
         - Name: ApiName
-          Value: !Sub "${AWS::StackName}-public"
+          Value: !Sub "${AWS::StackName}-private"
         - Name: Method
           Value: POST
         - Name: Stage
           Value: !Ref Environment
         - Name: Resource
-          Value: /credential/issue
+          Value: /check
       Statistic: Sum
       Unit: Count
       Period: 60
