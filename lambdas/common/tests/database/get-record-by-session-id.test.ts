@@ -3,6 +3,7 @@ import { mockLogger } from "../logger";
 vi.mock("@govuk-one-login/cri-logger", () => ({
   logger: mockLogger,
 }));
+vi.mock("@govuk-one-login/cri-metrics");
 import { mockClient } from "aws-sdk-client-mock";
 import { allCustomMatcherWithAliases } from "aws-sdk-client-mock-vitest";
 expect.extend(allCustomMatcherWithAliases);
@@ -230,7 +231,6 @@ describe("getRecordBySessionId()", () => {
 });
 
 describe("getSessionBySessionId()", () => {
-  vi.mock("@govuk-one-login/cri-metrics");
 
   const ddbMock = mockClient(DynamoDBClient);
   const now = Math.round(Date.now() / 1000);
