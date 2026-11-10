@@ -178,7 +178,7 @@ paths:
       security:
         - api_key:
             Fn::If:
-              - IsDevEnvironment
+              - OJ4013NoApiKey
               - Ref: AWS::NoValue
               - []
       x-amazon-apigateway-request-validator: "Validate both"
@@ -235,7 +235,7 @@ paths:
       security:
         - api_key:
             Fn::If:
-              - IsLocalDevEnvironment
+              - OJ4013NoApiKey
               - Ref: AWS::NoValue
               - []
       x-amazon-apigateway-request-validator: "Validate both"
@@ -361,6 +361,12 @@ components:
       properties:
         message:
           type: "string"
+
+  securitySchemes:
+    api_key:
+      type: "apiKey"
+      name: "x-api-key"
+      in: "header"
 
 x-amazon-apigateway-request-validators:
   Validate both:

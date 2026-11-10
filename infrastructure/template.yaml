@@ -76,6 +76,10 @@ Conditions:
     - !Condition IsIntOrProdEnvironment
   IsNotProdEnvironment: !Not
     - !Condition IsProdEnvironment
+  OJ4013NoApiKey: !Or
+    - !Condition IsDevLikeEnvironment
+    - !Condition IsIntOrProdEnvironment
+  OJ4013EnableApiKey: !Not [!Condition OJ4013NoApiKey]
   UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
@@ -991,6 +995,36 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
+
+  PublicNinoCheckApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Condition: OJ4013EnableApiKey
+    Properties:
+      ApiStages:
+        - ApiId: !Ref PublicNinoCheckApi
+          Stage: !Ref PublicNinoCheckApi.Stage
+      Quota:
+        Limit: 500000
+        Period: DAY
+      Throttle:
+        BurstLimit: 400 # max allowed request rate during a short, transient spike
+        RateLimit: 200 # allowed requests per second
+
+  LinkUsagePlanApiKey1:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Condition: OJ4013EnableApiKey
+    Properties:
+      KeyId: !ImportValue core-infrastructure-ApiKey1
+      KeyType: API_KEY
+      UsagePlanId: !Ref PublicNinoCheckApiUsagePlan
+
+  LinkUsagePlanApiKey2:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Condition: OJ4013EnableApiKey
+    Properties:
+      KeyId: !ImportValue core-infrastructure-ApiKey2
+      KeyType: API_KEY
+      UsagePlanId: !Ref PublicNinoCheckApiUsagePlan
 
   PrivateNinoCheckApi:
     Type: AWS::Serverless::Api
