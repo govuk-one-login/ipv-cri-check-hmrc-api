@@ -76,10 +76,6 @@ Conditions:
     - !Condition IsIntOrProdEnvironment
   IsNotProdEnvironment: !Not
     - !Condition IsProdEnvironment
-  OJ4013NoApiKey: !Or
-    - !Condition IsDevLikeEnvironment
-    - !Condition IsIntOrProdEnvironment
-  OJ4013EnableApiKey: !Not [!Condition OJ4013NoApiKey]
   UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
   DeployAlarms: !Or
     - !Condition IsNotDevLikeEnvironment
@@ -998,7 +994,7 @@ Resources:
 
   PublicNinoCheckApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
-    Condition: OJ4013EnableApiKey
+    Condition: IsNotDevLikeEnvironment
     Properties:
       ApiStages:
         - ApiId: !Ref PublicNinoCheckApi
@@ -1012,7 +1008,7 @@ Resources:
 
   LinkUsagePlanApiKey1:
     Type: AWS::ApiGateway::UsagePlanKey
-    Condition: OJ4013EnableApiKey
+    Condition: IsNotDevLikeEnvironment
     Properties:
       KeyId: !ImportValue core-infrastructure-ApiKey1
       KeyType: API_KEY
@@ -1020,7 +1016,7 @@ Resources:
 
   LinkUsagePlanApiKey2:
     Type: AWS::ApiGateway::UsagePlanKey
-    Condition: OJ4013EnableApiKey
+    Condition: IsNotDevLikeEnvironment
     Properties:
       KeyId: !ImportValue core-infrastructure-ApiKey2
       KeyType: API_KEY
