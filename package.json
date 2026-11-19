@@ -20,8 +20,8 @@
     "@aws-lambda-powertools/commons": "2.36.0",
     "@aws-lambda-powertools/parameters": "2.36.0",
     "@aws-lambda-powertools/tracer": "2.36.0",
-    "@aws-sdk/client-dynamodb": "3.1164.0",
-    "@aws-sdk/client-ssm": "3.1164.0",
+    "@aws-sdk/client-dynamodb": "3.1169.0",
+    "@aws-sdk/client-ssm": "3.1169.0",
     "@govuk-one-login/cri-audit": "1.0.2",
     "@govuk-one-login/cri-error-response": "1.0.2",
     "@govuk-one-login/cri-logger": "1.0.0",
@@ -31,7 +31,7 @@
     "jose": "6.2.2"
   },
   "devDependencies": {
-    "@aws-sdk/lib-dynamodb": "3.1164.0",
+    "@aws-sdk/lib-dynamodb": "3.1169.0",
     "@aws-sdk/util-dynamodb": "3.996.9",
     "@eslint/js": "^10.0.1",
     "@govuk-one-login/cri-types": "^1.0.1",
