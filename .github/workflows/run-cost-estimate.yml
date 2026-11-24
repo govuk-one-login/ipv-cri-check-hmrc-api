@@ -1,0 +1,98 @@
+name: Cost estimate
+
+on:
+  workflow_call:
+    inputs:
+      stack-name: { required: true, type: string }
+      aws-region: { required: false, type: string }
+
+permissions: {}
+
+concurrency:
+  group: cost-estimate-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  C3X_VERSION: v0.3.21
+  C3X_REGION: ${{ inputs.aws-region || 'eu-west-2' }}
+  C3X_CURRENCY: GBP
+
+jobs:
+  source-template:
+    # Estimates the SAM template as written and posts the cost change versus the base branch on the PR.
+    # c3x does not expand AWS::Serverless::* resources, so Lambda functions and APIs are missing from this estimate.
+    name: Source template
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Pull repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Estimate cost
+        uses: c3xdev/c3x@de7a3269566fd741f89b1a0b9fc8531e89dc7594 # v0.3.21
+        with:
+          version: ${{ env.C3X_VERSION }}
+          path: infrastructure/template.yaml
+          currency: ${{ env.C3X_CURRENCY }}
+          comment: true
+          branded-comments: false
+
+  processed-template:
+    # Estimates the template CloudFormation actually deployed for the preview stack,
+    # with the SAM, AWS::Include and AWS::LanguageExtensions transforms already applied.
+    name: Processed template
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: development
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Assume AWS Role
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.DEPLOYMENT_ROLE_ARN }}
+          aws-region: ${{ env.C3X_REGION }}
+
+      - name: Get processed template
+        id: template
+        env:
+          STACK_NAME: ${{ inputs.stack-name }}
+        run: |
+          body=$(aws cloudformation get-template \
+            --stack-name "$STACK_NAME" \
+            --template-stage Processed \
+            --query TemplateBody \
+            --output json)
+
+          # The CLI returns a JSON template as an object and a YAML template as a string
+          if jq -e 'type == "object"' <<< "$body" > /dev/null; then
+            template="$RUNNER_TEMP/processed-template.json"
+            jq . <<< "$body" > "$template"
+          else
+            template="$RUNNER_TEMP/processed-template.yaml"
+            jq -r . <<< "$body" > "$template"
+          fi
+
+          echo "path=$template" >> "$GITHUB_OUTPUT"
+
+      - name: Install c3x
+        uses: c3xdev/c3x@de7a3269566fd741f89b1a0b9fc8531e89dc7594 # v0.3.21
+        with:
+          version: ${{ env.C3X_VERSION }}
+          install-only: true
+
+      - name: Estimate cost
+        env:
+          TEMPLATE: ${{ steps.template.outputs.path }}
+          STACK_NAME: ${{ inputs.stack-name }}
+        run: |
+          c3x estimate --path "$TEMPLATE" --show-skipped
+
+          {
+            echo "## Cost estimate: processed template for \`$STACK_NAME\`"
+            c3x estimate --path "$TEMPLATE" --format markdown
+          } >> "$GITHUB_STEP_SUMMARY"
