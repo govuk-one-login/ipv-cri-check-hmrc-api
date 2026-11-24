@@ -45,6 +45,18 @@ jobs:
       pact-broker-username: ${{ secrets.PACT_BROKER_USERNAME }}
       pact-broker-password: ${{ secrets.PACT_BROKER_PASSWORD }}
 
+  cost-estimate:
+    name: Cost estimate
+    needs: deploy
+    uses: ./.github/workflows/run-cost-estimate.yml
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    with:
+      stack-name: ${{ needs.deploy.outputs.stack-name }}
+      aws-region: ${{ needs.deploy.outputs.aws-region }}
+
   apigw-tests:
     name: Run tests
     needs: deploy
